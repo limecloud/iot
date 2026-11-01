@@ -1,0 +1,29 @@
+{
+  "test_only": true,
+  "test_seed_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "control_origin": "https://iot.example",
+  "pairing": {
+    "pairing_id": "pair-vector",
+    "space_id": "sp-cloud",
+    "owner": {
+      "principal_id": "p-owner",
+      "issuer": "https://identity.example/oidc",
+      "subject": "test-owner",
+      "name": "测试所有者"
+    },
+    "challenge": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "expires_at": "2027-01-15T08:00:00Z",
+    "scopes": [
+      "devices.read"
+    ],
+    "claimed": false,
+    "cancelled": false
+  },
+  "claim": {
+    "gateway_id": "gw-56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c",
+    "local_space_id": "space-local",
+    "public_key": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+    "signature": "mY8aAuQXHGSKa9HeQGCbhdyDufCcsAkUGRA/qbAxouFik9F+/kXtXkgNNSAXI7hJ0xZ7xWzQibkiwKpmQfwyCA=="
+  },
+  "proof": "LIMEIOT-PAIR-1\nhttps://iot.example\npair-vector\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nsp-cloud\ngw-56475aa75463474c0285df5dbf2bcab73da651358839e9b77481b2eab107708c\nspace-local\np-owner\nA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=\n1800000000"
+}

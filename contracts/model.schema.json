@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT 0.1 model.schema.json",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "model_id",
+    "model_version",
+    "services"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "model_id": {
+      "type": "string",
+      "pattern": "^urn:[a-z0-9-]+:"
+    },
+    "model_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "services": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "semantic_id",
+          "properties",
+          "actions",
+          "events"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+          },
+          "semantic_id": {
+            "type": "string",
+            "pattern": "^urn:[a-z0-9-]+:"
+          },
+          "properties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "semantic_id",
+                "schema",
+                "access"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                },
+                "semantic_id": {
+                  "type": "string",
+                  "pattern": "^urn:[a-z0-9-]+:"
+                },
+                "schema": {
+                  "type": "object"
+                },
+                "access": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "enum": [
+                      "read",
+                      "write",
+                      "notify"
+                    ]
+                  }
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "max_age_ms": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "semantic_id",
+                "schema"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                },
+                "semantic_id": {
+                  "type": "string",
+                  "pattern": "^urn:[a-z0-9-]+:"
+                },
+                "schema": {
+                  "type": "object"
+                },
+                "access": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "enum": [
+                      "read",
+                      "write",
+                      "notify"
+                    ]
+                  }
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "max_age_ms": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.dev/contracts/control-relay.schema.json",
+  "title": "LimeIoT机器连接帧",
+  "oneOf": [
+    { "$ref": "#/$defs/challenge" },
+    { "$ref": "#/$defs/authenticate" },
+    { "$ref": "#/$defs/ready" },
+    { "$ref": "#/$defs/heartbeat" },
+    { "$ref": "#/$defs/error" }
+  ],
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$" },
+    "connection_id": { "type": "string", "pattern": "^conn-[a-f0-9]{64}$" },
+    "challenge": {
+      "type": "object",
+      "required": ["type", "control_origin", "connection_id", "challenge", "expires_at"],
+      "properties": {
+        "type": { "const": "challenge" },
+        "control_origin": { "type": "string", "format": "uri", "maxLength": 2048 },
+        "connection_id": { "$ref": "#/$defs/connection_id" },
+        "challenge": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "expires_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "authenticate": {
+      "type": "object",
+      "required": ["type", "gateway_id", "space_id", "local_space_id", "principal_id", "revision", "signature"],
+      "properties": {
+        "type": { "const": "authenticate" },
+        "gateway_id": { "type": "string", "pattern": "^gw-[a-f0-9]{64}$" },
+        "space_id": { "$ref": "#/$defs/identifier" },
+        "local_space_id": { "$ref": "#/$defs/identifier" },
+        "principal_id": { "$ref": "#/$defs/identifier" },
+        "revision": { "$ref": "#/$defs/identifier" },
+        "signature": { "type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$" }
+      },
+      "additionalProperties": false
+    },
+    "ready": {
+      "type": "object",
+      "required": ["type", "connection_id", "binding_revision", "heartbeat_seconds"],
+      "properties": {
+        "type": { "const": "ready" },
+        "connection_id": { "$ref": "#/$defs/connection_id" },
+        "binding_revision": { "$ref": "#/$defs/identifier" },
+        "heartbeat_seconds": { "const": 5 }
+      },
+      "additionalProperties": false
+    },
+    "heartbeat": {
+      "type": "object",
+      "required": ["type", "connection_id", "sequence"],
+      "properties": {
+        "type": { "const": "heartbeat" },
+        "connection_id": { "$ref": "#/$defs/connection_id" },
+        "sequence": { "type": "integer", "minimum": 1, "maximum": 18446744073709551615 }
+      },
+      "additionalProperties": false
+    },
+    "error": {
+      "type": "object",
+      "required": ["type", "code"],
+      "properties": {
+        "type": { "const": "error" },
+        "code": { "const": "machine_already_connected" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "v": 1,
+  "kind": "command",
+  "message_id": "message-expired",
+  "device_id": "device-lamp",
+  "model_revision": "sha256:aaf9fc9ba87187643ab777cda43658e09603fc1c0e51dc6ec1acde160d4aecfc",
+  "session_id": "session-001",
+  "body": {
+    "command_id": "command-expired",
+    "issued_at": "2026-11-01T08:59:00Z",
+    "expires_at": "2026-11-01T08:59:05Z",
+    "operation": {
+      "type": "property.set",
+      "path": "light.power",
+      "value": true
+    }
+  }
+}

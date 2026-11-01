@@ -1,0 +1,17 @@
+.git
+.dev
+target
+node_modules
+**/node_modules
+**/dist
+**/.build
+**/.gradle
+**/build
+**/local.properties
+**/*.keystore
+docs
+tests
+.env
+.env.*
+*.sqlite*
+**/xcuserdata

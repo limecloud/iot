@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "fixture_time": "2026-11-01T09:00:02Z",
+  "session_id": "session-001",
+  "fixtures": [
+    {
+      "file": "command-request.json",
+      "structural": "valid",
+      "schema": "command-request.schema.json",
+      "semantic": "maps_to_mqtt_command",
+      "maps_to": "mqtt-command.json"
+    },
+    {
+      "file": "mqtt-command.json",
+      "structural": "valid",
+      "semantic": "accepted"
+    },
+    {
+      "file": "mqtt-command-expired.json",
+      "structural": "valid",
+      "semantic": "command_expired"
+    },
+    {
+      "file": "mqtt-command-conflict.json",
+      "structural": "valid",
+      "semantic": "duplicate_conflict",
+      "after": "mqtt-command.json"
+    },
+    {
+      "file": "mqtt-command-invalid-value.json",
+      "structural": "valid",
+      "semantic": "invalid_value"
+    },
+    {
+      "file": "mqtt-result.json",
+      "structural": "valid",
+      "semantic": "confirmed_device_report",
+      "for": "mqtt-command.json"
+    },
+    {
+      "file": "capability-package.json",
+      "structural": "json_parse_only",
+      "deployment": "reject_unsigned_example"
+    },
+    {
+      "file": "ota-manifest.json",
+      "structural": "json_parse_only",
+      "deployment": "reject_missing_signature_and_artifact"
+    }
+  ]
+}

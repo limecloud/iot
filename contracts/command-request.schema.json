@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT 0.1 command-request.schema.json",
+  "type": "object",
+  "required": [
+    "space_id",
+    "device_id",
+    "model_revision",
+    "idempotency_key",
+    "expires_at",
+    "operation"
+  ],
+  "properties": {
+    "space_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "model_revision": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "operation": {
+      "type": "object",
+      "required": [
+        "type",
+        "path",
+        "value"
+      ],
+      "properties": {
+        "type": {
+          "const": "property.set"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*\\.[a-z][a-z0-9_-]*$"
+        },
+        "value": {}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

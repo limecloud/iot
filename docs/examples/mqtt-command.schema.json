@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Design MQTT command fixture",
+  "type": "object",
+  "required": [
+    "v",
+    "kind",
+    "message_id",
+    "device_id",
+    "model_revision",
+    "session_id",
+    "body"
+  ],
+  "properties": {
+    "v": {
+      "const": 1
+    },
+    "kind": {
+      "const": "command"
+    },
+    "message_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "model_revision": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "body": {
+      "type": "object",
+      "required": [
+        "command_id",
+        "issued_at",
+        "expires_at",
+        "operation"
+      ],
+      "properties": {
+        "command_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "issued_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operation": {
+          "type": "object",
+          "required": [
+            "type",
+            "path",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "const": "property.set"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]*\\.[a-z][a-z0-9_-]*$"
+            },
+            "value": {}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,1883 @@
+{
+  "schema_version": 1,
+  "project": "LimeIoT",
+  "updated_at": "2026-11-01",
+  "path_base": "repository_root",
+  "scope": "design_traceability",
+  "canonical_documents": {
+    "requirements_and_stories": "docs/01-产品需求PRD.md",
+    "extended_use_cases": "docs/17-用户故事与用例.md",
+    "acceptance": "docs/23-测试策略与验收矩阵.md",
+    "implementation_status": "docs/24-实施计划与进度.md"
+  },
+  "maintenance": "本文件为源文档的导航投影；编号、标题或验收映射变化时同步。正文与判断规则以 canonical_source 和 verification_source 为准。",
+  "counts": {
+    "functional_requirement": 31,
+    "nonfunctional_requirement": 7,
+    "user_story": 24,
+    "use_case": 22
+  },
+  "items": [
+    {
+      "id": "FR-01",
+      "kind": "functional_requirement",
+      "title": "自研物模型",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-01"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-03"
+      ],
+      "use_case_ids": [
+        "UC-01",
+        "UC-02"
+      ],
+      "design_document_ids": [
+        "DOC-05"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-01"
+        }
+      }
+    },
+    {
+      "id": "FR-02",
+      "kind": "functional_requirement",
+      "title": "自研 MQTT 应用协议",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-02"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-02"
+      ],
+      "use_case_ids": [
+        "UC-02",
+        "UC-04"
+      ],
+      "design_document_ids": [
+        "DOC-06"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-02"
+        }
+      }
+    },
+    {
+      "id": "FR-03",
+      "kind": "functional_requirement",
+      "title": "ESP-IDF IoT Core",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-03"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-02"
+      ],
+      "use_case_ids": [
+        "UC-02"
+      ],
+      "design_document_ids": [
+        "DOC-08"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-03"
+        }
+      }
+    },
+    {
+      "id": "FR-04",
+      "kind": "functional_requirement",
+      "title": "Rust 网关与独立事件总线",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-04"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-01"
+      ],
+      "use_case_ids": [
+        "UC-01",
+        "UC-10"
+      ],
+      "design_document_ids": [
+        "DOC-09"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-04"
+        }
+      }
+    },
+    {
+      "id": "FR-05",
+      "kind": "functional_requirement",
+      "title": "状态与命令生命周期",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-05"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-07",
+        "US-15"
+      ],
+      "use_case_ids": [
+        "UC-04"
+      ],
+      "design_document_ids": [
+        "DOC-04",
+        "DOC-09"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-05"
+        }
+      }
+    },
+    {
+      "id": "FR-06",
+      "kind": "functional_requirement",
+      "title": "自研自动化 DSL",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-06"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-08"
+      ],
+      "use_case_ids": [
+        "UC-05"
+      ],
+      "design_document_ids": [
+        "DOC-10"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-06"
+        }
+      }
+    },
+    {
+      "id": "FR-07",
+      "kind": "functional_requirement",
+      "title": "Zigbee/BLE/433/Matter",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-07"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-04",
+        "US-05"
+      ],
+      "use_case_ids": [
+        "UC-03"
+      ],
+      "design_document_ids": [
+        "DOC-07"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-07"
+        }
+      }
+    },
+    {
+      "id": "FR-08",
+      "kind": "functional_requirement",
+      "title": "本地优先",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-08"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-09"
+      ],
+      "use_case_ids": [
+        "UC-10"
+      ],
+      "design_document_ids": [
+        "DOC-03",
+        "DOC-09",
+        "DOC-14"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-08"
+        }
+      }
+    },
+    {
+      "id": "FR-09",
+      "kind": "functional_requirement",
+      "title": "双档网关与NAS部署",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-09"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-14"
+      ],
+      "use_case_ids": [
+        "UC-09"
+      ],
+      "design_document_ids": [
+        "DOC-19",
+        "DOC-22",
+        "DOC-28"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-09"
+        }
+      }
+    },
+    {
+      "id": "FR-10",
+      "kind": "functional_requirement",
+      "title": "身份与权限",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-10"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-06",
+        "US-12",
+        "US-16"
+      ],
+      "use_case_ids": [
+        "UC-02",
+        "UC-09",
+        "UC-19"
+      ],
+      "design_document_ids": [
+        "DOC-12"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-10"
+        }
+      }
+    },
+    {
+      "id": "FR-11",
+      "kind": "functional_requirement",
+      "title": "OTA",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-11"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-13"
+      ],
+      "use_case_ids": [
+        "UC-08"
+      ],
+      "design_document_ids": [
+        "DOC-13"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-11"
+        }
+      }
+    },
+    {
+      "id": "FR-12",
+      "kind": "functional_requirement",
+      "title": "家庭原生客户端与PWA",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-12"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-07"
+      ],
+      "use_case_ids": [
+        "UC-04",
+        "UC-10"
+      ],
+      "design_document_ids": [
+        "DOC-15"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-12"
+        }
+      }
+    },
+    {
+      "id": "FR-13",
+      "kind": "functional_requirement",
+      "title": "API/CLI/SDK",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-13"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-01",
+        "US-15"
+      ],
+      "use_case_ids": [
+        "UC-01",
+        "UC-04"
+      ],
+      "design_document_ids": [
+        "DOC-16"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-13"
+        }
+      }
+    },
+    {
+      "id": "FR-14",
+      "kind": "functional_requirement",
+      "title": "本地 Agent",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-14"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-08",
+        "US-21"
+      ],
+      "use_case_ids": [
+        "UC-05",
+        "UC-18"
+      ],
+      "design_document_ids": [
+        "DOC-11"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-14"
+        }
+      }
+    },
+    {
+      "id": "FR-15",
+      "kind": "functional_requirement",
+      "title": "AI 辅助适配",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-15"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-04",
+        "US-05"
+      ],
+      "use_case_ids": [
+        "UC-03",
+        "UC-20"
+      ],
+      "design_document_ids": [
+        "DOC-20"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-15"
+        }
+      }
+    },
+    {
+      "id": "FR-16",
+      "kind": "functional_requirement",
+      "title": "双版本与LimeCloud接入",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-16"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-09",
+        "US-15"
+      ],
+      "use_case_ids": [
+        "UC-10",
+        "UC-19"
+      ],
+      "design_document_ids": [
+        "DOC-14"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-16"
+        }
+      }
+    },
+    {
+      "id": "FR-17",
+      "kind": "functional_requirement",
+      "title": "开源与套件",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-17"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-14",
+        "US-18"
+      ],
+      "use_case_ids": [
+        "UC-09"
+      ],
+      "design_document_ids": [
+        "DOC-25"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-17"
+        }
+      }
+    },
+    {
+      "id": "FR-18",
+      "kind": "functional_requirement",
+      "title": "国际化与产品知识",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-18"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-01",
+        "US-21"
+      ],
+      "use_case_ids": [
+        "UC-01",
+        "UC-13"
+      ],
+      "design_document_ids": [
+        "DOC-27"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-18"
+        }
+      }
+    },
+    {
+      "id": "FR-19",
+      "kind": "functional_requirement",
+      "title": "运维与可靠性",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-19"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-12",
+        "US-15"
+      ],
+      "use_case_ids": [
+        "UC-10",
+        "UC-20"
+      ],
+      "design_document_ids": [
+        "DOC-22",
+        "DOC-28"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-19"
+        }
+      }
+    },
+    {
+      "id": "FR-20",
+      "kind": "functional_requirement",
+      "title": "生态设备接入",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-20"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-11",
+        "US-16"
+      ],
+      "use_case_ids": [
+        "UC-07",
+        "UC-19"
+      ],
+      "design_document_ids": [
+        "DOC-31"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-20"
+        }
+      }
+    },
+    {
+      "id": "FR-21",
+      "kind": "functional_requirement",
+      "title": "生态设备输出",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-21"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-10",
+        "US-16"
+      ],
+      "use_case_ids": [
+        "UC-06",
+        "UC-19"
+      ],
+      "design_document_ids": [
+        "DOC-31"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-21"
+        }
+      }
+    },
+    {
+      "id": "FR-22",
+      "kind": "functional_requirement",
+      "title": "开发者工作流",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-22"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-01",
+        "US-21"
+      ],
+      "use_case_ids": [
+        "UC-13",
+        "UC-20"
+      ],
+      "design_document_ids": [
+        "DOC-21",
+        "DOC-29"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-22"
+        }
+      }
+    },
+    {
+      "id": "FR-23",
+      "kind": "functional_requirement",
+      "title": "硬件支持包",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-23"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-02",
+        "US-05"
+      ],
+      "use_case_ids": [
+        "UC-02",
+        "UC-03",
+        "UC-20"
+      ],
+      "design_document_ids": [
+        "DOC-08",
+        "DOC-19",
+        "DOC-30"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-23"
+        }
+      }
+    },
+    {
+      "id": "FR-24",
+      "kind": "functional_requirement",
+      "title": "空间与场景模型",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-24"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-22"
+      ],
+      "use_case_ids": [
+        "UC-17"
+      ],
+      "design_document_ids": [
+        "DOC-04",
+        "DOC-32"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-24"
+        }
+      }
+    },
+    {
+      "id": "FR-25",
+      "kind": "functional_requirement",
+      "title": "统一多模态服务",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-25"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-18",
+        "US-20"
+      ],
+      "use_case_ids": [
+        "UC-14",
+        "UC-15"
+      ],
+      "design_document_ids": [
+        "DOC-33"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-25"
+        }
+      }
+    },
+    {
+      "id": "FR-26",
+      "kind": "functional_requirement",
+      "title": "能力组合与产品包",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-26"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-18",
+        "US-21"
+      ],
+      "use_case_ids": [
+        "UC-11",
+        "UC-13"
+      ],
+      "design_document_ids": [
+        "DOC-32"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-26"
+        }
+      }
+    },
+    {
+      "id": "FR-27",
+      "kind": "functional_requirement",
+      "title": "可组合智能玩具",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-27"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-17",
+        "US-19"
+      ],
+      "use_case_ids": [
+        "UC-11",
+        "UC-14",
+        "UC-18"
+      ],
+      "design_document_ids": [
+        "DOC-32"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-27"
+        }
+      }
+    },
+    {
+      "id": "FR-28",
+      "kind": "functional_requirement",
+      "title": "机器人与长任务",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-28"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-20"
+      ],
+      "use_case_ids": [
+        "UC-12",
+        "UC-16"
+      ],
+      "design_document_ids": [
+        "DOC-04",
+        "DOC-32"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-28"
+        }
+      }
+    },
+    {
+      "id": "FR-29",
+      "kind": "functional_requirement",
+      "title": "交互与应用会话",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-29"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-19",
+        "US-22"
+      ],
+      "use_case_ids": [
+        "UC-14",
+        "UC-17"
+      ],
+      "design_document_ids": [
+        "DOC-32",
+        "DOC-33"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-29"
+        }
+      }
+    },
+    {
+      "id": "FR-30",
+      "kind": "functional_requirement",
+      "title": "AI-first GUI/TUI",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-30"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-21"
+      ],
+      "use_case_ids": [
+        "UC-13",
+        "UC-20"
+      ],
+      "design_document_ids": [
+        "DOC-11",
+        "DOC-15",
+        "DOC-16"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-30"
+        }
+      }
+    },
+    {
+      "id": "FR-31",
+      "kind": "functional_requirement",
+      "title": "官方Web平台与管理后台",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": { "type": "table_row_id", "value": "FR-31" }
+      },
+      "implementation_status": "planned",
+      "story_ids": ["US-23", "US-24"],
+      "use_case_ids": ["UC-21", "UC-22"],
+      "design_document_ids": ["DOC-14", "DOC-15", "DOC-21", "DOC-22", "DOC-27", "DOC-29"],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": { "type": "table_row_id", "value": "FR-31" }
+      }
+    },
+    {
+      "id": "NFR-01",
+      "kind": "nonfunctional_requirement",
+      "title": "核心独立，外部实现不泄漏类型",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "NFR-01"
+        }
+      },
+      "implementation_status": "planned",
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "heading",
+          "value": "3. 非功能门槛"
+        }
+      }
+    },
+    {
+      "id": "NFR-02",
+      "kind": "nonfunctional_requirement",
+      "title": "关键状态和回执持久可恢复",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "NFR-02"
+        }
+      },
+      "implementation_status": "planned",
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "heading",
+          "value": "3. 非功能门槛"
+        }
+      }
+    },
+    {
+      "id": "NFR-03",
+      "kind": "nonfunctional_requirement",
+      "title": "所有资源消耗有界",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "NFR-03"
+        }
+      },
+      "implementation_status": "planned",
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "heading",
+          "value": "3. 非功能门槛"
+        }
+      }
+    },
+    {
+      "id": "NFR-04",
+      "kind": "nonfunctional_requirement",
+      "title": "最小权限和当前授权",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "NFR-04"
+        }
+      },
+      "implementation_status": "planned",
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "heading",
+          "value": "3. 非功能门槛"
+        }
+      }
+    },
+    {
+      "id": "NFR-05",
+      "kind": "nonfunctional_requirement",
+      "title": "隐私最小化",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "NFR-05"
+        }
+      },
+      "implementation_status": "planned",
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "heading",
+          "value": "3. 非功能门槛"
+        }
+      }
+    },
+    {
+      "id": "NFR-06",
+      "kind": "nonfunctional_requirement",
+      "title": "可重复交付与供应链可追溯",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "NFR-06"
+        }
+      },
+      "implementation_status": "planned",
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "heading",
+          "value": "3. 非功能门槛"
+        }
+      }
+    },
+    {
+      "id": "NFR-07",
+      "kind": "nonfunctional_requirement",
+      "title": "版本和生态兼容可解释",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "NFR-07"
+        }
+      },
+      "implementation_status": "planned",
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "heading",
+          "value": "3. 非功能门槛"
+        }
+      }
+    },
+    {
+      "id": "US-01",
+      "kind": "user_story",
+      "title": "作为新开发者，我希望先用模拟设备跑通平台",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-01"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-04",
+        "FR-13",
+        "FR-18",
+        "FR-22"
+      ]
+    },
+    {
+      "id": "US-02",
+      "kind": "user_story",
+      "title": "作为固件开发者，我希望复用连接与生命周期组件",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-02"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-02",
+        "FR-03",
+        "FR-23"
+      ]
+    },
+    {
+      "id": "US-03",
+      "kind": "user_story",
+      "title": "作为模型开发者，我希望一份定义贯通各端",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-03"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-01"
+      ]
+    },
+    {
+      "id": "US-04",
+      "kind": "user_story",
+      "title": "作为适配者，我希望分析陌生硬件并保存证据",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-04"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-07",
+        "FR-15"
+      ]
+    },
+    {
+      "id": "US-05",
+      "kind": "user_story",
+      "title": "作为贡献者，我希望独立复现别人适配的型号",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-05"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-07",
+        "FR-15",
+        "FR-23"
+      ]
+    },
+    {
+      "id": "US-06",
+      "kind": "user_story",
+      "title": "作为家庭所有者，我希望本地认领并配置设备",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-06"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-10"
+      ]
+    },
+    {
+      "id": "US-07",
+      "kind": "user_story",
+      "title": "作为成员，我希望看到可信状态并控制获准设备",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-07"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-05",
+        "FR-12"
+      ]
+    },
+    {
+      "id": "US-08",
+      "kind": "user_story",
+      "title": "作为用户，我希望通过自然语言建立规则",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-08"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-06",
+        "FR-14"
+      ]
+    },
+    {
+      "id": "US-09",
+      "kind": "user_story",
+      "title": "作为用户，我希望断网时基础自动化照常运行",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-09"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-08",
+        "FR-16"
+      ]
+    },
+    {
+      "id": "US-10",
+      "kind": "user_story",
+      "title": "作为 Apple/Google 用户，我希望保留原入口",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-10"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-21"
+      ]
+    },
+    {
+      "id": "US-11",
+      "kind": "user_story",
+      "title": "作为米家等生态用户，我希望复用获准设备",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-11"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-20"
+      ]
+    },
+    {
+      "id": "US-12",
+      "kind": "user_story",
+      "title": "作为安装人员，我希望获得临时维护权",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-12"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-10",
+        "FR-19"
+      ]
+    },
+    {
+      "id": "US-13",
+      "kind": "user_story",
+      "title": "作为维护者，我希望安全更新设备并处理断电",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-13"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-11"
+      ]
+    },
+    {
+      "id": "US-14",
+      "kind": "user_story",
+      "title": "作为硬件团队，我希望形成可重复交付的套件",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-14"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-09",
+        "FR-17"
+      ]
+    },
+    {
+      "id": "US-15",
+      "kind": "user_story",
+      "title": "作为服务开发者，我希望 API/CLI 能恢复未知操作",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-15"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-05",
+        "FR-13",
+        "FR-16",
+        "FR-19"
+      ]
+    },
+    {
+      "id": "US-16",
+      "kind": "user_story",
+      "title": "作为所有者，我希望随时撤销生态或 Agent 的访问",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-16"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-10",
+        "FR-20",
+        "FR-21"
+      ]
+    },
+    {
+      "id": "US-17",
+      "kind": "user_story",
+      "title": "作为孩子，我希望拼装模块创造会飞的玩具或对话萌宠",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-17"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-27"
+      ]
+    },
+    {
+      "id": "US-18",
+      "kind": "user_story",
+      "title": "作为玩具商家，我希望组合硬件、角色、多模态服务和玩法",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-18"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-17",
+        "FR-25",
+        "FR-26"
+      ]
+    },
+    {
+      "id": "US-19",
+      "kind": "user_story",
+      "title": "作为家长，我希望配置孩子可用的能力、时长和内容",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-19"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-27",
+        "FR-29"
+      ]
+    },
+    {
+      "id": "US-20",
+      "kind": "user_story",
+      "title": "作为机器人应用开发者，我希望复用感知、对话与长任务",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-20"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-25",
+        "FR-28"
+      ]
+    },
+    {
+      "id": "US-21",
+      "kind": "user_story",
+      "title": "作为Agent，我希望从目标找到准确合同和证据",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-21"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-14",
+        "FR-18",
+        "FR-22",
+        "FR-26",
+        "FR-30"
+      ]
+    },
+    {
+      "id": "US-22",
+      "kind": "user_story",
+      "title": "作为教师或健身应用开发者，我希望复用平台构建场景",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-22"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-24",
+        "FR-29"
+      ]
+    },
+    {
+      "id": "US-23",
+      "kind": "user_story",
+      "title": "作为开发者或Agent，我希望从官网和文档进入正确版本及控制台",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": { "type": "table_row_id", "value": "US-23" }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": ["FR-12", "FR-13", "FR-16", "FR-18", "FR-22", "FR-31"]
+    },
+    {
+      "id": "US-24",
+      "kind": "user_story",
+      "title": "作为平台运营人员，我希望通过独立后台维护官方云",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": { "type": "table_row_id", "value": "US-24" }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": ["FR-10", "FR-11", "FR-16", "FR-19", "FR-31"]
+    },
+    {
+      "id": "UC-01",
+      "kind": "use_case",
+      "title": "开发者首次运行模拟设备",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "UC-01：开发者首次运行模拟设备"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-01",
+        "FR-04",
+        "FR-13",
+        "FR-18"
+      ]
+    },
+    {
+      "id": "UC-02",
+      "kind": "use_case",
+      "title": "ESP 板卡接入为自有设备",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "UC-02：ESP 板卡接入为自有设备"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-01",
+        "FR-02",
+        "FR-03",
+        "FR-10",
+        "FR-23"
+      ]
+    },
+    {
+      "id": "UC-03",
+      "kind": "use_case",
+      "title": "适配一个 Zigbee/BLE/433 型号",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "UC-03：适配一个 Zigbee/BLE/433 型号"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-07",
+        "FR-15",
+        "FR-23"
+      ]
+    },
+    {
+      "id": "UC-04",
+      "kind": "use_case",
+      "title": "家庭成员控制设备并核对未知结果",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "UC-04：家庭成员控制设备并核对未知结果"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-02",
+        "FR-05",
+        "FR-12",
+        "FR-13"
+      ]
+    },
+    {
+      "id": "UC-05",
+      "kind": "use_case",
+      "title": "自然语言创建并部署规则",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "UC-05：自然语言创建并部署规则"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-06",
+        "FR-14"
+      ]
+    },
+    {
+      "id": "UC-06",
+      "kind": "use_case",
+      "title": "通过 Apple Home / Google Home 使用设备",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "UC-06：通过 Apple Home / Google Home 使用设备"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-21"
+      ]
+    },
+    {
+      "id": "UC-07",
+      "kind": "use_case",
+      "title": "接入既有小米、华为或小度生态能力",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "UC-07：接入既有小米、华为或小度生态能力"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-20"
+      ]
+    },
+    {
+      "id": "UC-08",
+      "kind": "use_case",
+      "title": "升级设备并从失败恢复",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "UC-08：升级设备并从失败恢复"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-11"
+      ]
+    },
+    {
+      "id": "UC-09",
+      "kind": "use_case",
+      "title": "安装人员交付并撤销委托",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "UC-09：安装人员交付并撤销委托"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-09",
+        "FR-10",
+        "FR-17"
+      ]
+    },
+    {
+      "id": "UC-10",
+      "kind": "use_case",
+      "title": "断网、重启与本地恢复",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "UC-10：断网、重启与本地恢复"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-04",
+        "FR-08",
+        "FR-12",
+        "FR-16",
+        "FR-19"
+      ]
+    },
+    {
+      "id": "UC-11",
+      "kind": "use_case",
+      "title": "组合玩具完整用例",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "19.2 组合玩具完整用例 UC-11"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-26",
+        "FR-27"
+      ]
+    },
+    {
+      "id": "UC-12",
+      "kind": "use_case",
+      "title": "清洁与陪伴机器人用例",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "19.3 清洁与陪伴机器人用例 UC-12"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-28"
+      ]
+    },
+    {
+      "id": "UC-13",
+      "kind": "use_case",
+      "title": "AI-first 开发用例",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "20.3 AI-first 开发用例 UC-13"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-18",
+        "FR-22",
+        "FR-26",
+        "FR-30"
+      ]
+    },
+    {
+      "id": "UC-14",
+      "kind": "use_case",
+      "title": "多模态陪伴用例",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "heading",
+          "value": "20.5 多模态陪伴用例 UC-14"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-25",
+        "FR-27",
+        "FR-29"
+      ]
+    },
+    {
+      "id": "UC-15",
+      "kind": "use_case",
+      "title": ". 模型调用预算与未知结果",
+      "canonical_source": {
+        "path": "docs/17-用户故事与用例.md",
+        "locator": {
+          "type": "heading",
+          "value": "2. UC-15：模型调用预算与未知结果"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-25"
+      ]
+    },
+    {
+      "id": "UC-16",
+      "kind": "use_case",
+      "title": ". 机器人取消与人工接管",
+      "canonical_source": {
+        "path": "docs/17-用户故事与用例.md",
+        "locator": {
+          "type": "heading",
+          "value": "3. UC-16：机器人取消与人工接管"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-28"
+      ]
+    },
+    {
+      "id": "UC-17",
+      "kind": "use_case",
+      "title": ". 同一能力扩展到教室或健身空间",
+      "canonical_source": {
+        "path": "docs/17-用户故事与用例.md",
+        "locator": {
+          "type": "heading",
+          "value": "4. UC-17：同一能力扩展到教室或健身空间"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-24",
+        "FR-29"
+      ]
+    },
+    {
+      "id": "UC-18",
+      "kind": "use_case",
+      "title": ". 模型故障后的玩具降级",
+      "canonical_source": {
+        "path": "docs/17-用户故事与用例.md",
+        "locator": {
+          "type": "heading",
+          "value": "5. UC-18：模型故障后的玩具降级"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-14",
+        "FR-27"
+      ]
+    },
+    {
+      "id": "UC-19",
+      "kind": "use_case",
+      "title": ". 撤销生态连接或转移空间设备",
+      "canonical_source": {
+        "path": "docs/17-用户故事与用例.md",
+        "locator": {
+          "type": "heading",
+          "value": "6. UC-19：撤销生态连接或转移空间设备"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-10",
+        "FR-16",
+        "FR-20",
+        "FR-21"
+      ]
+    },
+    {
+      "id": "UC-20",
+      "kind": "use_case",
+      "title": ". Agent 驱动的验证与发布准备",
+      "canonical_source": {
+        "path": "docs/17-用户故事与用例.md",
+        "locator": {
+          "type": "heading",
+          "value": "7. UC-20：Agent 驱动的验证与发布准备"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-15",
+        "FR-19",
+        "FR-22",
+        "FR-23",
+        "FR-30"
+      ]
+    },
+    {
+      "id": "UC-21",
+      "kind": "use_case",
+      "title": "从官网与开发文档进入双版本",
+      "canonical_source": {
+        "path": "docs/17-用户故事与用例.md",
+        "locator": { "type": "heading", "value": "8. UC-21：从官网与开发文档进入双版本" }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": ["FR-12", "FR-13", "FR-16", "FR-18", "FR-22", "FR-31"]
+    },
+    {
+      "id": "UC-22",
+      "kind": "use_case",
+      "title": "官方云平台后台运维与发布",
+      "canonical_source": {
+        "path": "docs/17-用户故事与用例.md",
+        "locator": { "type": "heading", "value": "9. UC-22：官方云平台后台运维与发布" }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": ["FR-10", "FR-11", "FR-16", "FR-19", "FR-31"]
+    }
+  ]
+}

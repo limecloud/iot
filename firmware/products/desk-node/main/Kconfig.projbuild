@@ -1,0 +1,32 @@
+menu "LimeIoT development node"
+    choice LIMEIOT_ROLE
+        prompt "Node role"
+        default LIMEIOT_ROLE_LAMP
+        config LIMEIOT_ROLE_LAMP
+            bool "Lamp"
+        config LIMEIOT_ROLE_BUTTON
+            bool "Button"
+    endchoice
+    config LIMEIOT_LED_GPIO
+        int "WS2812 data GPIO"
+        range 0 21
+        default 10
+        depends on LIMEIOT_ROLE_LAMP
+    config LIMEIOT_LED_COUNT
+        int "WS2812 pixel count"
+        range 1 8
+        default 1
+        depends on LIMEIOT_ROLE_LAMP
+    config LIMEIOT_BUTTON_GPIO
+        int "Button GPIO (active low, external button)"
+        range 0 21
+        default 3
+        depends on LIMEIOT_ROLE_BUTTON
+    config LIMEIOT_DEVELOPMENT_USB_CLOCK
+        bool "Allow physical USB time bootstrap for development"
+        default y
+        help
+            Development boards without a trusted RTC require the owner to enter
+            a Unix timestamp through USB after each cold boot. TLS verification
+            stays enabled. Production hardware needs a protected clock adapter.
+endmenu

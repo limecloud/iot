@@ -1,0 +1,436 @@
+{
+  "schema_version": 1,
+  "project": "LimeIoT",
+  "updated_at": "2026-11-01",
+  "path_base": "repository_root",
+  "scope": "documentation_navigation",
+  "runtime_capability_discovery": false,
+  "entry_points": {
+    "guide": "docs/README.md",
+    "knowledge": "docs/knowledge/README.md",
+    "agent": "llms.txt",
+    "requirements": "docs/requirements.json",
+    "examples": "docs/examples/README.md",
+    "implementation_status": "docs/24-实施计划与进度.md",
+    "device_evidence": "docs/30-设备支持矩阵与证据台账.md"
+  },
+  "reading_routes": {
+    "web_editions_and_source_boundaries": [
+      "DOC-15",
+      "DOC-25",
+      "DOC-27",
+      "DOC-21",
+      "DOC-14",
+      "DOC-22",
+      "DOC-29"
+    ],
+    "mvp_hardware_and_deployment": [
+      "DOC-29",
+      "DOC-19",
+      "DOC-14",
+      "DOC-21",
+      "DOC-22",
+      "DOC-24"
+    ],
+    "product_review": [
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-17",
+      "DOC-23",
+      "DOC-24"
+    ],
+    "agent_first_development": [
+      "DOC-27",
+      "DOC-16",
+      "DOC-11",
+      "DOC-15",
+      "DOC-21",
+      "DOC-29"
+    ],
+    "native_device": [
+      "DOC-03",
+      "DOC-05",
+      "DOC-06",
+      "DOC-08",
+      "DOC-12",
+      "DOC-13",
+      "DOC-19"
+    ],
+    "gateway_core": [
+      "DOC-03",
+      "DOC-04",
+      "DOC-07",
+      "DOC-09",
+      "DOC-10",
+      "DOC-14",
+      "DOC-28"
+    ],
+    "hardware_adaptation": [
+      "DOC-19",
+      "DOC-20",
+      "DOC-07",
+      "DOC-30",
+      "DOC-31"
+    ],
+    "ecosystem_interoperability": [
+      "DOC-31",
+      "DOC-07",
+      "DOC-12",
+      "DOC-30"
+    ],
+    "multimodal_composition": [
+      "DOC-32",
+      "DOC-33",
+      "DOC-11",
+      "DOC-12",
+      "DOC-17"
+    ],
+    "verification_and_delivery": [
+      "DOC-18",
+      "DOC-21",
+      "DOC-22",
+      "DOC-23",
+      "DOC-24",
+      "DOC-25",
+      "DOC-28",
+      "DOC-29",
+      "DOC-30"
+    ]
+  },
+  "documents": [
+    {
+      "id": "DOC-01",
+      "path": "docs/01-产品需求PRD.md",
+      "title": "AI-first平台产品需求 PRD",
+      "owns": "产品目标、角色、范围和需求编号",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-02",
+      "path": "docs/02-参考项目与技术调研.md",
+      "title": "参考项目与技术调研",
+      "owns": "来源、已观察事实、采用方式和证据限制",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-03",
+      "path": "docs/03-总体技术架构.md",
+      "title": "总体技术架构",
+      "owns": "四层架构、运行边界和依赖方向",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-04",
+      "path": "docs/04-领域模型与数据设计.md",
+      "title": "领域模型与数据设计",
+      "owns": "实体、Owner、事务、不变量和数据保留",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-05",
+      "path": "docs/05-自研物模型规范.md",
+      "title": "自研物模型规范",
+      "owns": "模型标识、能力语义、类型及版本规则",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-06",
+      "path": "docs/06-MQTT报文与设备通信规范.md",
+      "title": "MQTT 报文与设备通信规范",
+      "owns": "Topic、报文、会话、时效和去重",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-07",
+      "path": "docs/07-异构协议与适配器规范.md",
+      "title": "异构协议与适配器规范",
+      "owns": "接口、协议映射、隔离和降级",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-08",
+      "path": "docs/08-ESP-IDF固件SDK设计.md",
+      "title": "ESP-IDF 固件 SDK 设计",
+      "owns": "SDK 组件、启动、驱动和设备恢复",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-09",
+      "path": "docs/09-Rust网关内核设计.md",
+      "title": "Rust 网关内核设计",
+      "owns": "总线、状态机、持久任务和并发",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-10",
+      "path": "docs/10-自动化DSL与执行引擎.md",
+      "title": "自动化 DSL 与执行引擎",
+      "owns": "规则语言和确定性执行语义",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-11",
+      "path": "docs/11-AI与Agent接入设计.md",
+      "title": "AI 与 Agent 接入设计",
+      "owns": "推理、工具授权、任务和研发辅助边界",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-12",
+      "path": "docs/12-身份认证与安全体系.md",
+      "title": "身份认证与安全体系",
+      "owns": "配网、认领、信任、授权、撤销和威胁模型",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-13",
+      "path": "docs/13-OTA与制品交付规范.md",
+      "title": "OTA 与制品交付规范",
+      "owns": "签名、升级、兼容、回滚和恢复",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-14",
+      "path": "docs/14-云端服务与边云协同.md",
+      "title": "云端服务与边云协同",
+      "owns": "私有/云控制面、LimeCloud接入、远程请求和同步归属",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-15",
+      "path": "docs/15-客户端与交互设计.md",
+      "title": "客户端与交互设计",
+      "owns": "官网/文档/控制台/后台与NAS界面、身份隔离、交互及接管",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-16",
+      "path": "docs/16-API事件与CLI规范.md",
+      "title": "API、事件与 CLI 规范",
+      "owns": "正式能力入口、错误、幂等和恢复合同",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-17",
+      "path": "docs/17-用户故事与用例.md",
+      "title": "用户故事与用例",
+      "owns": "角色目标、前置条件、主流程和异常",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-18",
+      "path": "docs/18-关键时序与故障流程.md",
+      "title": "关键时序与故障流程",
+      "owns": "交互时序、故障和跨域协作",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-19",
+      "path": "docs/19-硬件选型采购与BOM.md",
+      "title": "硬件选型、采购与 BOM",
+      "owns": "网关配置、样板套件和采购验收",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-20",
+      "path": "docs/20-AI辅助逆向与设备适配流程.md",
+      "title": "AI 辅助逆向与设备适配流程",
+      "owns": "实验证据、协议假设、回放和适配发布",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-21",
+      "path": "docs/21-Monorepo与开发规范.md",
+      "title": "Monorepo 与开发规范",
+      "owns": "开源核心与私有官网仓库边界、目录、构建、合同生成和代码原则",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-22",
+      "path": "docs/22-本地开发部署与运维.md",
+      "title": "本地开发、部署与运维",
+      "owns": "NAS与Cloudflare/Railway部署、环境、配置、迁移、备份和发布",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-23",
+      "path": "docs/23-测试策略与验收矩阵.md",
+      "title": "测试策略与验收矩阵",
+      "owns": "需求到验证的映射和验收门槛",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-24",
+      "path": "docs/24-实施计划与进度.md",
+      "title": "实施计划与进度",
+      "owns": "唯一当前实施状态、里程碑和依赖",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-25",
+      "path": "docs/25-开源许可生态与商业化.md",
+      "title": "开源许可、生态与商业化",
+      "owns": "当前许可、建议、依赖治理及交付政策",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-26",
+      "path": "docs/26-架构决策记录与风险.md",
+      "title": "架构决策记录与风险",
+      "owns": "决策状态、备选、理由与待决问题",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-27",
+      "path": "docs/27-国际化与文档治理.md",
+      "title": "国际化与文档治理",
+      "owns": "语言、资料、文档发布与变更规则",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-28",
+      "path": "docs/28-可观测性与可靠性.md",
+      "title": "可观测性与可靠性",
+      "owns": "指标、追踪、资源预算及可靠性目标",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-29",
+      "path": "docs/29-MVP端到端落地蓝图.md",
+      "title": "MVP 端到端落地蓝图",
+      "owns": "首个纵向切片、任务依赖和连续验收",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-30",
+      "path": "docs/30-设备支持矩阵与证据台账.md",
+      "title": "设备支持矩阵与证据台账",
+      "owns": "型号级支持状态、实机证据和缺口",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-31",
+      "path": "docs/31-多生态兼容与开放接入.md",
+      "title": "多生态兼容与开放接入",
+      "owns": "方向、资格、映射、认证与生态验收",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-32",
+      "path": "docs/32-能力组合与场景应用.md",
+      "title": "能力组合与场景应用",
+      "owns": "组合包、玩具、机器人与空间应用",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-33",
+      "path": "docs/33-多模态模型与媒体服务.md",
+      "title": "多模态模型与媒体服务",
+      "owns": "模型目录、调用、流、媒体、预算与数据政策",
+      "status": "design_baseline"
+    }
+  ],
+  "examples": [
+    {
+      "path": "docs/examples/automation.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/automation.schema.json",
+      "type": "json_schema",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/button-model.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/capability-catalog.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/capability-package.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/command-request.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/command-request.schema.json",
+      "type": "json_schema",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/expected-results.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/model-invocation.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/mqtt-command-conflict.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/mqtt-command-expired.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/mqtt-command-invalid-value.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/mqtt-command.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/mqtt-command.schema.json",
+      "type": "json_schema",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/mqtt-result.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/mqtt-result.schema.json",
+      "type": "json_schema",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/mqtt-state.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/ota-manifest.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/thing-model.json",
+      "type": "design_fixture",
+      "status": "design_example"
+    },
+    {
+      "path": "docs/examples/thing-model.schema.json",
+      "type": "json_schema",
+      "status": "design_example"
+    }
+  ]
+}

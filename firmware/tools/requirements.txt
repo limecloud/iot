@@ -1,0 +1,2 @@
+# 开发样机离线 NVS 生成器。安装到项目虚拟环境，不全局安装。
+esp-idf-nvs-partition-gen==0.3.0

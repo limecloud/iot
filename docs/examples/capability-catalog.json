@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "scope": {
+    "space_id": "space-demo",
+    "subject_id": "subject-demo"
+  },
+  "implementation_status": "planned",
+  "operations": [
+    {
+      "operation_id": "devices.get",
+      "contract_revision": "example-devices-get-v1",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "space_id": {
+            "type": "string"
+          },
+          "device_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "space_id",
+          "device_id"
+        ],
+        "additionalProperties": false
+      },
+      "side_effect": "none",
+      "recovery_operation": null
+    },
+    {
+      "operation_id": "commands.create",
+      "contract_revision": "example-commands-create-v1",
+      "input_schema_ref": "command-request.schema.json",
+      "side_effect": "device_control",
+      "idempotency": "required",
+      "recovery_operation": "commands.get"
+    },
+    {
+      "operation_id": "commands.get",
+      "contract_revision": "example-commands-get-v1",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "space_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "command_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "space_id",
+          "command_id"
+        ],
+        "additionalProperties": false
+      },
+      "side_effect": "none",
+      "recovery_operation": null
+    }
+  ],
+  "partial_example": true
+}

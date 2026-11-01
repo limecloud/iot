@@ -1,0 +1,42 @@
+# LimeIoT
+
+> AI-first 开源智能物联与能力组合平台。以自研物模型、Rust 本地网关、ESP-IDF SDK 和统一工具合同，连接多模态模型、真实设备及场景应用。
+
+## 当前事实
+
+已实现Rust网关、SQLite耐久状态/事件、MQTT5、模拟器、JSON CLI、家庭PWA、所有者会话和规则子集。NAS源码/清单、HTTPS初始化、设备mTLS签发/撤销、备份恢复已实现，容器运行与实机待验收。C设备核心与真实Broker/Rust网关联调、离线NVS生成通过；ESP-IDF适配器/产品已有源码，目标编译因SDK获取失败而阻塞。Swift/SwiftUI和Kotlin/Compose工程已建立；两端库通过真实网关/模拟设备联调，Android调试APK构建与lint通过，iOS整包待完整Xcode。执行npm run cli -- schema发现当前工具，capabilities list读取实例能力。运行见deploy/dev/README.md、deploy/nas/README.md、firmware/README.md、apps/ios/README.md、apps/android/README.md。实机认领、OTA、云控制面、多模态和生态仍在开发。
+
+文档站页面与指南在私有 iotweb/src/docs 维护，官网同源 /docs/ 呈现；本仓库 docs/ 保留开源工程规范与入门知识资料，不建立文档站应用。
+
+Go/Gin/MySQL控制面已实现账户、受众隔离会话、空间和配对/撤销；HTTP合同为contracts/control.openapi.yaml，证明与本地恢复合同为contracts/control-pairing.md，运行见server/README.md。Rust本地审核/批准/核实/撤销、独立机器密钥、家庭PWA与NAS配对备份恢复已通过test:pairing。control-pairings.*是本地所有者工具，批准须本人核对review_revision，配对码与密钥不进入模型上下文。npm run test:control独立使用临时MySQL、HTTP/OIDC夹具、race及vet，不依赖私有仓库。出站中继、Console/Admin页面及真实LimeCloud联调尚未交付；配对active不表示远程在线或可执行。
+
+出站WSS机器认证与保活已实现，默认关闭；显式LIMEIOT_CONTROL_RELAY_ENABLED=1只为当前本地批准的active绑定连接。合同为contracts/control-relay.md及control-relay.schema.json，Node/Go/Rust共用固定证明向量。test:relay已验证真实CA/TLS、心跳、重启/断流重连、两侧撤销，移除CA后拒绝连接；本地控制继续工作。该连接尚不转发设备动作，不能据此调用不存在的远程工具。
+
+本地文字规则草案已实现：Ollama经RuleInference窄接口生成受限DSL，drafts.create/list/get/resolve为正式入口；CLI、PWA和Swift/Kotlin端先保存原键，响应丢失后查询原记录。模型无部署/设备/工具权限，预演后由用户明确启用。不配置模型不影响控制，网关重启中的推理恢复unknown，不重调、不切云。合同检查通过，但真实候选模型的未支持意图拒绝失败；已达本轮两次修复复验上限，质量验收阻塞，不再盲目调参或换模型。检查分别使用test:inference和显式配置后的test:inference:live；证据与后续条件以24为准，不能推断语音、视觉或通用Agent已实现。
+
+## 入口
+
+- [文档导航](docs/README.md)：33 篇专项设计及唯一维护范围。
+- [IoT入门知识库](docs/knowledge/README.md)：按问题与主题学习硬件、通信、架构、智能玩具、时延和成本，含图解与小米官网资料分类。
+- [机器目录](docs/catalog.json)：稳定文档 ID、仓库相对路径、职责、状态与按任务阅读路线。
+- [需求追踪](docs/requirements.json)：FR/NFR/US/UC 的规范来源及验收关联。
+- [当前实施状态](docs/24-实施计划与进度.md)：唯一当前进度来源。
+- [型号证据](docs/30-设备支持矩阵与证据台账.md)：实际硬件支持和证据范围。
+- [设计夹具](docs/examples/README.md)：模型、业务输入、MQTT、规则、组合、多模态及失败预期。
+
+## 按任务读取
+
+- 产品评审：[PRD](docs/01-产品需求PRD.md)、[研究](docs/02-参考项目与技术调研.md)、[架构](docs/03-总体技术架构.md)。
+- MVP采购与部署：[场景及验收](docs/29-MVP端到端落地蓝图.md)、[硬件BOM](docs/19-硬件选型采购与BOM.md)、[LimeCloud接入](docs/14-云端服务与边云协同.md)、[NAS与Cloudflare/Railway](docs/22-本地开发部署与运维.md)、[排期](docs/24-实施计划与进度.md)。
+- 双版本与Web：[入口及身份边界](docs/15-客户端与交互设计.md)、[文档发布](docs/27-国际化与文档治理.md)、[开源核心/私有官网](docs/25-开源许可生态与商业化.md)、[仓库边界](docs/21-Monorepo与开发规范.md)。
+- Agent 开发：[工具与 API](docs/16-API事件与CLI规范.md)、[交互](docs/15-客户端与交互设计.md)、[工程结构](docs/21-Monorepo与开发规范.md)、[首个切片](docs/29-MVP端到端落地蓝图.md)。
+- 设备与网关：[模型](docs/05-自研物模型规范.md)、[MQTT](docs/06-MQTT报文与设备通信规范.md)、[固件](docs/08-ESP-IDF固件SDK设计.md)、[内核](docs/09-Rust网关内核设计.md)。
+- 硬件适配：[采购与接入条件](docs/19-硬件选型采购与BOM.md)、[分析与适配流程](docs/20-AI辅助逆向与设备适配流程.md)、[型号证据](docs/30-设备支持矩阵与证据台账.md)、[生态资格](docs/31-多生态兼容与开放接入.md)。
+- 产品组合：[场景与组合包](docs/32-能力组合与场景应用.md)、[模型与媒体](docs/33-多模态模型与媒体服务.md)、[生态互通](docs/31-多生态兼容与开放接入.md)。
+- 交付验证：[用例](docs/17-用户故事与用例.md)、[验收矩阵](docs/23-测试策略与验收矩阵.md)、[身份](docs/12-身份认证与安全体系.md)、[OTA](docs/13-OTA与制品交付规范.md)。
+
+## 使用规则
+
+先按需求 ID 和任务路线定位资料，读取相关章节与夹具；实现阶段以正式 contracts/ 和运行时能力目录为准。不能把设计命令当作可执行工具，不能将模拟通过报告为实机支持。变更同步所属领域、合同、消费者、失败恢复与验收，保留原操作引用；无法执行的检查明确记录失败、跳过或阻塞。
+
+设备OS/框架与平台的分工以架构文档为准，首期原生目标为ESP-IDF。适配任务先确认原生开发或存量接入路线、接口来源、当前授权与支持用途，再开展分析；设备能联网、代码可见、持有样品或账号均不能单独证明第三方接口使用资格。

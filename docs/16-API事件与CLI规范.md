@@ -1,25 +1,39 @@
 # API、事件与 CLI 规范
 
-更新日期：2026-11-01。状态：目标合同；以下端点和命令尚未实现。OpenAPI、JSON Schema 和工具投影应从同一正式动作定义生成。
+更新日期：2026-11-02。状态：目标合同与已实现子集并存。本地网关可执行操作以 `contracts/tools/catalog.json` 和 CLI `schema` 为准，运行方式见 [本地开发](../deploy/dev/README.md)。独立Go控制面的已实现HTTP动作见 [control.openapi.yaml](../contracts/control.openapi.yaml)，目前尚无控制面CLI或远程执行动作，不加入本地工具目录。本文件还包含尚未实现的任务、媒体、模型及包管理目标。OpenAPI、JSON Schema 和工具投影应从同一正式动作定义生成。
 
 ## 1. 业务入口
 
 | operation_id | 目标 HTTP | 语义 |
 | --- | --- | --- |
 | `spaces.list` | `GET /api/v1/spaces` | 当前主体可见空间 |
-| `devices.list` / `devices.get` | `GET /api/v1/spaces/{space_id}/devices[/…]` | 有界列表/详情 |
+| `devices.list` | `GET /api/v1/spaces/{space_id}/devices` | 有界设备列表 |
+| `devices.get` | `GET /api/v1/spaces/{space_id}/devices/{device_id}` | 单设备详情 |
 | `models.get` | `GET /api/v1/model-releases/{revision}` | 精确模型正文 |
 | `commands.create` | `POST /api/v1/spaces/{space_id}/commands` | 校验、幂等受理控制 |
 | `commands.get` | `GET /api/v1/spaces/{space_id}/commands/{command_id}` | 原命令与证据 |
-| `rules.validate` / `rules.simulate` | `POST /api/v1/spaces/{space_id}/rules:validate` / `rules:simulate` | 显式校验与无实机模拟 |
+| `drafts.create` | `POST /api/v1/spaces/{space_id}/rule-drafts` | 幂等创建文字联动草案，202 仅表示推理已受理 |
+| `drafts.list` | `GET /api/v1/spaces/{space_id}/rule-drafts` | 有界草案列表 |
+| `drafts.get` | `GET /api/v1/spaces/{space_id}/rule-drafts/{draft_id}` | 查询原草案、状态和错误 |
+| `drafts.resolve` | `GET /api/v1/spaces/{space_id}/rule-drafts/by-key/{key}` | 丢失响应后按原键恢复，不重调模型 |
+| `rules.validate` | `POST /api/v1/spaces/{space_id}/rules:validate` | 显式校验规则 |
+| `rules.simulate` | `POST /api/v1/spaces/{space_id}/rules:simulate` | 无实机副作用的模拟 |
 | `rules.deploy` | `POST /api/v1/spaces/{space_id}/rule-deployments` | 部署固定版本 |
-| `tasks.get` / `tasks.cancel` | `GET /api/v1/spaces/{space_id}/tasks/{task_id}` / `POST …:cancel` | 任务原状态与取消请求 |
+| `tasks.get` | `GET /api/v1/spaces/{space_id}/tasks/{task_id}` | 任务原状态 |
+| `tasks.cancel` | `POST /api/v1/spaces/{space_id}/tasks/{task_id}:cancel` | 请求取消原任务 |
 | `capabilities.list` | `GET /api/v1/spaces/{space_id}/capabilities` | 当前可见能力与合同 |
 | `models.invoke` | `POST /api/v1/spaces/{space_id}/model-invocations` | 有预算的模型调用 |
 | `media.create` | `POST /api/v1/spaces/{space_id}/media` | 取得受控上传任务 |
-| `packages.validate` / `packages.deploy` | `POST /api/v1/spaces/{space_id}/packages:validate` / `package-deployments` | 校验与部署组合包 |
+| `packages.validate` | `POST /api/v1/spaces/{space_id}/packages:validate` | 校验组合包 |
+| `packages.deploy` | `POST /api/v1/spaces/{space_id}/package-deployments` | 部署固定组合包 |
 
-路径中的 `…` 仅表示文档缩写，生成正式合同必须展开完整路径和参数。每项正式入口有认证、scope、资源和字段限制；尚未支持的动作不得出现在可执行目录中。
+每项正式入口有认证、scope、资源和字段限制；尚未支持的动作不得出现在可执行目录中。列表采用有上限的 `limit`、不透明 `cursor` 和 `next_cursor`，游标绑定当前空间、主体及筛选条件，换条件时重新开始分页。
+
+草案正式输入见 `contracts/draft-request.schema.json`。CLI 将 `space_id` 映射到路径、`idempotency_key` 映射到 `Idempotency-Key` 请求头；HTTP 正文仅为 `prompt/expires_at`。需求不超过 512 字符和 2048 字节，截止时间在未来 120 秒内。响应含 `draft_id`、状态、请求/上下文摘要、提供方/模型、可选规则/修订、用量和错误。`completed` 不表示部署或执行；原生端和 PWA 均需预演与明确启用。并发忙返回 429 `inference_busy`，未配置模型返回 503；不自动重试或切云。其余状态与恢复语义见 [11](11-AI与Agent接入设计.md)。
+
+本地 `control-pairings.create/list/get/resolve/approve/reconcile/revoke` 已实现，使用 `/api/v1/spaces/{space_id}/control-pairings`，输入映射与冻结审批见 [正式配对合同](../contracts/control-pairing.md)。`approve` 须本人核对 `review_revision`；`reconcile` 在已批准后只查询原云绑定，不能重发claim。CLI遇到unknown返回6，保留原键与link_id；active只表示绑定建立，不提供远程执行权。code和密钥不得进入模型上下文。
+
+`control-pairings.list` 另返回独立connection投影，状态为disabled/unpaired/connecting/connected/disconnected，默认关闭；连接状态不写入配对耐久状态。Console所有者读取网关连接的HTTP合同及已实现WSS帧见 [机器连接](../contracts/control-relay.md)。当前机器层只有认证与保活，未将远程目标动作加入可执行工具目录。
 
 ## 2. 上下文与版本
 
@@ -30,6 +44,8 @@
 ## 3. 写入与结果
 
 副作用提交使用 `Idempotency-Key`，需要原资源修订时使用 `If-Match` 或合同明确字段。服务端规范化请求摘要；同键同参数回读原操作，同键不同参数返回冲突。
+
+CLI/Agent 的命令创建输入示例见 [command-request.json](examples/command-request.json)，其 `space_id` 映射到路径、`idempotency_key` 映射到请求头，其余业务字段进入正文。服务端再生成 command_id、message_id、issued_at，并绑定当前设备会话形成 [MQTT 命令](examples/mqtt-command.json)。业务输入不接受调用方伪造的设备会话或执行身份；输入中的空间选择必须与当前授权一致。该示例只覆盖属性写入，动作调用在正式合同时另行定义。
 
 异步受理返回 202、原 operation/task/command 引用和查询入口。成功 HTTP 表示调用或受理阶段，不等于设备动作完成。结果包含状态、当前修订、证据、观察时间和允许的下一步；部分完成保留逐项结果。
 

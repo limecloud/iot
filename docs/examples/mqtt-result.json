@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "kind": "result",
+  "message_id": "result-001",
+  "device_id": "device-lamp",
+  "model_revision": "sha256:aaf9fc9ba87187643ab777cda43658e09603fc1c0e51dc6ec1acde160d4aecfc",
+  "boot_id": "boot-001",
+  "seq": 2,
+  "session_id": "session-001",
+  "body": {
+    "command_id": "command-001",
+    "status": "confirmed",
+    "evidence": {
+      "type": "device_result",
+      "observed_at": "2026-11-01T09:00:01Z",
+      "reported": {
+        "light.power": true
+      }
+    }
+  }
+}

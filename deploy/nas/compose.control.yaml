@@ -1,0 +1,12 @@
+# 可选：配对集中控制面。只增加网关出站路由，不发布内部 API。
+services:
+  gateway:
+    environment:
+      LIMEIOT_CONTROL_ALLOWED_ORIGINS: ${LIMEIOT_CONTROL_ALLOWED_ORIGINS:?}
+      LIMEIOT_GATEWAY_KEY_FILE: /secrets/gateway-identity.pk8
+      LIMEIOT_CONTROL_CA_FILE: ${LIMEIOT_CONTROL_CA_FILE:-}
+      LIMEIOT_CONTROL_RELAY_ENABLED: ${LIMEIOT_CONTROL_RELAY_ENABLED:-0}
+    networks: [local, control]
+networks:
+  control:
+    internal: false

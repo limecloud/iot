@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "artifact_id": "example-lamp-firmware",
+  "target": "demo-lamp-esp32c3",
+  "hardware_revisions": [
+    "example-r1"
+  ],
+  "version": "0.1.0",
+  "model_revision": "sha256:aaf9fc9ba87187643ab777cda43658e09603fc1c0e51dc6ec1acde160d4aecfc",
+  "size": 1024,
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "security_epoch": 1,
+  "download": {
+    "uri": "https://example.invalid/firmware.bin"
+  },
+  "signing_key_id": "example-untrusted-key",
+  "signature": null
+}

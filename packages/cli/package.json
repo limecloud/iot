@@ -1,0 +1,8 @@
+{
+  "name": "@limeiot/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "bin": { "limeiot": "src/main.mjs" },
+  "engines": { "node": ">=24.21.0 <25" }
+}

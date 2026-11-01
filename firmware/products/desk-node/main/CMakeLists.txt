@@ -1,0 +1,1 @@
+idf_component_register(SRCS "main.c" INCLUDE_DIRS "." "../../../generated" REQUIRES limeiot_espidf PRIV_REQUIRES esp_wifi esp_netif esp_event esp_driver_gpio nvs_flash app_update esp_timer espressif__led_strip)

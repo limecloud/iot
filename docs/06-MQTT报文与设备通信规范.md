@@ -4,7 +4,7 @@
 
 ## 1. 连接与 Topic
 
-原生设备默认连接家庭网关 Broker；设备 mTLS 身份映射到设备与家庭绑定。用户名、Client ID、Topic 和正文中的 ID 均不能单独授予身份。Broker ACL 限制设备只读本设备命令、只写本设备上行，默认拒绝通配订阅和跨家庭访问。
+原生设备默认连接当前空间网关 Broker；设备 mTLS 身份映射到设备与空间绑定。用户名、Client ID、Topic 和正文中的 ID 均不能单独授予身份。Broker ACL 限制设备只读本设备命令、只写本设备上行，拒绝跨设备和跨空间的数据访问。设备订阅自身 Topic；当前 Mosquitto 适配器可能为更宽的过滤器返回成功 SUBACK，但仍按 ACL 过滤每条投递，SUBACK 不代表获得额外数据权限。
 
 ```text
 limeiot/v1/{space_id}/{device_id}/up/hello
@@ -50,6 +50,8 @@ seq 范围为 0 至 `2^53-1`；达到上限前建立新启动代次。消息身�
 命令正文含 `command_id`、`issued_at`、`expires_at`、`operation`。v1 首个操作为 `property.set`，包含 `path` 和类型化 `value`；动作调用另定义参数 Schema。设备先校验身份/会话、期限、模型、能力、值和去重记录，再驱动硬件。
 
 结果含原 command_id、执行状态、稳定错误码、证据类型和观测引用。Broker PUBACK 不能转换成设备确认。设备确认也只证明设备报告的阶段，不能夸大为独立物理测量。
+
+当前结果状态为 `confirmed`、`failed`、`unknown`。设备报告 `unknown` 时必须携带 `error: execution_unknown` 与 `evidence.type: device_result`；网关保留原操作，不自动重发。只有匹配原设备/会话/命令并满足证据校验的后续结果才能确认，普通状态上报不能替代回执。已确认/失败的终态拒绝相反状态或冲突证据覆盖。
 
 ## 5. QoS、缓存与消息限制
 

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "package_id": "org.limeiot.examples.interactive-light",
+  "version": "0.1.0",
+  "publisher": "org.limeiot.examples",
+  "purpose": "interactive-light",
+  "dependencies": {
+    "models": [
+      {
+        "model_id": "urn:limeiot:model:demo-lamp:1",
+        "revision": "sha256:aaf9fc9ba87187643ab777cda43658e09603fc1c0e51dc6ec1acde160d4aecfc"
+      },
+      {
+        "model_id": "urn:limeiot:model:demo-button:1",
+        "revision": "sha256:c557e81af48798cd354c4a3558e822aed3d732f78ecdfb481d46883d13a7366d"
+      }
+    ],
+    "model_capabilities": [
+      "text.generate"
+    ]
+  },
+  "bindings": {
+    "lamp": "device-lamp",
+    "button": "device-button"
+  },
+  "permissions": {
+    "device_properties": {
+      "device-lamp": [
+        "light.power"
+      ]
+    },
+    "model_capabilities": [
+      "text.generate"
+    ],
+    "media_capture": false,
+    "cloud_egress": false
+  },
+  "constraints": {
+    "max_duration_ms": 60000,
+    "max_steps": 4,
+    "max_model_calls": 1
+  },
+  "behavior": {
+    "type": "bounded_flow",
+    "steps": [
+      {
+        "id": "observe",
+        "operation": "devices.get",
+        "binding": "button"
+      },
+      {
+        "id": "explain",
+        "operation": "models.invoke",
+        "capability": "text.generate"
+      },
+      {
+        "id": "light",
+        "operation": "commands.create",
+        "binding": "lamp"
+      }
+    ]
+  },
+  "fallback": {
+    "on_provider_failure": "skip_explanation",
+    "on_cancel": "stop_new_commands"
+  },
+  "signatures": []
+}

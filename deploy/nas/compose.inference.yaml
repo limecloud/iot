@@ -1,0 +1,11 @@
+# 可选：仅为网关增加到局域网模型服务的出站路由，不发布模型或内部 HTTP 端口。
+services:
+  gateway:
+    environment:
+      LIMEIOT_OLLAMA_MODEL: ${LIMEIOT_OLLAMA_MODEL:?}
+      LIMEIOT_OLLAMA_URL: ${LIMEIOT_OLLAMA_URL:?}
+      LIMEIOT_OLLAMA_CA_FILE: ${LIMEIOT_OLLAMA_CA_FILE:-}
+    networks: [local, inference]
+networks:
+  inference:
+    internal: false

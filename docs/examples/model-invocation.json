@@ -1,0 +1,28 @@
+{
+  "space_id": "space-demo",
+  "application_id": "app-demo",
+  "capability": "text.generate",
+  "idempotency_key": "invocation-001",
+  "model_policy": {
+    "allowed_provider_ids": [
+      "ollama-local"
+    ],
+    "data_location": "local"
+  },
+  "input": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Explain why the lamp is unavailable using the attached observations."
+      }
+    ],
+    "observation_refs": [
+      "observation-demo"
+    ]
+  },
+  "budget": {
+    "max_output_tokens": 128,
+    "timeout_ms": 10000,
+    "max_tool_calls": 0
+  }
+}

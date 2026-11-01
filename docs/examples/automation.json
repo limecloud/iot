@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "button-light",
+  "trigger": {
+    "device": "device-button",
+    "event": "button.pressed"
+  },
+  "conditions": [],
+  "actions": [
+    {
+      "device": "device-lamp",
+      "set": {
+        "path": "light.power",
+        "value": true
+      }
+    }
+  ],
+  "cooldown_ms": 10000
+}

@@ -1,0 +1,700 @@
+{
+  "schema_version": 1,
+  "contract_version": "0.1.0",
+  "mode": "loopback_simulation",
+  "authentication": "local_owner_session_or_bearer",
+  "operations": [
+    {
+      "operation_id": "spaces.list",
+      "method": "GET",
+      "path": "/api/v1/spaces",
+      "space_required": false
+    },
+    {
+      "operation_id": "devices.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/devices",
+      "space_required": true
+    },
+    {
+      "operation_id": "devices.get",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/devices/{id}",
+      "space_required": true
+    },
+    {
+      "operation_id": "capabilities.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/capabilities",
+      "space_required": true
+    },
+    {
+      "operation_id": "models.get",
+      "method": "GET",
+      "path": "/api/v1/model-releases/{id}",
+      "space_required": false
+    },
+    {
+      "operation_id": "commands.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/commands",
+      "space_required": true,
+      "input_schema": "command-request"
+    },
+    {
+      "operation_id": "commands.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/commands",
+      "space_required": true
+    },
+    {
+      "operation_id": "commands.get",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/commands/{id}",
+      "space_required": true
+    },
+    {
+      "operation_id": "commands.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/commands/by-key/{id}",
+      "space_required": true
+    },
+    {
+      "operation_id": "rules.validate",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/rules:validate",
+      "space_required": true,
+      "input_schema": "rule"
+    },
+    {
+      "operation_id": "rules.simulate",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/rules:simulate",
+      "space_required": true,
+      "input_schema": "simulation"
+    },
+    {
+      "operation_id": "rules.deploy",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/rule-deployments",
+      "space_required": true,
+      "input_schema": "rule"
+    },
+    {
+      "operation_id": "rules.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/rule-deployments",
+      "space_required": true
+    },
+    {
+      "operation_id": "rules.stop",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/rule-deployments/{id}/stop",
+      "space_required": true,
+      "input_schema": "revision"
+    },
+    {
+      "operation_id": "runs.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/runs",
+      "space_required": true
+    },
+    {
+      "operation_id": "events.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/events",
+      "space_required": true
+    },
+    {
+      "operation_id": "events.stream",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/events/stream",
+      "space_required": true
+    },
+    {
+      "operation_id": "drafts.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/rule-drafts",
+      "space_required": true,
+      "input_schema": "draft-request",
+      "side_effects": "local_inference_only",
+      "recovery_operation": "drafts.resolve"
+    },
+    {
+      "operation_id": "drafts.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/rule-drafts",
+      "space_required": true
+    },
+    {
+      "operation_id": "drafts.get",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/rule-drafts/{id}",
+      "space_required": true
+    },
+    {
+      "operation_id": "drafts.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/rule-drafts/by-key/{id}",
+      "space_required": true
+    },
+    {
+      "operation_id": "control-pairings.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/control-pairings",
+      "space_required": true,
+      "input_schema": "control-pairing-request",
+      "side_effects": "review_only",
+      "recovery_operation": "control-pairings.resolve"
+    },
+    {
+      "operation_id": "control-pairings.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/control-pairings",
+      "space_required": true
+    },
+    {
+      "operation_id": "control-pairings.get",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/control-pairings/{id}",
+      "space_required": true
+    },
+    {
+      "operation_id": "control-pairings.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/control-pairings/by-key/{id}",
+      "space_required": true
+    },
+    {
+      "operation_id": "control-pairings.approve",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/control-pairings/{id}/approve",
+      "space_required": true,
+      "input_schema": "control-pairing-approval",
+      "side_effects": "approves_gateway_binding",
+      "requires_explicit_local_owner_approval": true,
+      "recovery_operation": "control-pairings.reconcile"
+    },
+    {
+      "operation_id": "control-pairings.reconcile",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/control-pairings/{id}/reconcile",
+      "space_required": true,
+      "side_effects": "queries_original_pairing_only"
+    },
+    {
+      "operation_id": "control-pairings.revoke",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/control-pairings/{id}/revoke",
+      "space_required": true
+    }
+  ],
+  "schemas": {
+    "revision": {
+      "type": "object",
+      "required": [
+        "revision"
+      ],
+      "properties": {
+        "revision": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "command-request": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "LimeIoT 0.1 command-request.schema.json",
+      "type": "object",
+      "required": [
+        "space_id",
+        "device_id",
+        "model_revision",
+        "idempotency_key",
+        "expires_at",
+        "operation"
+      ],
+      "properties": {
+        "space_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "device_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "model_revision": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operation": {
+          "type": "object",
+          "required": [
+            "type",
+            "path",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "const": "property.set"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]*\\.[a-z][a-z0-9_-]*$"
+            },
+            "value": {}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "rule": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "LimeIoT 0.1 rule.schema.json",
+      "type": "object",
+      "required": [
+        "version",
+        "id",
+        "trigger",
+        "conditions",
+        "actions",
+        "cooldown_ms"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "trigger": {
+          "type": "object",
+          "required": [
+            "device",
+            "event"
+          ],
+          "properties": {
+            "device": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "event": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "required": [
+              "device",
+              "set"
+            ],
+            "properties": {
+              "device": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "set": {
+                "type": "object",
+                "required": [
+                  "path",
+                  "value"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "value": {}
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "cooldown_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86400000
+        }
+      },
+      "additionalProperties": false
+    },
+    "model": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "LimeIoT 0.1 model.schema.json",
+      "type": "object",
+      "required": [
+        "schema_version",
+        "model_id",
+        "model_version",
+        "services"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "model_id": {
+          "type": "string",
+          "pattern": "^urn:[a-z0-9-]+:"
+        },
+        "model_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "services": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "semantic_id",
+              "properties",
+              "actions",
+              "events"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+              },
+              "semantic_id": {
+                "type": "string",
+                "pattern": "^urn:[a-z0-9-]+:"
+              },
+              "properties": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "semantic_id",
+                    "schema",
+                    "access"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                    },
+                    "semantic_id": {
+                      "type": "string",
+                      "pattern": "^urn:[a-z0-9-]+:"
+                    },
+                    "schema": {
+                      "type": "object"
+                    },
+                    "access": {
+                      "type": "array",
+                      "minItems": 1,
+                      "uniqueItems": true,
+                      "items": {
+                        "enum": [
+                          "read",
+                          "write",
+                          "notify"
+                        ]
+                      }
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "max_age_ms": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "actions": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "events": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "semantic_id",
+                    "schema"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                    },
+                    "semantic_id": {
+                      "type": "string",
+                      "pattern": "^urn:[a-z0-9-]+:"
+                    },
+                    "schema": {
+                      "type": "object"
+                    },
+                    "access": {
+                      "type": "array",
+                      "minItems": 1,
+                      "uniqueItems": true,
+                      "items": {
+                        "enum": [
+                          "read",
+                          "write",
+                          "notify"
+                        ]
+                      }
+                    },
+                    "unit": {
+                      "type": "string"
+                    },
+                    "max_age_ms": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "simulation": {
+      "type": "object",
+      "required": [
+        "rule",
+        "event"
+      ],
+      "properties": {
+        "rule": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "LimeIoT 0.1 rule.schema.json",
+          "type": "object",
+          "required": [
+            "version",
+            "id",
+            "trigger",
+            "conditions",
+            "actions",
+            "cooldown_ms"
+          ],
+          "properties": {
+            "version": {
+              "const": 1
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "trigger": {
+              "type": "object",
+              "required": [
+                "device",
+                "event"
+              ],
+              "properties": {
+                "device": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "event": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "conditions": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "actions": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 16,
+              "items": {
+                "type": "object",
+                "required": [
+                  "device",
+                  "set"
+                ],
+                "properties": {
+                  "device": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "set": {
+                    "type": "object",
+                    "required": [
+                      "path",
+                      "value"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string"
+                      },
+                      "value": {}
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "cooldown_ms": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 86400000
+            }
+          },
+          "additionalProperties": false
+        },
+        "event": {
+          "type": "object",
+          "required": [
+            "device_id",
+            "path",
+            "historical",
+            "data"
+          ],
+          "properties": {
+            "device_id": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "historical": {
+              "type": "boolean"
+            },
+            "data": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "draft-request": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "LimeIoT 0.1 local rule draft request",
+      "type": "object",
+      "required": [
+        "space_id",
+        "idempotency_key",
+        "prompt",
+        "expires_at"
+      ],
+      "properties": {
+        "space_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "idempotency_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "control-pairing-request": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "本地网关配对审核请求",
+      "type": "object",
+      "required": [
+        "space_id",
+        "idempotency_key",
+        "control_origin",
+        "pairing_id",
+        "code"
+      ],
+      "properties": {
+        "space_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "control_origin": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 400
+        },
+        "pairing_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "writeOnly": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "control-pairing-approval": {
+      "type": "object",
+      "required": [
+        "review_revision"
+      ],
+      "properties": {
+        "review_revision": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,91 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile,writeFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { setTimeout as delay } from 'node:timers/promises';
+import path from 'node:path';
+import { root,startStack,until } from '../tools/dev-stack.mjs';
+
+const exec=promisify(execFile),prefix='/api/v1/spaces/space-demo';
+const post=(body,headers={})=>({method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body)});
+const body=(device,value=true,expiry=5000)=>({device_id:device.device_id,model_revision:device.model_revision,expires_at:new Date(Date.now()+expiry).toISOString(),operation:{type:'property.set',path:'light.power',value}});
+async function confirmed(stack,command) {return until(async()=>{const r=await stack.request(`${prefix}/commands/${command}`);assert.notEqual(r.value.status,'failed');return r.value.status==='confirmed'&&r.value;});}
+
+test('真实 MQTT 5、CLI、幂等、按钮联动和耐久恢复', {timeout:60000}, async t=>{
+  const stack=await startStack();t.after(()=>stack.close());
+  const unauthorized=await fetch(`${stack.env.LIMEIOT_ENDPOINT}${prefix}/devices`);assert.equal(unauthorized.status,401);
+  assert.equal((await stack.request('/api/v1/spaces/another-space/devices')).status,403);
+  const cli=await exec(process.execPath,['packages/cli/src/main.mjs','devices','list','--space-id','space-demo'],{cwd:root,env:stack.env});
+  const devices=JSON.parse(cli.stdout).items;assert.equal(devices.length,2);
+  const lamp=devices.find(d=>d.device_id==='device-lamp');assert.equal(lamp.reported['light.power'].source,'simulator');
+  const input=body(lamp),key={'Idempotency-Key':'e2e-command-1'};
+  const created=await stack.request(`${prefix}/commands`,post(input,key));assert.equal(created.status,202);
+  const result=await confirmed(stack,created.value.command_id);assert.equal(result.evidence.type,'device_result');
+  const repeat=await stack.request(`${prefix}/commands`,post(input,key));assert.equal(repeat.value.command_id,created.value.command_id);
+  const conflict=await stack.request(`${prefix}/commands`,post({...input,operation:{...input.operation,value:false}},key));assert.equal(conflict.status,409);
+  assert.equal((await stack.request(`${prefix}/commands`,post(body(lamp,'true'),{'Idempotency-Key':'bad-value'}))).value.error.code,'invalid_value');
+  assert.equal((await stack.request(`${prefix}/commands`,post(body(lamp,true,-1),{'Idempotency-Key':'expired'}))).value.error.code,'command_expired');
+  const off=await stack.request(`${prefix}/commands`,post(body(lamp,false),{'Idempotency-Key':'lamp-off'}));await confirmed(stack,off.value.command_id);
+  const rule=JSON.parse(await readFile(path.join(root,'contracts/examples/button-light.json'),'utf8'));rule.cooldown_ms=0;
+  const validated=await stack.request(`${prefix}/rules:validate`,post(rule));assert.equal(validated.value.valid,true);
+  const simulation=await stack.request(`${prefix}/rules:simulate`,post({rule,event:{device_id:'device-button',path:'button.pressed',historical:false,data:{count:1}}}));assert.equal(simulation.value.executed,false);assert.equal(simulation.value.proposed_actions.length,1);
+  const before=await stack.request(`${prefix}/devices/device-lamp`);assert.equal(before.value.reported['light.power'].value,false);
+  await stack.request(`${prefix}/rule-deployments`,post(rule));
+  const event={event_id:'button-event-1',occurred_at:new Date().toISOString(),historical:false,data:{count:1}};
+  stack.button.stdin.write(JSON.stringify(event)+'\n');
+  const run=await until(async()=>{const runs=await stack.request(`${prefix}/runs`);return runs.value.items[0];});
+  assert.equal(run.command_ids.length,1);const linked=await confirmed(stack,run.command_ids[0]);assert.equal(linked.run_id,run.run_id);
+  stack.button.stdin.write(JSON.stringify(event)+'\n');
+  stack.button.stdin.write(JSON.stringify({...event,event_id:'historical-event',historical:true})+'\n');
+  await delay(400);assert.equal((await stack.request(`${prefix}/runs`)).value.items.length,1);
+  const events=await stack.request(`${prefix}/events?after=0`);assert(events.value.items.some(event=>event.type==='command.created'));
+  const stream=await fetch(`${stack.env.LIMEIOT_ENDPOINT}${prefix}/events/stream`,{headers:{Authorization:`Bearer ${stack.env.LIMEIOT_TOKEN}`},signal:AbortSignal.timeout(3000)});
+  const reader=stream.body.getReader();const chunk=await reader.read();assert.match(new TextDecoder().decode(chunk.value),/id: \d+/);await reader.cancel();
+  await stack.restartGateway();
+  await until(async()=>{const r=await stack.request(`${prefix}/devices`);return r.value.items.every(d=>d.ready);});
+  assert.equal((await stack.request(`${prefix}/commands/${created.value.command_id}`)).value.status,'confirmed');
+  assert.equal((await stack.request(`${prefix}/rule-deployments`)).value.items.length,1);
+  assert.equal((await stack.request(`${prefix}/runs`)).value.items.length,1);
+  stack.button.stdin.write(JSON.stringify(event)+'\n');await delay(300);assert.equal((await stack.request(`${prefix}/runs`)).value.items.length,1);
+  const recovered=await stack.request(`${prefix}/commands`,post(input,key));assert.equal(recovered.value.command_id,created.value.command_id);
+  await writeFile(path.join(stack.directory,'result.json'),JSON.stringify({passed:true,mode:'simulation',command_id:created.value.command_id,run_id:run.run_id,restart_recovery:true})+'\n');
+});
+
+test('状态上报不能代替命令回执，丢失回执保留 unknown', {timeout:30000}, async t=>{
+  const stack=await startStack({dropResults:true});t.after(()=>stack.close());
+  const lamp=(await stack.request(`${prefix}/devices/device-lamp`)).value;
+  const input=body(lamp,true,800),key={'Idempotency-Key':'lost-receipt'};
+  const created=await stack.request(`${prefix}/commands`,post(input,key));assert.equal(created.status,202);
+  await until(async()=>{const r=await stack.request(`${prefix}/commands/${created.value.command_id}`);return r.value.status==='unknown';});
+  const observed=(await stack.request(`${prefix}/devices/device-lamp`)).value;assert.equal(observed.reported['light.power'].value,true);
+  const recovered=await stack.request(`${prefix}/commands`,post(input,key));assert.equal(recovered.value.status,'unknown');assert.equal(recovered.value.command_id,created.value.command_id);
+  await assert.rejects(exec(process.execPath,['packages/cli/src/main.mjs','commands','get',created.value.command_id,'--space-id','space-demo'],{cwd:root,env:stack.env}),error=>error.code===6&&JSON.parse(error.stdout).status==='unknown');
+  await stack.restartGateway();assert.equal((await stack.request(`${prefix}/commands/${created.value.command_id}`)).value.status,'unknown');
+});
+
+test('本地会话、来源、CSRF、撤销、重启失效与限流', {timeout:30000}, async t=>{
+  const stack=await startStack();t.after(()=>stack.close());
+  const origin=stack.env.LIMEIOT_ENDPOINT;
+  const call=(resource,options={})=>fetch(origin+resource,{...options,signal:AbortSignal.timeout(4000)});
+  assert.equal((await call('/api/v1/auth/session',post({token:stack.env.LIMEIOT_TOKEN}))).status,403);
+  assert.equal((await call('/api/v1/auth/session',post({token:stack.env.LIMEIOT_TOKEN},{Origin:'https://other.invalid'}))).status,403);
+  assert.equal((await stack.request(`${prefix}/devices`,{headers:{Origin:origin}})).status,403);
+  const login=await call('/api/v1/auth/session',post({token:stack.env.LIMEIOT_TOKEN},{Origin:origin}));
+  assert.equal(login.status,200);assert.match(login.headers.get('set-cookie'),/HttpOnly; SameSite=Strict/);
+  assert.equal(login.headers.get('cache-control'),'no-store');
+  const session=await login.json(),cookie=login.headers.get('set-cookie').split(';')[0];
+  assert.equal((await call(`${prefix}/devices`,{headers:{Cookie:cookie}})).status,200);
+  assert.equal((await call(`${prefix}/devices`,{headers:{Cookie:cookie,'Sec-Fetch-Site':'cross-site'}})).status,403);
+  const rule=JSON.parse(await readFile(path.join(root,'contracts/examples/button-light.json'),'utf8'));
+  assert.equal((await call(`${prefix}/rules:validate`,post(rule,{Cookie:cookie,Origin:origin}))).status,403);
+  assert.equal((await call(`${prefix}/rules:validate`,post(rule,{Cookie:cookie,Origin:origin,'X-CSRF-Token':session.csrf_token}))).status,200);
+  const sse=await call(`${prefix}/events/stream`,{headers:{Cookie:cookie}});const reader=sse.body.getReader();await reader.read();
+  assert.equal((await call('/api/v1/auth/logout',post({}, {Cookie:cookie,Origin:origin,'X-CSRF-Token':session.csrf_token}))).status,204);
+  let ended='';await until(async()=>{const chunk=await reader.read();ended+=new TextDecoder().decode(chunk.value);return chunk.done||ended.includes('session.expired');},3000);assert.match(ended,/session.expired/);await reader.cancel();
+  assert.equal((await call(`${prefix}/devices`,{headers:{Cookie:cookie}})).status,401);
+  const again=await call('/api/v1/auth/session',post({token:stack.env.LIMEIOT_TOKEN},{Origin:origin}));const other=again.headers.get('set-cookie').split(';')[0];
+  await stack.restartGateway();assert.equal((await call(`${prefix}/devices`,{headers:{Cookie:other}})).status,401);
+  for(let i=0;i<5;i++)assert.equal((await call('/api/v1/auth/session',post({token:'wrong'},{Origin:origin}))).status,401);
+  assert.equal((await call('/api/v1/auth/session',post({token:'wrong'},{Origin:origin}))).status,429);
+});

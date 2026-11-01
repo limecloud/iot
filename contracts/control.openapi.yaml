@@ -1,0 +1,448 @@
+openapi: 3.1.0
+info:
+  title: LimeIoT 控制面
+  version: 0.1.0
+  description: >-
+    已实现的账户、空间和网关配对接口。独立于本地网关 /api/v1。
+    所有响应禁止缓存。Console 与 Admin Cookie、CSRF 和权限分离。
+    本地所有者批准由独立网关工具合同定义；本合同不声明远程中继已交付。
+servers:
+  - url: /
+paths:
+  /api/gateway/v1/connect:
+    get:
+      operationId: control.machines.connect
+      description: >-
+        独立机器WebSocket，子协议limeiot.relay.v1。拒绝Origin、Cookie、Authorization和URL参数。
+        升级后15秒挑战，Ed25519证明绑定当前revision；每5秒心跳重新检查当前绑定。
+        连接合同见control-relay.md，当前只提供机器连接，不提供远程命令。
+      responses:
+        '101': { description: WebSocket已升级，仍须完成机器证明，不能视为已认证 }
+        '400': { description: 无效握手或子协议 }
+        '403': { description: 不接受浏览器身份作为机器身份 }
+        '429': { description: 连接尝试限流 }
+        '503': { description: 连接容量已满 }
+  /api/console/v1/spaces/{space}/gateways/{gateway}/connection:
+    parameters:
+      - $ref: '#/components/parameters/Space'
+      - { name: gateway, in: path, required: true, schema: { $ref: '#/components/schemas/Identifier' } }
+    get:
+      operationId: control.gateways.connection
+      description: 当前Console所有者读取活动绑定的传输连接状态；不表示设备在线或已执行。
+      responses:
+        '200':
+          description: 进程内连接状态，重启后重新建立
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [connected]
+                properties:
+                  connected: { type: boolean }
+                  binding_revision: { type: string }
+                  connected_at: { type: string, format: date-time }
+                  last_seen_at: { type: string, format: date-time }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /health/live:
+    get:
+      operationId: control.health
+      responses:
+        '200': { description: 进程存活，不依赖外部身份或模型；只有两个精确健康路径允许平台探针免 Host/边缘凭据 }
+  /health/ready:
+    get:
+      operationId: control.ready
+      responses:
+        '200': { description: 当前 MySQL 可访问且迁移版本校验通过 }
+        '503': { description: 当前数据库或迁移状态不可用 }
+  /api/{audience}/v1/auth/config:
+    parameters:
+      - $ref: '#/components/parameters/Audience'
+    get:
+      operationId: control.auth.config
+      responses:
+        '200':
+          description: 当前实例允许的登录方法
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [local, oidc]
+                properties:
+                  local: { type: boolean }
+                  oidc: { type: boolean }
+                additionalProperties: false
+  /api/{audience}/v1/auth/local:
+    parameters:
+      - $ref: '#/components/parameters/Audience'
+      - $ref: '#/components/parameters/Origin'
+    post:
+      operationId: control.auth.local
+      description: 仅私有模式。成功后 GET session 获取当前主体和 CSRF，不将凭据存入浏览器存储。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, minLength: 32, maxLength: 4096 }
+              additionalProperties: false
+      responses:
+        '200': { description: 已建立 HttpOnly 会话，响应为 logged_in=true }
+        default: { $ref: '#/components/responses/Error' }
+  /api/{audience}/v1/auth/start:
+    parameters:
+      - $ref: '#/components/parameters/Audience'
+      - $ref: '#/components/parameters/Origin'
+    post:
+      operationId: control.auth.start
+      description: 建立五分钟、单次使用的持久 flow Cookie，返回标准 OIDC Code+PKCE 授权地址。
+      responses:
+        '200':
+          description: 客户端导航至 authorize_url
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [authorize_url]
+                properties:
+                  authorize_url: { type: string, format: uri }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/{audience}/v1/auth/callback:
+    parameters:
+      - $ref: '#/components/parameters/Audience'
+    get:
+      operationId: control.auth.callback
+      parameters:
+        - { name: state, in: query, required: true, schema: { type: string, minLength: 64, maxLength: 64 } }
+        - { name: code, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 8192 } }
+      responses:
+        '303': { description: Cookie 建立后转到 /console/ 或 /admin/；这些页面尚未交付 }
+        default: { $ref: '#/components/responses/Error' }
+  /api/{audience}/v1/auth/session:
+    parameters:
+      - $ref: '#/components/parameters/Audience'
+    get:
+      operationId: control.auth.session
+      description: 按 audience 选择 Cookie。外部身份每次重新检查 userinfo；503 保留会话，身份拒绝撤销本站会话。
+      responses:
+        '200':
+          description: 当前本站会话
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [principal, audience, expires_at, csrf_token]
+                properties:
+                  principal: { $ref: '#/components/schemas/Principal' }
+                  audience: { enum: [console, admin] }
+                  expires_at: { type: string, format: date-time }
+                  csrf_token: { type: string, pattern: '^[a-f0-9]{64}$' }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/{audience}/v1/auth/logout:
+    parameters:
+      - $ref: '#/components/parameters/Audience'
+      - $ref: '#/components/parameters/Origin'
+      - $ref: '#/components/parameters/CSRF'
+    post:
+      operationId: control.auth.logout
+      description: 先撤销本站会话，再尽力撤销提供方凭据；提供方故障不阻止本地退出。
+      responses:
+        '200': { description: 已退出，响应为 logged_out=true }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/spaces:
+    get:
+      operationId: control.spaces.list
+      responses:
+        '200':
+          description: 当前主体的空间
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [spaces]
+                properties:
+                  spaces: { type: array, maxItems: 16, items: { $ref: '#/components/schemas/Space' } }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+    post:
+      operationId: control.spaces.create
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/CSRF'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request_key, name]
+              properties:
+                request_key: { $ref: '#/components/schemas/Identifier' }
+                name: { type: string, minLength: 1, maxLength: 80 }
+              additionalProperties: false
+      responses:
+        '200':
+          description: 已创建或恢复原空间；仅名称首尾空白被归一化，同键异参 409
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Space' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/spaces/{space}/pairings:
+    parameters:
+      - $ref: '#/components/parameters/Space'
+    post:
+      operationId: control.pairings.create
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/CSRF'
+      description: >-
+        所有者创建120秒配对。新键取消旧的未使用配对；同键恢复原记录及原码，过期或取消时不重新开启。
+        每空间最多保留1024条配对；已存在活动网关时拒绝新配对。
+        调用方发送前持久保存原 request_key；响应丢失后只用原参数及原键恢复。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [request_key, scopes]
+              properties:
+                request_key: { $ref: '#/components/schemas/Identifier' }
+                scopes: { $ref: '#/components/schemas/Scopes' }
+              additionalProperties: false
+      responses:
+        '200':
+          description: 配对秘密只交给当前所有者，不放 URL、日志或模型上下文
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pairing, code, control_origin]
+                properties:
+                  pairing: { $ref: '#/components/schemas/Pairing' }
+                  code: { type: string, pattern: '^[a-f0-9]{64}$' }
+                  control_origin: { type: string, format: uri }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/pairing/v1/{pairing}/review:
+    parameters:
+      - $ref: '#/components/parameters/Pairing'
+    post:
+      operationId: control.pairings.review
+      description: 机器接口，以请求体中的高熵 code 认证；供本地所有者审核目标主体、控制面与 scopes。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, pattern: '^[a-f0-9]{64}$' }
+              additionalProperties: false
+      responses:
+        '200':
+          description: 配对审核内容；claimed=true 仅供恢复，不构成新授权
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pairing, control_origin]
+                properties:
+                  pairing: { $ref: '#/components/schemas/Pairing' }
+                  control_origin: { type: string, format: uri }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/pairing/v1/{pairing}/claim:
+    parameters:
+      - $ref: '#/components/parameters/Pairing'
+    post:
+      operationId: control.pairings.claim
+      description: >-
+        Ed25519 证明的逐字节合同见 control-pairing.md。只应在本地所有者明确批准后发送。
+        云侧无法独立证明本地审批；不得将本接口测试称为本地审批已完成。
+        成功请求重复返回原绑定，即使原窗口已过期；撤销后旧 claim 不能重新激活。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, gateway_id, local_space_id, public_key, signature]
+              properties:
+                code: { type: string, pattern: '^[a-f0-9]{64}$' }
+                gateway_id: { type: string, pattern: '^gw-[a-f0-9]{64}$' }
+                local_space_id: { $ref: '#/components/schemas/Identifier' }
+                public_key: { type: string, minLength: 44, maxLength: 44 }
+                signature: { type: string, minLength: 88, maxLength: 88 }
+              additionalProperties: false
+      responses:
+        '200':
+          description: 新建或恢复原绑定，绑定暂不提供远程执行能力
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Gateway' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/pairing/v1/{pairing}/status:
+    parameters:
+      - $ref: '#/components/parameters/Pairing'
+    post:
+      operationId: control.pairings.status
+      description: 使用原 code 和原 Ed25519 证明查询已建立的绑定，不创建、更新或重新激活。claim 响应丢失时只调用本接口恢复。已撤销绑定返回 active=false；未建立时404，过期且未建立时410。
+      requestBody:
+        $ref: '#/paths/~1api~1pairing~1v1~1{pairing}~1claim/post/requestBody'
+      responses:
+        '200':
+          description: 原绑定当前状态
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Gateway' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/spaces/{space}/gateways:
+    parameters:
+      - $ref: '#/components/parameters/Space'
+    get:
+      operationId: control.gateways.list
+      responses:
+        '200':
+          description: 所有者查看当前空间绑定与撤销历史
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [gateways]
+                properties:
+                  gateways: { type: array, maxItems: 1024, items: { $ref: '#/components/schemas/Gateway' } }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/spaces/{space}/gateways/{gateway}/revoke:
+    parameters:
+      - $ref: '#/components/parameters/Space'
+      - { name: gateway, in: path, required: true, schema: { type: string, pattern: '^gw-[a-f0-9]{64}$' } }
+    post:
+      operationId: control.gateways.revoke
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/CSRF'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: string, pattern: '^rev-[a-f0-9]{64}$' }
+              additionalProperties: false
+      responses:
+        '200': { description: 指定绑定已撤销；重复撤销成功，不影响后续新绑定 }
+        default: { $ref: '#/components/responses/Error' }
+  /api/admin/v1/gateways:
+    get:
+      operationId: control.admin.gateways.list
+      description: 只接受 Admin 会话；不返回家庭、成员、公钥、范围或设备状态。
+      responses:
+        '200':
+          description: 最近1000条绑定摘要；不是实时在线状态
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [gateways]
+                properties:
+                  gateways:
+                    type: array
+                    maxItems: 1000
+                    items:
+                      type: object
+                      required: [gateway_id, active, created_at]
+                      properties:
+                        gateway_id: { type: string }
+                        active: { type: boolean }
+                        created_at: { type: string, format: date-time }
+                      additionalProperties: false
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+components:
+  parameters:
+    Audience: { name: audience, in: path, required: true, schema: { enum: [console, admin] } }
+    Origin: { name: Origin, in: header, required: true, schema: { type: string, format: uri }, description: 必须精确等于对应 audience 配置的 origin }
+    CSRF: { name: X-CSRF-Token, in: header, required: true, schema: { type: string, pattern: '^[a-f0-9]{64}$' } }
+    Space: { name: space, in: path, required: true, schema: { $ref: '#/components/schemas/Identifier' } }
+    Pairing: { name: pairing, in: path, required: true, schema: { $ref: '#/components/schemas/Identifier' } }
+  responses:
+    Error:
+      description: >-
+        400输入，401会话/证明，403权限/Origin/CSRF/边缘凭据，404不可见/不存在，
+        409原键异参/绑定冲突/保留配额，410过期或取消，415类型，421Host，429限流，503存储/身份提供方故障。
+        原始数据库、令牌、提供方响应不返回调用方。
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error:
+                type: object
+                required: [code]
+                properties:
+                  code: { type: string }
+                additionalProperties: false
+            additionalProperties: false
+  schemas:
+    Identifier: { type: string, pattern: '^[A-Za-z0-9_-]{1,128}$' }
+    Scopes:
+      type: array
+      minItems: 1
+      maxItems: 4
+      uniqueItems: true
+      items: { enum: [devices.read, commands.write, rules.read, rules.write] }
+    Principal:
+      type: object
+      required: [principal_id, issuer, subject, name]
+      properties:
+        principal_id: { type: string }
+        issuer: { type: string }
+        subject: { type: string }
+        name: { type: string }
+      additionalProperties: false
+    Space:
+      type: object
+      required: [space_id, name, created_at]
+      properties:
+        space_id: { type: string }
+        name: { type: string }
+        created_at: { type: string, format: date-time }
+      additionalProperties: false
+    Pairing:
+      type: object
+      required: [pairing_id, space_id, owner, challenge, scopes, expires_at, claimed, cancelled]
+      properties:
+        pairing_id: { type: string }
+        space_id: { type: string }
+        owner: { $ref: '#/components/schemas/Principal' }
+        challenge: { type: string, pattern: '^[a-f0-9]{64}$' }
+        scopes: { $ref: '#/components/schemas/Scopes' }
+        expires_at: { type: string, format: date-time }
+        claimed: { type: boolean }
+        cancelled: { type: boolean }
+      additionalProperties: false
+    Gateway:
+      type: object
+      required: [gateway_id, space_id, local_space_id, principal_id, public_key, scopes, revision, active, created_at]
+      properties:
+        gateway_id: { type: string, pattern: '^gw-[a-f0-9]{64}$' }
+        space_id: { type: string }
+        local_space_id: { $ref: '#/components/schemas/Identifier' }
+        principal_id: { type: string }
+        public_key: { type: string, minLength: 44, maxLength: 44 }
+        scopes: { $ref: '#/components/schemas/Scopes' }
+        revision: { type: string, pattern: '^rev-[a-f0-9]{64}$' }
+        active: { type: boolean }
+        created_at: { type: string, format: date-time }
+      additionalProperties: false
