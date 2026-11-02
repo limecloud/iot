@@ -1,6 +1,6 @@
 # 控制面网关配对 0.1
 
-控制面 HTTP 入口与 JSON 字段以 [OpenAPI](control.openapi.yaml) 为准；本地网关动作以 [工具目录](tools/catalog.json) 为准。Go/MySQL 与 Rust 本地审核、机器证明、原绑定恢复及家庭 PWA 已接通。可选 [出站WSS机器连接](control-relay.md) 已实现，受限远程转发、远程工具和 Console/Admin 页面尚未实现。`gateway.active` 表示绑定未撤销，不表示连接在线或设备执行成功。
+控制面HTTP入口与JSON字段以 [OpenAPI](control.openapi.yaml) 为准；本地网关动作以 [工具目录](tools/catalog.json) 为准。Go/MySQL与Rust本地审核、机器证明、原绑定恢复及家庭PWA已接通。可选 [出站WSS机器连接](control-relay.md) 支持受限远程HTTP读写及原操作核实；远程CLI、Console/Admin页面和原生客户端云入口尚未实现。`gateway.active` 表示绑定未撤销，不表示连接在线或设备执行成功。
 
 ## 证明
 

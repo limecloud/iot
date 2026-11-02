@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from ota_policy import configuration_json, encode_policy, signing_key
 
 
 def run(*arguments):
@@ -31,7 +32,7 @@ def prepare(configuration, output):
         raise ValueError("nvs_generator_0_3_0_required")
     if configuration.stat().st_mode & 0o077:
         raise ValueError("configuration_must_be_owner_only")
-    data = json.loads(configuration.read_text())
+    data = configuration_json(configuration.read_text())
     device, space = identifier(data["device_id"]), identifier(data["space_id"])
     hardware = text(data["hardware_rev"], 1, 64)
     ssid, password = text(data["wifi"]["ssid"], 1, 32), text(data["wifi"]["password"], 8, 64)
@@ -45,6 +46,30 @@ def prepare(configuration, output):
     port = data["broker"]["port"]
     if type(port) is not int or not 1 <= port <= 65535:
         raise ValueError("invalid_broker_port")
+    ota_values = {}
+    if "ota_signing_key" in data:
+        ota_values = signing_key(data["ota_signing_key"])
+    ota_policy = None
+    if "ota_policy" in data:
+        ota_policy, policy_key = encode_policy(data["ota_policy"])
+        if ota_values and ota_values != policy_key:
+            raise ValueError("ota_policy_key_mismatch")
+        ota_values = policy_key
+    ota_ca = None
+    if "ota_transport" in data:
+        transport = data["ota_transport"]
+        if not isinstance(transport, dict) or set(transport) != {"ca"} or ota_policy is None:
+            raise ValueError("invalid_ota_transport")
+        ca_path = (configuration.parent / text(transport["ca"], 1, 4096)).resolve()
+        ota_ca = ca_path.read_text()
+        # 独立显式提供传输信任；不能隐式借用MQTT身份CA或接受叶证书/私钥。
+        certificates = re.findall(r"-----BEGIN CERTIFICATE-----[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----", ota_ca)
+        if not certificates or "".join(ota_ca.split()) != "".join("".join(certificates).split()) or len(ota_ca.encode()) > 3999:
+            raise ValueError("invalid_ota_https_ca")
+        for certificate in certificates:
+            parsed = subprocess.run(["openssl", "x509", "-noout", "-ext", "basicConstraints", "-checkend", "0"], input=certificate.encode(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if parsed.returncode or b"CA:TRUE" not in parsed.stdout:
+                raise ValueError("invalid_ota_https_ca")
     paths, contents = {}, {}
     for name in ("ca", "certificate", "private_key"):
         filename = text(data["identity"][name], 1, 4096)
@@ -70,6 +95,15 @@ def prepare(configuration, output):
         raise ValueError("client_auth_certificate_required")
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     values = {"ssid": ssid, "wifi_password": password, "space_id": space, "device_id": device, "broker_host": host, "hardware_rev": hardware}
+    values.update(ota_values)
+    if ota_policy is not None:
+        policy_file = output / "ota-policy.json"
+        policy_file.write_bytes(ota_policy)
+        policy_file.chmod(0o600)
+    if ota_ca is not None:
+        ca_file = output / "ota-https-ca.pem"
+        ca_file.write_text(ota_ca)
+        ca_file.chmod(0o600)
     for name, content in contents.items():
         target = output / f"{name}.pem"
         target.write_text(content)
@@ -82,6 +116,12 @@ def prepare(configuration, output):
         for name, value in values.items():
             writer.writerow([name, "data", "string", value])
         writer.writerow(["broker_port", "data", "u16", port])
+        if ota_policy is not None:
+            writer.writerow(["ota_policy_ver", "data", "u8", 1])
+            writer.writerow(["ota_policy", "file", "binary", str(policy_file)])
+        if ota_ca is not None:
+            writer.writerow(["ota_ca_ver", "data", "u8", 1])
+            writer.writerow(["ota_https_ca", "file", "string", str(ca_file)])
         for name in contents:
             writer.writerow([name, "file", "string", str(output / f"{name}.pem")])
     source.chmod(0o600)
@@ -93,7 +133,7 @@ def prepare(configuration, output):
             target.chmod(0o600)
     if target.stat().st_size != 0x6000:
         raise ValueError("invalid_nvs_image_size")
-    return {"device_id": device, "space_id": space, "image": str(target), "partition": "nvs", "offset": "0x9000", "size": 0x6000, "encrypted": False}
+    return {"device_id": device, "space_id": space, "image": str(target), "partition": "nvs", "offset": "0x9000", "size": 0x6000, "encrypted": False, "ota_signing_key_configured": bool(ota_values), "ota_policy_configured": ota_policy is not None, "ota_https_trust_configured": ota_ca is not None}
 
 
 if __name__ == "__main__":

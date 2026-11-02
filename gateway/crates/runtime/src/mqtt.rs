@@ -45,7 +45,7 @@ pub async fn run(app: App) {
                 let Ok(topic) = std::str::from_utf8(&packet.topic) else {
                     continue;
                 };
-                let Ok(message) = serde_json::from_slice::<Envelope>(&packet.payload) else {
+                let Ok(message) = Envelope::decode(&packet.payload) else {
                     continue;
                 };
                 let expected = format!(
@@ -60,10 +60,12 @@ pub async fn run(app: App) {
                     .update(&kind, |data| data.ingest(message, chrono::Utc::now()))
                     .await
                 {
-                    Ok(Some(welcome)) => {
-                        let topic =
-                            format!("limeiot/v1/{space}/{}/down/welcome", welcome.device_id);
-                        if let Ok(bytes) = serde_json::to_vec(&welcome) {
+                    Ok(Some(response)) => {
+                        let topic = format!(
+                            "limeiot/v1/{space}/{}/down/{}",
+                            response.device_id, response.kind
+                        );
+                        if let Ok(bytes) = serde_json::to_vec(&response) {
                             let _ = client.publish(topic, QoS::AtLeastOnce, false, bytes).await;
                         }
                     }
@@ -78,7 +80,7 @@ pub async fn run(app: App) {
                 if app.broker.swap(false, Ordering::Relaxed) {
                     let _ = app
                         .update("broker.disconnected", |data| {
-                            data.recover();
+                            data.mqtt_disconnected();
                             Ok(())
                         })
                         .await;
@@ -99,12 +101,18 @@ async fn dispatch(app: App, client: AsyncClient, space: String) {
         // 发送意图先耐久提交。崩溃后只能查询原操作，不能自动重发。
         let messages = app
             .update("commands.transitioned", |data| {
-                Ok(data.prepare_dispatch(chrono::Utc::now()))
+                let now = chrono::Utc::now();
+                let mut messages = data.prepare_dispatch(now);
+                messages.extend(data.prepare_ota_dispatch(now));
+                Ok(messages)
             })
             .await;
         if let Ok(messages) = messages {
             for message in messages {
-                let topic = format!("limeiot/v1/{space}/{}/down/command", message.device_id);
+                let topic = format!(
+                    "limeiot/v1/{space}/{}/down/{}",
+                    message.device_id, message.kind
+                );
                 if let Ok(bytes) = serde_json::to_vec(&message) {
                     let _ = client.publish(topic, QoS::AtLeastOnce, false, bytes).await;
                 }

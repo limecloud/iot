@@ -36,6 +36,13 @@ impl IntoResponse for ApiError {
             | "command_not_found"
             | "draft_not_found"
             | "control_link_not_found"
+            | "model_operation_not_found"
+            | "model_trust_not_found"
+            | "model_installation_not_found"
+            | "ota_task_not_found"
+            | "ota_trust_not_found"
+            | "ota_operation_not_found"
+            | "execution_operation_not_found"
             | "not_found" => StatusCode::NOT_FOUND,
             "idempotency_conflict"
             | "device_offline"
@@ -43,10 +50,15 @@ impl IntoResponse for ApiError {
             | "event_gap"
             | "revision_conflict"
             | "control_already_bound" => StatusCode::CONFLICT,
+            "ota_task_conflict" => StatusCode::CONFLICT,
             "storage_unavailable" | "inference_not_configured" | "control_not_configured" => {
                 StatusCode::SERVICE_UNAVAILABLE
             }
-            "inference_busy" | "control_busy" => StatusCode::TOO_MANY_REQUESTS,
+            "inference_busy"
+            | "control_busy"
+            | "model_operation_capacity"
+            | "ota_operation_capacity" => StatusCode::TOO_MANY_REQUESTS,
+            "execution_operation_capacity" => StatusCode::TOO_MANY_REQUESTS,
             _ => StatusCode::UNPROCESSABLE_ENTITY,
         };
         (
@@ -117,6 +129,9 @@ pub fn router(app: App) -> Router {
             axum::routing::get(stream),
         )
         .merge(crate::control_api::routes())
+        .merge(crate::model_api::routes())
+        .merge(crate::ota_api::routes())
+        .merge(crate::execution_api::routes())
         .route_layer(middleware::from_fn_with_state(app.clone(), auth::authorize));
     Router::new()
         .route("/healthz", axum::routing::get(health))
@@ -174,7 +189,7 @@ async fn capabilities(State(app): State<App>, Path(space): Path<String>) -> ApiR
     let store = app.store.lock().await;
     check(&store.data, &space)?;
     Ok(Json(
-        json!({"space_id":space,"mode":"loopback_simulation","operations":serde_json::from_str::<Value>(include_str!("../../../../contracts/tools/catalog.json")).unwrap()["operations"],"models":store.data.models,"inference":{"configured":app.inference.is_some(),"provider":"ollama","model":app.inference.as_ref().map(|p|p.model()),"data_location":"local","concurrency":1,"max_output_tokens":1024},"limits":{"devices":64,"commands":4096,"rules":64,"runs":1024,"dedup_events":4096,"rule_drafts":128}}),
+        json!({"space_id":space,"mode":"loopback_simulation","operations":serde_json::from_str::<Value>(include_str!("../../../../contracts/tools/catalog.json")).unwrap()["operations"],"models":store.data.models,"inference":{"configured":app.inference.is_some(),"provider":"ollama","model":app.inference.as_ref().map(|p|p.model()),"data_location":"local","concurrency":1,"max_output_tokens":1024},"limits":{"devices":64,"commands":4096,"rules":64,"runs":1024,"dedup_events":4096,"rule_drafts":128,"model_trusts":limeiot_core::model_registry::MAX_TRUSTS,"model_installations":limeiot_core::model_registry::MAX_INSTALLATIONS,"model_operations":limeiot_core::model_registry::MAX_OPERATIONS}}),
     ))
 }
 async fn model(State(app): State<App>, Path(revision): Path<String>) -> ApiResult<Json<Value>> {

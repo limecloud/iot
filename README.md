@@ -4,17 +4,23 @@ AI-first 的开源智能物联与能力组合平台。连接文字、视觉、�
 
 仓库：<https://github.com/limecloud/iot>。中文名称：青柠物联。
 
+当前源码版本为 **v0.2.0**，变更与验收边界见 [版本记录](CHANGELOG.md)。版本标签不代表已发布镜像、手机安装包或完成硬件验收。
+
 ## 当前状态
 
 已实现首个可运行的本地模拟闭环：自研物模型与规则子集、Rust 网关、SQLite 耐久状态与事件日志、MQTT 5 适配器、灯光/按钮模拟设备、HTTP/SSE 和 JSON CLI。已验证命令幂等、设备回执、按钮联动、重复与历史事件拒绝、丢失回执及重启恢复。
 
-已加入 NAS 家庭 PWA、所有者会话、规则预演/启停、原操作恢复、HTTPS 容器清单和一致性备份恢复。iOS 使用 Swift/SwiftUI，Android 使用 Kotlin/Jetpack Compose；两端客户端库已通过真实网关与模拟设备联调，Android 调试 APK 已构建通过。C 设备核心、NAS 设备 mTLS 与离线 NVS 工具已通过宿主验证；ESP-IDF 目标编译、实机认领、OTA、云控制面和生态适配仍在开发。完整状态见 [实施计划](docs/24-实施计划与进度.md)。
+已加入 NAS 家庭 PWA、所有者会话、规则预演/启停、原操作恢复、HTTPS 和一致性备份恢复。Linux ARM64整套容器已通过HTTPS、MQTT命令、设备mTLS/ACL/撤销及恢复检查，入口为 `npm run test:nas:container`；x86_64及指定NAS型号待验收。iOS使用Swift/SwiftUI，Android使用Kotlin/Jetpack Compose；独立库已联调，Android调试APK构建通过，两端App实际运行仍待验收。ESP-IDF灯/按钮均已通过C3目标编译，入口为 `npm run build:firmware`；烧录、实机认领、OTA、正式云和生态适配仍在开发。完整状态见 [实施计划](docs/24-实施计划与进度.md)。
 
 已加入本地 Ollama 文字联动草案，CLI、家庭 PWA 和原生客户端共用生成、原键恢复、预演和明确启用流程。模型经窄接口适配，只取得设备/物模型上下文，不拥有部署或设备执行权限。合同与故障检查通过，真实模型的完整意图质量验收尚未通过。配置与检查见[本地模型](deploy/dev/README.md)。语音、视觉、通用 Agent 与组合包仍在开发。
 
-已加入独立 [Go/Gin/MySQL 控制面](server/README.md)：私有凭据、标准OIDC、受众隔离会话、空间、Ed25519配对与撤销历史。Rust网关和家庭PWA已支持本地审核、明确批准、未知结果核实及NAS机器密钥备份恢复。`npm run test:pairing` 使用临时MySQL、真实Go/Rust/Broker及浏览器验证；`test:control` 可独立检查控制面。远程中继、Console/Admin页面和真实LimeCloud接入仍在开发。
+已加入独立 [Go/Gin/MySQL 控制面](server/README.md)：私有凭据、标准OIDC、受众隔离会话、空间、Ed25519配对与撤销历史。Rust网关和家庭PWA已支持本地审核、明确批准、未知结果核实及NAS机器密钥备份恢复。`npm run test:pairing` 使用临时MySQL、真实Go/Rust/Broker及浏览器验证；`test:control` 可独立检查控制面。两端原生云入口源码已接入，实际运行和真实LimeCloud接入仍待验收。
 
-可选出站WSS机器连接已接通，包含一次性挑战、当前绑定核对、心跳和撤销，`npm run test:relay` 验证真实TLS、两端重连及本地继续控制。配置见 [NAS](deploy/nas/README.md)，协议见 [机器连接](contracts/control-relay.md)；当前连接只认证和保活，尚不转发设备动作。
+可选出站WSS已接通受限远程API：设备/物模型读取、命令创建和原操作核实；两端当前授权、云端耐久发送意图、设备回执和断流不重放共用原合同。`npm run test:remote` 验证真实TLS/MySQL/Go/Rust/MQTT模拟链路和双进程重启；配置见 [NAS](deploy/nas/README.md)，协议见 [机器连接](contracts/control-relay.md)。默认关闭，当前单副本；不代表实机或公网部署验收。
+
+开源 [Console/Admin](deploy/control/README.md) 已提供空间、配对、设备控制与原操作查询，以及独立管理员的实例状态和脱敏绑定摘要。两份页面由Go同源托管，已接入产品草稿、模型校验/兼容性、签名发布与原决定查询。本地网关另提供所有者明确批准的信任、安装、设备绑定与撤销，NAS界面和CLI共用Rust规则；安装不自动切换设备。`npm run test:models`与`test:model-installation`验证相应模拟链路。OTA管理和完整运营任务仍在开发。
+
+[独立控制面CLI](packages/cli/README.md)通过`npm run cli -- control schema`发现空间/配对/设备与原操作工具，使用独立Console会话。命令先保存原请求，响应丢失后只查旧键；`npm run test:control:cli`验证相应模拟链路。账号与配对秘密保存在私有文件，不输出到模型上下文。
 
 ## 运行代码
 
@@ -48,7 +54,7 @@ Agent 入口：[llms.txt](llms.txt)、[机器文档目录](docs/catalog.json)、
 
 首个MVP为桌面互动环境灯：三个低压Wi-Fi节点＋本地网关，交付NAS私有化版和Cloudflare + Railway上的LimeIoT官方云服务版，按需接入LimeCloud账号和模型。硬件采购与预算见 [BOM](docs/19-硬件选型采购与BOM.md)，部署边界见 [部署设计](docs/22-本地开发部署与运维.md)。
 
-本仓库管理开源核心、工程规范及规划中的自部署管理界面。品牌官网和文档中心的页面、主题与指南源码在私有 `iotweb` 仓库的 `src/docs` 维护，共用官网域名的 `/docs/` 路径；不在本仓库建立文档站应用。范围见 [开源与商业化](docs/25-开源许可生态与商业化.md)。
+本仓库管理开源核心、工程规范及自部署Console/Admin和家庭界面。品牌官网和文档中心的页面、主题与指南源码在私有 `iotweb` 仓库的 `src/docs` 维护，共用官网域名的 `/docs/` 路径；不在本仓库建立文档站应用。范围见 [开源与商业化](docs/25-开源许可生态与商业化.md)。
 
 ## 设计原则
 

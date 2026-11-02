@@ -95,8 +95,8 @@ static bool timestamp(const cJSON *object, const char *key, int64_t *result) {
 }
 static void add_timestamp(cJSON *object, const char *key, int64_t milliseconds) {
     time_t seconds = (time_t)(milliseconds / 1000); struct tm utc; char value[32];
-    if (!gmtime_r(&seconds, &utc)) return;
-    snprintf(value, sizeof(value), "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", utc.tm_year + 1900, utc.tm_mon + 1, utc.tm_mday, utc.tm_hour, utc.tm_min, utc.tm_sec, (int)(milliseconds % 1000));
+    if (milliseconds < 0 || !gmtime_r(&seconds, &utc) || strftime(value, sizeof(value), "%Y-%m-%dT%H:%M:%S", &utc) != 19) return;
+    if (snprintf(value + 19, sizeof(value) - 19, ".%03dZ", (int)(milliseconds % 1000)) != 5) return;
     cJSON_AddStringToObject(object, key, value);
 }
 /* 这里只处理已通过严格字段校验的 ASCII 命令子集，不声称是通用 JCS 实现。 */
@@ -155,6 +155,27 @@ char *li_codec_hello(li_core_t *core) {
     cJSON_AddStringToObject(body, "challenge", core->challenge); cJSON_AddStringToObject(body, "firmware", core->config.firmware_version); cJSON_AddStringToObject(body, "hardware", core->config.hardware_revision);
     return print(envelope(core, "hello", body));
 }
+char *li_codec_device_info(li_core_t *core, const li_device_info_t *info) {
+    cJSON *body = cJSON_CreateObject(); if (!body) return NULL;
+    cJSON_AddStringToObject(body, "device_id", core->config.device_id);
+    cJSON_AddStringToObject(body, "model_revision", core->config.model_revision);
+    cJSON_AddStringToObject(body, "firmware_version", core->config.firmware_version);
+    cJSON_AddStringToObject(body, "hardware_revision", core->config.hardware_revision);
+    cJSON_AddStringToObject(body, "product_id", info->product_id);
+    cJSON_AddStringToObject(body, "architecture", info->architecture);
+    cJSON_AddStringToObject(body, "chip", info->chip);
+    cJSON_AddStringToObject(body, "board", info->board);
+    cJSON_AddStringToObject(body, "bootloader_version", info->bootloader_version);
+    cJSON_AddNumberToObject(body, "protocol_version", 1);
+    cJSON_AddNumberToObject(body, "security_epoch", info->security_epoch);
+    cJSON_AddNumberToObject(body, "ota_capacity_bytes", info->ota_capacity_bytes);
+    cJSON_AddBoolToObject(body, "external_power", info->external_power);
+    if (info->has_battery) cJSON_AddNumberToObject(body, "battery_percent", info->battery_percent);
+    else cJSON_AddNullToObject(body, "battery_percent");
+    cJSON_AddBoolToObject(body, "safe_to_update", info->safe_to_update);
+    cJSON_AddBoolToObject(body, "pending_update", info->pending_update);
+    return print(envelope(core, "device_info", body));
+}
 char *li_codec_snapshot(li_core_t *core, int64_t now, const li_value_t *values) {
     cJSON *body = cJSON_CreateObject(); if (!body) return NULL;
     cJSON_AddStringToObject(body, "type", "snapshot"); cJSON_AddNumberToObject(body, "revision", (double)++core->snapshot_revision);
@@ -184,6 +205,22 @@ char *li_codec_result(li_core_t *core, const li_receipt_t *receipt) {
     cJSON *reported = cJSON_AddObjectToObject(evidence, "reported"); if (!reported) { cJSON_Delete(body); return NULL; }
     if (receipt->stage == LI_CONFIRMED) cJSON_AddItemToObject(reported, receipt->path, value_encode(receipt->value));
     return print(envelope(core, "result", body));
+}
+char *li_codec_ota_result(li_core_t *core, const li_ota_log_view_t *v) {
+    bool terminal=v->stage>=LI_OTA_SUCCEEDED;
+    const char *version=terminal?v->outcome.firmware_version:v->baseline.firmware_version;
+    const char *image=terminal?v->outcome.image_sha256:v->baseline.image_sha256;
+    uint32_t epoch=terminal?v->outcome.security_epoch:v->baseline.security_epoch;
+    cJSON *body=cJSON_CreateObject();
+    if (!body || !cJSON_AddStringToObject(body,"task_id",v->task_id) || !cJSON_AddStringToObject(body,"execution_id",v->execution_id)
+        || !cJSON_AddStringToObject(body,"request_digest",v->request_digest) || !cJSON_AddStringToObject(body,"manifest_digest",v->manifest_digest)
+        || !cJSON_AddStringToObject(body,"status",li_ota_stage_name(v->stage)) || !cJSON_AddStringToObject(body,"firmware_version",version)
+        || !cJSON_AddNumberToObject(body,"security_epoch",epoch) || !cJSON_AddStringToObject(body,"image_sha256",image)
+        || !cJSON_AddFalseToObject(body,"pending_update")
+        || !(terminal&&v->outcome.error[0]?cJSON_AddStringToObject(body,"error",v->outcome.error):cJSON_AddNullToObject(body,"error"))) {
+        cJSON_Delete(body); return NULL;
+    }
+    return print(envelope(core,"ota_result",body));
 }
 char *li_codec_receipt_encode(const li_receipt_t *receipt) {
     cJSON *record = cJSON_CreateObject(); if (!record) return NULL;

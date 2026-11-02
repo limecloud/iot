@@ -32,8 +32,13 @@ public enum JSONValue: Codable, Sendable, Equatable {
         case .integer(let value): String(value)
         case .number(let value): String(value)
         case .string(let value): value
-        default: "—"
+        case .null: "null"
+        default: jsonText
         }
+    }
+    public var jsonText: String {
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return (try? encoder.encode(self)).flatMap { String(data: $0, encoding: .utf8) } ?? "null"
     }
 }
 public struct Page<Item: Decodable & Sendable>: Decodable, Sendable {
@@ -57,8 +62,11 @@ public struct ValueSchema: Codable, Sendable {
     public let maximum: Double?
     public let properties: [String: ValueSchema]?
     public let required: [String]?
+    public let enumValues: [JSONValue]?
+    private enum CodingKeys: String, CodingKey { case type, minimum, maximum, properties, required; case enumValues = "enum" }
     public var sample: JSONValue {
-        switch type {
+        if let first = enumValues?.first { return first }
+        return switch type {
         case "boolean": .bool(true)
         case "integer": .integer(Int(minimum ?? 0))
         case "number": .number(minimum ?? 0)
@@ -69,7 +77,8 @@ public struct ValueSchema: Codable, Sendable {
 }
 public struct Property: Decodable, Sendable { public let id: String; public let schema: ValueSchema; public let access: [String] }
 public struct ModelEvent: Decodable, Sendable { public let id: String; public let schema: ValueSchema }
-public struct Service: Decodable, Sendable { public let id: String; public let properties: [Property]; public let events: [ModelEvent] }
+public struct ModelAction: Decodable, Sendable { public let id: String; public let input: ValueSchema; public let output: ValueSchema; public let idempotent: Bool; public let risk: String; public let completion: String }
+public struct Service: Decodable, Sendable { public let id: String; public let properties: [Property]; public let events: [ModelEvent]; public let actions: [ModelAction]? }
 public struct Model: Decodable, Sendable { public let modelId: String; public let services: [Service] }
 public struct Inference: Decodable, Sendable { public let configured: Bool; public let model: String? }
 public struct Capabilities: Decodable, Sendable { public let models: [String: Model]; public let inference: Inference? }
@@ -93,11 +102,17 @@ public struct RuleDraft: Decodable, Sendable, Identifiable {
     public var id: String { draftId }
     public var statusText: String { ["running": "正在生成草案", "completed": "草案已生成", "rejected": "草案未通过", "unknown": "生成结果未知", "expired": "生成请求已过期"][status] ?? status }
 }
-public struct Operation: Codable, Sendable {
+public struct Operation: Codable, Sendable, Equatable {
     public let type: String
     public let path: String
     public let value: JSONValue
-    public init(path: String, value: JSONValue) { self.type = "property.set"; self.path = path; self.value = value }
+    public init(path: String, value: JSONValue, type: String = "property.set") { self.type = type; self.path = path; self.value = value }
+    public var summary: String {
+        if type == "action.invoke", path == "remote.press", case .object(let input) = value, case .string(let key) = input["key"] { return "遥控：" + (Self.keyLabels[key] ?? key) }
+        if type == "action.invoke", path == "apps.launch", case .object(let input) = value, case .string(let app) = input["application_id"] { return "启动应用：" + app }
+        return path + "：" + value.text
+    }
+    public static let keyLabels = ["up": "向上", "down": "向下", "left": "向左", "right": "向右", "select": "确认", "back": "返回", "home": "主页", "menu": "菜单", "play_pause": "播放/暂停"]
 }
 public struct CommandInput: Codable, Sendable {
     public let deviceId: String
@@ -108,9 +123,9 @@ public struct CommandInput: Codable, Sendable {
 public struct CommandIntent: Codable, Sendable {
     public let key: String
     public let input: CommandInput
-    public init(device: Device, path: String, value: JSONValue, now: Date = .now) {
+    public init(device: Device, path: String, value: JSONValue, now: Date = .now, type: String = "property.set") {
         key = UUID().uuidString.lowercased()
-        input = CommandInput(deviceId: device.deviceId, modelRevision: device.modelRevision, expiresAt: ISO8601DateFormatter().string(from: now.addingTimeInterval(5)), operation: Operation(path: path, value: value))
+        input = CommandInput(deviceId: device.deviceId, modelRevision: device.modelRevision, expiresAt: ISO8601DateFormatter().string(from: now.addingTimeInterval(5)), operation: Operation(path: path, value: value, type: type))
     }
 }
 public struct Command: Decodable, Sendable, Identifiable {
@@ -122,7 +137,14 @@ public struct Command: Decodable, Sendable, Identifiable {
     public let error: String?
     public let evidence: JSONValue?
     public var id: String { commandId }
-    public var statusText: String { ["accepted": "已受理", "dispatched": "已发送", "confirmed": "已确认", "unknown": "结果未知", "failed": "执行失败", "expired": "已过期", "rejected": "已拒绝"][status] ?? status }
+    public var statusText: String {
+        if status == "confirmed", request.operation.type == "action.invoke" { return Self.actionStatus(evidence) }
+        return ["accepted": "已受理", "dispatched": "已发送", "confirmed": "已确认", "unknown": "结果未知", "failed": "执行失败", "expired": "已过期", "rejected": "已拒绝"][status] ?? status
+    }
+    public static func actionStatus(_ evidence: JSONValue?) -> String {
+        guard case .object(let result) = evidence, result["type"] == .string("action_result") else { return "完成范围未知" }
+        switch result["completion"] { case .string("submitted"): return "输入已提交"; case .string("observed"): return "效果已观测"; default: return "完成范围未知" }
+    }
 }
 public struct Rule: Codable, Sendable, Equatable {
     public struct Trigger: Codable, Sendable, Equatable { public let device: String; public let event: String }

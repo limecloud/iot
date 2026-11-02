@@ -1,5 +1,6 @@
 {
   "name": "limeiot",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,27 +9,61 @@
   "scripts": {
     "build": "npm run build:home && cargo build --workspace --locked",
     "build:home": "npm run build --workspace @limeiot/home",
+    "build:control": "npm run build --workspace @limeiot/console && npm run build --workspace @limeiot/admin",
+    "build:firmware": "python3 tools/build-firmware.py",
     "check": "cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings",
     "test": "cargo test --workspace --locked",
     "test:e2e": "npm run build && node --test tests/e2e.test.mjs tests/nas.test.mjs tests/device-identity.test.mjs",
     "test:ios": "npm run build && node tools/test-native.mjs ios",
+    "test:clients:state": "node tools/test-native-state.mjs",
     "test:android": "npm run build && node tools/test-native.mjs android",
+    "test:android:runtime": "cargo build --workspace --locked && node tools/test-android-runtime.mjs",
     "test:firmware": "cargo build --workspace --locked && node tools/test-firmware.mjs",
     "test:provisioning": "node --test tests/provisioning.test.mjs",
     "test:inference": "npm run build && node --test tests/inference.test.mjs",
     "test:inference:live": "npm run build && node tools/test-local-model.mjs",
     "test:control": "node tools/test-control.mjs",
+    "test:products": "npm run build:control && node --test tests/products-boundaries.test.mjs tests/control-cli-boundaries.test.mjs && node tools/test-control.mjs --products",
+    "test:control:native": "npm run build && npm run build:control && node tools/test-control.mjs --native-clients",
     "test:pairing": "npm run build && node tools/test-control.mjs --gateway-pairing",
     "test:relay": "npm run build && node tools/test-control.mjs --gateway-relay",
+    "test:remote": "npm run build && node tools/test-control.mjs --gateway-remote",
+    "test:console": "npm run build && npm run build:control && node tools/test-control.mjs --control-web",
+    "test:control:cli": "npm run build && node --test tests/control-cli-boundaries.test.mjs && node tools/test-control.mjs --control-cli",
     "test:browser": "npm run build && playwright test",
     "dev": "npm run build && node tools/dev.mjs",
-    "cli": "node packages/cli/src/main.mjs"
+    "cli": "node packages/cli/src/main.mjs",
+    "test:models": "npm run build:home && npm run build:control && node --test tests/model-validation-boundaries.test.mjs tests/model-compatibility-boundaries.test.mjs tests/model-release-boundaries.test.mjs tests/model-publication-boundaries.test.mjs tests/model-registry-boundaries.test.mjs && node tools/test-control.mjs --models",
+    "test:model-installation": "npm run build && node --test tests/model-registry-boundaries.test.mjs tests/model-installation.test.mjs tests/model-installation-web.test.mjs",
+    "test:nas:container": "node tools/test-nas-container.mjs",
+    "test:nas:platform": "node tools/test-nas-platform.mjs",
+    "test:nas:inference:config": "node --test tests/nas-inference.test.mjs",
+    "test:nas:inference": "node tools/test-nas-inference.mjs",
+    "test:ota": "cargo test --locked -p limeiot-core --test ota && cargo test --locked -p limeiot-model-validator --test ota_process && node --test tests/ota-cli.test.mjs tests/ota-download.test.mjs",
+    "test:ota:sign": "cargo build --locked -p limeiot-model-validator --bin limeiot-ota && node --test tests/ota-sign.test.mjs",
+    "test:ota:publish": "cargo build --locked -p limeiot-model-validator --bin limeiot-ota && node --test tests/ota-publish.test.mjs",
+    "test:ota:repository": "node tools/test-ota-repository.mjs",
+    "test:ota:tasks": "cargo test --locked -p limeiot-core --test ota_tasks && cargo test --locked -p limeiot-gateway && cargo build --workspace --locked && node --test tests/ota-tasks-boundaries.test.mjs tests/ota-tasks.test.mjs",
+    "test:ota:web": "npm run build && node --test tests/ota-web.test.mjs",
+    "test:ota:native": "cargo build --workspace --locked && node --test tests/ota-native.test.mjs",
+    "test:ota:native:state": "cargo build --workspace --locked && node tools/test-ota-native-state.mjs",
+    "test:actions": "npm run build && node --test tests/command-receipts.test.mjs tests/actions.test.mjs tests/actions-web.test.mjs",
+    "test:actions:native": "npm run build && node --test --test-concurrency=1 tests/actions-native.test.mjs",
+    "test:tv": "npm run build && cargo test --locked -p limeiot-core --test execution --test execution_binding --test execution_composition && cargo test --locked -p limeiot-android-tv && node --test --test-concurrency=1 tests/execution-bindings-boundaries.test.mjs tests/tv-adapter.test.mjs tests/tv-bindings.test.mjs tests/tv-composition.test.mjs",
+    "test:tv-agent": "cargo build --workspace --locked && sh apps/android/gradlew --no-daemon -p apps/tv-agent :core:test && node --test --test-concurrency=1 tests/tv-agent.test.mjs tests/tv-agent-composition.test.mjs",
+    "test:tv-agent:android": "sh apps/android/gradlew --no-daemon -p apps/tv-agent :core:test :app:testDebugUnitTest :app:assembleDebug :app:lintDebug",
+    "test:firmware:ota": "node tools/test-firmware-ota.mjs"
   },
   "workspaces": [
     "packages/cli",
-    "apps/home"
+    "packages/control-ui",
+    "apps/home",
+    "apps/console",
+    "apps/admin"
   ],
   "devDependencies": {
-    "@playwright/test": "1.64.1"
+    "@playwright/test": "1.64.1",
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1"
   }
 }

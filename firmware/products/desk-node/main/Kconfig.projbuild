@@ -1,4 +1,10 @@
 menu "LimeIoT development node"
+    config LIMEIOT_BOARD_ID
+        string "Board identifier"
+        default "c3-development"
+        help
+            Set an exact board identifier after verifying the physical board.
+            The default describes the development contract, not a vendor model.
     choice LIMEIOT_ROLE
         prompt "Node role"
         default LIMEIOT_ROLE_LAMP

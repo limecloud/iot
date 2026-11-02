@@ -37,7 +37,7 @@ func run() error {
 		return err
 	}
 	store := &mysqlstore.Store{DB: db}
-	app, err := control.New(cfg, store, store, store, store, nil)
+	app, err := control.New(cfg, control.Dependencies{Sessions: store, Registry: store, Machines: store, Remote: store, Native: store, Products: store, Publications: store, Readiness: store})
 	if err != nil {
 		return err
 	}

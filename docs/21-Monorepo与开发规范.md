@@ -1,6 +1,6 @@
 # Monorepo 与开发规范
 
-更新日期：2026-11-01。状态：目标工程结构与已实现子集并存；已建立 Cargo workspace、网关核心/适配器、CLI、模拟器、合同及开发验收入口，具体范围见24。其余目录按实际需求建立。
+更新日期：2026-11-02。状态：目标工程结构与已实现子集并存；已建立 Cargo workspace、网关核心/适配器、CLI、模拟器、合同及开发验收入口，具体范围见24。其余目录按实际需求建立。
 
 ## 1. 目录与责任
 
@@ -65,6 +65,14 @@ LimeCloud客户端适配放在Go服务的外部适配包，基于其正式协议
 
 GitHub可见性以仓库为单位，公开monorepo不能通过目录或分支设置实现私有源码。私有官网不作为开源构建/测试前提，不通过相邻路径或私有子模块强制拉取。私有侧消费正式版本的SDK/UI包或API合同，并保留适用许可与归属；不复制维护第二套核心。
 
+### 1.3 电视设备终端扩展
+
+电视物模型、Android TV Agent、网关电视适配器及各控制端面板属于本开源仓库。新增目标路径与职责以 [34](34-电视终端与AndroidTV接入.md) 为准，尚未建立的工程不作为当前构建前提。TV Agent 是设备身份下的 Android 应用，与 `apps/android` 手机控制客户端分别构建；API 23 样本的库、TLS 和 ABI 兼容单独验证，不直接降低手机应用的最低版本。
+
+`apps/tv-agent`是独立Gradle工程，包含设备协议core和Android app，复用`apps/android/gradlew`分发及固定校验和，不依赖手机业务核心。JDK21构建Java8字节码，各模块依赖独立锁定；`npm run test:tv-agent`验证JVM故障、材料打包与真实mTLS/Broker/Rust旅程，`npm run test:tv-agent:android`检查Android宿主边界、调试APK与lint。minSdk=23、targetSdk=36，真实API23存储/Keystore/TLS和电视运行另验，入口见 [Agent说明](../apps/tv-agent/README.md)。
+
+电视动作先补齐正式合同和消费者，再建立可执行模型与适配代码；不新增电视专用后端或第二套命令账本。源码分析和 REA 只读实机观察不能提升为产品遥控验收，型号事实见 [30](30-设备支持矩阵与证据台账.md)。
+
 ## 2. 合同驱动与 Agent 可读性
 
 正式 `contracts/` 是实现阶段唯一机器合同来源，生成 Rust/Go/TypeScript/C 绑定和工具投影。`docs/examples/` 当前是设计夹具，迁入正式合同时同步消费者，避免长期维护两套互不校验定义。
@@ -79,7 +87,7 @@ KISS：优先直接函数和组合；YAGNI：未进入阶段的目录、框架�
 
 ## 4. 构建与验证入口
 
-当前实际入口为`npm run build`、`npm run check`、`npm test`、`npm run test:e2e`、`npm run test:browser`、`npm run test:ios`、`npm run test:android`、`npm run test:firmware`、`npm run test:provisioning`、`npm run test:inference`和`npm run dev`。`test:inference`及原生联调使用明确的假提供方，不证明模型质量；显式配置真实已安装模型后，`npm run test:inference:live`验证实际推理与模拟设备执行链。原生应用整包分别使用Xcode和Gradle。固件宿主检查与目标芯片构建分开记录；后者尚未通过，不发布可安装镜像或已验收烧录命令。
+当前实际入口为`npm run build`、`npm run check`、`npm test`、`npm run test:e2e`、`npm run test:browser`、`npm run test:ios`、`npm run test:android`、`npm run test:firmware`、`npm run build:firmware`、`npm run test:provisioning`、`npm run test:inference`和`npm run dev`。`test:inference`及原生联调使用明确的假提供方，不证明模型质量；显式配置真实已安装模型后，`npm run test:inference:live`验证实际推理与模拟设备执行链。原生应用整包分别使用Xcode和Gradle。固件宿主检查与目标芯片构建分开记录；灯/按钮均已通过固定ESP-IDF的C3构建，开发镜像尚未烧录或完成实机验收。
 
 Rust 使用 fmt/clippy/test，Go 使用 fmt/vet/test，前端使用类型检查/测试/构建，固件使用固定 ESP-IDF 工具链。工具链和依赖锁定，安装使用项目级环境，不隐式修改系统设置或全局包。
 

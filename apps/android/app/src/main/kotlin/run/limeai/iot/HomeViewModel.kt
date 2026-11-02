@@ -13,7 +13,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import run.limeai.iot.core.*
 
-data class HomeState(val origin: String = "", val connected: Boolean = false, val online: Boolean = false, val busy: Boolean = false, val message: String = "", val snapshot: Snapshot? = null, val pending: Map<String, CommandIntent> = emptyMap(), val draftReference: DraftReference? = null, val draft: RuleDraft? = null, val draftPrompt: String = "", val draftBusy: Boolean = false, val draftProof: String? = null, val draftMessage: String = "")
+data class HomeState(val origin: String = "", val connected: Boolean = false, val online: Boolean = false, val busy: Boolean = false, val message: String = "", val snapshot: Snapshot? = null, val pending: Map<String, CommandIntent> = emptyMap(), val draftReference: DraftReference? = null, val draft: RuleDraft? = null, val draftPrompt: String = "", val draftBusy: Boolean = false, val draftProof: String? = null, val draftMessage: String = "", val firmware: FirmwareController? = null)
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val preferences = application.getSharedPreferences("home", Application.MODE_PRIVATE)
     private val mutable = MutableStateFlow(HomeState(origin = preferences.getString("origin", "").orEmpty()))
@@ -22,9 +22,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private var client: GatewayClient? = null
     private var refreshing = false
     private var generation = 0
-    init { if (mutable.value.origin.isNotEmpty()) connect(mutable.value.origin, null, true) }
     fun connect(origin: String, token: String?, restore: Boolean = false) {
-        if (mutable.value.busy || mutable.value.draftBusy) return
+        if (mutable.value.busy || mutable.value.draftBusy || mutable.value.firmware?.state?.value?.busy == true) return
         mutable.update { it.copy(busy = true, message = "") }
         viewModelScope.launch {
             try {
@@ -32,9 +31,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 if (restore) next.restore() else next.login(token.orEmpty())
                 val pending = vault.load(origin.trim() + "#pending")?.let { Json.decodeFromString<Map<String, CommandIntent>>(it) }.orEmpty()
                 val reference = vault.load(origin.trim() + "#draft")?.let { Json.decodeFromString<DraftReference>(it) }
-                client = next; generation++
+                mutable.value.firmware?.close(); client = next; generation++
                 preferences.edit().putString("origin", origin.trim()).apply()
-                mutable.update { it.copy(origin = origin.trim(), connected = true, pending = pending, draftReference = reference, draft = null, draftPrompt = "", draftMessage = "", draftProof = null) }; refresh()
+                mutable.update { it.copy(origin = origin.trim(), connected = true, pending = pending, draftReference = reference, draft = null, draftPrompt = "", draftMessage = "", draftProof = null, firmware = null) }; refresh()
             } catch (error: Exception) { if (!(restore && error is GatewayException && error.status == 401)) report(error) }
             finally { mutable.update { it.copy(busy = false) } }
         }
@@ -46,11 +45,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         try {
             val next = current.snapshot()
             if (old == generation) {
-                mutable.update { it.copy(snapshot = next, online = true, message = "") }
+                mutable.update { it.copy(snapshot = next, online = true, message = "", firmware = it.firmware ?: FirmwareController(OtaClient(current, vault), next.space, viewModelScope, ::report)) }
                 if (!mutable.value.draftBusy && mutable.value.draftReference != null && (mutable.value.draft == null || mutable.value.draft?.status == "running")) loadDraft()
             }
         }
-        catch (error: Exception) { if (old == generation) report(error) }
+        catch (error: Exception) { if (old == generation) { if (error !is CancellationException) mutable.update { it.copy(online = false) }; report(error) } }
         finally { refreshing = false }
     }
     fun refreshNow() { viewModelScope.launch { refresh() } }
@@ -58,13 +57,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         vault.save(mutable.value.origin + "#pending", Json.encodeToString(next))
         mutable.update { it.copy(pending = next) }
     }
-    fun control(device: Device, path: String, value: JsonElement) {
+    fun control(device: Device, path: String, value: JsonElement, type: String = "property.set") {
         val current = client ?: return
         val snapshot = mutable.value.snapshot ?: return
         if (!mutable.value.online || mutable.value.busy || mutable.value.pending.containsKey(device.deviceId)) return
         mutable.update { it.copy(busy = true, message = "") }
         viewModelScope.launch {
-            val intent = CommandIntent.create(device, path, value)
+            val intent = CommandIntent.create(device, path, value, type = type)
             var submitted = false
             try {
                 savePending(mutable.value.pending + (device.deviceId to intent)); submitted = true
@@ -164,8 +163,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun deploy(rule: Rule) = task { val current = client ?: return@task; val snapshot = mutable.value.snapshot ?: return@task; current.deploy(snapshot.space, rule); refresh(); mutable.update { it.copy(message = "自动化已启用") } }
     fun stop(deployment: Deployment) = task { val current = client ?: return@task; val snapshot = mutable.value.snapshot ?: return@task; current.stop(snapshot.space, deployment); refresh() }
     fun logout() = task {
-        if (mutable.value.draftBusy) return@task
+        if (mutable.value.draftBusy || mutable.value.firmware?.state?.value?.busy == true) return@task
         client?.logout(); generation++; client = null
+        mutable.value.firmware?.close()
         mutable.update { HomeState(origin = it.origin) }
     }
     private fun task(action: suspend () -> Unit) {
@@ -176,7 +176,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun report(error: Exception) {
         if (error is CancellationException) throw error
         if (error is GatewayException) {
-            if (error.status == 401) { generation++; mutable.update { HomeState(origin = it.origin, message = error.displayMessage) } }
+            if (error.status == 401) { generation++; mutable.value.firmware?.close(); mutable.update { HomeState(origin = it.origin, message = error.displayMessage) } }
             else mutable.update { it.copy(message = error.displayMessage) }
         } else mutable.update { it.copy(online = false, message = "无法连接家庭网关，请检查本地网络") }
     }

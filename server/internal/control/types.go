@@ -7,12 +7,13 @@ import (
 )
 
 var (
-	ErrMissing      = errors.New("not_found")
-	ErrConflict     = errors.New("idempotency_conflict")
-	ErrIdentity     = errors.New("identity_rejected")
-	ErrProvider     = errors.New("identity_unavailable")
-	ErrForbidden    = errors.New("forbidden")
-	ErrAlreadyBound = errors.New("gateway_already_bound")
+	ErrMissing       = errors.New("not_found")
+	ErrConflict      = errors.New("idempotency_conflict")
+	ErrIdentity      = errors.New("identity_rejected")
+	ErrProvider      = errors.New("identity_unavailable")
+	ErrForbidden     = errors.New("forbidden")
+	ErrAlreadyBound  = errors.New("gateway_already_bound")
+	ErrNativeExpired = errors.New("native_authorization_expired")
 )
 
 type Principal struct {

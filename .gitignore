@@ -13,6 +13,7 @@ target/
 **/.build/
 **/.swiftpm/
 **/.gradle/
+**/.kotlin/
 **/build/
 **/local.properties
 **/xcuserdata/

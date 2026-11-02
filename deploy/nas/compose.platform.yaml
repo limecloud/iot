@@ -1,0 +1,84 @@
+# 完整本地工作台。与 compose.yaml 叠加；迁移须显式运行。
+services:
+  gateway:
+    environment:
+      LIMEIOT_CONTROL_ALLOWED_ORIGINS: ${LIMEIOT_PUBLIC_ORIGIN:?}
+      LIMEIOT_GATEWAY_KEY_FILE: /secrets/gateway-identity.pk8
+      LIMEIOT_CONTROL_CA_FILE: /config/control-ca.crt
+      LIMEIOT_CONTROL_RELAY_ENABLED: "1"
+    networks: [local, platform-link]
+  edge:
+    volumes:
+      - ./nginx.platform.conf:/etc/limeiot/nginx.conf:ro
+  control:
+    image: limeiot/control:0.2.0
+    build:
+      context: ../..
+      dockerfile: deploy/control/Dockerfile
+    user: "${LIMEIOT_UID:?}:${LIMEIOT_GID:?}"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ["/tmp:mode=1777,size=32m"]
+    environment:
+      LIMEIOT_CONTROL_MODE: private
+      LIMEIOT_CONTROL_LISTEN: 0.0.0.0:8080
+      LIMEIOT_CONTROL_ORIGIN: ${LIMEIOT_PUBLIC_ORIGIN:?}
+      LIMEIOT_CONTROL_KEY_FILE: /private/control-key
+      LIMEIOT_CONSOLE_TOKEN_FILE: /private/owner-token
+      LIMEIOT_ADMIN_TOKEN_FILE: /private/admin-token
+      LIMEIOT_CONTROL_MYSQL_DSN_FILE: /private/mysql.dsn
+      LIMEIOT_MODEL_VALIDATOR: /usr/local/bin/limeiot-model-validator
+      LIMEIOT_MODEL_RELEASE_KEY_FILE: /private/model-release-key.pem
+    volumes:
+      - ${LIMEIOT_STATE_DIR:?}/secrets/owner-token:/private/owner-token:ro
+      - ${LIMEIOT_STATE_DIR:?}/platform-secrets/admin-token:/private/admin-token:ro
+      - ${LIMEIOT_STATE_DIR:?}/platform-secrets/control-key:/private/control-key:ro
+      - ${LIMEIOT_STATE_DIR:?}/platform-secrets/mysql-runtime.dsn:/private/mysql.dsn:ro
+      - ${LIMEIOT_STATE_DIR:?}/platform-secrets/model-release-key.pem:/private/model-release-key.pem:ro
+    depends_on:
+      control-mysql: {condition: service_healthy}
+    networks: [local]
+  migrate:
+    image: limeiot/control:0.2.0
+    profiles: [maintenance]
+    user: "${LIMEIOT_UID:?}:${LIMEIOT_GID:?}"
+    entrypoint: [limeiot-migrate]
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      LIMEIOT_CONTROL_MYSQL_DSN_FILE: /private/mysql.dsn
+    volumes:
+      - ${LIMEIOT_STATE_DIR:?}/platform-secrets/mysql-migrator.dsn:/private/mysql.dsn:ro
+    depends_on:
+      control-mysql: {condition: service_healthy}
+    networks: [local]
+  control-mysql:
+    image: mysql:8.4
+    user: "${LIMEIOT_UID:?}:${LIMEIOT_GID:?}"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ["/tmp:mode=1777,size=256m", "/var/run/mysqld:mode=1777,size=16m"]
+    environment:
+      MYSQL_DATABASE: limeiot
+      MYSQL_ROOT_PASSWORD_FILE: /private/mysql-root-password
+    volumes:
+      - ${LIMEIOT_STATE_DIR:?}/mysql:/var/lib/mysql
+      - ${LIMEIOT_STATE_DIR:?}/platform-secrets/mysql-root-password:/private/mysql-root-password:ro
+      - ${LIMEIOT_STATE_DIR:?}/platform-secrets/mysql-readonly.cnf:/private/readonly.cnf:ro
+      - ${LIMEIOT_STATE_DIR:?}/platform-secrets/mysql-migrator.cnf:/private/migrator.cnf:ro
+      - ${LIMEIOT_STATE_DIR:?}/platform-secrets/mysql-init.sql:/docker-entrypoint-initdb.d/10-limeiot.sql:ro
+    healthcheck:
+      test: [CMD, mysql, --defaults-extra-file=/private/readonly.cnf, -Nse, SELECT 1]
+      interval: 5s
+      timeout: 4s
+      start_period: 30s
+      retries: 20
+    networks: [local]
+networks:
+  platform-link: {}

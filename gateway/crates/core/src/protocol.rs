@@ -21,6 +21,14 @@ pub struct Envelope {
     pub body: Value,
 }
 impl Envelope {
+    pub fn decode(raw: &[u8]) -> Result<Self> {
+        let value = crate::validation::bounded_document(raw, MAX_PACKET, 16, 2048)
+            .ok_or_else(|| crate::err("invalid_message"))?;
+        let message: Self =
+            serde_json::from_value(value).map_err(|_| crate::err("invalid_message"))?;
+        message.validate()?;
+        Ok(message)
+    }
     pub fn validate(&self) -> Result<()> {
         ensure(self.v == 1, "unsupported_version")?;
         ensure(
@@ -50,6 +58,17 @@ pub struct CommandRequest {
     pub idempotency_key: String,
     pub expires_at: DateTime<Utc>,
     pub operation: Operation,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ActionEvidence {
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub path: String,
+    pub input_digest: String,
+    pub output: Value,
+    pub completion: String,
+    pub observed_at: DateTime<Utc>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

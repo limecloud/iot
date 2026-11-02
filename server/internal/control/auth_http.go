@@ -40,31 +40,11 @@ func (s *Server) authenticate(c *gin.Context, a string, checkProvider bool) (Ses
 		}
 		return session, "", false
 	}
-	credential, err := open(s.cfg.Key, secretPurpose(a, session.Hash), session.Credential)
-	if err == nil && session.External {
-		provider := s.providers[a]
-		if provider == nil || session.Principal.Issuer != s.cfg.Logins[a].Issuer {
-			err = ErrIdentity
-		} else if checkProvider {
-			var subject string
-			subject, err = provider.Current(c.Request.Context(), credential)
-			if err == nil && subject != session.Principal.Subject {
-				err = ErrIdentity
-			}
-		}
-	} else if err == nil {
-		if s.cfg.Mode != "private" || !equal(credential, Hash(s.cfg.Logins[a].LocalToken)) {
-			err = ErrIdentity
-		}
-	}
-	if err == nil && a == "admin" && session.External && !s.cfg.Logins[a].Operators[session.Principal.Subject] {
-		err = ErrIdentity
-	}
+	err = s.validateStoredSession(c.Request.Context(), session, a, checkProvider)
 	if err != nil {
-		if !errors.Is(err, ErrProvider) {
+		if errors.Is(err, ErrIdentity) {
 			_ = s.sessions.RevokeSession(c.Request.Context(), session.Hash, a)
 			s.cookie(c, a, "", "", -1)
-			err = ErrIdentity
 		}
 		result(c, nil, err)
 		return session, "", false
@@ -79,6 +59,56 @@ func (s *Server) authenticate(c *gin.Context, a string, checkProvider bool) (Ses
 		}
 	}
 	return session, raw, true
+}
+
+func (s *Server) validateStoredSession(ctx context.Context, session Session, a string, checkProvider bool) error {
+	credential, err := open(s.cfg.Key, secretPurpose(a, session.Hash), session.Credential)
+	identitySession := session
+	if err == nil && !session.External && strings.HasPrefix(credential, cliParentPrefix) {
+		if a != "console" {
+			err = ErrIdentity
+		} else {
+			parent, parentErr := s.sessions.Session(ctx, strings.TrimPrefix(credential, cliParentPrefix), a)
+			if parentErr != nil && !errors.Is(parentErr, ErrMissing) {
+				return parentErr
+			}
+			if parentErr != nil || parent.Principal.ID != session.Principal.ID || session.Expires.After(parent.Expires) {
+				err = ErrIdentity
+			} else {
+				identitySession = parent
+				credential, err = open(s.cfg.Key, secretPurpose(a, parent.Hash), parent.Credential)
+				if err == nil && strings.HasPrefix(credential, cliParentPrefix) {
+					err = ErrIdentity
+				}
+			}
+		}
+	}
+	if err == nil && identitySession.External {
+		provider := s.providers[a]
+		if provider == nil || identitySession.Principal.Issuer != s.cfg.Logins[a].Issuer {
+			err = ErrIdentity
+		} else if checkProvider {
+			var subject string
+			subject, err = provider.Current(ctx, credential)
+			if err == nil && subject != identitySession.Principal.Subject {
+				err = ErrIdentity
+			}
+		}
+	} else if err == nil {
+		if s.cfg.Mode != "private" || !equal(credential, Hash(s.cfg.Logins[a].LocalToken)) {
+			err = ErrIdentity
+		}
+	}
+	if err == nil && a == "admin" && session.External && !s.cfg.Logins[a].Operators[session.Principal.Subject] {
+		err = ErrIdentity
+	}
+	if err != nil {
+		if !errors.Is(err, ErrProvider) {
+			return ErrIdentity
+		}
+		return err
+	}
+	return nil
 }
 func (s *Server) session(c *gin.Context, a string) {
 	session, raw, ok := s.authenticated(c, a)
@@ -158,13 +188,48 @@ func (s *Server) startLogin(c *gin.Context, a string) {
 		fail(c, 404, "not_found")
 		return
 	}
+	var input struct {
+		Native string `json:"native_authorization,omitempty"`
+	}
+	if !body(c, &input) {
+		return
+	}
+	flowPrefix := s.cookieName(a, "flow_")
+	pending := 0
+	for _, cookie := range c.Request.Cookies() {
+		if strings.HasPrefix(cookie.Name, flowPrefix) && hexSecret(strings.TrimPrefix(cookie.Name, flowPrefix)) {
+			pending++
+		}
+	}
+	if pending >= 8 {
+		fail(c, 429, "rate_limited")
+		return
+	}
+	if input.Native != "" {
+		if a != "console" || !nativeID(input.Native) {
+			fail(c, 400, "invalid_request")
+			return
+		}
+		v, err := s.native.NativeAuthorization(c.Request.Context(), input.Native, false)
+		if err == nil && (v.Origin != s.cfg.Logins[a].Origin || !v.Expires.After(time.Now()) || v.Status != "pending") {
+			err = ErrNativeExpired
+		}
+		if err != nil {
+			result(c, nil, err)
+			return
+		}
+	}
 	raw, state, nonce, verifier := Random(), Random(), Random(), Random()
 	location, err := p.Authorize(c.Request.Context(), state, nonce, verifier)
 	if err != nil {
 		result(c, nil, err)
 		return
 	}
-	encrypted, err := seal(s.cfg.Key, "flow:"+a+":"+Hash(raw), verifier)
+	savedVerifier := verifier
+	if input.Native != "" {
+		savedVerifier = "native:" + input.Native + ":" + verifier
+	}
+	encrypted, err := seal(s.cfg.Key, "flow:"+a+":"+Hash(raw), savedVerifier)
 	if err != nil {
 		result(c, nil, err)
 		return
@@ -173,7 +238,8 @@ func (s *Server) startLogin(c *gin.Context, a string) {
 		result(c, nil, err)
 		return
 	}
-	s.cookie(c, a, "flow", raw, 300)
+	// 标签页共享 Cookie；按 state 区分流程，避免后一次登录覆盖前一次。
+	s.cookie(c, a, "flow_"+state, raw, 300)
 	c.JSON(200, gin.H{"authorize_url": location})
 }
 func (s *Server) callback(c *gin.Context, a string) {
@@ -185,10 +251,20 @@ func (s *Server) callback(c *gin.Context, a string) {
 		fail(c, 404, "not_found")
 		return
 	}
-	raw, err := c.Cookie(s.cookieName(a, "flow"))
 	state := c.Query("state")
 	code := c.Query("code")
-	if err != nil || len(raw) != 64 || len(state) != 64 || len(code) < 1 || len(code) > 8192 || c.Query("error") != "" {
+	if !hexSecret(state) || (c.Query("error") == "" && (len(code) < 1 || len(code) > 8192)) {
+		fail(c, 401, "identity_rejected")
+		return
+	}
+	kind := "flow_" + state
+	raw, err := c.Cookie(s.cookieName(a, kind))
+	if errors.Is(err, http.ErrNoCookie) {
+		// 允许滚动部署前已发起的短期流程完成，仍核对原 state 和单次记录。
+		kind = "flow"
+		raw, err = c.Cookie(s.cookieName(a, kind))
+	}
+	if err != nil || !hexSecret(raw) {
 		fail(c, 401, "identity_rejected")
 		return
 	}
@@ -200,11 +276,25 @@ func (s *Server) callback(c *gin.Context, a string) {
 		result(c, nil, err)
 		return
 	}
-	s.cookie(c, a, "flow", "", -1)
+	s.cookie(c, a, kind, "", -1)
+	if c.Query("error") != "" {
+		fail(c, 401, "identity_rejected")
+		return
+	}
 	verifier, err := open(s.cfg.Key, "flow:"+a+":"+Hash(raw), flow.Verifier)
 	if err != nil {
 		result(c, nil, ErrIdentity)
 		return
+	}
+	nativeAuthorization := ""
+	if strings.HasPrefix(verifier, "native:") {
+		parts := strings.Split(verifier, ":")
+		if a != "console" || len(parts) != 3 || !nativeID(parts[1]) || !hexSecret(parts[2]) {
+			result(c, nil, ErrIdentity)
+			return
+		}
+		nativeAuthorization = parts[1]
+		verifier = parts[2]
 	}
 	id, err := p.Exchange(c.Request.Context(), code, verifier, flow.Nonce)
 	if err == nil {
@@ -217,7 +307,11 @@ func (s *Server) callback(c *gin.Context, a string) {
 		result(c, nil, err)
 		return
 	}
-	c.Redirect(http.StatusSeeOther, "/"+a+"/")
+	target := "/" + a + "/"
+	if nativeAuthorization != "" {
+		target += "?native=" + nativeAuthorization
+	}
+	c.Redirect(http.StatusSeeOther, target)
 }
 func (s *Server) revoke(p IdentityProvider, token string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

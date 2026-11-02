@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "contract_version": "0.1.0",
+  "mode": "local",
+  "authentication": "none",
+  "schema_resources": {"ota.schema.json": "verification", "ota-release.schema.json": "release"},
+  "operations": [
+    {
+      "operation_id": "ota.verify",
+      "command": ["ota", "verify"],
+      "flags": {
+        "--input": "local verification request JSON file",
+        "--image": "local firmware binary file"
+      },
+      "input_schema": "verification",
+      "output_schema": "verification#/$defs/report",
+      "effects": "read_only",
+      "network": false,
+      "exit_codes": {"0": "verified_snapshot_and_file", "2": "invalid_or_ineligible", "5": "component_or_io_failure"}
+    },
+    {
+      "operation_id": "ota.download",
+      "command": ["ota", "download"],
+      "flags": {"--input": "local verification request JSON file", "--output-dir": "new private staging directory"},
+      "optional_flags": {"--ca-file": "local trusted HTTPS CA PEM bundle"},
+      "input_schema": "verification",
+      "output_schema": "verification#/$defs/download-receipt",
+      "effects": "new_private_directory",
+      "network": "signed_https_origin",
+      "exit_codes": {"0": "downloaded_and_verified", "2": "invalid_or_ineligible", "4": "output_exists", "5": "network_component_or_io_failure"}
+    },
+    {
+      "operation_id": "ota.keygen",
+      "command": ["ota", "keygen"],
+      "flags": {"--output-dir": "new private directory for private.pk8 and public.json"},
+      "output_schema": "release#/$defs/key",
+      "effects": "new_private_directory",
+      "network": false,
+      "exit_codes": {"0": "generated_key_not_trust", "2": "invalid_arguments", "4": "output_exists", "5": "component_or_io_failure"}
+    },
+    {
+      "operation_id": "ota.sign",
+      "command": ["ota", "sign"],
+      "flags": {
+        "--input": "local release recipe JSON file",
+        "--trust": "independently confirmed device-firmware trust JSON file",
+        "--key": "owner-only dedicated Ed25519 PKCS8 DER file",
+        "--image": "actual local firmware binary file",
+        "--output-dir": "new private signed bundle directory"
+      },
+      "input_schema": "release",
+      "output_schema": "release#/$defs/receipt",
+      "effects": "new_private_directory",
+      "network": false,
+      "exit_codes": {"0": "signed_bundle_ready_not_published_or_installed", "2": "invalid_or_ineligible", "4": "output_exists", "5": "component_or_io_failure"}
+    },
+    {
+      "operation_id": "ota.publish",
+      "command": ["ota", "publish"],
+      "flags": {
+        "--bundle": "complete offline signed bundle directory",
+        "--trust": "independently confirmed device-firmware trust JSON file",
+        "--repository": "existing private local repository root",
+        "--base-url": "exact signed HTTPS base mapped to repository artifacts/"
+      },
+      "output_schema": "release#/$defs/publication",
+      "effects": "new_immutable_local_artifact",
+      "network": false,
+      "exit_codes": {"0": "stored_not_remote_published_or_installed", "2": "invalid_or_ineligible", "4": "artifact_exists", "5": "component_or_io_failure"}
+    }
+  ]
+}

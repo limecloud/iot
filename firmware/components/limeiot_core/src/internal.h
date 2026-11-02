@@ -1,6 +1,7 @@
 #ifndef LI_INTERNAL_H
 #define LI_INTERNAL_H
 #include "limeiot.h"
+#include "limeiot_ota_device.h"
 
 #define LI_REVISION_SIZE 72
 #define LI_TOPIC_SIZE 256
@@ -34,6 +35,7 @@ struct li_core {
     li_receipt_t receipts[LI_RECEIPT_SLOTS];
     bool occupied[LI_RECEIPT_SLOTS];
     bool unreported[LI_RECEIPT_SLOTS];
+    struct li_ota_device *ota;
 };
 
 bool li_identifier(const char *);
@@ -43,10 +45,17 @@ li_error_t li_codec_decode(const char *, size_t, li_down_t *);
 void li_codec_down_free(li_down_t *);
 char *li_codec_hello(li_core_t *);
 char *li_codec_snapshot(li_core_t *, int64_t, const li_value_t *);
+char *li_codec_device_info(li_core_t *, const li_device_info_t *);
 char *li_codec_event(li_core_t *, int64_t, const li_event_t *, int64_t);
 char *li_codec_result(li_core_t *, const li_receipt_t *);
 char *li_codec_receipt_encode(const li_receipt_t *);
 bool li_codec_receipt_decode(const char *, size_t, li_receipt_t *);
 void li_codec_free(char *);
 bool li_new_id(li_core_t *, char[LI_ID_SIZE]);
+li_error_t li_publish(li_core_t *, const char *, char *);
+char *li_codec_ota_result(li_core_t *, const li_ota_log_view_t *);
+li_error_t li_ota_device_receive(li_core_t *, const char *, size_t, bool query);
+li_error_t li_ota_device_reconcile(li_core_t *);
+bool li_ota_device_blocked(const li_core_t *);
+void li_ota_device_drop(li_core_t *);
 #endif

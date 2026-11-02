@@ -1,0 +1,1155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT local firmware trust and OTA task changes",
+  "$ref": "#/$defs/change",
+  "$defs": {
+    "token": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "artifact_id": {
+      "type": "string",
+      "pattern": "^artifact-[a-f0-9]{64}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "epoch": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "tokens": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/token"
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "product_id",
+        "architecture",
+        "chip",
+        "board",
+        "hardware_revisions"
+      ],
+      "properties": {
+        "product_id": {
+          "$ref": "#/$defs/token"
+        },
+        "architecture": {
+          "$ref": "#/$defs/token"
+        },
+        "chip": {
+          "$ref": "#/$defs/token"
+        },
+        "board": {
+          "$ref": "#/$defs/token"
+        },
+        "hardware_revisions": {
+          "$ref": "#/$defs/tokens"
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "model_revisions",
+        "minimum_bootloader_version",
+        "from_versions"
+      ],
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "model_revisions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/digest"
+          }
+        },
+        "minimum_bootloader_version": {
+          "$ref": "#/$defs/version"
+        },
+        "from_versions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/version"
+          }
+        }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "version",
+        "algorithm",
+        "signing_key_id",
+        "statement",
+        "signature"
+      ],
+      "properties": {
+        "schema": {
+          "const": "limeiot.ota-manifest"
+        },
+        "version": {
+          "const": 1
+        },
+        "algorithm": {
+          "const": "Ed25519"
+        },
+        "signing_key_id": {
+          "$ref": "#/$defs/digest"
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$"
+        },
+        "statement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "artifact_id",
+            "kind",
+            "target",
+            "version",
+            "compatibility",
+            "size_bytes",
+            "sha256",
+            "security_epoch",
+            "download",
+            "issued_at",
+            "expires_at"
+          ],
+          "properties": {
+            "artifact_id": {
+              "$ref": "#/$defs/artifact_id"
+            },
+            "kind": {
+              "const": "device-firmware"
+            },
+            "target": {
+              "$ref": "#/$defs/target"
+            },
+            "version": {
+              "$ref": "#/$defs/version"
+            },
+            "compatibility": {
+              "$ref": "#/$defs/compatibility"
+            },
+            "size_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 33554432
+            },
+            "sha256": {
+              "$ref": "#/$defs/digest"
+            },
+            "security_epoch": {
+              "$ref": "#/$defs/epoch"
+            },
+            "download": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "url",
+                "redirects"
+              ],
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                },
+                "redirects": {
+                  "const": false
+                }
+              }
+            },
+            "issued_at": {
+              "$ref": "#/$defs/timestamp"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/timestamp"
+            }
+          }
+        }
+      }
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "version",
+        "purpose",
+        "signing_key_id",
+        "public_key",
+        "product_ids",
+        "download_origins",
+        "minimum_security_epoch",
+        "minimum_battery_percent",
+        "revoked_artifact_ids",
+        "not_before",
+        "expires_at"
+      ],
+      "properties": {
+        "schema": {
+          "const": "limeiot.ota-trust"
+        },
+        "version": {
+          "const": 1
+        },
+        "purpose": {
+          "const": "device-firmware"
+        },
+        "signing_key_id": {
+          "$ref": "#/$defs/digest"
+        },
+        "public_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{43}=$"
+        },
+        "product_ids": {
+          "$ref": "#/$defs/tokens"
+        },
+        "download_origins": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1023
+          }
+        },
+        "minimum_security_epoch": {
+          "$ref": "#/$defs/epoch"
+        },
+        "minimum_battery_percent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "revoked_artifact_ids": {
+          "type": "array",
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/artifact_id"
+          }
+        },
+        "not_before": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/timestamp"
+        }
+      }
+    },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_id",
+        "product_id",
+        "architecture",
+        "chip",
+        "board",
+        "hardware_revision",
+        "firmware_version",
+        "bootloader_version",
+        "protocol_version",
+        "model_revision",
+        "security_epoch",
+        "ota_capacity_bytes",
+        "external_power",
+        "battery_percent",
+        "safe_to_update",
+        "pending_update"
+      ],
+      "properties": {
+        "device_id": {
+          "$ref": "#/$defs/token"
+        },
+        "product_id": {
+          "$ref": "#/$defs/token"
+        },
+        "architecture": {
+          "$ref": "#/$defs/token"
+        },
+        "chip": {
+          "$ref": "#/$defs/token"
+        },
+        "board": {
+          "$ref": "#/$defs/token"
+        },
+        "hardware_revision": {
+          "$ref": "#/$defs/token"
+        },
+        "firmware_version": {
+          "$ref": "#/$defs/version"
+        },
+        "bootloader_version": {
+          "$ref": "#/$defs/version"
+        },
+        "protocol_version": {
+          "const": 1
+        },
+        "model_revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "security_epoch": {
+          "$ref": "#/$defs/epoch"
+        },
+        "ota_capacity_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 33554432
+        },
+        "external_power": {
+          "type": "boolean"
+        },
+        "battery_percent": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "safe_to_update": {
+          "type": "boolean"
+        },
+        "pending_update": {
+          "type": "boolean"
+        }
+      }
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "firmware-trust-id": {
+      "type": "string",
+      "pattern": "^fwtrust-[a-f0-9]{64}$"
+    },
+    "task-id": {
+      "type": "string",
+      "pattern": "^ota-[A-Za-z0-9_-]{1,124}$"
+    },
+    "change": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "trust.add"
+            },
+            "trust": {
+              "$ref": "#/$defs/trust"
+            },
+            "expected_signing_key_id": {
+              "$ref": "#/$defs/digest"
+            }
+          },
+          "required": [
+            "type",
+            "trust",
+            "expected_signing_key_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "trust.revoke"
+            },
+            "trust_id": {
+              "$ref": "#/$defs/firmware-trust-id"
+            },
+            "expected_revision": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "type",
+            "trust_id",
+            "expected_revision"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "tasks.plan"
+            },
+            "device_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "trust_id": {
+              "$ref": "#/$defs/firmware-trust-id"
+            },
+            "manifest": {
+              "$ref": "#/$defs/manifest"
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "type",
+            "device_id",
+            "trust_id",
+            "manifest",
+            "expires_at"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "tasks.approve"
+            },
+            "task_id": {
+              "$ref": "#/$defs/task-id"
+            },
+            "expected_revision": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "type",
+            "task_id",
+            "expected_revision"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "tasks.cancel"
+            },
+            "task_id": {
+              "$ref": "#/$defs/task-id"
+            },
+            "expected_revision": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "type",
+            "task_id",
+            "expected_revision"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "tasks.execute"
+            },
+            "task_id": {
+              "$ref": "#/$defs/task-id"
+            },
+            "expected_revision": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "type",
+            "task_id",
+            "expected_revision"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "tasks.reconcile"
+            },
+            "task_id": {
+              "$ref": "#/$defs/task-id"
+            },
+            "expected_revision": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "type",
+            "task_id",
+            "expected_revision"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "device-info": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "$ref": "#/$defs/device"
+        },
+        "boot_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "session_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "received_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "device",
+        "boot_id",
+        "session_id",
+        "seq",
+        "received_at"
+      ],
+      "additionalProperties": false
+    },
+    "firmware-trust": {
+      "type": "object",
+      "properties": {
+        "trust_id": {
+          "$ref": "#/$defs/firmware-trust-id"
+        },
+        "revision": {
+          "$ref": "#/$defs/identifier"
+        },
+        "trust": {
+          "$ref": "#/$defs/trust"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "revoked_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "trust_id",
+        "revision",
+        "trust",
+        "active",
+        "created_at",
+        "revoked_at"
+      ],
+      "additionalProperties": false
+    },
+    "approval": {
+      "type": "object",
+      "properties": {
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "device_info": {
+          "$ref": "#/$defs/device-info"
+        }
+      },
+      "required": [
+        "approved_at",
+        "device_info"
+      ],
+      "additionalProperties": false
+    },
+    "task": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/task-id"
+        },
+        "revision": {
+          "$ref": "#/$defs/identifier"
+        },
+        "device_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "trust_id": {
+          "$ref": "#/$defs/firmware-trust-id"
+        },
+        "trust_revision": {
+          "$ref": "#/$defs/identifier"
+        },
+        "manifest": {
+          "$ref": "#/$defs/manifest"
+        },
+        "manifest_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "baseline": {
+          "$ref": "#/$defs/device-info"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "enum": [
+            "planned",
+            "approved",
+            "cancelled",
+            "expired",
+            "invalidated",
+            "executing",
+            "unknown",
+            "succeeded",
+            "failed"
+          ]
+        },
+        "approval": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/approval"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "execution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/execution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "task_id",
+        "revision",
+        "device_id",
+        "trust_id",
+        "trust_revision",
+        "manifest",
+        "manifest_digest",
+        "baseline",
+        "created_at",
+        "expires_at",
+        "status",
+        "approval",
+        "reason",
+        "execution"
+      ],
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "space_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/identifier"
+        },
+        "change": {
+          "$ref": "#/$defs/change"
+        }
+      },
+      "required": [
+        "space_id",
+        "idempotency_key",
+        "change"
+      ],
+      "additionalProperties": false
+    },
+    "resource": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "firmware_trust",
+            "ota_task"
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "revision": {
+          "$ref": "#/$defs/identifier"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "operation": {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "request": {
+          "$ref": "#/$defs/request"
+        },
+        "request_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "status": {
+          "enum": [
+            "applied",
+            "rejected",
+            "conflict"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resource": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/resource"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "operation_id",
+        "request",
+        "request_digest",
+        "status",
+        "reason",
+        "resource",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "install-body": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/task-id"
+        },
+        "execution_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "manifest_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "manifest": {
+          "$ref": "#/$defs/manifest"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "task_id",
+        "execution_id",
+        "manifest_digest",
+        "manifest",
+        "expires_at"
+      ],
+      "additionalProperties": false
+    },
+    "query-body": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/task-id"
+        },
+        "execution_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "request_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "manifest_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "task_id",
+        "execution_id",
+        "request_digest",
+        "manifest_digest",
+        "expires_at"
+      ],
+      "additionalProperties": false
+    },
+    "receipt-body": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/task-id"
+        },
+        "execution_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "request_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "manifest_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "status": {
+          "enum": [
+            "installing",
+            "awaiting_boot",
+            "succeeded",
+            "rejected",
+            "failed",
+            "rolled_back"
+          ]
+        },
+        "firmware_version": {
+          "$ref": "#/$defs/version"
+        },
+        "security_epoch": {
+          "$ref": "#/$defs/epoch"
+        },
+        "image_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "pending_update": {
+          "const": false
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "task_id",
+        "execution_id",
+        "request_digest",
+        "manifest_digest",
+        "status",
+        "firmware_version",
+        "security_epoch",
+        "image_sha256",
+        "pending_update",
+        "error"
+      ],
+      "additionalProperties": false
+    },
+    "install-envelope": {
+      "type": "object",
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "kind": {
+          "const": "ota_install"
+        },
+        "message_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "device_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "model_revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "boot_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "session_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "body": {
+          "$ref": "#/$defs/install-body"
+        }
+      },
+      "required": [
+        "v",
+        "kind",
+        "message_id",
+        "device_id",
+        "model_revision",
+        "boot_id",
+        "session_id",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "query-envelope": {
+      "type": "object",
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "kind": {
+          "const": "ota_query"
+        },
+        "message_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "device_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "model_revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "boot_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "session_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "body": {
+          "$ref": "#/$defs/query-body"
+        }
+      },
+      "required": [
+        "v",
+        "kind",
+        "message_id",
+        "device_id",
+        "model_revision",
+        "boot_id",
+        "session_id",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "receipt-envelope": {
+      "type": "object",
+      "properties": {
+        "v": {
+          "const": 1
+        },
+        "kind": {
+          "const": "ota_result"
+        },
+        "message_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "device_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "model_revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "boot_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "session_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "body": {
+          "$ref": "#/$defs/receipt-body"
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "v",
+        "kind",
+        "message_id",
+        "device_id",
+        "model_revision",
+        "boot_id",
+        "session_id",
+        "body",
+        "seq"
+      ],
+      "additionalProperties": false
+    },
+    "execution-evidence": {
+      "type": "object",
+      "properties": {
+        "envelope": {
+          "$ref": "#/$defs/receipt-envelope"
+        },
+        "received_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "envelope",
+        "received_at"
+      ],
+      "additionalProperties": false
+    },
+    "execution-query": {
+      "type": "object",
+      "properties": {
+        "envelope": {
+          "$ref": "#/$defs/query-envelope"
+        },
+        "prepared_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "attempted": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "envelope",
+        "prepared_at",
+        "attempted"
+      ],
+      "additionalProperties": false
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "envelope": {
+          "$ref": "#/$defs/install-envelope"
+        },
+        "request_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "prepared_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "attempted_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "receipt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/execution-evidence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/execution-query"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "query_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32
+        }
+      },
+      "required": [
+        "envelope",
+        "request_digest",
+        "prepared_at",
+        "attempted_at",
+        "receipt",
+        "query",
+        "query_count"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

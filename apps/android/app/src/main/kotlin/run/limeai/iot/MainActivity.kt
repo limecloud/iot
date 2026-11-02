@@ -2,7 +2,9 @@ package run.limeai.iot
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,6 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -42,36 +46,62 @@ private val Red11 = Color(0xFFCE2C31)
 private val colors = lightColorScheme(primary = Grass9, onPrimary = Sand1, primaryContainer = Grass3, onPrimaryContainer = Grass11, secondary = Grass11, onSecondary = Sand1, secondaryContainer = Grass3, onSecondaryContainer = Grass11, tertiary = Grass11, onTertiary = Sand1, tertiaryContainer = Grass3, onTertiaryContainer = Grass11, background = Sand1, onBackground = Sand12, surface = Sand1, onSurface = Sand12, surfaceVariant = Sand3, onSurfaceVariant = Sand11, outline = Sand7, outlineVariant = Sand7, error = Red11, onError = Sand1, errorContainer = Sand3, onErrorContainer = Red11, inverseSurface = Sand12, inverseOnSurface = Sand1, inversePrimary = Grass3, scrim = Sand12, surfaceTint = Grass9, surfaceDim = Sand3, surfaceBright = Sand1, surfaceContainerLowest = Sand1, surfaceContainerLow = Sand1, surfaceContainer = Sand3, surfaceContainerHigh = Sand3, surfaceContainerHighest = Sand3)
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); setContent { MaterialTheme(colorScheme = colors) { HomeApp() } } }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val transparent = android.graphics.Color.TRANSPARENT
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.light(transparent, transparent), navigationBarStyle = SystemBarStyle.light(transparent, transparent))
+        setContent { MaterialTheme(colorScheme = colors) { HomeApp() } }
+    }
 }
 @Composable private fun HomeApp(vm: HomeViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current.applicationContext
+    val preferences = remember(context) { context.getSharedPreferences("home", android.content.Context.MODE_PRIVATE) }
+    var cloud by remember { mutableStateOf(preferences.getString("connection.mode", "nas") == "cloud") }
+    fun selectCloud(value: Boolean) { cloud = value; preferences.edit().putString("connection.mode", if (value) "cloud" else "nas").apply() }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(vm, lifecycle) { lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { while (true) { vm.refresh(); delay(5000) } } }
-    if (!state.connected) { Login(state, vm); return }
+    LaunchedEffect(vm, lifecycle, cloud) {
+        if (cloud) return@LaunchedEffect
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            if (!vm.state.value.connected && vm.state.value.origin.isNotEmpty()) vm.connect(vm.state.value.origin, null, true)
+            while (true) { vm.refresh(); delay(5000) }
+        }
+    }
+    if (cloud) { CloudHome { selectCloud(false) }; return }
+    if (!state.connected) { Login(state, vm) { selectCloud(true) }; return }
     var tab by remember { mutableIntStateOf(0) }
-    Scaffold(bottomBar = { NavigationBar(containerColor = Sand1, tonalElevation = 0.dp) { listOf("设备", "自动化", "执行记录", "设置").forEachIndexed { index, label -> NavigationBarItem(selected = tab == index, onClick = { tab = index }, icon = {}, label = { Text(label, fontSize = 14.sp) }) } } }) { padding ->
+    var firmwareOpen by remember { mutableStateOf(false) }
+    val firmwareController = state.firmware
+    Scaffold(bottomBar = { NavigationBar(containerColor = Sand1, tonalElevation = 0.dp) { listOf("设备", "自动化", "执行记录", "设置").forEachIndexed { index, label -> NavigationBarItem(modifier = Modifier.testTag("nas-tab-$index"), selected = tab == index, onClick = { tab = index }, icon = {}, label = { Text(label, fontSize = 14.sp) }) } } }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            Text(listOf("我的设备", "自动化", "执行记录", "设置")[tab], fontSize = 28.sp)
+            Text(if (tab == 3 && firmwareOpen) "固件升级" else listOf("我的设备", "自动化", "执行记录", "设置")[tab], fontSize = 28.sp)
             if (!state.online) Text("连接中断，当前显示上次观测", fontSize = 12.sp, color = Amber11)
             if (state.message.isNotEmpty()) Text(state.message, fontSize = 14.sp, color = Amber11)
             when (tab) {
                 0 -> Devices(state, vm)
                 1 -> Automations(state, vm)
                 2 -> Activity(state)
-                else -> { Text(state.origin, fontSize = 14.sp); Text(if (state.online) "本地已连接" else "连接中断", fontSize = 14.sp); TextButton(onClick = vm::logout, enabled = !state.busy) { Text("退出登录") } }
+                else -> if (firmwareOpen && firmwareController != null) {
+                    TextButton(onClick = { firmwareOpen = false }) { Text("返回设置") }
+                    FirmwarePanel(firmwareController, state.snapshot?.devices.orEmpty(), state.online && !state.busy)
+                } else {
+                    Text(state.origin, fontSize = 14.sp); Text(if (state.online) "本地已连接" else "连接中断", fontSize = 14.sp)
+                    if (state.firmware != null) TextButton(onClick = { firmwareOpen = true }, modifier = Modifier.testTag("nas-firmware")) { Text("固件升级") }
+                    TextButton(onClick = vm::logout, enabled = !state.busy && state.firmware?.state?.value?.busy != true) { Text("退出登录") }
+                }
             }
             TextButton(onClick = vm::refreshNow) { Text("刷新") }
         }
     }
 }
-@Composable private fun Login(state: HomeState, vm: HomeViewModel) {
+@Composable private fun Login(state: HomeState, vm: HomeViewModel, onCloud: () -> Unit) {
     var origin by remember(state.origin) { mutableStateOf(state.origin) }
     var token by remember { mutableStateOf("") }
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        if (!state.busy) ConnectionOptions(false) { if (it) onCloud() }
         Spacer(Modifier.height(48.dp)); Text("LimeIoT", fontSize = 16.sp); Text("连接我的家", fontSize = 28.sp)
-        OutlinedTextField(origin, { origin = it }, label = { Text("家庭网关 HTTPS 地址") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(token, { token = it }, label = { Text("所有者凭据") }, visualTransformation = PasswordVisualTransformation(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(origin, { origin = it }, label = { Text("家庭网关 HTTPS 地址") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth().testTag("nas-origin"))
+        OutlinedTextField(token, { token = it }, label = { Text("所有者凭据") }, visualTransformation = PasswordVisualTransformation(), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth().testTag("nas-credential"))
         if (state.message.isNotEmpty()) Text(state.message, color = Amber11, fontSize = 14.sp)
         Button(onClick = { val input = token; token = ""; vm.connect(origin, input) }, enabled = !state.busy && token.isNotEmpty()) { Text(if (state.busy) "正在连接" else "连接家庭网关") }
     }
@@ -85,24 +115,27 @@ class MainActivity : ComponentActivity() {
                 Text(if (state.online && device.ready) "在线" else "离线", fontSize = 12.sp, color = if (device.ready && state.online) Grass11 else Amber11)
                 val latest = snapshot.commands.items.firstOrNull { it.request.deviceId == device.deviceId }
                 val disabled = !state.online || !device.ready || state.busy || state.pending.containsKey(device.deviceId) || latest?.status in listOf("accepted", "dispatched")
-                snapshot.models[device.modelRevision]?.services?.forEach { service -> service.properties.forEach { property ->
-                    val path = "${service.id}.${property.id}"
-                    val observed = device.reported[path]
-                    val name = when (property.id) { "power" -> "电源"; "brightness" -> "亮度"; else -> property.id }
-                    val writable = property.access.contains("write")
-                    when (property.schema.type) {
-                        "boolean" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(name, fontSize = 14.sp); Switch(checked = observed?.value?.toString() == "true", enabled = !disabled && writable && observed != null, onCheckedChange = { vm.control(device, path, JsonPrimitive(it)) }) }
-                        "integer" -> {
-                            var value by remember(device.deviceId, path) { mutableStateOf(observed?.value?.toString() ?: "0") }
-                            LaunchedEffect(observed?.value) { value = observed?.value?.toString() ?: "0" }
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                OutlinedTextField(value, { value = it }, label = { Text(name) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, enabled = !disabled && writable, modifier = Modifier.weight(1f))
-                                Button(onClick = { value.toIntOrNull()?.let { vm.control(device, path, JsonPrimitive(it)) } }, enabled = !disabled && writable && value.toIntOrNull()?.let { it >= (property.schema.minimum ?: Double.NEGATIVE_INFINITY) && it <= (property.schema.maximum ?: Double.POSITIVE_INFINITY) } == true) { Text("设置") }
+                snapshot.models[device.modelRevision]?.services?.forEach { service ->
+                    service.properties.forEach { property ->
+                        val path = "${service.id}.${property.id}"
+                        val observed = device.reported[path]
+                        val name = when (property.id) { "power" -> "电源"; "brightness" -> "亮度"; else -> property.id }
+                        val writable = property.access.contains("write")
+                        when (property.schema.type) {
+                            "boolean" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(name, fontSize = 14.sp); Switch(checked = observed?.value?.toString() == "true", enabled = !disabled && writable && observed != null, onCheckedChange = { vm.control(device, path, JsonPrimitive(it)) }) }
+                            "integer" -> {
+                                var value by remember(device.deviceId, path) { mutableStateOf(observed?.value?.toString() ?: "0") }
+                                LaunchedEffect(observed?.value) { value = observed?.value?.toString() ?: "0" }
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    OutlinedTextField(value, { value = it }, label = { Text(name) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, enabled = !disabled && writable, modifier = Modifier.weight(1f))
+                                    Button(onClick = { value.toIntOrNull()?.let { vm.control(device, path, JsonPrimitive(it)) } }, enabled = !disabled && writable && value.toIntOrNull()?.let { it >= (property.schema.minimum ?: Double.NEGATIVE_INFINITY) && it <= (property.schema.maximum ?: Double.POSITIVE_INFINITY) } == true) { Text("设置") }
+                                }
                             }
+                            else -> Text("$name：${observed?.value ?: "暂无状态"}", fontSize = 14.sp)
                         }
-                        else -> Text("$name：${observed?.value ?: "暂无状态"}", fontSize = 14.sp)
                     }
-                } }
+                    service.actions.forEach { action -> DeviceActions(action, "${service.id}.${action.id}", disabled) { vm.control(device, "${service.id}.${action.id}", it, "action.invoke") } }
+                }
                 if (state.pending.containsKey(device.deviceId)) TextButton(onClick = { vm.recover(device) }, enabled = state.online && !state.busy) { Text("查询原操作") }
                 latest?.let { Text("最近操作：${it.statusText}", fontSize = 12.sp, color = if (it.status == "unknown") Amber11 else Sand11) }
                 var expanded by remember { mutableStateOf(false) }
@@ -182,7 +215,7 @@ private data class Target(val device: String, val path: String, val label: Strin
     if (state.snapshot?.commands?.nextCursor != null) Text("最近 100 条设备操作", fontSize = 12.sp, color = Sand11)
     state.snapshot?.commands?.items?.forEach { command ->
         var expanded by remember(command.commandId) { mutableStateOf(false) }
-        Text("${if (command.request.operation.path == "light.power") "电源" else "亮度"} ${command.request.operation.value}", fontSize = 14.sp)
+        Text(command.request.operation.summary, fontSize = 14.sp)
         Text(command.statusText, fontSize = 12.sp, color = if (command.status == "unknown") Amber11 else Sand11)
         TextButton(onClick = { expanded = !expanded }) { Text("操作详情") }
         if (expanded) { Text(command.commandId, fontSize = 12.sp); command.runId?.let { Text("关联运行 $it", fontSize = 12.sp) }; command.error?.let { Text(it, fontSize = 12.sp) } }

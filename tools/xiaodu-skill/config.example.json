@@ -1,0 +1,13 @@
+{
+  "applicationId": "replace-with-dueros-application-id",
+  "host": "127.0.0.1",
+  "port": 18765,
+  "deferredReplies": true,
+  "provider": {
+    "baseUrl": "https://aishenji.top/",
+    "apiKey": "replace-with-your-private-key",
+    "model": "gpt-6.1-sol",
+    "timeoutMs": 20000,
+    "reasoningEffort": "none"
+  }
+}

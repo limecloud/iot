@@ -1,0 +1,193 @@
+{
+  "test_only": true,
+  "seed_hex": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+  "principal_id": "p-1111111111111111111111111111111111111111111111111111111111111111",
+  "trust": {
+    "version": 1,
+    "issuer": "https://control.example.test",
+    "publisher_id": "publisher-97a1627cfa4fe94e584cd43567f9604523964dd104b22d992b1605b742e6b873",
+    "namespace": "p-97a1627cfa4fe94e584cd43567f960",
+    "signing_key_id": "sha256:21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "public_key": "11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo="
+  },
+  "source_model": {
+    "schema_version": 1,
+    "model_id": "urn:p-97a1627cfa4fe94e584cd43567f960:model:lamp:1",
+    "model_version": "1.0.0",
+    "services": [
+      {
+        "id": "light",
+        "semantic_id": "urn:limeiot:service:light:1",
+        "properties": [
+          {
+            "id": "power",
+            "semantic_id": "urn:limeiot:property:power:1",
+            "schema": {
+              "type": "boolean",
+              "properties": {}
+            },
+            "access": [
+              "read",
+              "write",
+              "notify"
+            ],
+            "max_age_ms": 60000
+          },
+          {
+            "id": "brightness",
+            "semantic_id": "urn:limeiot:property:brightness:1",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "access": [
+              "read",
+              "write",
+              "notify"
+            ],
+            "unit": "percent",
+            "max_age_ms": 60000
+          }
+        ],
+        "actions": [],
+        "events": []
+      }
+    ]
+  },
+  "artifact": {
+    "version": 1,
+    "algorithm": "Ed25519",
+    "signing_key_id": "sha256:21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "statement": {
+      "issuer": "https://control.example.test",
+      "publisher_id": "publisher-97a1627cfa4fe94e584cd43567f9604523964dd104b22d992b1605b742e6b873",
+      "namespace": "p-97a1627cfa4fe94e584cd43567f960",
+      "product_id": "product-2222222222222222222222222222222222222222222222222222222222222222",
+      "release_id": "release-3333333333333333333333333333333333333333333333333333333333333333",
+      "source_revision": "prodrev-4444444444444444444444444444444444444444444444444444444444444444",
+      "source_document_digest": "sha256:669d235047591e35aede3e690f688669d863be5999a893b5bacf26466ca97b2a",
+      "visibility": "public",
+      "validator": "limeiot.model/1.0.0",
+      "compatibility_checker": "limeiot.model-compatibility/1.0.0",
+      "model_revision": "sha256:700f163408e782aa89fd91b234d89de4ed15ac679b3e9f9e61573059192dc3d6",
+      "model": {
+        "schema_version": 1,
+        "model_id": "urn:p-97a1627cfa4fe94e584cd43567f960:model:lamp:1",
+        "model_version": "1.0.0",
+        "services": [
+          {
+            "id": "light",
+            "semantic_id": "urn:limeiot:service:light:1",
+            "properties": [
+              {
+                "id": "power",
+                "semantic_id": "urn:limeiot:property:power:1",
+                "schema": {
+                  "type": "boolean"
+                },
+                "access": [
+                  "read",
+                  "write",
+                  "notify"
+                ],
+                "max_age_ms": 60000
+              },
+              {
+                "id": "brightness",
+                "semantic_id": "urn:limeiot:property:brightness:1",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "access": [
+                  "read",
+                  "write",
+                  "notify"
+                ],
+                "unit": "percent",
+                "max_age_ms": 60000
+              }
+            ],
+            "actions": [],
+            "events": []
+          }
+        ]
+      },
+      "baseline": null,
+      "published_at": "2026-01-01T00:00:00Z"
+    },
+    "signature": "aEj/WtLKv3/AO8YmYhEOdwPWEISGPtlz7bUMQaEX/JVAmxR60zGDb0Mi8Saoyv83/rK5CP4Jn/Z+SIgZVnb7DQ=="
+  },
+  "upgrade": {
+    "version": 1,
+    "algorithm": "Ed25519",
+    "signing_key_id": "sha256:21fe31dfa154a261626bf854046fd2271b7bed4b6abe45aa58877ef47f9721b9",
+    "statement": {
+      "issuer": "https://control.example.test",
+      "publisher_id": "publisher-97a1627cfa4fe94e584cd43567f9604523964dd104b22d992b1605b742e6b873",
+      "namespace": "p-97a1627cfa4fe94e584cd43567f960",
+      "product_id": "product-2222222222222222222222222222222222222222222222222222222222222222",
+      "release_id": "release-5555555555555555555555555555555555555555555555555555555555555555",
+      "source_revision": "prodrev-6666666666666666666666666666666666666666666666666666666666666666",
+      "source_document_digest": "sha256:5599ce66bd033c055a6798893cdf5c4458ccf6b1f2ecad597887eee26fb5a8f4",
+      "visibility": "public",
+      "validator": "limeiot.model/1.0.0",
+      "compatibility_checker": "limeiot.model-compatibility/1.0.0",
+      "model_revision": "sha256:5599ce66bd033c055a6798893cdf5c4458ccf6b1f2ecad597887eee26fb5a8f4",
+      "model": {
+        "schema_version": 1,
+        "model_id": "urn:p-97a1627cfa4fe94e584cd43567f960:model:lamp:1",
+        "model_version": "1.0.1",
+        "services": [
+          {
+            "id": "light",
+            "semantic_id": "urn:limeiot:service:light:1",
+            "properties": [
+              {
+                "id": "power",
+                "semantic_id": "urn:limeiot:property:power:1",
+                "schema": {
+                  "type": "boolean"
+                },
+                "access": [
+                  "read",
+                  "write",
+                  "notify"
+                ],
+                "max_age_ms": 60000
+              },
+              {
+                "id": "brightness",
+                "semantic_id": "urn:limeiot:property:brightness:1",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "access": [
+                  "read",
+                  "write",
+                  "notify"
+                ],
+                "unit": "percent",
+                "max_age_ms": 60000
+              }
+            ],
+            "actions": [],
+            "events": []
+          }
+        ]
+      },
+      "baseline": {
+        "release_id": "release-3333333333333333333333333333333333333333333333333333333333333333",
+        "model_revision": "sha256:700f163408e782aa89fd91b234d89de4ed15ac679b3e9f9e61573059192dc3d6",
+        "model_version": "1.0.0"
+      },
+      "published_at": "2026-01-02T00:00:00Z"
+    },
+    "signature": "6mal5Xr10Eoi6f2PMX8/z3Z4u4AWwwk718kzEtjRfhNdLJMcHJjaZGluj0ayg0iDRqqUGoln2D8iUDIrutY4BA=="
+  },
+  "signing_message_digest": "sha256:acf2d346860ca71f21e9c5c569f6f74a7d039df162de7c587119ecd92b8c5b2f"
+}

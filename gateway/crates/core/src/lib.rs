@@ -1,10 +1,21 @@
 //! 自有领域合同与确定性校验，不依赖 MQTT、HTTP 或数据库框架。
+pub mod command_receipts;
+pub mod compatibility;
 pub mod control;
+pub mod device_info;
 pub mod draft;
 pub mod engine;
+pub mod execution;
+pub mod execution_binding;
 pub mod model;
+pub mod model_registry;
+pub mod ota;
+pub mod ota_execution;
+pub mod ota_tasks;
 pub mod protocol;
+pub mod release;
 pub mod remote;
+pub mod validation;
 
 use serde::{Deserialize, Serialize};
 

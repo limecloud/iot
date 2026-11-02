@@ -43,11 +43,14 @@
       ],
       "properties": {
         "type": {
-          "const": "property.set"
+          "enum": [
+            "property.set",
+            "action.invoke"
+          ]
         },
         "path": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_-]*\\.[a-z][a-z0-9_-]*$"
+          "pattern": "^[a-z][a-z0-9_-]{0,63}\\.[a-z][a-z0-9_-]{0,63}$"
         },
         "value": {}
       },

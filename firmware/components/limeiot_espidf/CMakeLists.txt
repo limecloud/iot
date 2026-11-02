@@ -1,1 +1,1 @@
-idf_component_register(SRCS "src/espidf.c" INCLUDE_DIRS "include" REQUIRES limeiot_core PRIV_REQUIRES esp_timer esp_event esp_system esp_hw_support nvs_flash mbedtls espressif__mqtt)
+idf_component_register(SRCS "src/espidf.c" "src/ota_crypto.c" "src/ota_transfer.c" "src/image_health.c" INCLUDE_DIRS "include" REQUIRES limeiot_core PRIV_REQUIRES esp_http_client esp_timer esp_event esp_system esp_hw_support nvs_flash mbedtls app_update bootloader_support esp_partition espressif__mqtt espressif__libsodium)

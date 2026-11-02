@@ -150,6 +150,56 @@ func testOIDC(t *testing.T, store *mysqlstore.Store) {
 	key := make([]byte, 32)
 	rand.Read(key)
 	server, _ := newApp(t, store, control.Config{Mode: "cloud", Key: key, Logins: map[string]control.LoginConfig{"console": {Issuer: p.issuer(), ClientID: "console-client", ClientSecret: p.clients["console-client"]}, "admin": {Issuer: p.issuer(), ClientID: "admin-client", ClientSecret: p.clients["admin-client"], Operators: map[string]bool{"operator": true}}}})
+	t.Run("overlapping_browser_logins", func(t *testing.T) {
+		browser := newClient(t, server.URL)
+		first := browser.beginOIDC("console")
+		second := browser.beginOIDC("console")
+		firstCode, firstState := p.issue(t, first, "overlapping-developer", "")
+		secondCode, secondState := p.issue(t, second, "overlapping-developer", "")
+		firstCallback := "/api/console/v1/auth/callback?state=" + firstState + "&code=" + firstCode
+		secondCallback := "/api/console/v1/auth/callback?state=" + secondState + "&code=" + secondCode
+		// 同一浏览器的标签页共享 Cookie，两次授权必须都能独立完成。
+		browser.call("GET", firstCallback, nil, 303)
+		owner := browser.session("console")
+		attacker := newClient(t, server.URL)
+		attacker.call("GET", secondCallback, nil, 401)
+		browser.call("GET", secondCallback, nil, 303)
+		if browser.session("console").ID != owner.ID {
+			t.Fatal("overlapping login changed the principal")
+		}
+		browser.call("GET", firstCallback, nil, 401)
+		browser.call("GET", secondCallback, nil, 401)
+		browser.call("GET", "/api/admin/v1/auth/session", nil, 401)
+	})
+	t.Run("pending_flow_limit_and_cancellation", func(t *testing.T) {
+		browser := newClient(t, server.URL)
+		first := browser.beginOIDC("console")
+		for i := 1; i < 8; i++ {
+			browser.beginOIDC("console")
+		}
+		browser.call("POST", "/api/console/v1/auth/start", map[string]string{}, 429)
+		code, state := p.issue(t, first, "cancelled-developer", "")
+		browser.call("GET", "/api/console/v1/auth/callback?state="+state+"&error=access_denied", nil, 401)
+		browser.beginOIDC("console")
+		browser.call("GET", "/api/console/v1/auth/callback?state="+state+"&code="+code, nil, 401)
+		browser.call("GET", "/api/console/v1/auth/session", nil, 401)
+	})
+	t.Run("flow_started_before_deployment", func(t *testing.T) {
+		browser := newClient(t, server.URL)
+		location := browser.beginOIDC("console")
+		code, state := p.issue(t, location, "legacy-developer", "")
+		base, _ := url.Parse(server.URL)
+		for _, cookie := range browser.http.Jar.Cookies(base) {
+			if cookie.Name == "limeiot_console_flow_"+state {
+				browser.http.Jar.SetCookies(base, []*http.Cookie{
+					{Name: cookie.Name, Path: "/", MaxAge: -1},
+					{Name: "limeiot_console_flow", Value: cookie.Value, Path: "/"},
+				})
+			}
+		}
+		browser.call("GET", "/api/console/v1/auth/callback?state="+state+"&code="+code, nil, 303)
+		browser.session("console")
+	})
 	a := newClient(t, server.URL)
 	b := newClient(t, server.URL)
 	operator := newClient(t, server.URL)

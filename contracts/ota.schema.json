@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT offline device firmware verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifest", "trust", "device"],
+  "properties": {
+    "manifest": {"$ref": "#/$defs/manifest"},
+    "trust": {"$ref": "#/$defs/trust"},
+    "device": {"$ref": "#/$defs/device"}
+  },
+  "$defs": {
+    "token": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9_.-]+$"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "artifact_id": {"type": "string", "pattern": "^artifact-[a-f0-9]{64}$"},
+    "version": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "timestamp": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "epoch": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+    "tokens": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/token"}},
+    "target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["product_id", "architecture", "chip", "board", "hardware_revisions"],
+      "properties": {
+        "product_id": {"$ref": "#/$defs/token"}, "architecture": {"$ref": "#/$defs/token"},
+        "chip": {"$ref": "#/$defs/token"}, "board": {"$ref": "#/$defs/token"},
+        "hardware_revisions": {"$ref": "#/$defs/tokens"}
+      }
+    },
+    "compatibility": {
+      "type": "object", "additionalProperties": false,
+      "required": ["protocol_version", "model_revisions", "minimum_bootloader_version", "from_versions"],
+      "properties": {
+        "protocol_version": {"const": 1},
+        "model_revisions": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/digest"}},
+        "minimum_bootloader_version": {"$ref": "#/$defs/version"},
+        "from_versions": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/version"}}
+      }
+    },
+    "manifest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "version", "algorithm", "signing_key_id", "statement", "signature"],
+      "properties": {
+        "schema": {"const": "limeiot.ota-manifest"}, "version": {"const": 1}, "algorithm": {"const": "Ed25519"},
+        "signing_key_id": {"$ref": "#/$defs/digest"},
+        "signature": {"type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$"},
+        "statement": {
+          "type": "object", "additionalProperties": false,
+          "required": ["artifact_id", "kind", "target", "version", "compatibility", "size_bytes", "sha256", "security_epoch", "download", "issued_at", "expires_at"],
+          "properties": {
+            "artifact_id": {"$ref": "#/$defs/artifact_id"}, "kind": {"const": "device-firmware"},
+            "target": {"$ref": "#/$defs/target"}, "version": {"$ref": "#/$defs/version"},
+            "compatibility": {"$ref": "#/$defs/compatibility"},
+            "size_bytes": {"type": "integer", "minimum": 1, "maximum": 33554432},
+            "sha256": {"$ref": "#/$defs/digest"}, "security_epoch": {"$ref": "#/$defs/epoch"},
+            "download": {
+              "type": "object", "additionalProperties": false, "required": ["url", "redirects"],
+              "properties": {"url": {"type": "string", "minLength": 1, "maxLength": 1024}, "redirects": {"const": false}}
+            },
+            "issued_at": {"$ref": "#/$defs/timestamp"}, "expires_at": {"$ref": "#/$defs/timestamp"}
+          }
+        }
+      }
+    },
+    "trust": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "version", "purpose", "signing_key_id", "public_key", "product_ids", "download_origins", "minimum_security_epoch", "minimum_battery_percent", "revoked_artifact_ids", "not_before", "expires_at"],
+      "properties": {
+        "schema": {"const": "limeiot.ota-trust"}, "version": {"const": 1}, "purpose": {"const": "device-firmware"},
+        "signing_key_id": {"$ref": "#/$defs/digest"}, "public_key": {"type": "string", "pattern": "^[A-Za-z0-9+/]{43}=$"},
+        "product_ids": {"$ref": "#/$defs/tokens"},
+        "download_origins": {"type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1023}},
+        "minimum_security_epoch": {"$ref": "#/$defs/epoch"},
+        "minimum_battery_percent": {"type": "integer", "minimum": 0, "maximum": 100},
+        "revoked_artifact_ids": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/artifact_id"}},
+        "not_before": {"$ref": "#/$defs/timestamp"}, "expires_at": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "device": {
+      "type": "object", "additionalProperties": false,
+      "required": ["device_id", "product_id", "architecture", "chip", "board", "hardware_revision", "firmware_version", "bootloader_version", "protocol_version", "model_revision", "security_epoch", "ota_capacity_bytes", "external_power", "battery_percent", "safe_to_update", "pending_update"],
+      "properties": {
+        "device_id": {"$ref": "#/$defs/token"}, "product_id": {"$ref": "#/$defs/token"},
+        "architecture": {"$ref": "#/$defs/token"}, "chip": {"$ref": "#/$defs/token"},
+        "board": {"$ref": "#/$defs/token"}, "hardware_revision": {"$ref": "#/$defs/token"},
+        "firmware_version": {"$ref": "#/$defs/version"}, "bootloader_version": {"$ref": "#/$defs/version"},
+        "protocol_version": {"const": 1}, "model_revision": {"$ref": "#/$defs/digest"},
+        "security_epoch": {"$ref": "#/$defs/epoch"},
+        "ota_capacity_bytes": {"type": "integer", "minimum": 1, "maximum": 33554432},
+        "external_power": {"type": "boolean"}, "battery_percent": {"type": ["integer", "null"], "minimum": 0, "maximum": 100},
+        "safe_to_update": {"type": "boolean"}, "pending_update": {"type": "boolean"}
+      }
+    },
+    "download-receipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "downloader", "status", "request_digest", "artifact_id", "bytes_received", "verification", "error"],
+      "properties": {
+        "version": {"const": 1}, "downloader": {"const": "limeiot.ota-download/1.0.0"},
+        "status": {"enum": ["started", "verified", "failed"]},
+        "request_digest": {"$ref": "#/$defs/digest"}, "artifact_id": {"$ref": "#/$defs/artifact_id"},
+        "bytes_received": {"type": "integer", "minimum": 0, "maximum": 33554432},
+        "verification": {"anyOf": [{"$ref": "#/$defs/report"}, {"type": "null"}]},
+        "error": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9_]{0,63}$"}
+      }
+    },
+    "report": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "verifier", "valid", "request_digest", "image_size_bytes", "image_sha256", "issues"],
+      "properties": {
+        "version": {"const": 1}, "verifier": {"const": "limeiot.ota/1.0.0"}, "valid": {"type": "boolean"},
+        "request_digest": {"type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$"},
+        "image_size_bytes": {"type": ["integer", "null"], "minimum": 1, "maximum": 33554432},
+        "image_sha256": {"type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$"},
+        "issues": {
+          "type": "array", "maxItems": 32,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["path", "code"],
+            "properties": {"path": {"type": "string", "maxLength": 1024}, "code": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"}}
+          }
+        }
+      }
+    }
+  }
+}

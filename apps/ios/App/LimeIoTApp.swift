@@ -2,16 +2,19 @@ import SwiftUI
 
 @main struct LimeIoTApp: App {
     @StateObject private var home = HomeStore()
+    @StateObject private var cloud = CloudStore()
+    @AppStorage("connection.mode") private var connection = "nas"
     @Environment(\.scenePhase) private var scenePhase
     var body: some Scene {
         WindowGroup {
-            RootView().environmentObject(home).tint(Palette.grass9)
-                .task { if !home.endpoint.isEmpty { await home.connect(token: nil, restore: true) } }
-                .task(id: scenePhase) {
+            RootView().environmentObject(home).environmentObject(cloud).tint(Palette.grass9)
+                .task(id: connection + (scenePhase == .active ? ":active" : ":paused")) {
                     guard scenePhase == .active else { return }
+                    if connection == "cloud" { await cloud.runForeground(); return }
+                    if !home.connected && !home.endpoint.isEmpty { await home.connect(token: nil, restore: true) }
                     while !Task.isCancelled {
                         await home.refresh()
-                        try? await Task.sleep(for: .seconds(5))
+                        do { try await Task.sleep(for: .seconds(5)) } catch { break }
                     }
                 }
         }

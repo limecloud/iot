@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "project": "LimeIoT",
-  "updated_at": "2026-11-01",
+  "updated_at": "2026-11-02",
   "path_base": "repository_root",
   "scope": "design_traceability",
   "canonical_documents": {
@@ -12,10 +12,10 @@
   },
   "maintenance": "本文件为源文档的导航投影；编号、标题或验收映射变化时同步。正文与判断规则以 canonical_source 和 verification_source 为准。",
   "counts": {
-    "functional_requirement": 31,
+    "functional_requirement": 33,
     "nonfunctional_requirement": 7,
-    "user_story": 24,
-    "use_case": 22
+    "user_story": 26,
+    "use_case": 24
   },
   "items": [
     {
@@ -1878,6 +1878,125 @@
       },
       "implementation_status": "planned",
       "requirement_ids": ["FR-10", "FR-11", "FR-16", "FR-19", "FR-31"]
+    },
+    {
+      "id": "FR-32",
+      "kind": "functional_requirement",
+      "title": "电视设备终端",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-32"
+        }
+      },
+      "implementation_status": "planned",
+      "story_ids": [
+        "US-25"
+      ],
+      "use_case_ids": [
+        "UC-23"
+      ],
+      "design_document_ids": [
+        "DOC-03",
+        "DOC-04",
+        "DOC-05",
+        "DOC-07",
+        "DOC-12",
+        "DOC-15",
+        "DOC-16",
+        "DOC-21",
+        "DOC-34"
+      ],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "FR-32"
+        }
+      }
+    },
+    {
+      "id": "US-25",
+      "kind": "user_story",
+      "title": "作为家庭成员，我希望通过手机或电脑遥控获准电视并参与家庭联动",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {
+          "type": "table_row_id",
+          "value": "US-25"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-05",
+        "FR-08",
+        "FR-10",
+        "FR-12",
+        "FR-32"
+      ]
+    },
+    {
+      "id": "UC-23",
+      "kind": "use_case",
+      "title": "网页遥控电视终端",
+      "canonical_source": {
+        "path": "docs/17-用户故事与用例.md",
+        "locator": {
+          "type": "heading",
+          "value": "10. UC-23：网页遥控电视终端"
+        }
+      },
+      "implementation_status": "planned",
+      "requirement_ids": [
+        "FR-01",
+        "FR-05",
+        "FR-08",
+        "FR-10",
+        "FR-12",
+        "FR-13",
+        "FR-20",
+        "FR-32"
+      ]
+    },
+    {
+      "id": "FR-33",
+      "kind": "functional_requirement",
+      "title": "可选音频播放终端",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {"type": "table_row_id", "value": "FR-33"}
+      },
+      "implementation_status": "planned",
+      "story_ids": ["US-26"],
+      "use_case_ids": ["UC-24"],
+      "design_document_ids": ["DOC-04", "DOC-05", "DOC-07", "DOC-12", "DOC-16", "DOC-33", "DOC-36"],
+      "verification_source": {
+        "path": "docs/23-测试策略与验收矩阵.md",
+        "locator": {"type": "table_row_id", "value": "FR-33"}
+      }
+    },
+    {
+      "id": "US-26",
+      "kind": "user_story",
+      "title": "作为家庭成员，我希望将已有网络音箱用作 LimeIoT 播放端并按需接入外部采音",
+      "canonical_source": {
+        "path": "docs/01-产品需求PRD.md",
+        "locator": {"type": "table_row_id", "value": "US-26"}
+      },
+      "implementation_status": "planned",
+      "requirement_ids": ["FR-05", "FR-08", "FR-10", "FR-20", "FR-25", "FR-29", "FR-33"]
+    },
+    {
+      "id": "UC-24",
+      "kind": "use_case",
+      "title": "存量音箱播报与可选语音对话",
+      "canonical_source": {
+        "path": "docs/17-用户故事与用例.md",
+        "locator": {"type": "heading", "value": "11. UC-24：存量音箱播报与可选语音对话"}
+      },
+      "implementation_status": "planned",
+      "requirement_ids": ["FR-05", "FR-08", "FR-10", "FR-20", "FR-25", "FR-29", "FR-33"]
     }
   ]
 }

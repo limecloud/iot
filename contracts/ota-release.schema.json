@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT offline firmware release recipe",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "image_format", "target", "firmware_version", "compatibility", "security_epoch", "download_base_url", "issued_at", "expires_at"],
+  "properties": {
+    "schema": {"const": "limeiot.ota-release"},
+    "version": {"const": 1},
+    "image_format": {"const": "esp32c3"},
+    "target": {"$ref": "ota.schema.json#/$defs/target"},
+    "firmware_version": {"$ref": "ota.schema.json#/$defs/version"},
+    "compatibility": {"$ref": "ota.schema.json#/$defs/compatibility"},
+    "security_epoch": {"$ref": "ota.schema.json#/$defs/epoch"},
+    "download_base_url": {"type": "string", "minLength": 9, "maxLength": 938, "pattern": "^https://.+/$"},
+    "issued_at": {"$ref": "ota.schema.json#/$defs/timestamp"},
+    "expires_at": {"$ref": "ota.schema.json#/$defs/timestamp"}
+  },
+  "$defs": {
+    "publication": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "publisher", "status", "artifact_id", "manifest_digest", "image_size_bytes", "image_sha256", "download_url"],
+      "properties": {
+        "version": {"const": 1}, "publisher": {"const": "limeiot.ota-publish/1.0.0"}, "status": {"const": "stored"},
+        "artifact_id": {"$ref": "ota.schema.json#/$defs/artifact_id"},
+        "manifest_digest": {"$ref": "ota.schema.json#/$defs/digest"},
+        "image_size_bytes": {"type": "integer", "minimum": 1, "maximum": 33554432},
+        "image_sha256": {"$ref": "ota.schema.json#/$defs/digest"},
+        "download_url": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^https://"}
+      }
+    },
+    "key": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "version", "purpose", "algorithm", "signing_key_id", "public_key"],
+      "properties": {
+        "schema": {"const": "limeiot.ota-key"}, "version": {"const": 1},
+        "purpose": {"const": "device-firmware"}, "algorithm": {"const": "Ed25519"},
+        "signing_key_id": {"$ref": "ota.schema.json#/$defs/digest"},
+        "public_key": {"type": "string", "pattern": "^[A-Za-z0-9+/]{43}=$"}
+      }
+    },
+    "receipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "signer", "status", "artifact_id", "image_format", "project_name", "recipe_digest", "manifest_digest", "signing_key_id", "image_size_bytes", "image_sha256"],
+      "properties": {
+        "version": {"const": 1}, "signer": {"const": "limeiot.ota-sign/1.0.0"}, "status": {"const": "ready"},
+        "image_format": {"const": "esp32c3"}, "project_name": {"type": "string", "minLength": 1, "maxLength": 31, "pattern": "^[A-Za-z0-9_.-]+$"},
+        "artifact_id": {"$ref": "ota.schema.json#/$defs/artifact_id"},
+        "recipe_digest": {"$ref": "ota.schema.json#/$defs/digest"},
+        "manifest_digest": {"$ref": "ota.schema.json#/$defs/digest"},
+        "signing_key_id": {"$ref": "ota.schema.json#/$defs/digest"},
+        "image_size_bytes": {"type": "integer", "minimum": 1, "maximum": 33554432},
+        "image_sha256": {"$ref": "ota.schema.json#/$defs/digest"}
+      }
+    }
+  }
+}

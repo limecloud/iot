@@ -69,10 +69,14 @@ type ConnectionView struct {
 }
 
 type machinePeer struct {
-	conn      *websocket.Conn
-	binding   Gateway
-	connected time.Time
-	lastSeen  time.Time
+	conn         *websocket.Conn
+	binding      Gateway
+	connected    time.Time
+	lastSeen     time.Time
+	connectionID string
+	ready        bool
+	done         chan struct{}
+	pending      map[string]machinePending
 }
 
 // 每个进程只维护当前传输连接；业务执行事实不保存在连接表中。
@@ -127,6 +131,7 @@ func (h *machineHub) remove(conn *websocket.Conn, p *machinePeer) {
 	delete(h.all, conn)
 	if p != nil && h.peers[p.binding.ID] == p {
 		delete(h.peers, p.binding.ID)
+		close(p.done)
 	}
 }
 
@@ -146,7 +151,7 @@ func (h *machineHub) view(b Gateway) ConnectionView {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	p := h.peers[b.ID]
-	if !b.Active || p == nil || p.binding.Revision != b.Revision {
+	if !b.Active || p == nil || !p.ready || p.binding.Revision != b.Revision {
 		return ConnectionView{Connected: false}
 	}
 	connected, seen := p.connected, p.lastSeen
@@ -173,6 +178,9 @@ func machineWrite(ctx context.Context, conn *websocket.Conn, value any) error {
 	raw, err := json.Marshal(value)
 	if err != nil {
 		return err
+	}
+	if len(raw) > 16384 {
+		return ErrCapacity
 	}
 	writeCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
@@ -236,7 +244,7 @@ func (s *Server) connectMachine(c *gin.Context) {
 		return
 	}
 	now := time.Now().UTC()
-	peer = &machinePeer{conn: conn, binding: binding, connected: now, lastSeen: now}
+	peer = &machinePeer{conn: conn, binding: binding, connected: now, lastSeen: now, connectionID: challenge.ConnectionID, done: make(chan struct{}), pending: map[string]machinePending{}}
 	if !s.relay.register(peer) {
 		_ = machineWrite(ctx, conn, gin.H{"type": "error", "code": "machine_already_connected"})
 		return
@@ -245,17 +253,27 @@ func (s *Server) connectMachine(c *gin.Context) {
 		return
 	}
 	cancel()
+	s.relay.mu.Lock()
+	peer.ready = true
+	s.relay.mu.Unlock()
 	var sequence uint64
 	for {
-		var heartbeat struct {
-			Type         string `json:"type"`
-			ConnectionID string `json:"connection_id"`
-			Sequence     uint64 `json:"sequence"`
+		var frame struct {
+			Type         string          `json:"type"`
+			ConnectionID string          `json:"connection_id"`
+			Sequence     uint64          `json:"sequence"`
+			RequestID    string          `json:"request_id,omitempty"`
+			Revision     string          `json:"binding_revision,omitempty"`
+			Result       json.RawMessage `json:"result,omitempty"`
+			Error        *string         `json:"error,omitempty"`
 		}
-		readCtx, done := context.WithTimeout(connectionCtx, 12*time.Second)
-		err = machineRead(readCtx, conn, &heartbeat)
+		s.relay.mu.Lock()
+		deadline := peer.lastSeen.Add(12 * time.Second)
+		s.relay.mu.Unlock()
+		readCtx, done := context.WithDeadline(connectionCtx, deadline)
+		err = machineRead(readCtx, conn, &frame)
 		done()
-		if err != nil || heartbeat.Type != "heartbeat" || heartbeat.ConnectionID != challenge.ConnectionID || heartbeat.Sequence != sequence+1 {
+		if err != nil || frame.ConnectionID != challenge.ConnectionID {
 			return
 		}
 		checkCtx, done := context.WithTimeout(connectionCtx, 2*time.Second)
@@ -264,7 +282,25 @@ func (s *Server) connectMachine(c *gin.Context) {
 		if checkErr != nil || !sameMachineBinding(current, binding) {
 			return
 		}
-		sequence = heartbeat.Sequence
+		if frame.Type == "result" {
+			if frame.Revision != binding.Revision || !identifier(frame.RequestID) || frame.Sequence != 0 {
+				return
+			}
+			s.relay.mu.Lock()
+			pending, exists := peer.pending[frame.RequestID]
+			s.relay.mu.Unlock()
+			if exists {
+				select {
+				case pending.result <- machineResult{Type: frame.Type, ConnectionID: frame.ConnectionID, RequestID: frame.RequestID, Revision: frame.Revision, Result: frame.Result, Error: frame.Error}:
+				default:
+				}
+			}
+			continue
+		}
+		if frame.Type != "heartbeat" || frame.Sequence != sequence+1 || frame.RequestID != "" || frame.Revision != "" || len(frame.Result) > 0 || frame.Error != nil {
+			return
+		}
+		sequence = frame.Sequence
 		s.relay.mu.Lock()
 		peer.lastSeen = time.Now().UTC()
 		s.relay.mu.Unlock()

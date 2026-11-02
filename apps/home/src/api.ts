@@ -1,13 +1,14 @@
 export interface Session { authenticated: true; csrf_token: string; expires_at: string }
 export interface Observation { value: unknown; observed_at: string; quality: string; source: string }
-export interface Device { device_id: string; model_revision: string; ready: boolean; last_seen: string | null; reported: Record<string, Observation> }
+export interface Device { device_id: string; model_revision: string; ready: boolean; last_seen: string | null; reported: Record<string, Observation>; action_availability?: Record<string, boolean> }
 export interface Property { id: string; semantic_id: string; schema: { type: string; minimum?: number; maximum?: number }; access: string[] }
-export interface Schema { type: string; minimum?: number; properties?: Record<string, Schema>; required?: string[] }
-export interface Model { model_id: string; services: { id: string; properties: Property[]; events: { id: string; schema: Schema }[] }[] }
+export interface Schema { type: string; minimum?: number; maximum?: number; enum?: unknown[]; properties?: Record<string, Schema>; required?: string[] }
+export interface Action { id: string; semantic_id: string; input: Schema; output: Schema; idempotent: boolean; risk: 'low' | 'medium' | 'high'; completion: 'submitted' | 'observed' }
+export interface Model { model_id: string; services: { id: string; properties: Property[]; actions?: Action[]; events: { id: string; schema: Schema }[] }[] }
 export interface Rule { version: number; id: string; trigger: { device: string; event: string }; conditions: unknown[]; actions: { device: string; set: { path: string; value: unknown } }[]; cooldown_ms: number }
 export interface Inference { configured: boolean; provider: string; model: string | null }
 export interface RuleDraft { draft_id: string; status: 'running' | 'completed' | 'rejected' | 'unknown' | 'expired'; request: { prompt: string; expires_at: string }; rule: Rule | null; rule_revision: string | null; error: string | null }
-export interface Command { command_id: string; status: string; request: { device_id: string; operation: { path: string; value: unknown }; expires_at: string }; error: string | null; run_id: string | null; evidence: { type?: string } | null }
+export interface Command { command_id: string; status: string; request: { device_id: string; operation: { type?: string; path: string; value: unknown }; expires_at: string }; error: string | null; run_id: string | null; evidence: { type?: string; completion?: string } | null }
 export interface Deployment { revision: string; rule: Rule; last_run: string | null }
 export interface Run { run_id: string; rule_revision: string; event_id: string; command_ids: string[]; error: string | null }
 export interface List<T> { items: T[]; next_cursor: string | null }
@@ -49,6 +50,7 @@ const messages: Record<string, string> = {
   control_not_found: '控制面未找到原绑定，请核实原配对', control_secret_invalid: '无法读取配对材料，请恢复原网关密钥',
   unauthenticated: '登录凭据无效或会话已过期', forbidden: '当前请求未获授权，请重新登录',
   rate_limited: '尝试次数过多，请一分钟后重试', device_offline: '设备已离线',
+  device_queue_full: '设备还有操作正在处理，请稍后重试',
   invalid_rule: '规则格式不正确', invalid_value: '数值不符合设备要求',
   device_not_found: '规则引用的设备不存在', invalid_prompt: '请填写 512 字以内的联动需求', capacity_exceeded: '网关记录容量已满',
   unsupported_capability: '当前版本不支持此能力', event_gap: '记录已更新，正在重新获取',
@@ -67,10 +69,25 @@ export function errorText(error: unknown) {
   return '无法连接家庭网关，请检查本地网络';
 }
 export const statusText: Record<string, string> = { accepted: '已受理', dispatched: '已发送', confirmed: '已确认', failed: '执行失败', unknown: '结果未知', expired: '已过期', rejected: '已拒绝' };
+export const remoteKeyLabels: Record<string, string> = { up: '上', down: '下', left: '左', right: '右', select: '确认', back: '返回', home: '主页', menu: '菜单', play_pause: '播放 / 暂停' };
+export function commandStatus(command: Command) {
+  if (command.status === 'confirmed' && command.evidence?.type === 'action_result') return command.evidence.completion === 'submitted' ? '输入已提交' : command.evidence.completion === 'observed' ? '效果已观测' : '完成范围未知';
+  return statusText[command.status] ?? command.status;
+}
+export function commandSummary(command: Command) {
+  const { type, path, value } = command.request.operation;
+  const input = value !== null && typeof value === 'object' ? value as Record<string, unknown> : {};
+  if (type === 'action.invoke' && path === 'remote.press' && typeof input.key === 'string') return `遥控：${remoteKeyLabels[input.key] ?? input.key}`;
+  if (type === 'action.invoke' && path === 'apps.launch' && typeof input.application_id === 'string') return `启动应用：${input.application_id}`;
+  if (path === 'light.power') return value ? '打开' : '关闭';
+  const label = ({ 'light.brightness': '亮度', 'audio.volume': '音量', 'audio.muted': '静音' } as Record<string, string>)[path] ?? path;
+  return `${label} ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`;
+}
 export function deviceName(device: Device, models: Record<string, Model>) {
   const model = models[device.model_revision];
   if (model?.services.some(service => service.id === 'light')) return '环境灯';
   if (model?.services.some(service => service.id === 'button')) return '无线按钮';
+  if (model?.services.some(service => service.actions?.some(action => action.semantic_id === 'urn:limeiot:action:remote-press:1'))) return '电视';
   return device.device_id;
 }
 export function when(value: string | null) { return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '尚无记录'; }

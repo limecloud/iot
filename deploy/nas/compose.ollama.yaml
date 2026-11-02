@@ -1,0 +1,45 @@
+# 可选同机CPU推理服务；使用预先准备的模型缓存，不发布端口或赋予设备权限。
+services:
+  gateway:
+    environment:
+      LIMEIOT_OLLAMA_MODEL: ${LIMEIOT_OLLAMA_MODEL:?}
+      LIMEIOT_OLLAMA_URL: http://ollama:11434
+      LIMEIOT_OLLAMA_CA_FILE: ""
+    networks:
+      inference: {}
+  ollama:
+    image: ${LIMEIOT_OLLAMA_IMAGE:-ollama/ollama:0.40.13}
+    user: "${LIMEIOT_UID:?}:${LIMEIOT_GID:?}"
+    command: [serve]
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ["/tmp:mode=1777,size=64m"]
+    cpus: ${LIMEIOT_OLLAMA_CPUS:-2}
+    mem_limit: ${LIMEIOT_OLLAMA_MEMORY_LIMIT:-4g}
+    environment:
+      HOME: /tmp/ollama
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_MODELS: /models
+      OLLAMA_NO_CLOUD: "1"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_MAX_QUEUE: "1"
+      OLLAMA_CONTEXT_LENGTH: "4096"
+    volumes:
+      - type: bind
+        source: ${LIMEIOT_OLLAMA_MODELS_DIR:?}
+        target: /models
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: [CMD, ollama, list]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 6
+    networks: [inference]
+networks:
+  inference:
+    internal: true

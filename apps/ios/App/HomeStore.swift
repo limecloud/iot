@@ -8,6 +8,7 @@ import LimeIoTKit
     @Published private(set) var online = false
     @Published private(set) var busy = false
     @Published private(set) var snapshot: Snapshot?
+    @Published private(set) var firmware: FirmwareStore?
     @Published private(set) var pending: [String: CommandIntent] = [:]
     @Published var message = ""
     @Published var draftPrompt = "" { didSet { if oldValue != draftPrompt { draftProof = nil } } }
@@ -22,12 +23,13 @@ import LimeIoTKit
     private var generation = 0
 
     func connect(token: String?, restore: Bool = false) async {
-        guard !busy, !draftBusy else { return }
+        guard !busy, !draftBusy, firmware?.busy != true else { return }
         busy = true; message = ""; defer { busy = false }
         do {
             let origin = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
             let next = try GatewayClient(endpoint: origin, store: vault)
             if restore { try await next.restore() } else { try await next.login(token: token ?? "") }
+            firmware?.close(); firmware = nil
             client = next; endpoint = origin; generation += 1
             if let data = try await vault.load(origin: origin + "#pending") { pending = try JSONDecoder().decode([String: CommandIntent].self, from: data) } else { pending = [:] }
             draftReference = try await vault.load(origin: origin + "#draft").map { try JSONDecoder().decode(DraftReference.self, from: $0) }
@@ -46,17 +48,18 @@ import LimeIoTKit
             let next = try await client.snapshot()
             guard current == generation else { return }
             snapshot = next; online = true; message = ""
+            if firmware == nil { firmware = FirmwareStore(client: OtaClient(gateway: client, store: vault), space: next.space, authFailure: { [weak self] in self?.report($0) }) }
             if draftReference != nil && (draft == nil || draft?.status == "running") { await recoverDraft() }
-        } catch { if current == generation { report(error) } }
+        } catch { if current == generation { if !(error is CancellationError) { online = false }; report(error) } }
     }
     private func savePending(_ next: [String: CommandIntent]) async throws {
         try await vault.save(origin: endpoint + "#pending", data: JSONEncoder().encode(next))
         pending = next
     }
-    func control(_ device: Device, path: String, value: JSONValue) async {
+    func control(_ device: Device, path: String, value: JSONValue, type: String = "property.set") async {
         guard let client, let snapshot, online, !busy, pending[device.id] == nil else { return }
         busy = true; message = ""; defer { busy = false }
-        let intent = CommandIntent(device: device, path: path, value: value)
+        let intent = CommandIntent(device: device, path: path, value: value, type: type)
         var submitted = false
         do {
             var next = pending; next[device.id] = intent; try await savePending(next)
@@ -155,10 +158,11 @@ import LimeIoTKit
         do { try await client.stop(space: snapshot.space, deployment: deployment); await refresh() } catch { report(error) }
     }
     func logout() async {
-        guard let client, !busy, !draftBusy else { return }
+        guard let client, !busy, !draftBusy, firmware?.busy != true else { return }
         busy = true; defer { busy = false }
         do {
             try await client.logout(); generation += 1; self.client = nil
+            firmware?.close(); firmware = nil
             connected = false; online = false; snapshot = nil; pending = [:]
             draftReference = nil; draft = nil; draftPrompt = ""; draftMessage = ""; draftProof = nil
         } catch { report(error) }
@@ -167,7 +171,7 @@ import LimeIoTKit
         if error is CancellationError { return }
         if let error = error as? GatewayError {
             message = error.message
-            if error == .unauthenticated { generation += 1; connected = false; snapshot = nil; pending = [:]; draftReference = nil; draft = nil; draftPrompt = ""; draftProof = nil; draftMessage = "" }
+            if error == .unauthenticated { generation += 1; firmware?.close(); firmware = nil; connected = false; snapshot = nil; pending = [:]; draftReference = nil; draft = nil; draftPrompt = ""; draftProof = nil; draftMessage = "" }
         } else { online = false; message = "无法连接家庭网关，请检查本地网络" }
     }
 }

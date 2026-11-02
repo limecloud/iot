@@ -1,7 +1,7 @@
 name: limeiot
 services:
   gateway:
-    image: limeiot/local:0.1.0
+    image: limeiot/local:0.2.0
     build:
       context: ../..
       dockerfile: deploy/nas/Dockerfile
@@ -10,10 +10,9 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    tmpfs: [/tmp:mode=1777,size=32m]
+    tmpfs: ["/tmp:mode=1777,size=32m"]
     environment:
       LIMEIOT_PUBLIC_ORIGIN: ${LIMEIOT_PUBLIC_ORIGIN:?}
-    ports: ["${LIMEIOT_MQTT_TLS_PORT:-8883}:8883"]
     volumes:
       - ${LIMEIOT_STATE_DIR:?}/data:/data
       - ${LIMEIOT_STATE_DIR:?}/config:/config:ro
@@ -26,20 +25,23 @@ services:
     user: "${LIMEIOT_UID:?}:${LIMEIOT_GID:?}"
     command: [nginx, -c, /etc/limeiot/nginx.conf, -g, "daemon off;"]
     entrypoint: []
-    ports: ["${LIMEIOT_HTTPS_PORT:?}:8443"]
+    ports:
+      - "${LIMEIOT_BIND_HOST:-0.0.0.0}:${LIMEIOT_HTTPS_PORT:?}:8443"
+      - "${LIMEIOT_BIND_HOST:-0.0.0.0}:${LIMEIOT_MQTT_TLS_PORT:-8883}:8883"
     depends_on:
       gateway: {condition: service_healthy}
     restart: unless-stopped
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    tmpfs: [/tmp:mode=1777,size=32m]
+    tmpfs: ["/tmp:mode=1777,size=32m"]
     volumes:
       - ./nginx.conf:/etc/limeiot/nginx.conf:ro
       - ${LIMEIOT_STATE_DIR:?}/tls:/tls:ro
-    networks: [local]
+      - ${LIMEIOT_STATE_DIR:?}/firmware:/firmware:ro
+    networks: [local, ingress]
   lamp:
-    image: limeiot/local:0.1.0
+    image: limeiot/local:0.2.0
     profiles: [simulation]
     user: "${LIMEIOT_UID:?}:${LIMEIOT_GID:?}"
     command: [simulator, device-lamp]
@@ -63,3 +65,4 @@ services:
 networks:
   local:
     internal: true
+  ingress: {}

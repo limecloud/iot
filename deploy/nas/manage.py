@@ -29,7 +29,7 @@ def save(path, content):
     path.chmod(0o600)
 
 
-def init(directory, origin):
+def init(directory, origin, mode="gateway"):
     if os.getuid() == 0:
         raise ValueError("initialize_as_non_root_owner")
     url = urlsplit(origin)
@@ -44,7 +44,7 @@ def init(directory, origin):
             raise ValueError("invalid_hostname")
         san = f"DNS:{host}"
     fresh(directory)
-    for name in ("data", "config", "secrets", "tls", "authority"):
+    for name in ("data", "config", "secrets", "tls", "authority", "firmware"):
         (directory / name).mkdir(mode=0o700)
     passwords = {}
     for user in ("gateway", "device-lamp", "device-button"):
@@ -75,13 +75,16 @@ def init(directory, origin):
     (authority / "ca.key").chmod(0o600)
     (tls / "server.key").chmod(0o600)
     initialize_device_identity(directory, host)
-    metadata = {"schema_version": 1, "device_identity_version": 1, "origin": origin, "port": url.port or 443, "mode": "simulation", "uid": os.getuid(), "gid": os.getgid()}
+    if mode == "private":
+        from platform_install import configure
+        configure(directory, save)
+    metadata = {"schema_version": 1, "device_identity_version": 1, "origin": origin, "port": url.port or 443, "mode": "simulation", "deployment": mode, "uid": os.getuid(), "gid": os.getgid()}
     save(directory / "installation.json", json.dumps(metadata, indent=2) + "\n")
     environment(directory, metadata)
 
 
 def environment(directory, metadata):
-    values = {"LIMEIOT_STATE_DIR": str(directory), "LIMEIOT_PUBLIC_ORIGIN": metadata["origin"], "LIMEIOT_HTTPS_PORT": metadata["port"], "LIMEIOT_UID": os.getuid(), "LIMEIOT_GID": os.getgid()}
+    values = {"COMPOSE_PROJECT_NAME": "limeiot-" + hashlib.sha256(str(directory).encode()).hexdigest()[:12], "LIMEIOT_STATE_DIR": str(directory), "LIMEIOT_PUBLIC_ORIGIN": metadata["origin"], "LIMEIOT_HTTPS_PORT": metadata["port"], "LIMEIOT_UID": os.getuid(), "LIMEIOT_GID": os.getgid()}
     if values["LIMEIOT_UID"] == 0:
         raise ValueError("initialize_as_non_root_owner")
     save(directory / "compose.env", "\n".join(f"{key}={json.dumps(str(value))}" for key, value in values.items()) + "\n")
@@ -93,6 +96,10 @@ def backup(directory, output):
     if output.is_relative_to(directory):
         raise ValueError("backup_must_be_outside_installation")
     fresh(output)
+    metadata = json.loads((directory / "installation.json").read_text())
+    if metadata.get("deployment") == "private":
+        from platform_install import backup_control
+        backup_control(directory, output)
     (output / "data").mkdir(mode=0o700)
     with sqlite3.connect(f"file:{directory / 'data/gateway.sqlite'}?mode=ro", uri=True) as source:
         with sqlite3.connect(output / "data/gateway.sqlite") as target:
@@ -104,6 +111,8 @@ def backup(directory, output):
         for name in ("config", "secrets", "tls", "authority", "device-authority", "broker-tls"):
             shutil.copytree(directory / name, output / name)
     shutil.copyfile(directory / "installation.json", output / "installation.json")
+    if (directory / "firmware").is_dir():
+        shutil.copytree(directory / "firmware", output / "firmware")
     manifest = {}
     for path in output.rglob("*"):
         if path.is_file():
@@ -125,6 +134,11 @@ def restore(source, directory):
         path = (source / relative).resolve()
         if relative.is_absolute() or ".." in relative.parts or not path.is_relative_to(source.resolve()) or any(part.is_symlink() for part in [source / relative, *(source / relative).parents] if part.is_relative_to(source)) or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
             raise ValueError("invalid_backup")
+    metadata = json.loads((source / "installation.json").read_text())
+    if metadata.get("deployment") == "private":
+        platform_required = {"control.sql", "platform-secrets/control-key", "platform-secrets/admin-token", "platform-secrets/model-release-key.pem", "platform-secrets/mysql-root-password", "platform-secrets/mysql-init.sql", "platform-secrets/mysql-runtime.dsn", "platform-secrets/mysql-migrator.dsn", "platform-secrets/mysql-readonly.cnf", "platform-secrets/mysql-migrator.cnf", "config/control-ca.crt", "secrets/gateway-identity.pk8"}
+        if not platform_required.issubset(manifest["files"]):
+            raise ValueError("incomplete_platform_backup")
     with sqlite3.connect(f"file:{source / 'data/gateway.sqlite'}?mode=ro", uri=True) as db:
         if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
             raise ValueError("invalid_database")
@@ -138,6 +152,9 @@ def restore(source, directory):
         shutil.copyfile(source / name, target)
         target.chmod(0o600)
     metadata = json.loads((directory / "installation.json").read_text())
+    (directory / "firmware").mkdir(mode=0o700, exist_ok=True)
+    if metadata.get("deployment") == "private":
+        (directory / "mysql").mkdir(mode=0o700)
     save(directory / "device-authority/openssl.cnf", ca_config(directory / "device-authority"))
     environment(directory, metadata)
 
@@ -145,9 +162,10 @@ def restore(source, directory):
 if __name__ == "__main__":
     os.umask(0o077)
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("init", "backup", "restore"))
+    parser.add_argument("action", choices=("init", "backup", "restore", "restore-control"))
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--origin")
+    parser.add_argument("--mode", choices=("gateway", "private"), default="gateway")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--backup", type=Path)
     args = parser.parse_args()
@@ -155,13 +173,16 @@ if __name__ == "__main__":
     if args.action == "init":
         if not args.origin:
             parser.error("--origin required")
-        init(directory, args.origin)
+        init(directory, args.origin, args.mode)
     elif args.action == "backup":
         if not args.output:
             parser.error("--output required")
         backup(directory, args.output.expanduser().resolve())
-    else:
+    elif args.action == "restore":
         if not args.backup:
             parser.error("--backup required")
         restore(args.backup.expanduser().resolve(), directory)
+    else:
+        from platform_install import restore_control
+        restore_control(directory)
     print(json.dumps({"status": "ok", "action": args.action, "directory": str(directory)}))

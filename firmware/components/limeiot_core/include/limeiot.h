@@ -22,6 +22,12 @@ typedef struct { li_value_type_t type; int64_t integer; bool boolean; } li_value
 typedef struct { const char *path; li_value_type_t type; bool writable; int64_t minimum, maximum; } li_property_t;
 typedef struct { const char *path; const char *field; int64_t minimum, maximum; } li_event_t;
 typedef enum { LI_APPLIED, LI_NOT_APPLIED, LI_EXECUTION_UNKNOWN } li_apply_result_t;
+typedef struct {
+    const char *product_id, *architecture, *chip, *board, *bootloader_version;
+    uint32_t security_epoch, ota_capacity_bytes;
+    bool external_power, has_battery, safe_to_update, pending_update;
+    uint8_t battery_percent;
+} li_device_info_t;
 
 /* 回调在同一个设备任务中调用。写存储成功必须表示已耐久提交；publish 成功表示已复制入有界发送队列。 */
 typedef struct {
@@ -34,6 +40,8 @@ typedef struct {
     bool (*publish)(void *, const char *, const char *, size_t);
     bool (*read_property)(void *, const char *, li_value_t *);
     li_apply_result_t (*write_property)(void *, const char *, li_value_t);
+    /* 可选的当前设备信息；缺失或读取失败不得推断为支持升级。 */
+    bool (*read_device_info)(void *, li_device_info_t *);
 } li_ports_t;
 typedef struct {
     const char *space_id, *device_id, *model_revision, *firmware_version, *hardware_revision;

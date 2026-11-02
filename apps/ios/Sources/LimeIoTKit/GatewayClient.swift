@@ -68,7 +68,7 @@ public actor GatewayClient {
     }
     private static func encoder() -> JSONEncoder { let encoder = JSONEncoder(); encoder.keyEncodingStrategy = .convertToSnakeCase; return encoder }
     private static func decoder() -> JSONDecoder { let decoder = JSONDecoder(); decoder.keyDecodingStrategy = .convertFromSnakeCase; return decoder }
-    private func call<T: Decodable & Sendable>(_ path: String, method: String = "GET", body: Data? = nil, key: String? = nil, authenticated: Bool = true) async throws -> T {
+    private func call<T: Decodable & Sendable>(_ path: String, method: String = "GET", body: Data? = nil, key: String? = nil, authenticated: Bool = true, ota: Bool = false) async throws -> T {
         guard let url = URL(string: origin + path) else { throw GatewayError.invalidEndpoint }
         if authenticated && saved == nil { throw GatewayError.unauthenticated }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData)
@@ -91,6 +91,10 @@ public actor GatewayClient {
             let session = try Self.decoder().decode(Session.self, from: data)
             saved = SavedSession(session: session, cookie: cookie)
             try await store?.save(origin: origin, data: Self.encoder().encode(saved))
+        }
+        if ota {
+            guard let text = String(data: data, encoding: .utf8), let result = try OtaJSON.parse(text, response: true) as? T else { throw OtaJSON.fail() }
+            return result
         }
         return try Self.decoder().decode(T.self, from: data.isEmpty ? Data("{}".utf8) : data)
     }
@@ -127,6 +131,9 @@ public actor GatewayClient {
     }
     public func resolve(space: String, key: String) async throws -> Command { try await call(base(space) + "/commands/by-key/" + Self.segment(key)) }
     public func command(space: String, id: String) async throws -> Command { try await call(base(space) + "/commands/" + Self.segment(id)) }
+    func otaCall(space: String, suffix: String, method: String = "GET", body: JSONValue? = nil, key: String? = nil) async throws -> JSONValue {
+        try await call(base(space) + suffix, method: method, body: body.map { Data(OtaJSON.canonical($0).utf8) }, key: key, ota: true)
+    }
     public func createDraft(reference: DraftReference, input: DraftInput) async throws -> RuleDraft {
         try await call(base(reference.space) + "/rule-drafts", method: "POST", body: Self.encoder().encode(input), key: reference.key)
     }

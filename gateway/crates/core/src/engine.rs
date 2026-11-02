@@ -9,6 +9,8 @@ use std::collections::{BTreeMap, BTreeSet};
 pub struct Binding {
     pub device_id: String,
     pub model_revision: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub routes: BTreeMap<String, crate::execution::Route>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -28,6 +30,10 @@ pub struct Observation {
 pub struct Device {
     pub device_id: String,
     pub model_revision: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub routes: BTreeMap<String, crate::execution::Route>,
+    #[serde(skip)]
+    pub adapter_sessions: BTreeMap<String, crate::execution::Session>,
     pub ready: bool,
     pub boot_id: Option<String>,
     pub session_id: Option<String>,
@@ -37,10 +43,42 @@ pub struct Device {
     pub reported: BTreeMap<String, Observation>,
     pub retired_boots: BTreeSet<String>,
     pub seen: BTreeMap<u64, String>,
+    // 会话观测只保存在本次运行内存，备份或重启不能恢复成当前升级事实。
+    #[serde(skip)]
+    pub device_info: Option<crate::device_info::DeviceInfo>,
+    #[serde(skip)]
+    pub receipt_ledger: bool,
+    // 由本次认证设备会话声明；重启不能从旧快照恢复能力证明。
+    #[serde(skip)]
+    pub native_actions: Option<BTreeSet<String>>,
+}
+impl Device {
+    pub(crate) fn new_binding(device_id: String, model_revision: String) -> Self {
+        Self {
+            device_id,
+            model_revision,
+            routes: BTreeMap::new(),
+            adapter_sessions: BTreeMap::new(),
+            ready: false,
+            boot_id: None,
+            session_id: None,
+            last_seq: 0,
+            last_seen: None,
+            state_revision: 0,
+            reported: BTreeMap::new(),
+            retired_boots: BTreeSet::new(),
+            seen: BTreeMap::new(),
+            device_info: None,
+            receipt_ledger: false,
+            native_actions: None,
+        }
+    }
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Command {
     pub command_id: String,
+    #[serde(default)]
+    pub sequence: u64,
     pub request: CommandRequest,
     pub request_digest: String,
     pub status: String,
@@ -50,6 +88,8 @@ pub struct Command {
     pub run_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub remote_authority: Option<crate::remote::RemoteAuthority>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_route: Option<crate::execution::Route>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Deployment {
@@ -79,6 +119,12 @@ pub struct Data {
     pub rule_drafts: BTreeMap<String, crate::draft::RuleDraft>,
     #[serde(default)]
     pub control_links: crate::control::Links,
+    #[serde(default)]
+    pub model_registry: crate::model_registry::Registry,
+    #[serde(default)]
+    pub ota_registry: crate::ota_tasks::Registry,
+    #[serde(default)]
+    pub execution_registry: crate::execution_binding::Registry,
 }
 impl Data {
     pub fn new(config: Config) -> Result<Self> {
@@ -101,24 +147,11 @@ impl Data {
                     && !devices.contains_key(&binding.device_id),
                 "invalid_binding",
             )?;
-            devices.insert(
-                binding.device_id.clone(),
-                Device {
-                    device_id: binding.device_id,
-                    model_revision: binding.model_revision,
-                    ready: false,
-                    boot_id: None,
-                    session_id: None,
-                    last_seq: 0,
-                    last_seen: None,
-                    state_revision: 0,
-                    reported: BTreeMap::new(),
-                    retired_boots: BTreeSet::new(),
-                    seen: BTreeMap::new(),
-                },
-            );
+            let mut device = Device::new_binding(binding.device_id, binding.model_revision);
+            device.routes = binding.routes;
+            devices.insert(device.device_id.clone(), device);
         }
-        Ok(Self {
+        let data = Self {
             space_id: config.space_id,
             models,
             devices,
@@ -129,9 +162,15 @@ impl Data {
             event_ids: BTreeMap::new(),
             rule_drafts: BTreeMap::new(),
             control_links: BTreeMap::new(),
-        })
+            model_registry: crate::model_registry::Registry::default(),
+            ota_registry: crate::ota_tasks::Registry::default(),
+            execution_registry: crate::execution_binding::Registry::default(),
+        };
+        data.validate_execution_routes()?;
+        Ok(data)
     }
     pub fn recover(&mut self) {
+        self.reset_ota_approvals(None, "gateway_restarted");
         for link in self.control_links.values_mut() {
             if matches!(
                 link.status,
@@ -151,6 +190,10 @@ impl Data {
         }
         for device in self.devices.values_mut() {
             device.ready = false;
+            device.receipt_ledger = false;
+            device.native_actions = None;
+            device.device_info = None;
+            device.adapter_sessions.clear();
         }
         for command in self.commands.values_mut() {
             if command.status == "accepted" {
@@ -167,16 +210,53 @@ impl Data {
             .values()
             .map(|device| {
                 let mut view = serde_json::to_value(device).expect("device serialization");
-                let ready = device.ready
-                    && device.last_seen.is_some_and(|at| {
-                        let age = now.signed_duration_since(at);
-                        age >= Duration::zero() && age < Duration::seconds(15)
-                    });
+                let native_ready = device.native_ready(now)
+                    && self.check_model_authority(&device.device_id).is_ok();
+                let ready = !self.execution_blocked(&device.device_id)
+                    && (native_ready
+                        || self.check_model_authority(&device.device_id).is_ok()
+                            && device
+                                .routes
+                                .values()
+                                .any(|route| device.adapter_ready(route, now)));
                 view["ready"] = json!(ready);
+                view["device_info"] = device
+                    .device_info
+                    .as_ref()
+                    .map(|info| {
+                        let mut value =
+                            serde_json::to_value(info).expect("device info serialization");
+                        value["fresh"] =
+                            json!(self.current_device_info(&device.device_id, now).is_ok());
+                        value
+                    })
+                    .unwrap_or(Value::Null);
                 for field in ["retired_boots", "seen"] {
                     view.as_object_mut().unwrap().remove(field);
                 }
                 let model = &self.models[&device.model_revision];
+                if self
+                    .execution_registry
+                    .bindings
+                    .get(&device.device_id)
+                    .is_some_and(|binding| binding.native_paths.is_some())
+                {
+                    let availability: BTreeMap<_, _> = model
+                        .services
+                        .iter()
+                        .flat_map(|service| {
+                            service.actions.iter().map(|action| {
+                                let path = format!("{}.{}", service.id, action.id);
+                                let available =
+                                    self.check_model_authority(&device.device_id).is_ok()
+                                        && !self.ota_reserves_device(&device.device_id, now)
+                                        && self.command_session(device, &path, now).is_ok();
+                                (path, available)
+                            })
+                        })
+                        .collect();
+                    view["action_availability"] = json!(availability);
+                }
                 for (path, observation) in &device.reported {
                     let age = now
                         .signed_duration_since(observation.observed_at)
@@ -185,7 +265,7 @@ impl Data {
                         .property(path)
                         .map(|p| age >= 0 && age <= p.max_age_ms as i64)
                         .unwrap_or(false);
-                    if !fresh || !ready {
+                    if !fresh || !native_ready {
                         view["reported"][path]["quality"] = json!("stale");
                     }
                 }
@@ -212,45 +292,55 @@ impl Data {
         }
         ensure(self.commands.len() < 4096, "capacity_exceeded")?;
         ensure(
-            request.expires_at > now && request.expires_at <= now + Duration::seconds(30),
-            "command_expired",
+            self.commands
+                .values()
+                .filter(|command| {
+                    command.request.device_id == request.device_id
+                        && matches!(command.status.as_str(), "accepted" | "dispatched")
+                })
+                .count()
+                < 32,
+            "device_queue_full",
         )?;
         ensure(
-            request.operation.kind == "property.set",
-            "unsupported_capability",
+            request.expires_at > now && request.expires_at <= now + Duration::seconds(30),
+            "command_expired",
         )?;
         let device = self
             .devices
             .get(&request.device_id)
             .ok_or_else(|| err("device_not_found"))?;
+        self.check_model_authority(&request.device_id)?;
         ensure(
-            device.ready
-                && device
-                    .last_seen
-                    .map(|t| now - t < Duration::seconds(15))
-                    .unwrap_or(false),
-            "device_offline",
+            !self.ota_reserves_device(&request.device_id, now),
+            "ota_task_conflict",
         )?;
+        let session_id = self.command_session(device, &request.operation.path, now)?;
         ensure(
             device.model_revision == request.model_revision,
             "model_mismatch",
         )?;
-        self.models[&device.model_revision]
-            .write(&request.operation.path, &request.operation.value)?;
-        let command_id = id();
+        self.models[&device.model_revision].operation(&request.operation)?;
+        let sequence = self
+            .command_sequence_head()
+            .checked_add(1)
+            .filter(|sequence| *sequence <= crate::command_receipts::MAX_COMMAND_SEQUENCE)
+            .ok_or_else(|| err("capacity_exceeded"))?;
+        let command_id = format!("c1-{sequence}-{}", id());
         let envelope = Envelope {
             v: 1,
             kind: "command".into(),
-            message_id: id(),
+            message_id: command_id.clone(),
             device_id: device.device_id.clone(),
             model_revision: device.model_revision.clone(),
             boot_id: None,
             seq: None,
-            session_id: device.session_id.clone(),
+            session_id,
             body: json!({"command_id":command_id,"issued_at":now,"expires_at":request.expires_at,"operation":request.operation}),
         };
         let command = Command {
             command_id: command_id.clone(),
+            sequence,
             request: request.clone(),
             request_digest: hash,
             status: "accepted".into(),
@@ -259,6 +349,7 @@ impl Data {
             error: None,
             run_id,
             remote_authority: None,
+            execution_route: device.routes.get(&request.operation.path).cloned(),
         };
         self.keys
             .insert(request.idempotency_key, command_id.clone());
@@ -279,8 +370,10 @@ impl Data {
             .devices
             .get(&rule.trigger.device)
             .ok_or_else(|| err("device_not_found"))?;
+        self.check_model_authority(&source.device_id)?;
         self.models[&source.model_revision].event(&rule.trigger.event)?;
         for action in &rule.actions {
+            self.check_model_authority(&action.device)?;
             let target = self
                 .devices
                 .get(&action.device)
@@ -317,6 +410,7 @@ impl Data {
     }
     pub fn ingest(&mut self, message: Envelope, now: DateTime<Utc>) -> Result<Option<Envelope>> {
         message.validate()?;
+        self.check_model_authority(&message.device_id)?;
         let current = self
             .devices
             .get(&message.device_id)
@@ -335,7 +429,18 @@ impl Data {
         let hash = digest(&message)?;
         if message.kind == "hello" {
             ensure(!current.retired_boots.contains(boot), "old_boot")?;
-            let challenge = message
+            let native_actions = self.native_action_declaration(&current, &message.body)?;
+            let receipt_ledger = match message.body.get("receipt_ledger") {
+                None => false,
+                Some(value) if value.as_u64() == Some(1) => true,
+                _ => return Err(err("unsupported_receipt_ledger")),
+            };
+            let mut welcome_body = json!({"challenge":message.body["challenge"],"time":now,"max_packet_bytes":MAX_PACKET});
+            if receipt_ledger {
+                welcome_body["receipt_ledger"] = json!(1);
+                welcome_body["command_sequence"] = json!(self.command_sequence_head());
+            }
+            let _challenge = message
                 .body
                 .get("challenge")
                 .and_then(Value::as_str)
@@ -359,7 +464,11 @@ impl Data {
             device.seen.insert(seq, hash);
             device.state_revision = 0;
             device.ready = false;
+            device.device_info = None;
+            device.receipt_ledger = receipt_ledger;
+            device.native_actions = native_actions;
             device.last_seen = Some(now);
+            self.reset_ota_approvals(Some(&message.device_id), "ota_session_changed");
             return Ok(Some(Envelope {
                 v: 1,
                 kind: "welcome".into(),
@@ -369,7 +478,7 @@ impl Data {
                 boot_id: None,
                 seq: None,
                 session_id: Some(session),
-                body: json!({"challenge":challenge,"time":now,"max_packet_bytes":MAX_PACKET}),
+                body: welcome_body,
             }));
         }
         ensure(
@@ -385,14 +494,20 @@ impl Data {
         ensure(seq > current.last_seq, "out_of_order")?;
         match message.kind.as_str() {
             "state" => self.apply_state(&message, now)?,
-            "result" => self.apply_result(&message)?,
+            "result" => self.apply_result(&message, now)?,
+            "receipt" => self.receipt_report(&message, now)?,
             "event" => self.apply_event(&message, now)?,
+            "device_info" => self.apply_device_info(&message, now)?,
+            "ota_result" => self.apply_ota_receipt(&message, now)?,
             "availability" => {
                 ensure(
                     message.body["online"].as_bool() == Some(false),
                     "invalid_message",
                 )?;
-                self.devices.get_mut(&message.device_id).unwrap().ready = false;
+                let device = self.devices.get_mut(&message.device_id).unwrap();
+                device.ready = false;
+                device.device_info = None;
+                self.reset_ota_approvals(Some(&message.device_id), "ota_session_changed");
             }
             _ => return Err(err("unsupported_message")),
         }
@@ -404,7 +519,11 @@ impl Data {
             let first = *device.seen.keys().next().unwrap();
             device.seen.remove(&first);
         }
-        Ok(None)
+        if matches!(message.kind.as_str(), "result" | "receipt") {
+            self.receipt_response(&message)
+        } else {
+            Ok(None)
+        }
     }
     fn apply_state(&mut self, message: &Envelope, now: DateTime<Utc>) -> Result<()> {
         ensure(message.body["type"] == "snapshot", "snapshot_required")?;
@@ -443,8 +562,31 @@ impl Data {
         device.ready = true;
         Ok(())
     }
-    fn apply_result(&mut self, message: &Envelope) -> Result<()> {
+    fn apply_result(&mut self, message: &Envelope, now: DateTime<Utc>) -> Result<()> {
         let command_id = message.body["command_id"]
+            .as_str()
+            .ok_or_else(|| err("invalid_result"))?;
+        ensure(
+            self.commands
+                .get(command_id)
+                .is_none_or(|command| command.execution_route.is_none()),
+            "execution_source_mismatch",
+        )?;
+        self.apply_command_result(
+            &message.device_id,
+            message.session_id.as_deref(),
+            &message.body,
+            now,
+        )
+    }
+    pub(crate) fn apply_command_result(
+        &mut self,
+        device_id: &str,
+        session_id: Option<&str>,
+        body: &Value,
+        now: DateTime<Utc>,
+    ) -> Result<()> {
+        let command_id = body["command_id"]
             .as_str()
             .ok_or_else(|| err("invalid_result"))?;
         let command = self
@@ -452,11 +594,11 @@ impl Data {
             .get_mut(command_id)
             .ok_or_else(|| err("command_not_found"))?;
         ensure(
-            command.request.device_id == message.device_id
-                && command.envelope.session_id == message.session_id,
+            command.request.device_id == device_id
+                && command.envelope.session_id.as_deref() == session_id,
             "session_mismatch",
         )?;
-        let status = message.body["status"]
+        let status = body["status"]
             .as_str()
             .ok_or_else(|| err("invalid_result"))?;
         ensure(
@@ -465,15 +607,13 @@ impl Data {
         )?;
         if status == "unknown" {
             ensure(
-                message.body["error"] == "execution_unknown"
-                    && message.body["evidence"]["type"] == "device_result",
+                body["error"] == "execution_unknown" && body["evidence"]["type"] == "device_result",
                 "invalid_result",
             )?;
         }
         if matches!(command.status.as_str(), "confirmed" | "failed") {
             ensure(
-                command.status == status
-                    && command.evidence.as_ref() == Some(&message.body["evidence"]),
+                command.status == status && command.evidence.as_ref() == Some(&body["evidence"]),
                 "duplicate_conflict",
             )?;
             return Ok(());
@@ -483,22 +623,40 @@ impl Data {
             "invalid_transition",
         )?;
         if status == "confirmed" {
-            ensure(
-                message.body["evidence"]["type"] == "device_result"
-                    && message.body["evidence"]["reported"][&command.request.operation.path]
-                        == command.request.operation.value,
-                "invalid_evidence",
-            )?;
+            if command.request.operation.kind == "action.invoke" {
+                let action = self.models[&command.request.model_revision]
+                    .action(&command.request.operation.path)?;
+                let evidence: ActionEvidence = serde_json::from_value(body["evidence"].clone())
+                    .map_err(|_| err("invalid_evidence"))?;
+                let issued_at: DateTime<Utc> =
+                    serde_json::from_value(command.envelope.body["issued_at"].clone())
+                        .map_err(|_| err("invalid_evidence"))?;
+                ensure(
+                    evidence.kind == "action_result"
+                        && evidence.path == command.request.operation.path
+                        && evidence.input_digest == digest(&command.request.operation.value)?
+                        && evidence.completion == action.completion
+                        && evidence.observed_at >= issued_at - Duration::seconds(2)
+                        && evidence.observed_at <= now + Duration::seconds(2),
+                    "invalid_evidence",
+                )?;
+                action
+                    .output
+                    .validate(&evidence.output)
+                    .map_err(|_| err("invalid_evidence"))?;
+            } else {
+                ensure(
+                    body["evidence"]["type"] == "device_result"
+                        && body["evidence"]["reported"][&command.request.operation.path]
+                            == command.request.operation.value,
+                    "invalid_evidence",
+                )?;
+            }
         }
         command.status = status.into();
-        command.evidence = Some(message.body["evidence"].clone());
+        command.evidence = Some(body["evidence"].clone());
         command.error = if status == "failed" || status == "unknown" {
-            Some(
-                message.body["error"]
-                    .as_str()
-                    .unwrap_or("device_failed")
-                    .into(),
-            )
+            Some(body["error"].as_str().unwrap_or("device_failed").into())
         } else {
             None
         };
@@ -591,6 +749,27 @@ impl Data {
         Ok(())
     }
     pub fn prepare_dispatch(&mut self, now: DateTime<Utc>) -> Vec<Envelope> {
+        self.prepare_dispatch_for(None, now)
+    }
+    pub(crate) fn prepare_dispatch_for(
+        &mut self,
+        adapter: Option<&str>,
+        now: DateTime<Utc>,
+    ) -> Vec<Envelope> {
+        self.expire_ota_tasks(now);
+        let reserved: BTreeSet<_> = self
+            .ota_registry
+            .tasks
+            .values()
+            .filter(|task| task.status.reserves(task.expires_at, now))
+            .map(|task| task.device_id.clone())
+            .collect();
+        let untrusted: BTreeSet<_> = self
+            .devices
+            .keys()
+            .filter(|device| self.check_model_authority(device).is_err())
+            .cloned()
+            .collect();
         let unauthorized: BTreeSet<String> = self
             .commands
             .values()
@@ -602,6 +781,19 @@ impl Data {
             })
             .map(|c| c.command_id.clone())
             .collect();
+        let available: BTreeSet<String> = self
+            .commands
+            .values()
+            .filter(|command| {
+                let device = &self.devices[&command.request.device_id];
+                command.execution_route.as_ref()
+                    == device.routes.get(&command.request.operation.path)
+                    && self
+                        .command_session(device, &command.request.operation.path, now)
+                        .is_ok_and(|session| session == command.envelope.session_id)
+            })
+            .map(|command| command.command_id.clone())
+            .collect();
         for device in self.devices.values_mut() {
             if device
                 .last_seen
@@ -612,7 +804,33 @@ impl Data {
             }
         }
         let mut messages = Vec::new();
-        for command in self.commands.values_mut() {
+        let mut active: BTreeSet<_> = self
+            .commands
+            .values()
+            .filter(|command| command.status == "dispatched" && command.request.expires_at > now)
+            .map(|command| command.request.device_id.clone())
+            .collect();
+        let mut ordered: Vec<_> = self
+            .commands
+            .values()
+            .map(|command| (command.sequence, command.command_id.clone()))
+            .collect();
+        ordered.sort();
+        let mut earlier_paths = BTreeSet::new();
+        for (_, command_id) in ordered {
+            let command = self.commands.get_mut(&command_id).unwrap();
+            if command
+                .execution_route
+                .as_ref()
+                .map(|route| route.adapter_id.as_str())
+                != adapter
+            {
+                // 同一设备的受理顺序跨执行端成立；不能越过另一条路径的在先命令。
+                if command.status == "accepted" && command.request.expires_at > now {
+                    earlier_paths.insert(command.request.device_id.clone());
+                }
+                continue;
+            }
             if command.status == "dispatched" && command.request.expires_at <= now {
                 command.status = "unknown".into();
                 command.error = Some("execution_unknown".into());
@@ -620,19 +838,30 @@ impl Data {
             if command.status != "accepted" {
                 continue;
             }
+            if reserved.contains(&command.request.device_id) {
+                command.status = "rejected".into();
+                command.error = Some("ota_task_conflict".into());
+                continue;
+            }
             if unauthorized.contains(&command.command_id) {
                 command.status = "rejected".into();
                 command.error = Some("remote_authorization_rejected".into());
                 continue;
             }
-            let device = &self.devices[&command.request.device_id];
+            if untrusted.contains(&command.request.device_id) {
+                command.status = "rejected".into();
+                command.error = Some("model_trust_revoked".into());
+                continue;
+            }
             if command.request.expires_at <= now {
                 command.status = "expired".into();
                 command.error = Some("command_expired".into());
-            } else if !device.ready || device.session_id != command.envelope.session_id {
+            } else if !available.contains(&command.command_id) {
                 command.status = "rejected".into();
                 command.error = Some("device_offline".into());
-            } else {
+            } else if !earlier_paths.contains(&command.request.device_id)
+                && active.insert(command.request.device_id.clone())
+            {
                 command.status = "dispatched".into();
                 messages.push(command.envelope.clone());
             }

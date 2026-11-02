@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "record_id": "EVID-SPEAKER-20261102-01",
+  "candidate_id": "DEV-CAND-09",
+  "observed_on": "2026-11-02",
+  "scope": "standalone_lan_dlna_playback_experiment",
+  "publication": "redacted_observation_summary_not_raw_capture",
+  "identity": {
+    "user_reported_device": "小度音箱，首代外观及拆解参考",
+    "upnp_manufacturer": "DuerOS",
+    "upnp_model_name": "DuerOS-Render",
+    "upnp_model_number": "",
+    "app_reported_firmware": "2.30.18.2026041017",
+    "exact_hardware_model": "not_verified",
+    "pcb_revision": "not_verified",
+    "reference_teardown": "https://www.52audio.com/archives/6004.html"
+  },
+  "sources": [
+    {
+      "name": "discovery",
+      "sha256": "cf2ba205091bc0384837249ac6cd6922c820a8670558ce74b3dd3762742de196"
+    },
+    {
+      "name": "readonly_status",
+      "sha256": "41603e04cd3cfa7ce396e884607a67e7cb90ae5532d005f8aa2fa78b0de78059"
+    },
+    {
+      "name": "beep_test",
+      "sha256": "c8f2a2761883554e6bbea6e0808b6a4f3325b4a41f49ff282e84034f57e07dfe"
+    },
+    {
+      "name": "max_volume_test",
+      "sha256": "44f65bda47c0a32c47dabae7a5055c98a707e5ab655e851f6770bba2acb7a9d1"
+    }
+  ],
+  "observations": [
+    {
+      "id": "SPEAKER-OBS-01",
+      "source_names": ["discovery"],
+      "observed": {
+        "services": [
+          "urn:schemas-upnp-org:service:AVTransport:1",
+          "urn:schemas-upnp-org:service:RenderingControl:1",
+          "urn:schemas-upnp-org:service:ConnectionManager:1"
+        ]
+      }
+    },
+    {
+      "id": "SPEAKER-OBS-02",
+      "source_names": ["readonly_status"],
+      "observed": {
+        "GetVolume": {"http_status": 200, "CurrentVolume": "1"},
+        "GetMute": {"http_status": 200, "CurrentMute": "0"},
+        "GetTransportInfo": {"http_status": 200, "CurrentTransportState": "STOPPED"},
+        "GetProtocolInfo": {"http_status": 200, "Source": "", "Sink": ""}
+      }
+    },
+    {
+      "id": "SPEAKER-OBS-03",
+      "source_names": ["beep_test", "max_volume_test"],
+      "observed": {
+        "SetAVTransportURI_http_status": 200,
+        "Play_http_status": 200,
+        "GetTransportInfo_state": "PLAYING",
+        "Stop_http_status": 200,
+        "media_source": "lan_http_server",
+        "test_file_container": "wav",
+        "audio_fetch_method": "GET",
+        "audio_fetch_http_status": 206,
+        "audio_sha256": "6175aba5ba6a527878b93bf2056c47c5571a79cd344198be74d67a00a6c48a57",
+        "physical_stop_and_natural_completion": "not_verified"
+      }
+    },
+    {
+      "id": "SPEAKER-OBS-04",
+      "source_names": ["max_volume_test"],
+      "observed": {
+        "SetVolume_http_status": 200,
+        "volume_before": "1",
+        "volume_readback": "100",
+        "SetMute_unmute_http_status": 200,
+        "mute_enabled_test": "not_run"
+      }
+    },
+    {
+      "id": "SPEAKER-OBS-05",
+      "source": "user_confirmation_after_max_volume_test",
+      "observed": {"quote": "听到了"}
+    }
+  ],
+  "capability_evidence": {
+    "discovered": "observed_on_single_sample",
+    "read": "selected_soap_reads_observed",
+    "control": "playback_and_volume_experiment_with_user_audible_confirmation",
+    "notify": "not_run",
+    "reconnect": "not_run",
+    "recover": "not_run",
+    "update": "not_run",
+    "limeiot_platform_integration": "not_run"
+  },
+  "not_run": [
+    "pause_seek_queue_streaming",
+    "microphone_capture_or_default_voice_backend_replacement",
+    "factory_service_arbitration_or_backend_switch",
+    "external_microphone_asr_llm_tts_dlna_end_to_end",
+    "firmware_modification_or_flashing",
+    "long_term_operation_and_other_models_or_firmware"
+  ],
+  "limitations": [
+    "Summary of earlier authorized local experiments; no new device actions were executed while preparing these documents.",
+    "Source SHA-256 values identify retained local records; raw captures are not published and cannot be reconstructed from this summary.",
+    "IP/MAC/UDN, device display name, media URL, local host paths and credentials are omitted.",
+    "Firmware is App-reported and hardware identity is user-described; neither is an independently read exact board identity.",
+    "A matching teardown is a hardware reference, not proof of a specific PCB revision or protocol compatibility.",
+    "SOAP acceptance, device-reported state, HTTP fetch and user audible confirmation are separate observations.",
+    "Stop and unmute requests were accepted, but physical stop and full mute behavior were not independently verified.",
+    "A single WAV test and an empty GetProtocolInfo Sink do not establish general codec or streaming support.",
+    "Volume 100 was explicitly requested for that experiment and is not a recommended default or an acoustic measurement.",
+    "These experiments did not use a LimeIoT DLNA adapter, published device model, platform API or GUI."
+  ]
+}

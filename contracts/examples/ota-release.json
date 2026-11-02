@@ -1,0 +1,23 @@
+{
+  "schema": "limeiot.ota-release",
+  "version": 1,
+  "image_format": "esp32c3",
+  "target": {
+    "product_id": "desk-node-lamp",
+    "architecture": "riscv32",
+    "chip": "esp32c3",
+    "board": "c3-development",
+    "hardware_revisions": ["c3-prototype-1"]
+  },
+  "firmware_version": "0.2.0",
+  "compatibility": {
+    "protocol_version": 1,
+    "model_revisions": ["sha256:aaf9fc9ba87187643ab777cda43658e09603fc1c0e51dc6ec1acde160d4aecfc"],
+    "minimum_bootloader_version": "0.1.0",
+    "from_versions": ["0.1.0"]
+  },
+  "security_epoch": 0,
+  "download_base_url": "https://firmware.example.test/artifacts/",
+  "issued_at": "2026-11-01T00:00:00Z",
+  "expires_at": "2099-01-01T00:00:00Z"
+}

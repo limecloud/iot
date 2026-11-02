@@ -36,6 +36,7 @@ static li_error_t publish(li_core_t *core, const char *kind, char *payload) {
     bool sent = size > 0 && (size_t)size < sizeof(topic) && length <= LI_MAX_PACKET && core->ports.publish(core->ports.context, topic, payload, length);
     li_codec_free(payload); return sent ? LI_OK : LI_TRANSPORT;
 }
+li_error_t li_publish(li_core_t *core, const char *kind, char *payload) { return publish(core,kind,payload); }
 static bool store(li_core_t *core, unsigned slot, li_receipt_t *record) {
     char *json = li_codec_receipt_encode(record);
     if (!json) return false;
@@ -76,7 +77,7 @@ storage_error:
     if (error) *error = LI_STORAGE;
     free(core); return NULL;
 }
-void li_core_destroy(li_core_t *core) { if (core) { memset(core, 0, sizeof(*core)); free(core); } }
+void li_core_destroy(li_core_t *core) { if (core) { li_ota_device_drop(core); memset(core, 0, sizeof(*core)); free(core); } }
 bool li_ready(const li_core_t *core) { return core && core->connected && core->ready; }
 void li_disconnected(li_core_t *core) { core->connected = false; core->ready = false; core->session[0] = '\0'; memset(core->unreported, 0, sizeof(core->unreported)); }
 static li_error_t hello(li_core_t *core) {
@@ -85,12 +86,35 @@ static li_error_t hello(li_core_t *core) {
     return publish(core, "hello", li_codec_hello(core));
 }
 li_error_t li_connected(li_core_t *core) { li_disconnected(core); core->connected = true; return hello(core); }
+static bool info_token(const char *value) {
+    if (!value || !*value || strlen(value) > 128) return false;
+    for (; *value; value++) if (!((*value >= 'a' && *value <= 'z') || (*value >= 'A' && *value <= 'Z') || (*value >= '0' && *value <= '9') || *value == '-' || *value == '_' || *value == '.')) return false;
+    return true;
+}
+static bool info_version(const char *value) {
+    if (!value) return false;
+    for (unsigned part = 0; part < 3; part++) {
+        if (*value < '0' || *value > '9' || (*value == '0' && value[1] >= '0' && value[1] <= '9')) return false;
+        uint64_t number = 0;
+        while (*value >= '0' && *value <= '9') { number = number * 10 + (unsigned)(*value++ - '0'); if (number > UINT32_MAX) return false; }
+        if (part < 2 && *value++ != '.') return false;
+    }
+    return *value == '\0';
+}
+static li_error_t report_device_info(li_core_t *core) {
+    if (!core->ports.read_device_info) return LI_OK;
+    li_device_info_t info = {0};
+    if (!core->ports.read_device_info(core->ports.context, &info)) return LI_DRIVER;
+    if (!info_token(info.product_id) || !info_token(info.architecture) || !info_token(info.chip) || !info_token(info.board) || !info_token(core->config.hardware_revision) || !info_version(core->config.firmware_version) || !info_version(info.bootloader_version) || !info.ota_capacity_bytes || info.ota_capacity_bytes > UINT32_C(33554432) || (info.has_battery && info.battery_percent > 100)) return LI_INVALID;
+    return publish(core, "device_info", li_codec_device_info(core, &info));
+}
 li_error_t li_report_snapshot(li_core_t *core) {
     int64_t now = li_now(core); if (now < 0) return LI_CLOCK;
     li_value_t values[LI_MAX_PROPERTIES];
     for (size_t i = 0; i < core->config.property_count; i++) if (!core->ports.read_property(core->ports.context, core->config.properties[i].path, &values[i]) || !li_value_valid(&core->config.properties[i], values[i])) return LI_DRIVER;
     core->last_snapshot = core->ports.monotonic_ms(core->ports.context);
-    return publish(core, "state", li_codec_snapshot(core, now, values));
+    li_error_t result = publish(core, "state", li_codec_snapshot(core, now, values));
+    return result == LI_OK ? report_device_info(core) : result;
 }
 static li_error_t result(li_core_t *core, unsigned slot) {
     li_error_t error = publish(core, "result", li_codec_result(core, &core->receipts[slot]));
@@ -113,6 +137,7 @@ static li_error_t command(li_core_t *core, const li_down_t *down) {
         }
         if (slot < 0 && (!core->occupied[i] || (core->receipts[i].expires_ms <= now && !core->unreported[i]))) slot = (int)i;
     }
+    if (li_ota_device_blocked(core)) return LI_CONFLICT;
     if (down->expires_ms <= now || down->issued_ms > now + 2000 || down->expires_ms <= down->issued_ms || down->expires_ms - down->issued_ms > 30000) return LI_EXPIRED;
     if (slot < 0) return LI_CAPACITY;
     li_receipt_t receipt = {0};
@@ -137,6 +162,11 @@ static li_error_t command(li_core_t *core, const li_down_t *down) {
 }
 li_error_t li_receive(li_core_t *core, const char *topic, const char *payload, size_t length, bool retained) {
     if (!core->connected || !topic || retained || !payload || length == 0 || length > LI_MAX_PACKET) return LI_INVALID;
+    char ota_topic[LI_TOPIC_SIZE];
+    for (unsigned query=0; query<2; query++) {
+        int bytes=snprintf(ota_topic,sizeof(ota_topic),"limeiot/v1/%s/%s/down/%s",core->config.space_id,core->config.device_id,query?"ota_query":"ota_install");
+        if (bytes>0 && (size_t)bytes<sizeof(ota_topic) && !strcmp(topic,ota_topic)) return li_ota_device_receive(core,payload,length,query!=0);
+    }
     li_down_t down = {0}; li_error_t error = li_codec_decode(payload, length, &down);
     if (error != LI_OK) return error;
     char expected[LI_TOPIC_SIZE];
@@ -155,6 +185,7 @@ li_error_t li_tick(li_core_t *core) {
     if (!core->ready) return mono - core->last_hello >= 3000 ? hello(core) : LI_IGNORED;
     if (li_now(core) < 0) { li_disconnected(core); return LI_CLOCK; }
     for (unsigned slot = 0; slot < LI_RECEIPT_SLOTS; slot++) if (core->unreported[slot]) { li_error_t error = result(core, slot); if (error != LI_OK) return error; }
+    li_error_t ota=li_ota_device_reconcile(core); if (ota!=LI_OK&&ota!=LI_IGNORED) return ota;
     return mono - core->last_snapshot >= 2000 ? li_report_snapshot(core) : LI_IGNORED;
 }
 li_error_t li_emit_event(li_core_t *core, const char *path, int64_t value) {

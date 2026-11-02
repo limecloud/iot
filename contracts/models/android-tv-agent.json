@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "model_id": "urn:limeiot:model:android-tv-agent:1",
+  "model_version": "1.0.0",
+  "services": [
+    {
+      "id": "apps",
+      "semantic_id": "urn:limeiot:service:applications:1",
+      "properties": [],
+      "actions": [
+        {
+          "id": "launch",
+          "semantic_id": "urn:limeiot:action:application-launch:1",
+          "input": {
+            "type": "object",
+            "properties": {
+              "application_id": { "type": "string", "minLength": 1, "maxLength": 255 }
+            },
+            "required": ["application_id"],
+            "additionalProperties": false
+          },
+          "output": { "type": "object", "additionalProperties": false },
+          "idempotent": false,
+          "risk": "low",
+          "completion": "submitted"
+        }
+      ],
+      "events": []
+    }
+  ]
+}

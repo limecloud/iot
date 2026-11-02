@@ -1,0 +1,85 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdir,mkdtemp,readFile,writeFile,rename } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import path from 'node:path';
+import { chromium,expect } from '@playwright/test';
+import { root,startStack,stop,until } from '../tools/dev-stack.mjs';
+import { createAdbFixture } from './helpers/android-tv.mjs';
+import { mqttProbe } from './support/mqtt-probe.mjs';
+import { documentDigest } from '../packages/protocol/model-validation.mjs';
+const exec=promisify(execFile),base='/api/v1/spaces/space-demo',devicePath=base+'/devices/device-lamp';
+const post=(body,key)=>({method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify(body)});
+async function lines(file){try{return (await readFile(file,'utf8')).trim().split('\n').filter(Boolean).map(line=>JSON.parse(line));}catch(error){if(error.code==='ENOENT')return [];throw error;}}
+test('已有空间明确接入：网页存储失败零发送、原键恢复、应用发现、撤销与配置迁移', {timeout:120000}, async t=>{
+  const directory=await mkdtemp(path.join(root,'.dev/tv-bindings-')),state=path.join(directory,'adb-state');await mkdir(state,{mode:0o700});
+  const binary=await createAdbFixture(state);
+  async function scenario(extra={}){await writeFile(path.join(state,'scenario.next.json'),JSON.stringify({database:path.join(directory,'gateway.sqlite'),...extra}));await rename(path.join(state,'scenario.next.json'),path.join(state,'scenario.json'));}
+  await scenario();
+  const adapterConfig={schema_version:1,adb_path:binary,state_directory:state,server_port:5049,target:'192.168.31.94:5555',fingerprint:'Xiaomi/xmen/xmen:6.0.1/MHC19J/2061:user/release-keys',device_serial:'sample-tv-001',applications:[{application_id:'com.example.player',category:'leanback'}],timeout_ms:3000};
+  const modelPath=path.join(root,'contracts/models/android-tv-remote.json');
+  const validatorEnv={...process.env,LIMEIOT_MODEL_VALIDATOR:process.env.LIMEIOT_MODEL_VALIDATOR??path.join(root,'target/debug/limeiot-model-validator')};
+  const validated=JSON.parse((await exec(process.execPath,['packages/cli/src/main.mjs','model','validate','--input',modelPath],{cwd:root,env:validatorEnv,timeout:5000})).stdout);assert.equal(validated.valid,true);
+  const config=JSON.parse(await readFile(path.join(root,'deploy/dev/config.json'),'utf8'));config.models[0]=validated.normalized_model;config.devices[0].model_revision=validated.model_revision;delete config.devices[0].routes;
+  const configPath=path.join(directory,'config.json'),tvPath=path.join(directory,'tv.json');await writeFile(configPath,JSON.stringify(config));
+  const originalConfig=await readFile(configPath,'utf8');
+  async function hostConfig(){await writeFile(tvPath,JSON.stringify({schema_version:1,bindings:[{device_id:'device-lamp',adapter_id:'tv-adb',config:adapterConfig}]}));}
+  await hostConfig();
+  const stack=await startStack({directory,modelPaths:{lamp:modelPath},gatewayEnv:{LIMEIOT_CONFIG:configPath,LIMEIOT_TV_CONFIG:tvPath}});t.after(()=>stack.close());await stop(stack.lamp);
+  const mqtt=await mqttProbe({port:Number(stack.env.LIMEIOT_MQTT_PORT),username:'device-lamp',password:stack.env.LIMEIOT_MQTT_PASSWORD});t.after(()=>mqtt.close());await mqtt.subscribe('limeiot/v1/space-demo/device-lamp/down/+');
+  assert.deepEqual(await lines(path.join(state,'calls.jsonl')),[]);
+  assert.equal((await stack.request(devicePath+'/execution-binding')).value.state,'native');
+  assert.equal((await stack.request('/api/v1/spaces/other/execution-adapters')).status,403);
+  const malformed=await stack.request(base+'/execution-operations',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':'duplicate'},body:'{"type":"bindings.revoke","device_id":"device-lamp","device_id":"other","expected_binding_revision":"bad"}'});assert.equal(malformed.status,422);
+  const browser=await chromium.launch({headless:true,executablePath:process.env.LIMEIOT_BROWSER_EXECUTABLE});t.after(()=>browser.close());
+  const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});page.setDefaultTimeout(12000);
+  // 禁用兜底轮询，证明适配结果与连接变化能通过正式事件更新控件。
+  await page.addInitScript(()=>{const interval=window.setInterval.bind(window);window.setInterval=(callback,delay,...args)=>interval(delay===5000?()=>{}:callback,delay,...args);});
+  await page.goto(stack.env.LIMEIOT_ENDPOINT);await page.getByLabel('所有者凭据',{exact:true}).fill(stack.env.LIMEIOT_TOKEN);await page.getByRole('button',{name:'连接家庭网关',exact:true}).click();
+  const tv=page.getByRole('article',{name:'电视',exact:true});
+  async function review(){await tv.getByText('电视接入与应用',{exact:true}).click();await tv.getByRole('button',{name:'读取接入信息',exact:true}).click();await expect(tv.getByText('电视序列号：sample-tv-001',{exact:false})).toBeVisible();}
+  await review();await tv.getByRole('checkbox',{name:'已在电视端核对设备并允许连接',exact:true}).check();
+  let posts=0;page.on('request',request=>{if(request.method()==='POST'&&new URL(request.url()).pathname===base+'/execution-operations')posts++;});
+  await page.evaluate(()=>{const original=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key.startsWith('limeiot.execution-operation:'))throw new DOMException('blocked','QuotaExceededError');return original.call(this,key,value);};});
+  await tv.getByRole('button',{name:'确认绑定电视',exact:true}).click();await expect(tv.getByText('无法保存接入操作记录，尚未发送请求',{exact:true})).toBeVisible();assert.equal(posts,0);assert.deepEqual(await lines(path.join(state,'calls.jsonl')),[]);
+  await page.reload();await review();await tv.getByRole('checkbox',{name:'已在电视端核对设备并允许连接',exact:true}).check();
+  let lost;
+  await page.route('**'+base+'/execution-operations',async handler=>{if(handler.request().method()!=='POST'){await handler.continue();return;}lost={change:handler.request().postDataJSON(),key:handler.request().headers()['idempotency-key']};await handler.fetch();await handler.abort('failed');});
+  await tv.getByRole('button',{name:'确认绑定电视',exact:true}).click();await expect(tv.getByText('接入结果未知，请查询原操作',{exact:true})).toBeVisible();
+  assert.equal(posts,1);await page.unroute('**'+base+'/execution-operations');await page.reload();
+  await tv.getByText('电视接入与应用',{exact:true}).click();await tv.getByRole('button',{name:'查询接入原操作',exact:true}).click();
+  await expect(tv.getByText('接入状态：已绑定',{exact:true})).toBeVisible();assert.equal(posts,1);
+  const original=(await stack.request(base+'/execution-operations/by-key/'+lost.key)).value;assert.equal(original.status,'applied');assert.deepEqual(original.request.change,lost.change);
+  await until(async()=>(await stack.request(devicePath+'/applications')).value.fresh);
+  await tv.getByRole('button',{name:'读取应用列表',exact:true}).click();
+  const discovered=tv.getByLabel('已发现应用',{exact:true});
+  await expect(discovered.getByRole('button',{name:'启动 com.example.player',exact:true})).toBeEnabled();await expect(discovered.getByRole('button',{name:'启动 com.android.settings',exact:true})).toBeDisabled();
+  await discovered.getByRole('button',{name:'启动 com.example.player',exact:true}).click();
+  await until(async()=>(await lines(path.join(state,'effects.jsonl'))).length===1);
+  await until(async()=>(await stack.request(base+'/commands')).value.items.every(command=>command.status==='confirmed'));
+  await expect(tv.getByText('最近操作：输入已提交',{exact:true})).toBeVisible();
+  await expect(discovered.getByRole('button',{name:'启动 com.example.player',exact:true})).toBeEnabled();
+  await assert.rejects(mqtt.message(150),/mqtt_packet_timeout/);
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);assert.equal(overflow,false);
+  await page.screenshot({path:path.join(directory,'tv-binding-mobile.png'),fullPage:true});
+  await tv.getByRole('button',{name:'撤销电视接入',exact:true}).click();await expect(tv.getByText('接入状态：已撤销',{exact:true})).toBeVisible();
+  const commandInput=()=>({device_id:'device-lamp',model_revision:validated.model_revision,expires_at:new Date(Date.now()+8000).toISOString(),operation:{type:'action.invoke',path:'remote.press',value:{key:'home'}}});
+  assert.equal((await stack.request(base+'/commands',post(commandInput(),'revoked-command'))).value.error.code,'execution_binding_revoked');
+  adapterConfig.timeout_ms=3500;await hostConfig();await stack.restartGateway();assert.equal((await stack.request(devicePath+'/execution-binding')).value.state,'revoked');
+  const restored=await stack.request(base+'/execution-operations',post(lost.change,lost.key));assert.equal(restored.value.operation_id,original.operation_id);assert.equal((await stack.request(devicePath+'/execution-binding')).value.state,'revoked');
+  assert.equal((await lines(path.join(state,'effects.jsonl'))).length,1);
+  const binding=(await stack.request(devicePath+'/execution-binding')).value,offers=(await stack.request(base+'/execution-adapters')).value;
+  const nextRoute=offers.items[0].route;assert.equal(nextRoute.revision,await documentDigest(adapterConfig));assert.notEqual(nextRoute.revision,lost.change.route.revision);
+  const rejected=await stack.request(base+'/execution-operations',post({...lost.change,expected_binding_revision:binding.revision},'old-configuration'));assert.equal(rejected.value.status,'rejected');
+  const change={...lost.change,route:nextRoute,expected_binding_revision:binding.revision},input=path.join(directory,'bind-new.json');await writeFile(input,JSON.stringify(change));
+  const cliEnv={...stack.env};delete cliEnv.LIMEIOT_TOKEN_FILE;
+  const args=['packages/cli/src/main.mjs','invoke','execution-changes.create','--space-id','space-demo','--idempotency-key','new-configuration','--state-dir',path.join(directory,'cli-state'),'--input',input];
+  const first=JSON.parse((await exec(process.execPath,args,{cwd:root,env:cliEnv,timeout:6000})).stdout),second=JSON.parse((await exec(process.execPath,args,{cwd:root,env:cliEnv,timeout:6000})).stdout);assert.equal(first.operation_id,second.operation_id);assert.equal(first.status,'applied');
+  await until(async()=>(await stack.request(devicePath)).value.ready);
+  const fresh=await stack.request(base+'/commands',post(commandInput(),'after-migration'));assert.equal(fresh.status,202);await until(async()=>(await stack.request(base+'/commands/'+fresh.value.command_id)).value.status==='confirmed');
+  const stale=await stack.request(base+'/execution-operations',post(change,'stale-binding'));assert.equal(stale.value.status,'conflict');
+  const proofs=await lines(path.join(state,'durable.jsonl'));assert.equal(proofs.length,2);for(const proof of proofs){assert.equal(proof.version,7);assert.equal(proof.command.status,'dispatched');assert.deepEqual(proof.binding.route,proof.command.execution_route);assert.ok(proof.binding.generation);}
+  assert.equal(await readFile(configPath,'utf8'),originalConfig);assert.deepEqual((await stack.request(devicePath)).value.reported,{});
+  await writeFile(path.join(directory,'tv-bindings-result.json'),JSON.stringify({passed:true,existing_space:true,browser:true,real_http:true,real_mqtt:true,real_sqlite:true,fake_adb:true,storage_failure_zero_posts:true,lost_response_original_only:true,live_adapter_events_without_polling:true,applications_discovered:true,unauthorized_application_disabled:true,explicit_revoke_no_mqtt_fallback:true,restart_preserves_revocation:true,original_operation_does_not_reactivate:true,explicit_config_migration:true,stale_revision_conflict:true,durable_binding_before_effect:true,core_config_unchanged:true,adapter_effects:2,snapshot_version:7,hardware:false,native_app_runtime:false,physical_exactly_once:false}));
+});

@@ -17,6 +17,7 @@ pub struct App {
     pub inference_slots: Arc<Semaphore>,
     pub control: Option<Arc<crate::control_client::ControlAccess>>,
     pub connection: Arc<RwLock<crate::relay::ConnectionStatus>>,
+    pub tv: Arc<crate::tv::Adapters>,
 }
 pub fn setting(key: &str, default: &str) -> String {
     std::env::var(key).unwrap_or_else(|_| default.into())
@@ -54,6 +55,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         "LIMEIOT_CONFIG",
         "deploy/dev/config.json",
     ))?)?;
+    let tv_adapters = crate::tv::configured()?;
     let store = Store::open(&setting("LIMEIOT_DB", ".dev/gateway.sqlite"), config)?;
     let (bus, _) = broadcast::channel(64);
     let app = App {
@@ -67,10 +69,12 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         inference_slots: Arc::new(Semaphore::new(1)),
         control: crate::control_client::configured()?,
         connection: Arc::new(RwLock::new(crate::relay::ConnectionStatus::default())),
+        tv: Arc::new(tv_adapters.clone()),
     };
     let relay_tls = crate::relay::configured(app.control.as_deref())?;
     let relay = relay_tls.map(|tls| tokio::spawn(crate::relay::run(app.clone(), tls)));
     let mqtt = tokio::spawn(crate::mqtt::run(app.clone()));
+    let tv = tokio::spawn(crate::tv::run(app.clone(), tv_adapters));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     println!(
         "{}",
@@ -82,6 +86,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         })
         .await?;
     mqtt.abort();
+    tv.abort();
     if let Some(task) = relay {
         task.abort();
     }

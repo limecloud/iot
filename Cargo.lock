@@ -701,26 +701,42 @@ dependencies = [
 ]
 
 [[package]]
-name = "limeiot-core"
-version = "0.1.0"
+name = "limeiot-android-tv"
+version = "0.2.0"
 dependencies = [
  "chrono",
+ "limeiot-core",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "limeiot-core"
+version = "0.2.0"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "ring",
  "serde",
  "serde_jcs",
  "serde_json",
+ "serde_path_to_error",
  "sha2",
  "thiserror",
+ "url",
  "uuid",
 ]
 
 [[package]]
 name = "limeiot-gateway"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "axum",
  "base64 0.22.1",
  "chrono",
  "futures-util",
+ "limeiot-android-tv",
  "limeiot-core",
  "reqwest",
  "ring",
@@ -739,8 +755,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "limeiot-model-validator"
+version = "0.2.0"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "libc",
+ "limeiot-core",
+ "reqwest",
+ "ring",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+]
+
+[[package]]
 name = "limeiot-simulator"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "limeiot-core",

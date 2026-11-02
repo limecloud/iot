@@ -34,6 +34,19 @@ test('同一C固件核心通过真实MQTT完成控制、规则、原操作和跨
     await command(stack, run.command_ids[0], 'confirmed');
     const lamp = await until(async () => { const current = (await stack.request(base + '/devices/device-lamp')).value; return current.reported['light.power'].value === true && current; });
     assert.equal(lamp.reported['light.power'].source, 'host-fixture');
+    const info = await until(async () => {
+      const current = (await stack.request(base + '/devices/device-lamp')).value;
+      return current.device_info?.fresh && current.device_info;
+    });
+    assert.equal(info.device.device_id, 'device-lamp');
+    assert.equal(info.device.model_revision, lamp.model_revision);
+    assert.equal(info.device.chip, 'host');
+    assert.equal(info.device.board, 'host-fixture');
+    assert.equal(info.device.firmware_version, '0.1.0');
+    assert.equal(info.device.safe_to_update, false);
+    assert.equal(info.device.battery_percent, null);
+    assert.equal(info.session_id, lamp.session_id);
+    assert.equal(info.boot_id, lamp.boot_id);
     assert.equal((await stack.request(base + '/commands')).value.items.length, 2);
   } finally { await stack.close(); }
 });

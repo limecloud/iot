@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 
@@ -21,7 +22,7 @@ type OIDC struct {
 }
 
 func NewOIDC(cfg LoginConfig, audience string) *OIDC {
-	return &OIDC{Config: cfg, Audience: audience, Client: &http.Client{Timeout: 10 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}
+	return &OIDC{Config: cfg, Audience: audience, Client: &http.Client{Transport: oidcTransport{}, Timeout: 10 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}
 }
 
 type metadata struct {
@@ -59,7 +60,11 @@ func (p *OIDC) discovery(ctx context.Context) (*oidc.Provider, metadata, context
 	return provider, m, ctx, nil
 }
 func (p *OIDC) oauth(m metadata) oauth2.Config {
-	return oauth2.Config{ClientID: p.Config.ClientID, ClientSecret: p.Config.ClientSecret, RedirectURL: p.Config.Origin + "/api/" + p.Audience + "/v1/auth/callback", Scopes: []string{"openid", "profile"}, Endpoint: oauth2.Endpoint{AuthURL: m.Authorization, TokenURL: m.Token, AuthStyle: oauth2.AuthStyleInHeader}}
+	scopes := []string{"openid", "profile"}
+	if p.Config.CloudEnvironment != "" {
+		scopes = append(scopes, "email")
+	}
+	return oauth2.Config{ClientID: p.Config.ClientID, ClientSecret: p.Config.ClientSecret, RedirectURL: p.Config.Origin + "/api/" + p.Audience + "/v1/auth/callback", Scopes: scopes, Endpoint: oauth2.Endpoint{AuthURL: m.Authorization, TokenURL: m.Token, AuthStyle: oauth2.AuthStyleInHeader}}
 }
 func (p *OIDC) Authorize(ctx context.Context, state, nonce, verifier string) (string, error) {
 	_, m, _, err := p.discovery(ctx)
@@ -67,7 +72,11 @@ func (p *OIDC) Authorize(ctx context.Context, state, nonce, verifier string) (st
 		return "", err
 	}
 	cfg := p.oauth(m)
-	return cfg.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier), oauth2.SetAuthURLParam("nonce", nonce)), nil
+	options := []oauth2.AuthCodeOption{oauth2.S256ChallengeOption(verifier), oauth2.SetAuthURLParam("nonce", nonce)}
+	if p.Config.InstallationID != "" {
+		options = append(options, oauth2.SetAuthURLParam("installation_id", p.Config.InstallationID), oauth2.SetAuthURLParam("space_id", p.Config.SpaceID))
+	}
+	return cfg.AuthCodeURL(state, options...), nil
 }
 func (p *OIDC) Exchange(ctx context.Context, code, verifier, nonce string) (Identity, error) {
 	provider, m, ctx, err := p.discovery(ctx)
@@ -87,7 +96,11 @@ func (p *OIDC) Exchange(ctx context.Context, code, verifier, nonce string) (Iden
 	if !ok {
 		return identity, ErrIdentity
 	}
-	id, err := provider.VerifierContext(ctx, &oidc.Config{ClientID: p.Config.ClientID, SupportedSigningAlgs: []string{"RS256", "ES256", "EdDSA"}}).Verify(ctx, raw)
+	algorithms := []string{"RS256", "ES256", "EdDSA"}
+	if p.Config.CloudEnvironment != "" {
+		algorithms = []string{"RS256"}
+	}
+	id, err := provider.VerifierContext(ctx, &oidc.Config{ClientID: p.Config.ClientID, SupportedSigningAlgs: algorithms}).Verify(ctx, raw)
 	if err != nil || id.Nonce != nonce || id.Subject == "" || len(id.Subject) > 255 || id.IssuedAt.IsZero() || id.IssuedAt.After(time.Now().Add(10*time.Second)) || id.IssuedAt.Before(time.Now().Add(-10*time.Minute)) {
 		return identity, ErrIdentity
 	}
@@ -100,16 +113,29 @@ func (p *OIDC) Exchange(ctx context.Context, code, verifier, nonce string) (Iden
 	}
 	identity.Subject = id.Subject
 	identity.Name = strings.TrimSpace(claims.Name)
-	subject, err := p.current(ctx, m.UserInfo, token.AccessToken)
+	var allClaims map[string]any
+	if id.Claims(&allClaims) != nil {
+		return identity, ErrIdentity
+	}
+	authorization, err := p.cloudContext(allClaims)
+	if err != nil {
+		return identity, err
+	}
+	subject, err := p.current(ctx, m.UserInfo, token.AccessToken, authorization)
 	if err != nil {
 		return identity, err
 	}
 	if subject != id.Subject {
 		return identity, ErrIdentity
 	}
+	credential, err := p.encodeCredential(token.AccessToken, authorization)
+	if err != nil {
+		return identity, err
+	}
+	identity.AccessToken = credential
 	return identity, nil
 }
-func (p *OIDC) current(ctx context.Context, endpoint, token string) (string, error) {
+func (p *OIDC) current(ctx context.Context, endpoint, token string, expected map[string]any) (string, error) {
 	request, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
 	if err != nil {
 		return "", ErrProvider
@@ -136,16 +162,37 @@ func (p *OIDC) current(ctx context.Context, endpoint, token string) (string, err
 	if json.Unmarshal(body, &claims) != nil || claims.Subject == "" || len(claims.Subject) > 255 {
 		return "", ErrIdentity
 	}
+	if p.Config.CloudEnvironment != "" {
+		var allClaims map[string]any
+		if json.Unmarshal(body, &allClaims) != nil {
+			return "", ErrIdentity
+		}
+		current, err := p.cloudContext(allClaims)
+		if err != nil || !reflect.DeepEqual(current, expected) {
+			return "", ErrIdentity
+		}
+	}
 	return claims.Subject, nil
 }
 func (p *OIDC) Current(ctx context.Context, token string) (string, error) {
+	credential, err := p.decodeCredential(token)
+	if err != nil {
+		return "", err
+	}
 	_, m, ctx, err := p.discovery(ctx)
 	if err != nil {
 		return "", err
 	}
-	return p.current(ctx, m.UserInfo, token)
+	return p.current(ctx, m.UserInfo, credential.Token, credential.Context)
 }
 func (p *OIDC) Revoke(ctx context.Context, token string) error {
+	if strings.HasPrefix(token, cloudCredentialPrefix) {
+		credential, err := p.decodeCredential(token)
+		if err != nil {
+			return err
+		}
+		token = credential.Token
+	}
 	_, m, ctx, err := p.discovery(ctx)
 	if err != nil {
 		return err

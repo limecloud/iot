@@ -11,8 +11,8 @@ import java.util.UUID
 @Serializable data class Space(@SerialName("space_id") val spaceId: String)
 @Serializable data class Observation(val value: JsonElement, @SerialName("observed_at") val observedAt: String, val quality: String, val source: String)
 @Serializable data class Device(@SerialName("device_id") val deviceId: String, @SerialName("model_revision") val modelRevision: String, val ready: Boolean, @SerialName("last_seen") val lastSeen: String? = null, val reported: Map<String, Observation> = emptyMap())
-@Serializable data class ValueSchema(val type: String, val minimum: Double? = null, val maximum: Double? = null, val properties: Map<String, ValueSchema> = emptyMap(), val required: List<String> = emptyList()) {
-    fun sample(): JsonElement = when (type) {
+@Serializable data class ValueSchema(val type: String, val minimum: Double? = null, val maximum: Double? = null, val properties: Map<String, ValueSchema> = emptyMap(), val required: List<String> = emptyList(), @SerialName("enum") val enumValues: List<JsonElement> = emptyList()) {
+    fun sample(): JsonElement = enumValues.firstOrNull() ?: when (type) {
         "boolean" -> JsonPrimitive(true)
         "integer" -> JsonPrimitive((minimum ?: 0.0).toLong())
         "number" -> JsonPrimitive(minimum ?: 0.0)
@@ -22,7 +22,8 @@ import java.util.UUID
 }
 @Serializable data class Property(val id: String, val schema: ValueSchema, val access: List<String>)
 @Serializable data class ModelEvent(val id: String, val schema: ValueSchema)
-@Serializable data class Service(val id: String, val properties: List<Property>, val events: List<ModelEvent>)
+@Serializable data class ModelAction(val id: String, val input: ValueSchema, val output: ValueSchema, val idempotent: Boolean, val risk: String, val completion: String)
+@Serializable data class Service(val id: String, val properties: List<Property>, val events: List<ModelEvent>, val actions: List<ModelAction> = emptyList())
 @Serializable data class Model(@SerialName("model_id") val modelId: String, val services: List<Service>)
 @Serializable data class Inference(val configured: Boolean, val model: String? = null)
 @Serializable data class Capabilities(val models: Map<String, Model>, val inference: Inference? = null)
@@ -31,15 +32,30 @@ import java.util.UUID
 @Serializable data class RuleDraft(@SerialName("draft_id") val draftId: String, val request: DraftInput, val status: String, val rule: Rule? = null, @SerialName("rule_revision") val ruleRevision: String? = null, val error: String? = null) {
     val statusText: String get() = mapOf("running" to "正在生成草案", "completed" to "草案已生成", "rejected" to "草案未通过", "unknown" to "生成结果未知", "expired" to "生成请求已过期")[status] ?: status
 }
-@Serializable data class Operation(val type: String = "property.set", val path: String, val value: JsonElement)
+@Serializable data class Operation(val type: String = "property.set", val path: String, val value: JsonElement) {
+    val summary: String get() {
+        val input = value as? JsonObject
+        if (type == "action.invoke" && path == "remote.press") (input?.get("key") as? JsonPrimitive)?.contentOrNull?.let { return "遥控：${keyLabels[it] ?: it}" }
+        if (type == "action.invoke" && path == "apps.launch") (input?.get("application_id") as? JsonPrimitive)?.contentOrNull?.let { return "启动应用：$it" }
+        return "${path}：$value"
+    }
+    companion object { val keyLabels = mapOf("up" to "向上", "down" to "向下", "left" to "向左", "right" to "向右", "select" to "确认", "back" to "返回", "home" to "主页", "menu" to "菜单", "play_pause" to "播放/暂停") }
+}
 @Serializable data class CommandInput(@SerialName("device_id") val deviceId: String, @SerialName("model_revision") val modelRevision: String, @SerialName("expires_at") val expiresAt: String, val operation: Operation)
 @Serializable data class CommandIntent(val key: String, val input: CommandInput) {
     companion object {
-        fun create(device: Device, path: String, value: JsonElement, now: Instant = Instant.now()) = CommandIntent(UUID.randomUUID().toString(), CommandInput(device.deviceId, device.modelRevision, now.plusSeconds(5).toString(), Operation(path = path, value = value)))
+        fun create(device: Device, path: String, value: JsonElement, now: Instant = Instant.now(), type: String = "property.set") = CommandIntent(UUID.randomUUID().toString(), CommandInput(device.deviceId, device.modelRevision, now.plusSeconds(5).toString(), Operation(type = type, path = path, value = value)))
     }
 }
 @Serializable data class Command(@SerialName("command_id") val commandId: String, val status: String, val request: CommandInput, @SerialName("run_id") val runId: String? = null, val evidence: JsonElement? = null, val error: String? = null) {
-    val statusText: String get() = mapOf("accepted" to "已受理", "dispatched" to "已发送", "confirmed" to "已确认", "unknown" to "结果未知", "failed" to "执行失败", "expired" to "已过期", "rejected" to "已拒绝")[status] ?: status
+    val statusText: String get() = if (status == "confirmed" && request.operation.type == "action.invoke") actionStatus(evidence) else mapOf("accepted" to "已受理", "dispatched" to "已发送", "confirmed" to "已确认", "unknown" to "结果未知", "failed" to "执行失败", "expired" to "已过期", "rejected" to "已拒绝")[status] ?: status
+    companion object {
+        fun actionStatus(value: JsonElement?): String {
+            val evidence = value as? JsonObject
+            if (evidence?.get("type") != JsonPrimitive("action_result")) return "完成范围未知"
+            return when (evidence["completion"]) { JsonPrimitive("submitted") -> "输入已提交"; JsonPrimitive("observed") -> "效果已观测"; else -> "完成范围未知" }
+        }
+    }
 }
 @Serializable data class Trigger(val device: String, val event: String)
 @Serializable data class SetValue(val path: String, val value: JsonElement)

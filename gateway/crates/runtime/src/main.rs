@@ -3,11 +3,16 @@ mod application;
 mod auth;
 mod control_api;
 mod control_client;
+mod execution_api;
 mod identity;
 mod inference;
+mod model_api;
 mod mqtt;
+mod ota_api;
 mod relay;
+mod relay_rpc;
 mod store;
+mod tv;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

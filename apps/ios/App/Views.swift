@@ -10,17 +10,25 @@ enum Palette {
 }
 struct RootView: View {
     @EnvironmentObject private var home: HomeStore
+    @EnvironmentObject private var cloud: CloudStore
+    @AppStorage("connection.mode") private var connection = "nas"
     @State private var token = ""
     var body: some View {
-        Group {
-            if home.connected {
+        VStack(spacing: 0) {
+            if !home.connected && cloud.principal == nil && !cloud.pendingAuthorization {
+                Picker("连接方式", selection: $connection) { Text("家庭网关").tag("nas"); Text("云服务").tag("cloud") }
+                    .pickerStyle(.segmented).padding().disabled(home.busy || cloud.busy)
+            }
+            if connection == "cloud" { CloudRootView() }
+            else if home.connected {
                 TabView {
                     NavigationStack { DevicesView() }.tabItem { Label("设备", systemImage: "house") }
                     NavigationStack { AutomationView() }.tabItem { Label("自动化", systemImage: "bolt") }
                     NavigationStack { ActivityView() }.tabItem { Label("执行记录", systemImage: "clock") }
                     NavigationStack { Form {
                         Section("家庭网关") { Text(home.endpoint).textSelection(.enabled); Text(home.online ? "本地已连接" : "连接中断") }
-                        Button("退出登录", role: .destructive) { Task { await home.logout() } }.disabled(home.busy)
+                        if let firmware = home.firmware { NavigationLink("固件升级") { FirmwareView(firmware: firmware, devices: home.snapshot?.devices ?? []) } }
+                        Button("退出登录", role: .destructive) { Task { await home.logout() } }.disabled(home.busy || home.firmware?.busy == true)
                         MessageView()
                     }.navigationTitle("设置") }.tabItem { Label("设置", systemImage: "gearshape") }
                 }
@@ -55,6 +63,11 @@ struct DevicesView: View {
                         LabeledContent("连接", value: home.online && device.ready ? "在线" : "离线")
                         ForEach(snapshot.models[device.modelRevision]?.services ?? [], id: \.id) { service in
                             ForEach(service.properties, id: \.id) { property in PropertyView(device: device, property: property, path: "\(service.id).\(property.id)") }
+                            ForEach(service.actions ?? [], id: \.id) { action in
+                                DeviceActionView(action: action, path: service.id + "." + action.id, disabled: !home.online || !device.ready || home.busy || home.pending[device.id] != nil) { value in
+                                    Task { await home.control(device, path: service.id + "." + action.id, value: value, type: "action.invoke") }
+                                }
+                            }
                         }
                         if home.pending[device.id] != nil { Button("查询原操作") { Task { await home.recover(device) } }.disabled(!home.online || home.busy) }
                         if let command = snapshot.commands.items.first(where: { $0.request.deviceId == device.id }) { LabeledContent("最近操作", value: command.statusText).font(.footnote) }
@@ -85,6 +98,36 @@ struct PropertyView: View {
                 Button("设置") { if let value = Int(number) { Task { await home.control(device, path: path, value: .integer(value)) } } }.disabled(disabled || Int(number) == nil || Double(number).map { $0 < (property.schema.minimum ?? -.infinity) || $0 > (property.schema.maximum ?? .infinity) } != false)
             }.onChange(of: device.reported[path]?.value, initial: true) { _, next in number = next?.text ?? "0" }
         } else { LabeledContent(name, value: device.reported[path]?.value.text ?? "暂无状态") }
+    }
+}
+struct DeviceActionView: View {
+    let action: ModelAction; let path: String; let disabled: Bool; let invoke: (JSONValue) -> Void
+    @State private var input = ""
+    @State private var error = ""
+    private var keys: [String] { action.input.properties?["key"]?.enumValues?.compactMap { if case .string(let key) = $0 { key } else { nil } } ?? [] }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if path == "remote.press", !keys.isEmpty, keys.allSatisfy({ Operation.keyLabels[$0] != nil }) {
+                Text("遥控器")
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
+                    ForEach(["menu", "up", "home", "left", "select", "right", "back", "down", "play_pause"], id: \.self) { key in
+                        if keys.contains(key) { Button(Operation.keyLabels[key]!) { invoke(.object(["key": .string(key)])) }.frame(maxWidth: .infinity, minHeight: 44).buttonStyle(.bordered) }
+                        else { Color.clear.frame(height: 44).accessibilityHidden(true) }
+                    }
+                }
+            } else if path == "apps.launch" {
+                TextField("应用 ID", text: $input).textInputAutocapitalization(.never).autocorrectionDisabled()
+                Button("启动应用") { invoke(.object(["application_id": .string(input)])) }.disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || input.unicodeScalars.count > 255)
+            } else {
+                Text(action.id)
+                TextField("动作参数（JSON）", text: $input, axis: .vertical).textInputAutocapitalization(.never).autocorrectionDisabled()
+                Button("执行动作") {
+                    do { invoke(try JSONDecoder().decode(JSONValue.self, from: Data(input.utf8))); error = "" }
+                    catch { error = "请输入有效的动作参数" }
+                }
+                if !error.isEmpty { Text(error).font(.footnote).foregroundStyle(Palette.amber11) }
+            }
+        }.disabled(disabled).onAppear { if input.isEmpty && path != "apps.launch" { input = action.input.sample.jsonText } }
     }
 }
 private struct Source: Identifiable { let id: String; let device: String; let event: String; let name: String; let sample: JSONValue }
@@ -175,7 +218,7 @@ struct ActivityView: View {
                         Text(command.id).textSelection(.enabled).font(.footnote)
                         if let run = command.runId { LabeledContent("关联运行", value: run).font(.footnote) }
                         if let error = command.error { Text(error).font(.footnote) }
-                    } label: { VStack(alignment: .leading) { Text("\(command.request.operation.path == "light.power" ? "电源" : "亮度") \(command.request.operation.value.text)"); Text(command.statusText).font(.footnote).foregroundStyle(command.status == "unknown" ? Palette.amber11 : Palette.sand11) } }
+                    } label: { VStack(alignment: .leading) { Text(command.request.operation.summary); Text(command.statusText).font(.footnote).foregroundStyle(command.status == "unknown" ? Palette.amber11 : Palette.sand11) } }
                 }
             }
             Section("自动化运行") { ForEach(home.snapshot?.runs ?? []) { run in DisclosureGroup("\(run.commandIds.count) 个关联操作") { Text(run.id).textSelection(.enabled); ForEach(run.commandIds, id: \.self) { Text($0).textSelection(.enabled) } }.font(.footnote) } }

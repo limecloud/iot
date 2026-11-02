@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS control_remote_commands (
+  remote_id VARCHAR(80) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+  space_id VARCHAR(80) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  principal_id VARCHAR(80) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  gateway_id VARCHAR(80) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  binding_revision VARCHAR(80) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  local_space_id VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  request_key VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  request_digest CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  request_body JSON NOT NULL,
+  status VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  local_result JSON NULL,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  UNIQUE KEY original_request (space_id, principal_id, request_key),
+  INDEX space_history (space_id, created_at),
+  FOREIGN KEY (space_id) REFERENCES control_spaces(space_id),
+  FOREIGN KEY (principal_id) REFERENCES control_principals(principal_id),
+  FOREIGN KEY (binding_revision) REFERENCES control_gateways(revision)
+) ENGINE=InnoDB;

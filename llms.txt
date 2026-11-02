@@ -4,19 +4,64 @@
 
 ## 当前事实
 
-已实现Rust网关、SQLite耐久状态/事件、MQTT5、模拟器、JSON CLI、家庭PWA、所有者会话和规则子集。NAS源码/清单、HTTPS初始化、设备mTLS签发/撤销、备份恢复已实现，容器运行与实机待验收。C设备核心与真实Broker/Rust网关联调、离线NVS生成通过；ESP-IDF适配器/产品已有源码，目标编译因SDK获取失败而阻塞。Swift/SwiftUI和Kotlin/Compose工程已建立；两端库通过真实网关/模拟设备联调，Android调试APK构建与lint通过，iOS整包待完整Xcode。执行npm run cli -- schema发现当前工具，capabilities list读取实例能力。运行见deploy/dev/README.md、deploy/nas/README.md、firmware/README.md、apps/ios/README.md、apps/android/README.md。实机认领、OTA、云控制面、多模态和生态仍在开发。
+2026-11-02用户范围调整：跳过ESP板卡、指定NAS型号和手机真机等实机验收，不作为交付阻塞，不计为已通过。继续软件闭环、目标编译、模拟器、容器及模拟设备端到端验证；硬件证据保持hardware=false。
+
+NAS网页OTA：apps/home/src/Firmware.tsx通过正式ota-tasks HTTP与packages/protocol/ota-tasks.mjs接入独立固件信任、10分钟计划、明确批准/执行/取消、原决定恢复和原设备结果查询。基础包及完整私有版共用本地组件，当前源码私有工作台11菜单；官方云与手机OTA未因此实现。独立指纹不自动确认，原请求先保存，保存失败零发送、损坏保留禁写；同设备/任务未知操作不能用新键绕过，撤销仍可明确执行。两个真实Chromium/Rust/SQLite/MQTT旅程通过：主旅程8次变更、1次安装/1次原查询及取消零安装/丢响应/重启恢复，边界1次变更验证错绑和畸形/损坏拒绝。Home/Console/Admin构建与24个主题/尺寸/任务视图通过。索引.dev/ota-web-report.json；hardware=false、device_installation=false，新NAS镜像及完整私有版11菜单运行另验。固件验签和升级策略仍由Rust/设备SDK负责，网页只消费共享合同。
+
+NAS跨架构最新：test:nas:container与test:nas:platform均接受--platform linux/amd64或linux/arm64，共享tools/nas-verification-platform.mjs；构建显式目标、启动前校验全部镜像架构并固定ID与Compose平台、运行后核对uname。两项错误架构反向检查在启动前拒绝。显式ARM64基础包的.dev/nas-container-7104f8d01f0f26c6/report.json为passed=true，覆盖架构、HTTPS、页面、MQTT、mTLS/撤销、恢复及不补发，已清理测试容器；使用冻结镜像。AMD64源码构建在Node基础镜像解析时因Docker DNS失败，未进入编译，证据.dev/nas-platform-a7001b5613041dc5/result.json。完整工作台本次复验在共享约2GiB Docker虚拟机上MySQL初始化OOM/exit137，证据.dev/nas-platform-f9de7e6ffcb8b57c/result.json；历史工作台通过保持独立，新增完整架构检查未获全程通过。索引.dev/nas-platform-architecture-report.json。可用目标架构镜像和足够隔离运行资源是恢复条件，不停止其他会话服务或修改系统配置。
+
+NAS当前证据：.dev/nas-platform-6939c2d0e130e891/result.json为passed=true、linux/arm64、hardware=false，记录冻结网关/控制面镜像ID，覆盖完整私有工作台统一登录、10个同页菜单、显式迁移、MQTT、产品签名发布、明确配对/WSS、故障维护和完整恢复。x86_64及冻结镜像之后的源码另验。可选同机模型入口deploy/nas/compose.ollama.yaml、npm run test:nas:inference:config及test:nas:inference；两项Compose配置检查通过，支持完整私有版叠加、内部网络、非root/只读根、无公开端口/设备材料，网关不依赖模型健康。模型缓存须预装，位于安装目录之外，不纳入NAS备份。实际运行在缺ollama/ollama:0.40.13镜像的预检失败，容器未启动；Docker Hub解析失败且官方Linux包备用下载超时，不完整制品未使用。索引.dev/nas-inference-report.json为passed=false、real_containers=false、real_ollama=false、model_quality_acceptance=false；未支持意图拒绝的既有质量失败保留，不因部署配置通过而提升。
+
+Android NAS运行当前未验收：npm run test:android:runtime仅使用独立API36 ARM64 AVD/ADB、显式debug CA、生产Compose/Keystore/HTTP与真实Rust/MQTT模拟设备。历史.dev/android-runtime-0389d7a7-b432-4ab1-9d5d-f29708032ca3/report.json四项通过（两项Keystore、页面旅程与新进程恢复各一），登录/命令POST各1；含origin/云键隔离、密文损坏拒绝、503离线禁用、后台零轮询/前台恢复、不重新登录/重发和退出。随后状态栏修复及恢复页面在线/开关状态加强断言的最新.dev/android-runtime-5cf6392a-d72c-4dc0-9722-a87d381da5ba/report.json为passed=false、native_app_runtime=false，在首个Keystore阶段进程启动ANR，未进入测试；退出记录reason=6、failed to complete startup，无Java栈，根因未确认，按重试上限停止循环。独立常规Debug外观检查未观察到登录页，也未通过；历史通过不覆盖当前源码。常规Debug/Release/R8、3项App状态、lint（0错误17警告）及两包测试CA隔离通过，证据.dev/android-runtime-packaging/report.json；Release未签名发布。两端503未清除online已在现有状态层修正，Swift对应源码通过macOS类型检查，不等于iOS App运行。云系统浏览器/页面、用户安装CA、其他API/字体缩放及完整Xcode/iOS SDK另验。阶段索引.dev/android-runtime-report.json，hardware=false、实机跳过，完整目标继续进行。
+
+2026-11-02最新固件阶段：ota keygen/sign/publish已实现，正式来源contracts/ota-release.md、ota-release.schema.json及tools/ota.json。publish离线重验完整四文件包、独立trust、C3原生格式/版本/代次、内容身份、完整statement及原回执，已有制品/中断目录均不覆盖；最后原子提交published.json。NAS只读HTTPS仅提供已提交镜像/清单，拒绝内部元数据和写请求，不改变网关外连。共享check_manifest已包含trust安全代次下限。构建入口支持--firmware-version、--security-epoch和显式--native-anti-rollback，按版本/配置/角色隔离并核对实际镜像；非零代次不隐式启用eFuse策略。灯/按钮0.2.0代次0、灯0.2.0代次1目标编译通过，两角色实际目标镜像经隔离NAS HTTPS和正式下载器验证，基线是显式0.1.0宿主快照。15组Node、9项Rust、3项进程及1项NAS恢复检查通过，三份不同目标镜像覆盖实际HTTPS/下载，4份签名包经C验签/预检；Clippy和官网39文件检查通过。报告.dev/ota-publish-report.json；前阶段C侧证据保留在.dev/ota-sign-report.json。NAS备份包含制品，备份期间暂停所有发布写入；独立保留签名包，旧备份无制品时在恢复后明确导入。正式密钥/生产托管、量产认领及安全存储仍待完成，hardware=false，实机按用户要求跳过。
+
+产品固件初始化状态：离线初始化支持ota_transport.ca（需完整ota_policy），独立CA与ota_ca_ver=1写入原NVS，不继承MQTT CA。工具拒绝叶证书/私钥/额外字段/过期CA；SDK重查CA用途。li_espidf_confirm_running_image在产品驱动、身份、可信时钟及握手就绪后核对运行/选择分区和原生镜像，仅确认PENDING_VERIFY或读取VALID，错误与未知不修补。固定v6.1引导程序在首次正常加载初始OTA槽后建立VALID，本次健康门禁仍必需。产品仅在完整策略、独立CA、本次健康确认、当前原生VALID及运行/选择一致时声明可升级；执行继续完整实时预检。37项专项（含12组日志、4组健康）及5份实际NVS镜像/CRC/策略和CA字节检查通过，灯/按钮C3构建及镜像校验通过。原生健康调用为显式宿主夹具，实机按用户要求跳过，hardware=false。初始化报告.dev/ota-product-report.json；剩余见docs/24-实施计划与进度.md。
+
+
+已实现Rust网关、SQLite耐久状态/事件、MQTT5、模拟器、JSON CLI、家庭PWA、所有者会话和规则子集。NAS源码/清单、HTTPS初始化、设备mTLS签发/撤销、备份恢复已实现，Linux ARM64容器运行已通过，其他架构待验收，指定NAS实机按用户要求跳过。C设备核心通过11组宿主检查与2项真实Broker/Rust网关联调，离线NVS生成通过；固定ESP-IDF v6.1的灯/按钮C3目标编译及镜像校验通过，入口npm run build:firmware，组件锁在firmware/products/desk-node/dependencies.lock；尚未烧录。Swift/SwiftUI和Kotlin/Compose工程已建立；两端库通过真实网关/模拟设备联调，Android调试APK构建与lint通过，iOS整包待完整Xcode。执行npm run cli -- schema发现当前工具，capabilities list读取实例能力。运行见deploy/dev/README.md、deploy/nas/README.md、firmware/README.md、apps/ios/README.md、apps/android/README.md。实机认领、OTA、云控制面、多模态和生态仍在开发。
 
 文档站页面与指南在私有 iotweb/src/docs 维护，官网同源 /docs/ 呈现；本仓库 docs/ 保留开源工程规范与入门知识资料，不建立文档站应用。
 
-Go/Gin/MySQL控制面已实现账户、受众隔离会话、空间和配对/撤销；HTTP合同为contracts/control.openapi.yaml，证明与本地恢复合同为contracts/control-pairing.md，运行见server/README.md。Rust本地审核/批准/核实/撤销、独立机器密钥、家庭PWA与NAS配对备份恢复已通过test:pairing。control-pairings.*是本地所有者工具，批准须本人核对review_revision，配对码与密钥不进入模型上下文。npm run test:control独立使用临时MySQL、HTTP/OIDC夹具、race及vet，不依赖私有仓库。出站中继、Console/Admin页面及真实LimeCloud联调尚未交付；配对active不表示远程在线或可执行。
+Go/Gin/MySQL控制面已实现账户、受众隔离会话、空间和配对/撤销；HTTP合同为contracts/control.openapi.yaml，证明与本地恢复合同为contracts/control-pairing.md，运行见server/README.md。Rust本地审核/批准/核实/撤销、独立机器密钥、家庭PWA与NAS配对备份恢复已通过test:pairing。control-pairings.*是本地所有者工具，批准须本人核对review_revision，配对码与密钥不进入模型上下文。npm run test:control独立使用临时MySQL、HTTP/OIDC夹具、race及vet，不依赖私有仓库。Console/Admin基础任务已接Go同源托管；真实LimeCloud联调、完整运营和签名OTA页面仍未交付。配对active不表示远程在线或可执行。
 
-出站WSS机器认证与保活已实现，默认关闭；显式LIMEIOT_CONTROL_RELAY_ENABLED=1只为当前本地批准的active绑定连接。合同为contracts/control-relay.md及control-relay.schema.json，Node/Go/Rust共用固定证明向量。test:relay已验证真实CA/TLS、心跳、重启/断流重连、两侧撤销，移除CA后拒绝连接；本地控制继续工作。该连接尚不转发设备动作，不能据此调用不存在的远程工具。
+出站WSS机器认证与保活已实现，默认关闭；显式LIMEIOT_CONTROL_RELAY_ENABLED=1只为当前本地批准的active绑定连接。合同为contracts/control-relay.md及control-relay.schema.json，Node/Go/Rust共用固定证明向量。test:relay已验证真实CA/TLS、心跳、重启/断流重连、两侧撤销，移除CA后拒绝连接；本地控制继续工作。test:remote已验证受限设备/模型读取、命令创建与原操作核实，两端当前授权、耐久原键和断流不重放；只有MQTT模拟设备证据，实机与公网部署未通过。
+
+独立控制面工具通过npm run cli -- control schema发现，正式目录为contracts/tools/control.json；不复用本地Bearer或混入本地工具目录。私有凭据文件登录、Console显式创建最长一小时子会话并导入，详见packages/cli/README.md。发送前将完整原请求保存在本人私有文件，失败不发送；再次调用同键命令创建只查询原键，unknown返回6，不自动重放。配对码只写指定私有输出文件，身份/配对材料不进入stdout或模型。test:control:cli与test:console覆盖真实控制面/浏览器/WSS及MQTT模拟链路。
+
+原生云授权后端、同站Console确认页及Swift/Kotlin独立授权/读取/远程库已实现，正式行为为contracts/control-native.md及control.openapi.yaml。随机键/PKCE先保存在必填安全存储接口，云记录使用独立origin键；本人浏览器明确批准，材料验证主体/CSRF/受众/期限后保存，不向界面返回Token。批准与独立子会话同事务提交，恢复不重复签发，取消/父退出使子失效；v3显式迁移保持v1/v2原文。完整请求和attempted先保存再单次发送，旧键/404只读，显式reconcile核实，退出保留操作，未知不可删除。客户端核对原请求/主体/空间、摘要连续性及设备结果，未独立重算RFC8785。test:control:native通过真实HTTPS/WSS、Go/MySQL、Rust/MQTT模拟设备、Chromium及私有文件恢复，每端分别验证属性/动作，各旅程仅一条设备命令，默认传输拒绝未受信CA。
+
+SwiftUI/Compose云页面已接入源码，复用平台安全存储与默认HTTPS。前台每3秒查询，后台/离开入口取消，错误暂停；503可恢复原会话，有证明沿用原授权，无证明等待用户登录。每空间一个有效网关，逐页校验revision，空间切换清旧投影；支持设备布尔/数值控制、原操作查询/终态清理及独立退出，云页不调用NAS规则。test:clients:state通过两端各3组宿主状态检查及Android APK/lint，报告.dev/native-state-checks/report.json中native_app_runtime=false、hardware=false。Swift状态/Keychain源码类型检查及App语法通过，但缺完整Xcode/iOS SDK；云入口系统浏览器、完整会话与生命周期仍待验收。Android NAS的实际Keystore和生命周期结果见顶部最新运行证据。
 
 本地文字规则草案已实现：Ollama经RuleInference窄接口生成受限DSL，drafts.create/list/get/resolve为正式入口；CLI、PWA和Swift/Kotlin端先保存原键，响应丢失后查询原记录。模型无部署/设备/工具权限，预演后由用户明确启用。不配置模型不影响控制，网关重启中的推理恢复unknown，不重调、不切云。合同检查通过，但真实候选模型的未支持意图拒绝失败；已达本轮两次修复复验上限，质量验收阻塞，不再盲目调参或换模型。检查分别使用test:inference和显式配置后的test:inference:live；证据与后续条件以24为准，不能推断语音、视觉或通用Agent已实现。
 
 ## 入口
 
-- [文档导航](docs/README.md)：33 篇专项设计及唯一维护范围。
+电视设备Agent核心位于apps/tv-agent/core，正式合同contracts/tv-agent.md及contracts/command-receipts.md。DeviceModelProfile固定android-tv-agent/android-tv-remote两种逻辑模型，均只执行并在hello.execution_paths声明apps.launch，按键仍需外部绑定；资源按Rust规范投影后计算JCS摘要，不接受任意模型/摘要覆盖。旧材料v1隐含应用模型，v2必须model_profile；tools/tv-agent-enrollment.py以--model-profile选择。应用日志v2、遥控日志v3，允许旧应用模型v1/v2单向迁入v3，保留完整原Envelope/结果、unknown、未决和high_watermark；实时只接受当前精确模型，旧模型只供原记录/结果核对，拒绝反向变更。未回收记录仍最多128条/1MiB，满容量拒绝；网关4096条未归档，两端联合旧备份不能证明历史完整。回收阶段的132次文件应用副作用证据保留在docs/24第4.13节及.dev/tv-ledger-report.json，当前模型/日志实现与未通过项见第4.15节。
+
+独立TV app提供本机模型/指纹确认、AndroidKeyStore AES-GCM、私有SQLite FULL事务、Leanback明确组件和用户主动可见服务；源码versionCode=3/versionName=0.3.0、minSdk23/targetSdk36。模型迁移在同一SQLite事务保存加密材料和完整日志，失败回滚，原授权保留；同模型换证保留原日志。本机迁移不改变网关Device模型绑定、不批准compose；已有网关设备跨内置模型完整路线尚未验证。24项核心/材料、12项Android宿主及0.3.0 APK/lint有阶段通过，早于最后摘要规范化/固定断言和存储异常处理微调，不代表当前源码最终通过；Keystore为替身、SQLite是API28宿主沙箱。test:tv-agent现串行含旧回收旅程和新增真实JVM/假ADB组合，最新组合已握手/写v3/CLI批准，但等待两个动作可用时失败，未进入业务命令；证据见docs/24第4.15节及.dev/tv-agent-compose-_p_d_5dg/journey-retry2.log。native_app_runtime/same_device_adb_coexistence/hardware/full_goal_completed均false。Android端上TLS/Keystore/生命周期、物理归属、认领/轮换、APK更新与NAS另验，实机按24要求跳过；34第5.3/5.4节及13第10.1节维护门槛。
+
+动作命令合同为contracts/commands.md，operation.type支持property.set/action.invoke，动作参数复用value。Schema 2定义input/output、idempotent、risk、completion；submitted只确认输入提交，action_result核对输入JCS摘要、输出及时间，不修改reported。每设备32条accepted/dispatched、受理顺序分发，unknown/重启不重发；旧签名1.0/1.0组合仅支持Schema 1空actions。test:actions的4项本地HTTP/MQTT、Chromium及回执检查通过；test:remote的6项含动作CLI检查通过。Swift/Kotlin已解析动作、枚举和完成范围，NAS/云共用遥控/应用启动/通用参数控件；test:actions:native的4项完整/仅动作模型本地真实HTTP/MQTT库旅程通过，刻意丢响应后只查原键，每端两次明确动作。test:control:native的7项联合检查通过，两端分别验证属性/动作HTTPS、浏览器批准、WSS/MySQL/MQTT、丢响应/Go重启及原记录恢复，每个组合仅一条设备命令。远程path总长129、每段64；CLI重算完整命令JCS摘要，原生端绑定完整原输入并检查摘要格式/连续性与证据外壳，正式JCS摘要及精确模型校验仍归Go/Rust。Android APK/lint、两端宿主状态与Swift库检查通过，iOS整包与手机云界面运行尚未验收；Android NAS专项运行见顶部，全部设备仍为虚拟设备，hardware=false。第一方静态路由与受限ADB的软件验证见电视执行合同；现有空间明确绑定/撤销及应用发现已有完整假ADB软件旅程，实机另验；DSL invoke、通用插件、TV Agent当前组合复验及端上/物理归属仍待实现或验收；不证明物理exactly-once或真实电视控制。证据和剩余工作统一见24，阶段汇总.dev/actions-native-report.json。
+
+物模型当前输入校验已实现：共享limeiot-core定义规则与独立limeiot-model-validator进程，报告合同contracts/model-validation.md、model-validation-report.schema.json及58份共享正反例；当前validator为limeiot.model/1.1.0，支持模型Schema 1/2，Schema 1仍要求actions为空。先构建组件，以LIMEIOT_MODEL_VALIDATOR绝对路径调用npm run cli -- model validate --input MODEL_FILE可离线检查；控制面通过models.validate工具和POST /api/console/v1/models/validate检查封装model对象。无副作用、无需原键，输入摘要与候选规范模型修订分开，模型有效退出0、无效2、组件故障5。两类Console隐藏不再对应当前编辑输入的报告；保存草稿仍draft/unvalidated；签名发布、本地安装和设备绑定使用独立显式操作。npm run test:models覆盖开源隔离链；官网独立专项使用相同命令名及显式LIMEIOT_CORE_ROOT，不成为核心默认构建依赖。
+
+双模型定义兼容性已实现：正式合同contracts/model-compatibility.md、报告Schema及69份共享向量；当前checker为limeiot.model-compatibility/1.1.0。离线model compare --input FILE和控制面models.compare均输入完整baseline/candidate，无副作用。两份定义有效后，同model_id且版本递增，旧写入/动作输入仍可接受，新上报/通知/事件及动作输出仍可被旧读取者解析；读写属性同时满足两种方向。报告核对封装和两个子模型摘要；compatible=true退出0，不兼容或定义错误退出2，组件故障5。valid=false时compatible=null。不能推导命名空间所有权、硬件支持、签名发布或自动切换设备绑定；编辑器当前只提供单份输入校验。
+
+固件校验与受控下载已实现：contracts/ota.md、ota.schema.json及tools/ota.json为正式来源。构建limeiot-model-validator包中的limeiot-ota二进制，使用LIMEIOT_OTA_TOOL绝对路径运行npm run cli -- ota schema/verify/download。输入完整manifest/trust/device；verify加本地--image并只读离线，共享Rust验证独立固件签名、精确硬件/版本/模型、安全代次、电源/忙碌、容量及实际镜像摘要。download加全新--output-dir，可选--ca-file；只GET签名与本地信任允许的HTTPS源，先落原请求与开始记录，禁止重定向/自动重试，完整验证才生成firmware.bin与verified回执。0为通过，2为策略/输入/镜像不符，4为已有目录且零GET，5为网络/组件/IO故障；失败或中断不自动续传，恢复读取原receipt.json。检查入口npm run test:ota；不创建设备任务或授予安装权限，测试镜像只是文本；设备安装和完整OTA仍未交付。
+
+当前设备信息合同为contracts/device-info.md；C核心在完整快照后上报，Rust绑定当前模型/启动/会话并计算独立5000ms期限。重复报告、状态和心跳不续期，缓存不持久化；重连/离线/模型换绑清除。C3从实际应用/引导程序及备用分区取值，整数引导版本N映射0.0.N、默认板卡c3-development、USB电量null。产品可升级条件见最新固件事实；Rust模拟器缺报告不能用于升级判断，host-fixture不是实机证据。
+
+本地固件信任及执行合同为contracts/ota-tasks.md、ota-tasks.schema.json和catalog中的firmware-trusts/ota-tasks/ota-changes。先耐久记录原键/决定，计划与批准不自动安装，execute实时重检并在MQTT前提交发送意图。可能已发送后重启/离线/到期/撤销保持unknown和设备占用，不取消或重执行；reconcile只查原日志，30秒有效期、每任务最多32次。回执绑定原Envelope/清单摘要与执行ID；成功须新启动、精确版本/代次/声明范围镜像和已确认状态。网关快照v7读取v1–6且严格校验恢复，设备日志独立v2兼容v1。test:ota:tasks与test:firmware分别覆盖网关和C消费者/安装/结果恢复；离线签名包准备已实现；HTTPS托管/发布适配仍待接入。
+
+设备固件签名真实性由limeiot_ota.h提供li_ota_key_decode/validate和li_ota_authenticate；字节端口隔离SHA-256/Ed25519，ESP固定官方libsodium1.0.22~1并保留ISC许可。初始化独立确认公钥/指纹，启动重查，不接受报文公钥自举。规范化域与Rust一致；有界ASCII/安全整数JSON拒绝重复键、Unicode、非法数字及16KiB/16层/2048节点越界。真实性不独立授予安装权限；接口与全部输入边界见firmware/README.md。
+
+设备完整安装前策略由li_ota_preflight校验，独立策略绑定公钥、产品、下载origin、撤销、代次/电量和有效期，当前条件来自本机li_config_t/read_device_info和独立可信时钟。精确硬件、协议/模型、版本路径、引导程序、容量、电源/忙碌均需满足，HTTPS来源拒绝规范化歧义。完整ota_policy以ota_policy二进制块和ota_policy_ver=1保存，超过单串限制仍用原24KiB NVS；标记/块缺一、坏内容、未知版本或与公钥不符停止启动。li_ota_trust_t拥有策略内容，生命周期覆盖适配器；下行不能替换策略。预检只表示瞬时条件，安装仍需实际镜像验证和耐久授权。独立传输CA与产品健康见最新固件事实。
+
+设备独立执行日志limeiot_ota_log.h保存完整原Envelope/JCS摘要、基线、阶段、启动凭据与结果，最多4条/32KiB；版本2只读兼容版本1，合法修改才升级，不补旧未决凭据。恢复未决禁止续装，原请求只读、异参冲突；存储失败冻结并重开读取实际状态。启动选择后先耐久绑定本机凭据再重启；新启动只读观察器按原声明长度的实际镜像及确认状态证明成功/独立回滚，先保存后发布。终态原查询复核当前事实而不安装；旧期限/撤销不抹去历史结果。ESP凭据绑定目标分区/实际ota_seq和CRC，旧凭据、待确认或仅版本相同保持未知。接口见firmware/README.md。
+
+设备消费者limeiot_ota_device.h接入li_receive，精确核对topic、Envelope、当前boot/session与retain=false。重复原请求只读；查询绑定原task/execution/request/manifest摘要和最多30秒期限，证据不足保持未知。新请求使用独立签名策略及本机基线；无提供方耐久拒绝ota_installer_unavailable。已配置提供方经intent→installing→受控HTTPS/备用区校验→完整再预检/基线→awaiting_boot→选择/凭据提交→重启；每个IO边界核对连接代次、会话、可信时间、期限、策略/撤销、电源和30秒预算，不保证硬实时取消。宿主11条真实MQTT旅程与Rust/SQLite恢复已通过；产品配置及健康门禁见最新事实。
+
+- [文档导航](docs/README.md)：35 篇专项设计及唯一维护范围。
 - [IoT入门知识库](docs/knowledge/README.md)：按问题与主题学习硬件、通信、架构、智能玩具、时延和成本，含图解与小米官网资料分类。
 - [机器目录](docs/catalog.json)：稳定文档 ID、仓库相对路径、职责、状态与按任务阅读路线。
 - [需求追踪](docs/requirements.json)：FR/NFR/US/UC 的规范来源及验收关联。
@@ -31,8 +76,11 @@ Go/Gin/MySQL控制面已实现账户、受众隔离会话、空间和配对/撤�
 - 双版本与Web：[入口及身份边界](docs/15-客户端与交互设计.md)、[文档发布](docs/27-国际化与文档治理.md)、[开源核心/私有官网](docs/25-开源许可生态与商业化.md)、[仓库边界](docs/21-Monorepo与开发规范.md)。
 - Agent 开发：[工具与 API](docs/16-API事件与CLI规范.md)、[交互](docs/15-客户端与交互设计.md)、[工程结构](docs/21-Monorepo与开发规范.md)、[首个切片](docs/29-MVP端到端落地蓝图.md)。
 - 设备与网关：[模型](docs/05-自研物模型规范.md)、[MQTT](docs/06-MQTT报文与设备通信规范.md)、[固件](docs/08-ESP-IDF固件SDK设计.md)、[内核](docs/09-Rust网关内核设计.md)。
+- 电视终端：[架构与Android TV接入](docs/34-电视终端与AndroidTV接入.md)、[能力与动作](docs/05-自研物模型规范.md)、[适配](docs/07-异构协议与适配器规范.md)、[验收](docs/23-测试策略与验收矩阵.md)、[型号证据](docs/30-设备支持矩阵与证据台账.md)；FR-32/US-25/UC-23。协议夹具/假ADB显式组合证据保留在24第4.14节；受控模型、材料v2、日志v3单向迁移及真实JVM组合未通过项见[第4.15节](docs/24-实施计划与进度.md#415-tv-agent模型配置与日志迁移文档同步)。本机迁移、网关跨模型绑定、执行组合及物理归属分别验收；旧回收证据不扩展为当前源码全部通过。API23完整端上、生产认领/轮换、音量与NAS另验，实机按24要求跳过。
 - 硬件适配：[采购与接入条件](docs/19-硬件选型采购与BOM.md)、[分析与适配流程](docs/20-AI辅助逆向与设备适配流程.md)、[型号证据](docs/30-设备支持矩阵与证据台账.md)、[生态资格](docs/31-多生态兼容与开放接入.md)。
+- 多品牌架构：[调研与小米REA范围](docs/35-多品牌设备接入与升级架构调研.md)、[领域归属](docs/04-领域模型与数据设计.md)、[适配/型号映射/插件](docs/07-异构协议与适配器规范.md)、[按目标升级](docs/13-OTA与制品交付规范.md)。小米是模型与产品闭环的主要参考之一，异构接入和恢复结合HA/openHAB与目标机制；已有研究不等于完成小米/华为REA。协议、型号映射/quirks、UI与更新提供方分别扩展，第二类协议验证后再提炼通用插件合同。正式OTA制品kind仍仅device-firmware；本地信任/计划/批准、网关执行/证据恢复、C3安装/启动恢复SDK及本地签名/不可覆盖发布/HTTPS下载已有软件或目标编译证据，见24当前检查点。生产密钥材料与托管、APK/OS/厂商更新提供方分别推进，实机按用户要求跳过。
 - 产品组合：[场景与组合包](docs/32-能力组合与场景应用.md)、[模型与媒体](docs/33-多模态模型与媒体服务.md)、[生态互通](docs/31-多生态兼容与开放接入.md)。
+- 可选音频终端：[DLNA播放与采音分离](docs/36-音频播放终端与DLNA接入.md)、[用例与验收](docs/23-测试策略与验收矩阵.md)、[型号证据](docs/30-设备支持矩阵与证据台账.md)；FR-33/US-26/UC-24。平台实施状态以24为准，原厂麦克风与默认语音后端不因播放接入而转交平台。
 - 交付验证：[用例](docs/17-用户故事与用例.md)、[验收矩阵](docs/23-测试策略与验收矩阵.md)、[身份](docs/12-身份认证与安全体系.md)、[OTA](docs/13-OTA与制品交付规范.md)。
 
 ## 使用规则
@@ -40,3 +88,9 @@ Go/Gin/MySQL控制面已实现账户、受众隔离会话、空间和配对/撤�
 先按需求 ID 和任务路线定位资料，读取相关章节与夹具；实现阶段以正式 contracts/ 和运行时能力目录为准。不能把设计命令当作可执行工具，不能将模拟通过报告为实机支持。变更同步所属领域、合同、消费者、失败恢复与验收，保留原操作引用；无法执行的检查明确记录失败、跳过或阻塞。
 
 设备OS/框架与平台的分工以架构文档为准，首期原生目标为ESP-IDF。适配任务先确认原生开发或存量接入路线、接口来源、当前授权与支持用途，再开展分析；设备能联网、代码可见、持有样品或账号均不能单独证明第三方接口使用资格。
+
+产品草稿正式合同：contracts/control-products.md。Console/CLI支持products.list/create/get/save/resolve，草稿始终draft/unvalidated；HTTP200须检查saved/conflict，旧请求只查原键，404不补发。不等同正式模型发布或设备绑定切换。共享客户端输入/结果边界位于packages/protocol/products.mjs。验证入口npm run test:products。
+
+签名发布正式合同：contracts/model-release.md。发布HTTP须冻结已保存草稿修订、上一数据库发布ID（首次显式null）及visibility=public；读取published/rejected/conflict，丢响应只GET原键。独立Ed25519发布密钥，Go签名、Rust验签及模型规则、MySQL v5事务再次核对两种修订并提交制品/决定/审计。离线model verify必须指定独立确认的--trust，不发网络或写原操作。公开下载不自举信任、不授予本地安装或设备绑定；发布UI、控制面发布CLI及本地明确安装/绑定已接入；历史决定不恢复已撤销信任或回退当前绑定。
+
+电视执行与绑定合同：[execution-routes](contracts/execution-routes.md)、[机器Schema](contracts/execution-bindings.schema.json)。五项本地工具为execution-adapters.list、execution-bindings.get、device-applications.list、execution-changes.create/resolve，未扩展独立控制面远程管理目录。LIMEIOT_TV_CONFIG仅准备宿主候选；配置变化须重启和明确绑定，已有config_hash仍须匹配。bindings.bind固定完整动作集，bindings.compose固定native_paths与单个外部候选的完整分区，要求精确相同逻辑模型、当前原生session和hello.execution_paths覆盖。单命令唯一路径、跨端FIFO、逐动作action_availability；离线/unknown不改路由，撤销阻断两端，旧成功只读不复活。快照v7读取v1–6，v6隐藏组合字段拒绝；CLI/网页先存原请求，丢响应/404只查原键。通用CLI创建compose，网页显示/控制/撤销，无专用创建表单。apps.launch走原生时不提供ADB应用发现/授权。26项核心、10项适配器、6项Node及原生协议夹具2次/假ADB 2次效果属于24第4.14节和.dev/tv-composition-report.json的历史范围；真实JVM组合最新未通过见4.15。Agent已提供受控模型及保留日志的单向迁移，不等于已有网关跨模型完整迁移、Android端上或物理共存；通用IPC/热加载、APK/厂商更新仍待实现或验收。

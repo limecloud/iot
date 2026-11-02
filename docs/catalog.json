@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "project": "LimeIoT",
-  "updated_at": "2026-11-01",
+  "updated_at": "2026-11-02",
   "path_base": "repository_root",
   "scope": "documentation_navigation",
   "runtime_capability_discovery": false,
@@ -15,6 +15,18 @@
     "device_evidence": "docs/30-设备支持矩阵与证据台账.md"
   },
   "reading_routes": {
+    "heterogeneous_devices_and_updates": [
+      "DOC-35",
+      "DOC-04",
+      "DOC-05",
+      "DOC-07",
+      "DOC-13",
+      "DOC-16",
+      "DOC-20",
+      "DOC-26",
+      "DOC-24",
+      "DOC-30"
+    ],
     "web_editions_and_source_boundaries": [
       "DOC-15",
       "DOC-25",
@@ -47,6 +59,30 @@
       "DOC-15",
       "DOC-21",
       "DOC-29"
+    ],
+    "television_terminal": [
+      "DOC-34",
+      "DOC-35",
+      "DOC-05",
+      "DOC-07",
+      "DOC-12",
+      "DOC-16",
+      "DOC-21",
+      "DOC-23",
+      "DOC-24",
+      "DOC-30"
+    ],
+    "audio_playback_terminal": [
+      "DOC-36",
+      "DOC-04",
+      "DOC-05",
+      "DOC-07",
+      "DOC-12",
+      "DOC-16",
+      "DOC-33",
+      "DOC-23",
+      "DOC-24",
+      "DOC-30"
     ],
     "native_device": [
       "DOC-03",
@@ -328,6 +364,27 @@
       "path": "docs/33-多模态模型与媒体服务.md",
       "title": "多模态模型与媒体服务",
       "owns": "模型目录、调用、流、媒体、预算与数据政策",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-34",
+      "path": "docs/34-电视终端与AndroidTV接入.md",
+      "title": "电视终端与 Android TV 接入",
+      "owns": "电视设备/客户端角色、Agent与适配器、能力路由、权限和工程边界",
+      "status": "design_baseline"
+    },
+    {
+      "id": "DOC-35",
+      "path": "docs/35-多品牌设备接入与升级架构调研.md",
+      "title": "多品牌设备接入与升级架构调研",
+      "owns": "小米/华为与开放异构平台比较、采用依据、REA研究目标与证据限制",
+      "status": "research_input"
+    },
+    {
+      "id": "DOC-36",
+      "path": "docs/36-音频播放终端与DLNA接入.md",
+      "title": "音频播放终端与 DLNA 接入",
+      "owns": "可选播放角色、采音分离、媒体拉取、原厂共存与抢占边界",
       "status": "design_baseline"
     }
   ],

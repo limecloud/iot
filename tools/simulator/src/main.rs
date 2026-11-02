@@ -92,15 +92,31 @@ impl Device {
             return Err("command_expired".into());
         }
         let operation: Operation = serde_json::from_value(message.body["operation"].clone())?;
-        if operation.kind != "property.set" {
-            return Err("unsupported_capability".into());
-        }
-        self.model.write(&operation.path, &operation.value)?;
-        let mut reported = BTreeMap::new();
-        reported.insert(operation.path.clone(), operation.value.clone());
-        let result = json!({"command_id":command_id,"status":"confirmed","evidence":{"type":"device_result","observed_at":Utc::now(),"reported":reported}});
+        self.model.operation(&operation)?;
         let mut next = self.state.clone();
-        next["reported"][&operation.path] = operation.value;
+        let result = if operation.kind == "action.invoke" {
+            let action = self.model.action(&operation.path)?;
+            if action.completion != "submitted" {
+                return Err("unsupported simulator action completion".into());
+            }
+            let output = json!({});
+            action.output.validate(&output)?;
+            if !next["action_log"].is_array() {
+                next["action_log"] = json!([]);
+            }
+            next["action_log"].as_array_mut().unwrap().push(json!({
+                "command_id":command_id,"path":operation.path,"input":operation.value
+            }));
+            json!({"command_id":command_id,"status":"confirmed","evidence":{
+                "type":"action_result","observed_at":Utc::now(),"path":operation.path,
+                "input_digest":digest(&operation.value)?,"output":output,"completion":action.completion
+            }})
+        } else {
+            let mut reported = BTreeMap::new();
+            reported.insert(operation.path.clone(), operation.value.clone());
+            next["reported"][&operation.path] = operation.value;
+            json!({"command_id":command_id,"status":"confirmed","evidence":{"type":"device_result","observed_at":Utc::now(),"reported":reported}})
+        };
         next["receipts"][command_id] = json!({"digest":hash,"result":result});
         // 模拟设备的副作用就是这个快照；与回执一起原子替换，避免伪造执行证据。
         let temporary = self.path.with_extension("tmp");
@@ -190,7 +206,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(Event::Incoming(Packet::ConnAck(_)))=>{
                     device.session=None;device.challenge=id();
                     client.subscribe(format!("limeiot/v1/{}/{}/down/+",device.space,device.id),QoS::AtLeastOnce).await?;
-                    let hello=device.message("hello",json!({"challenge":device.challenge,"firmware":"simulator-0.1.0","hardware":"virtual"}));device.publish(&client,&hello).await?;
+                    let hello=device.message("hello",json!({"challenge":device.challenge,"firmware":concat!("simulator-",env!("CARGO_PKG_VERSION")),"hardware":"virtual"}));device.publish(&client,&hello).await?;
                 },
                 Ok(Event::Incoming(Packet::Publish(packet)))=>{
                     if packet.retain || packet.payload.len()>MAX_PACKET {continue;}

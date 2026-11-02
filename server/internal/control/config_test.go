@@ -70,6 +70,29 @@ func TestEnvironmentPortAndIndependentCredentials(t *testing.T) {
 		t.Fatal("explicit listen address not respected")
 	}
 }
+
+func TestCloudInstallationSelectionConfiguration(t *testing.T) {
+	for _, test := range []struct {
+		environment, installation, space string
+		valid                            bool
+	}{
+		{"production", "", "", true},
+		{"production", "ins_fixture", "sp_fixture", true},
+		{"production", "ins_fixture", "", false},
+		{"production", "", "sp_fixture", false},
+		{"production", "ins_fixture?other=x", "sp_fixture", false},
+		{"sandbox", "ins_fixture", "sp_fixture", false},
+		{"", "ins_fixture", "sp_fixture", false},
+	} {
+		cfg := Config{Origin: "https://iot.example", Mode: "private", Key: make([]byte, 32), Logins: map[string]LoginConfig{
+			"console": {Origin: "https://iot.example", LocalToken: "console-private-token-with-32-characters"},
+			"admin":   {Origin: "https://iot.example", LocalToken: "admin-private-token-with-32-characters", Issuer: "https://identity.example", ClientID: "app_fixture", ClientSecret: "fixture", CloudEnvironment: test.environment, ApplicationID: "app_fixture", InstallationID: test.installation, SpaceID: test.space},
+		}}
+		if err := cfg.Validate(); (err == nil) != test.valid {
+			t.Errorf("environment=%q installation=%q space=%q valid=%v: %v", test.environment, test.installation, test.space, test.valid, err)
+		}
+	}
+}
 func TestNodeGeneratedPairingVector(t *testing.T) {
 	raw, err := os.ReadFile("../../../contracts/examples/control-pairing-proof.json")
 	if err != nil {

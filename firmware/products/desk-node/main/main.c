@@ -7,6 +7,7 @@
 #endif
 #include "driver/gpio.h"
 #include "esp_event.h"
+#include "esp_app_desc.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_ota_ops.h"
@@ -33,37 +34,74 @@
 static const char *TAG = "desk-node";
 static EventGroupHandle_t network;
 static atomic_bool application_healthy;
-static void verify_pending_image(void *context) {
+static atomic_bool image_confirmed;
+static bool rollback_required;
+static void verify_running_image(void *context) {
     (void)context;
     const int64_t deadline = esp_timer_get_time() + INT64_C(90000000);
-    while (esp_timer_get_time() < deadline) {
+    while (!rollback_required || esp_timer_get_time() < deadline) {
         if (atomic_load(&application_healthy)) {
-            ESP_ERROR_CHECK(esp_ota_mark_app_valid_cancel_rollback());
+            if (li_espidf_confirm_running_image() != LI_OK) abort();
+            atomic_store(&image_confirmed, true);
             vTaskDelete(NULL);
         }
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-    ESP_LOGE(TAG, "Pending image did not become healthy within 90 seconds");
-    ESP_ERROR_CHECK(esp_ota_mark_app_invalid_rollback_and_reboot());
-    abort();
+    ESP_LOGE(TAG, "Image did not become healthy within 90 seconds; OTA remains disabled");
+    if (rollback_required) {
+        ESP_ERROR_CHECK(esp_ota_mark_app_invalid_rollback_and_reboot());
+        abort();
+    }
+    vTaskDelete(NULL);
 }
 static void begin_image_verification(void) {
     const esp_partition_t *running = esp_ota_get_running_partition();
     esp_ota_img_states_t state;
-    if (esp_ota_get_state_partition(running, &state) == ESP_OK && state == ESP_OTA_IMG_PENDING_VERIFY) {
-        /* 从启动开始计时，配网或等待开发时钟不能绕过回滚期限。 */
-        if (xTaskCreate(verify_pending_image, "image-health", 3072, NULL, 5, NULL) != pdPASS) abort();
-    }
+    if (!running || esp_ota_get_state_partition(running, &state) != ESP_OK
+        || (state != ESP_OTA_IMG_VALID && state != ESP_OTA_IMG_PENDING_VERIFY)) abort();
+    rollback_required = state == ESP_OTA_IMG_PENDING_VERIFY;
+    /* 原生初始VALID也须经过产品健康门禁；等待时钟/配网不能绕过待确认镜像期限。 */
+    if (xTaskCreate(verify_running_image, "image-health", 4096, NULL, 5, NULL) != pdPASS) abort();
 }
 typedef struct {
     char ssid[33], password[65], space[LI_ID_SIZE], device[LI_ID_SIZE], host[254], hardware[65];
-    char ca[4096], certificate[4096], private_key[4096];
+    char ca[4096], certificate[4096], private_key[4096], ota_https_ca[4000], bootloader_version[32];
     uint16_t port;
     bool power, clock_bootstrapped;
     int64_t brightness, clock_unix, clock_mono;
     led_strip_handle_t strip;
     li_espidf_t *iot;
+    li_ota_key_t firmware_key;
+    li_ota_trust_t *firmware_trust;
+    bool has_firmware_key;
+    bool has_ota_transport;
 } product_t;
+static bool read_device_info(void *context, li_device_info_t *info) {
+    product_t *product = context;
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    const esp_partition_t *next = esp_ota_get_next_update_partition(running);
+    esp_bootloader_desc_t bootloader; esp_app_desc_t application; esp_ota_img_states_t state;
+    if (!running || !next || next->address == running->address || esp_ota_get_bootloader_description(NULL, &bootloader) != ESP_OK || esp_ota_get_partition_description(running, &application) != ESP_OK) return false;
+    int count = snprintf(product->bootloader_version, sizeof(product->bootloader_version), "0.0.%lu", (unsigned long)bootloader.version);
+    if (count <= 0 || (size_t)count >= sizeof(product->bootloader_version)) return false;
+    const esp_partition_t *chosen = esp_ota_get_boot_partition();
+    bool pending = !atomic_load(&image_confirmed) || esp_ota_get_state_partition(running, &state) != ESP_OK
+        || state != ESP_OTA_IMG_VALID || !chosen || chosen->address != running->address;
+    *info = (li_device_info_t){
+#if CONFIG_LIMEIOT_ROLE_LAMP
+        .product_id = "desk-node-lamp",
+#else
+        .product_id = "desk-node-button",
+#endif
+        .architecture = "riscv32", .chip = "esp32c3", .board = CONFIG_LIMEIOT_BOARD_ID,
+        .bootloader_version = product->bootloader_version,
+        .security_epoch = application.secure_version, .ota_capacity_bytes = next->size,
+        .external_power = true, .has_battery = false,
+        .safe_to_update = !pending && product->has_ota_transport && product->firmware_trust,
+        .pending_update = pending,
+    };
+    return true;
+}
 static bool trusted_clock(void *context) {
     product_t *product = context;
     int64_t mono = esp_timer_get_time()/1000000, wall = (int64_t)time(NULL);
@@ -75,6 +113,45 @@ static void load_configuration(product_t *product) {
     ESP_ERROR_CHECK(nvs_flash_init());
     nvs_handle_t storage; ESP_ERROR_CHECK(nvs_open("li-config", NVS_READONLY, &storage));
     bool valid = load_string(storage, "ssid", product->ssid, sizeof(product->ssid)) && load_string(storage, "wifi_password", product->password, sizeof(product->password)) && load_string(storage, "space_id", product->space, sizeof(product->space)) && load_string(storage, "device_id", product->device, sizeof(product->device)) && load_string(storage, "broker_host", product->host, sizeof(product->host)) && load_string(storage, "hardware_rev", product->hardware, sizeof(product->hardware)) && load_string(storage, "ca", product->ca, sizeof(product->ca)) && load_string(storage, "certificate", product->certificate, sizeof(product->certificate)) && load_string(storage, "private_key", product->private_key, sizeof(product->private_key)) && nvs_get_u16(storage, "broker_port", &product->port) == ESP_OK && product->port > 0 && strlen(product->password) >= 8;
+    size_t key_size = 0, id_size = 0;
+    esp_err_t key_error = nvs_get_str(storage, "ota_public_key", NULL, &key_size);
+    esp_err_t id_error = nvs_get_str(storage, "ota_key_id", NULL, &id_size);
+    if (key_error != ESP_ERR_NVS_NOT_FOUND || id_error != ESP_ERR_NVS_NOT_FOUND) {
+        char public_key[45], key_id[72]; li_ota_crypto_t crypto;
+        product->has_firmware_key = key_error == ESP_OK && id_error == ESP_OK
+            && load_string(storage, "ota_public_key", public_key, sizeof(public_key))
+            && load_string(storage, "ota_key_id", key_id, sizeof(key_id))
+            && li_espidf_ota_crypto(&crypto)
+            && li_ota_key_decode(&crypto, public_key, key_id, &product->firmware_key) == LI_OK;
+        valid = valid && product->has_firmware_key;
+    }
+    size_t policy_size = 0; uint8_t policy_version = 0;
+    esp_err_t policy_error = nvs_get_blob(storage, "ota_policy", NULL, &policy_size);
+    esp_err_t version_error = nvs_get_u8(storage, "ota_policy_ver", &policy_version);
+    if (policy_error != ESP_ERR_NVS_NOT_FOUND || version_error != ESP_ERR_NVS_NOT_FOUND) {
+        /* 标记/策略缺一、未知版本、坏JSON或与独立公钥不符均停止，不能回退到宽松策略。 */
+        li_ota_crypto_t crypto; char *raw = NULL;
+        bool configured = policy_error == ESP_OK && version_error == ESP_OK && policy_version == 1
+            && policy_size > 0 && policy_size <= LI_MAX_PACKET && product->has_firmware_key;
+        if (configured) {
+            raw = malloc(policy_size);
+            configured = raw && nvs_get_blob(storage, "ota_policy", raw, &policy_size) == ESP_OK
+                && li_espidf_ota_crypto(&crypto)
+                && li_ota_trust_decode(&crypto, raw, policy_size, &product->firmware_trust) == LI_OK;
+        }
+        free(raw);
+        const li_ota_policy_t *policy = li_ota_trust_policy(product->firmware_trust);
+        configured = configured && policy && !memcmp(policy->key, &product->firmware_key, sizeof(product->firmware_key));
+        valid = valid && configured;
+    }
+    size_t ca_size = 0; uint8_t ca_version = 0;
+    esp_err_t ca_error = nvs_get_str(storage, "ota_https_ca", NULL, &ca_size);
+    esp_err_t ca_version_error = nvs_get_u8(storage, "ota_ca_ver", &ca_version);
+    if (ca_error != ESP_ERR_NVS_NOT_FOUND || ca_version_error != ESP_ERR_NVS_NOT_FOUND) {
+        product->has_ota_transport = ca_error == ESP_OK && ca_version_error == ESP_OK && ca_version == 1
+            && product->firmware_trust && load_string(storage, "ota_https_ca", product->ota_https_ca, sizeof(product->ota_https_ca));
+        valid = valid && product->has_ota_transport;
+    }
     nvs_close(storage);
     if (!valid) { ESP_LOGE(TAG, "commissioning configuration is missing or invalid"); abort(); }
 }
@@ -168,18 +245,18 @@ void app_main(void) {
     product_t *product = calloc(1, sizeof(*product)); if (!product) abort();
     initialize_driver(product); load_configuration(product); bootstrap_clock(product); connect_wifi(product);
 #if CONFIG_LIMEIOT_ROLE_LAMP
-    li_config_t model = {product->space, product->device, LI_LAMP_REVISION, "0.1.0", product->hardware, LI_LAMP_PROPERTIES, LI_LAMP_PROPERTY_COUNT, NULL, 0, "driver.applied"};
+    li_config_t model = {product->space, product->device, LI_LAMP_REVISION, esp_app_get_description()->version, product->hardware, LI_LAMP_PROPERTIES, LI_LAMP_PROPERTY_COUNT, NULL, 0, "driver.applied"};
 #else
-    li_config_t model = {product->space, product->device, LI_BUTTON_REVISION, "0.1.0", product->hardware, NULL, 0, LI_BUTTON_EVENTS, LI_BUTTON_EVENT_COUNT, "driver.applied"};
+    li_config_t model = {product->space, product->device, LI_BUTTON_REVISION, esp_app_get_description()->version, product->hardware, NULL, 0, LI_BUTTON_EVENTS, LI_BUTTON_EVENT_COUNT, "driver.applied"};
 #endif
-    li_espidf_options_t options = {model, product->host, product->ca, product->certificate, product->private_key, product->port, product, trusted_clock, read_property, write_property};
+    li_espidf_options_t options = {model, product->host, product->ca, product->certificate, product->private_key, product->port, product, trusted_clock, read_property, write_property, read_device_info, product->has_firmware_key ? &product->firmware_key : NULL, li_ota_trust_policy(product->firmware_trust), product->has_ota_transport ? product->ota_https_ca : NULL};
     li_error_t error = li_espidf_start(&options, &product->iot);
     if (error != LI_OK) { ESP_LOGE(TAG, "IoT Core start failed: %s", li_error_code(error)); abort(); }
 #if CONFIG_LIMEIOT_ROLE_BUTTON
     int raw = 1, stable = 1; int64_t changed = esp_timer_get_time();
 #endif
     for (;;) {
-        if (li_espidf_ready(product->iot)) atomic_store(&application_healthy, true);
+        atomic_store(&application_healthy, li_espidf_ready(product->iot) && trusted_clock(product));
 #if CONFIG_LIMEIOT_ROLE_BUTTON
         int current = gpio_get_level(CONFIG_LIMEIOT_BUTTON_GPIO); int64_t now = esp_timer_get_time();
         if (current != raw) { raw = current; changed = now; }

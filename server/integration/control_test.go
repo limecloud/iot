@@ -136,7 +136,7 @@ func newApp(t *testing.T, store *mysqlstore.Store, cfg control.Config) (*httptes
 		l.Origin = cfg.Origin
 		cfg.Logins[a] = l
 	}
-	app, err := control.New(cfg, store, store, store, store, nil)
+	app, err := control.New(cfg, control.Dependencies{Sessions: store, Registry: store, Machines: store, Remote: store, Native: store, Products: store, Publications: store, Readiness: store})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,6 +169,27 @@ func TestControlWithMySQL(t *testing.T) {
 	if mysqlstore.Check(ctx, store.DB) == nil {
 		t.Fatal("unmigrated schema accepted")
 	}
+	// 先建立真实v1基线，再验证显式升级，不用全新建库替代升级路径。
+	v1, err := os.ReadFile("../internal/mysqlstore/schema.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, statement := range strings.Split(string(v1), ";") {
+		if strings.TrimSpace(statement) != "" {
+			if _, err := store.DB.ExecContext(ctx, statement); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if _, err := store.DB.ExecContext(ctx, `CREATE TABLE control_schema_migrations (version INT PRIMARY KEY, checksum CHAR(64) NOT NULL, applied_at DATETIME(6) NOT NULL)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.DB.ExecContext(ctx, `INSERT INTO control_schema_migrations VALUES (1,?,UTC_TIMESTAMP(6))`, control.Hash(string(v1))); err != nil {
+		t.Fatal(err)
+	}
+	if mysqlstore.Check(ctx, store.DB) == nil {
+		t.Fatal("v1 treated as current schema ready")
+	}
 	if err := mysqlstore.Migrate(ctx, store.DB); err != nil {
 		t.Fatal(err)
 	}
@@ -178,13 +199,22 @@ func TestControlWithMySQL(t *testing.T) {
 	if err := mysqlstore.Check(ctx, store.DB); err != nil {
 		t.Fatal(err)
 	}
+	var versionCount int
+	if err := store.DB.QueryRow(`SELECT COUNT(*) FROM control_schema_migrations`).Scan(&versionCount); err != nil || versionCount != 5 {
+		t.Fatal("v1 upgrade did not preserve ordered history")
+	}
 	t.Run("private_sessions_pairing_and_revocation", func(t *testing.T) { testPrivate(t, store) })
 	t.Run("oidc_and_space_isolation", func(t *testing.T) { testOIDC(t, store) })
+	t.Run("cli_session_parent_and_audience", func(t *testing.T) { testCLISessions(t, store) })
+	t.Run("product_drafts", func(t *testing.T) { testProductDrafts(t, store) })
+	t.Run("model_publications", func(t *testing.T) { testModelPublications(t, store) })
+	t.Run("native_authorization_and_recovery", func(t *testing.T) { testNativeAuthorization(t, store) })
 	t.Run("machine_connection_and_revocation", func(t *testing.T) { testMachineConnections(t, store) })
+	t.Run("remote_durability_and_authorization", func(t *testing.T) { testRemoteDurability(t, store) })
 	t.Run("edge_and_https_cookie_boundaries", func(t *testing.T) {
 		origin := "https://iot.example"
 		cfg := control.Config{Mode: "private", Origin: origin, Key: make([]byte, 32), EdgeToken: control.Random(), Logins: map[string]control.LoginConfig{"console": {Origin: origin, LocalToken: control.Random()}, "admin": {Origin: origin, LocalToken: control.Random()}}}
-		app, err := control.New(cfg, store, store, store, store, nil)
+		app, err := control.New(cfg, control.Dependencies{Sessions: store, Registry: store, Machines: store, Remote: store, Native: store, Products: store, Readiness: store})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -224,6 +254,8 @@ func TestControlWithMySQL(t *testing.T) {
 		}
 	})
 	t.Run("concurrent_original_requests", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
 		owner, err := store.Principal(ctx, control.Identity{Issuer: "test-concurrency", Subject: "owner"})
 		if err != nil {
 			t.Fatal(err)
@@ -277,6 +309,8 @@ func TestControlWithMySQL(t *testing.T) {
 		}
 	})
 	t.Run("concurrent_claims_have_one_active_binding", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
 		claims := make([]control.Pairing, 2)
 		gateway := control.Claim{GatewayID: "gw-" + control.Hash("same-public-key"), LocalSpaceID: "same-local", PublicKey: "validated-by-http-layer"}
 		for i := range 2 {
@@ -406,7 +440,7 @@ func testPrivate(t *testing.T, store *mysqlstore.Store) {
 		}
 	}
 	// 新建应用实例复用耐久会话，不依赖旧实例的内存缓存。
-	second, err := control.New(cfg, store, store, store, store, nil)
+	second, err := control.New(cfg, control.Dependencies{Sessions: store, Registry: store, Machines: store, Remote: store, Native: store, Products: store, Readiness: store})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -456,18 +490,28 @@ func testPrivate(t *testing.T, store *mysqlstore.Store) {
 	if _, err := store.DB.Exec(`DELETE FROM control_schema_migrations WHERE version=1`); err != nil {
 		t.Fatal(err)
 	}
+	if mysqlstore.Migrate(context.Background(), store.DB) == nil {
+		t.Fatal("migration history gap accepted")
+	}
+	v1, err := os.ReadFile("../internal/mysqlstore/schema.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.DB.Exec(`INSERT INTO control_schema_migrations (version,checksum,applied_at) VALUES (1,?,UTC_TIMESTAMP(6))`, control.Hash(string(v1))); err != nil {
+		t.Fatal(err)
+	}
 	if err := mysqlstore.Migrate(context.Background(), store.DB); err != nil {
 		t.Fatal(err)
 	}
 	c.call("GET", "/health/ready", nil, 200)
-	if _, err := store.DB.Exec(`INSERT INTO control_schema_migrations (version,checksum,applied_at) VALUES (2,?,UTC_TIMESTAMP(6))`, strings.Repeat("0", 64)); err != nil {
+	if _, err := store.DB.Exec(`INSERT INTO control_schema_migrations (version,checksum,applied_at) VALUES (6,?,UTC_TIMESTAMP(6))`, strings.Repeat("0", 64)); err != nil {
 		t.Fatal(err)
 	}
 	c.call("GET", "/health/ready", nil, 503)
 	if mysqlstore.Migrate(context.Background(), store.DB) == nil {
 		t.Fatal("unknown future schema accepted")
 	}
-	if _, err := store.DB.Exec(`DELETE FROM control_schema_migrations WHERE version=2`); err != nil {
+	if _, err := store.DB.Exec(`DELETE FROM control_schema_migrations WHERE version=6`); err != nil {
 		t.Fatal(err)
 	}
 }

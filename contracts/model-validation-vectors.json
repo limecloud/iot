@@ -1,0 +1,348 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "lamp",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": true
+    },
+    {
+      "name": "button",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-button:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"button\",\"semantic_id\":\"urn:limeiot:service:button:1\",\"properties\":[],\"actions\":[],\"events\":[{\"id\":\"pressed\",\"semantic_id\":\"urn:limeiot:event:button-pressed:1\",\"schema\":{\"type\":\"object\",\"properties\":{\"count\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":3}},\"required\":[\"count\"],\"additionalProperties\":false}}]}]}",
+      "valid": true
+    },
+    {
+      "name": "integral-json-numbers",
+      "raw": "{\"schema_version\":1.0,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000.0},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": true
+    },
+    {
+      "name": "urn-empty-name",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_urn"
+    },
+    {
+      "name": "urn-invalid-namespace",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:-iot:model\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_urn"
+    },
+    {
+      "name": "urn-unicode",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:iot:\u706f\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_urn"
+    },
+    {
+      "name": "version-leading-zero",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"01.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_model_version"
+    },
+    {
+      "name": "version-overflow",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"4294967296.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_model_version"
+    },
+    {
+      "name": "schema-version",
+      "raw": "{\"schema_version\":3,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "unsupported_model_schema"
+    },
+    {
+      "name": "duplicate-access",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"read\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_access"
+    },
+    {
+      "name": "unknown-access",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"execute\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_access"
+    },
+    {
+      "name": "zero-age",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":0},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_max_age"
+    },
+    {
+      "name": "unit-whitespace",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"degree C\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_unit_code"
+    },
+    {
+      "name": "unit-null",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":null,\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_model_structure"
+    },
+    {
+      "name": "duplicate-property",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_or_duplicate_identifier"
+    },
+    {
+      "name": "malformed-action-definition",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[{\"id\":\"go\"}],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_model_structure"
+    },
+    {
+      "name": "unknown-field",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}],\"note\":\"private text\"}",
+      "valid": false,
+      "code": "invalid_model_structure"
+    },
+    {
+      "name": "event-urn",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[{\"id\":\"pressed\",\"semantic_id\":\"https://example.com\",\"schema\":{\"type\":\"boolean\"}}]}]}",
+      "valid": false,
+      "code": "invalid_urn"
+    },
+    {
+      "name": "event-property-collision",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[{\"id\":\"power\",\"semantic_id\":\"urn:iot:power\",\"schema\":{\"type\":\"boolean\"}}]}]}",
+      "valid": false,
+      "code": "invalid_or_duplicate_identifier"
+    },
+    {
+      "name": "unknown-type",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"array\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "unsupported_schema_type"
+    },
+    {
+      "name": "inverted-range",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"number\",\"minimum\":10,\"maximum\":1},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_schema_range"
+    },
+    {
+      "name": "integer-fractional-bound",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0.5},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_numeric_bound"
+    },
+    {
+      "name": "boolean-numeric-bound",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\",\"minimum\":0},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_numeric_bound"
+    },
+    {
+      "name": "number-string-bound",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"number\",\"minLength\":0},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_string_bounds"
+    },
+    {
+      "name": "string-long-bound",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"string\",\"maxLength\":4097},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_string_bounds"
+    },
+    {
+      "name": "string-inverted-bound",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"string\",\"minLength\":3,\"maxLength\":2},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_string_bounds"
+    },
+    {
+      "name": "empty-enum",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\",\"enum\":[]},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "enum_capacity"
+    },
+    {
+      "name": "duplicate-enum",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"integer\",\"enum\":[1,1.0]},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "duplicate_enum_value"
+    },
+    {
+      "name": "invalid-enum",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\",\"enum\":[\"true\"]},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_enum_value"
+    },
+    {
+      "name": "out-of-range-enum",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"integer\",\"maximum\":3,\"enum\":[4]},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_enum_value"
+    },
+    {
+      "name": "null-bound",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"integer\",\"minimum\":null},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_model_structure"
+    },
+    {
+      "name": "open-object",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"object\",\"additionalProperties\":true},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "unbounded_object_schema"
+    },
+    {
+      "name": "scalar-object-keyword",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\",\"additionalProperties\":false},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "inapplicable_object_keywords"
+    },
+    {
+      "name": "required-missing",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"object\",\"required\":[\"absent\"]},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_required_field"
+    },
+    {
+      "name": "required-duplicate",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"object\",\"properties\":{\"n\":{\"type\":\"integer\"}},\"required\":[\"n\",\"n\"]},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_required_field"
+    },
+    {
+      "name": "unknown-schema-field",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\",\"description\":\"private text\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_model_structure"
+    },
+    {
+      "name": "empty-inapplicable-collections",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"boolean\",\"properties\":{},\"required\":[]},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": true
+    },
+    {
+      "name": "schema-depth",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:demo-lamp:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"light\",\"semantic_id\":\"urn:limeiot:service:light:1\",\"properties\":[{\"id\":\"power\",\"semantic_id\":\"urn:limeiot:property:power:1\",\"schema\":{\"type\":\"object\",\"properties\":{\"n\":{\"type\":\"object\",\"properties\":{\"n\":{\"type\":\"object\",\"properties\":{\"n\":{\"type\":\"object\",\"properties\":{\"n\":{\"type\":\"object\",\"properties\":{\"n\":{\"type\":\"boolean\"}}}}}}}}}}},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":60000},{\"id\":\"brightness\",\"semantic_id\":\"urn:limeiot:property:brightness:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":60000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "schema_depth_exceeded"
+    },
+    {
+      "name": "duplicate-json",
+      "raw": "{\"a\":1,\"a\":2}",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "nested-duplicate-json",
+      "raw": "{\"a\":{\"n\":1,\"n\":2}}",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "unpaired-surrogate",
+      "raw": "{\"a\":\"\\ud800\"}",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "unsafe-integer",
+      "raw": "{\"n\":9007199254740992}",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "nonfinite-number",
+      "raw": "{\"n\":1e400}",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "deep-json",
+      "raw": "{\"a\":[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]}",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "node-capacity",
+      "raw": "{\"a\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "jcs-expanded-size",
+      "raw": "{\"a\":[1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20,1e20]}",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "raw-size",
+      "raw": "{\"a\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "trailing-json",
+      "raw": "{} {}",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "non-object",
+      "raw": "[]",
+      "valid": false,
+      "code": "invalid_model_document"
+    },
+    {
+      "name": "schema2-television-actions",
+      "raw": "{\"schema_version\":2,\"model_id\":\"urn:limeiot:model:android-tv:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"remote\",\"semantic_id\":\"urn:limeiot:service:remote:1\",\"properties\":[],\"actions\":[{\"id\":\"press\",\"semantic_id\":\"urn:limeiot:action:remote-press:1\",\"input\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"left\",\"right\",\"select\",\"back\",\"home\",\"menu\",\"play_pause\"]}},\"required\":[\"key\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"apps\",\"semantic_id\":\"urn:limeiot:service:applications:1\",\"properties\":[],\"actions\":[{\"id\":\"launch\",\"semantic_id\":\"urn:limeiot:action:application-launch:1\",\"input\":{\"type\":\"object\",\"properties\":{\"application_id\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":255}},\"required\":[\"application_id\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"audio\",\"semantic_id\":\"urn:limeiot:service:audio:1\",\"properties\":[{\"id\":\"volume\",\"semantic_id\":\"urn:limeiot:property:volume:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":15000},{\"id\":\"muted\",\"semantic_id\":\"urn:limeiot:property:muted:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":15000}],\"actions\":[],\"events\":[]}]}",
+      "valid": true
+    },
+    {
+      "name": "schema1-no-actions",
+      "raw": "{\"schema_version\":1,\"model_id\":\"urn:limeiot:model:android-tv:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"remote\",\"semantic_id\":\"urn:limeiot:service:remote:1\",\"properties\":[],\"actions\":[{\"id\":\"press\",\"semantic_id\":\"urn:limeiot:action:remote-press:1\",\"input\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"left\",\"right\",\"select\",\"back\",\"home\",\"menu\",\"play_pause\"]}},\"required\":[\"key\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"apps\",\"semantic_id\":\"urn:limeiot:service:applications:1\",\"properties\":[],\"actions\":[{\"id\":\"launch\",\"semantic_id\":\"urn:limeiot:action:application-launch:1\",\"input\":{\"type\":\"object\",\"properties\":{\"application_id\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":255}},\"required\":[\"application_id\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"audio\",\"semantic_id\":\"urn:limeiot:service:audio:1\",\"properties\":[{\"id\":\"volume\",\"semantic_id\":\"urn:limeiot:property:volume:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":15000},{\"id\":\"muted\",\"semantic_id\":\"urn:limeiot:property:muted:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":15000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "unsupported_actions"
+    },
+    {
+      "name": "action-risk",
+      "raw": "{\"schema_version\":2,\"model_id\":\"urn:limeiot:model:android-tv:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"remote\",\"semantic_id\":\"urn:limeiot:service:remote:1\",\"properties\":[],\"actions\":[{\"id\":\"press\",\"semantic_id\":\"urn:limeiot:action:remote-press:1\",\"input\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"left\",\"right\",\"select\",\"back\",\"home\",\"menu\",\"play_pause\"]}},\"required\":[\"key\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"unsafe\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"apps\",\"semantic_id\":\"urn:limeiot:service:applications:1\",\"properties\":[],\"actions\":[{\"id\":\"launch\",\"semantic_id\":\"urn:limeiot:action:application-launch:1\",\"input\":{\"type\":\"object\",\"properties\":{\"application_id\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":255}},\"required\":[\"application_id\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"audio\",\"semantic_id\":\"urn:limeiot:service:audio:1\",\"properties\":[{\"id\":\"volume\",\"semantic_id\":\"urn:limeiot:property:volume:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":15000},{\"id\":\"muted\",\"semantic_id\":\"urn:limeiot:property:muted:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":15000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_action_risk"
+    },
+    {
+      "name": "action-completion",
+      "raw": "{\"schema_version\":2,\"model_id\":\"urn:limeiot:model:android-tv:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"remote\",\"semantic_id\":\"urn:limeiot:service:remote:1\",\"properties\":[],\"actions\":[{\"id\":\"press\",\"semantic_id\":\"urn:limeiot:action:remote-press:1\",\"input\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"left\",\"right\",\"select\",\"back\",\"home\",\"menu\",\"play_pause\"]}},\"required\":[\"key\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"completed\"}],\"events\":[]},{\"id\":\"apps\",\"semantic_id\":\"urn:limeiot:service:applications:1\",\"properties\":[],\"actions\":[{\"id\":\"launch\",\"semantic_id\":\"urn:limeiot:action:application-launch:1\",\"input\":{\"type\":\"object\",\"properties\":{\"application_id\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":255}},\"required\":[\"application_id\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"audio\",\"semantic_id\":\"urn:limeiot:service:audio:1\",\"properties\":[{\"id\":\"volume\",\"semantic_id\":\"urn:limeiot:property:volume:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":15000},{\"id\":\"muted\",\"semantic_id\":\"urn:limeiot:property:muted:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":15000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_action_completion"
+    },
+    {
+      "name": "action-output",
+      "raw": "{\"schema_version\":2,\"model_id\":\"urn:limeiot:model:android-tv:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"remote\",\"semantic_id\":\"urn:limeiot:service:remote:1\",\"properties\":[],\"actions\":[{\"id\":\"press\",\"semantic_id\":\"urn:limeiot:action:remote-press:1\",\"input\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"left\",\"right\",\"select\",\"back\",\"home\",\"menu\",\"play_pause\"]}},\"required\":[\"key\"],\"additionalProperties\":false},\"output\":{\"type\":\"array\"},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"apps\",\"semantic_id\":\"urn:limeiot:service:applications:1\",\"properties\":[],\"actions\":[{\"id\":\"launch\",\"semantic_id\":\"urn:limeiot:action:application-launch:1\",\"input\":{\"type\":\"object\",\"properties\":{\"application_id\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":255}},\"required\":[\"application_id\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"audio\",\"semantic_id\":\"urn:limeiot:service:audio:1\",\"properties\":[{\"id\":\"volume\",\"semantic_id\":\"urn:limeiot:property:volume:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":15000},{\"id\":\"muted\",\"semantic_id\":\"urn:limeiot:property:muted:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":15000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "unsupported_schema_type"
+    },
+    {
+      "name": "duplicate-action-id",
+      "raw": "{\"schema_version\":2,\"model_id\":\"urn:limeiot:model:android-tv:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"remote\",\"semantic_id\":\"urn:limeiot:service:remote:1\",\"properties\":[],\"actions\":[{\"id\":\"press\",\"semantic_id\":\"urn:limeiot:action:remote-press:1\",\"input\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"left\",\"right\",\"select\",\"back\",\"home\",\"menu\",\"play_pause\"]}},\"required\":[\"key\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"},{\"id\":\"press\",\"semantic_id\":\"urn:limeiot:action:remote-press:1\",\"input\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"left\",\"right\",\"select\",\"back\",\"home\",\"menu\",\"play_pause\"]}},\"required\":[\"key\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"apps\",\"semantic_id\":\"urn:limeiot:service:applications:1\",\"properties\":[],\"actions\":[{\"id\":\"launch\",\"semantic_id\":\"urn:limeiot:action:application-launch:1\",\"input\":{\"type\":\"object\",\"properties\":{\"application_id\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":255}},\"required\":[\"application_id\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"audio\",\"semantic_id\":\"urn:limeiot:service:audio:1\",\"properties\":[{\"id\":\"volume\",\"semantic_id\":\"urn:limeiot:property:volume:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":15000},{\"id\":\"muted\",\"semantic_id\":\"urn:limeiot:property:muted:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":15000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_or_duplicate_identifier"
+    },
+    {
+      "name": "action-idempotency-required",
+      "raw": "{\"schema_version\":2,\"model_id\":\"urn:limeiot:model:android-tv:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"remote\",\"semantic_id\":\"urn:limeiot:service:remote:1\",\"properties\":[],\"actions\":[{\"id\":\"press\",\"semantic_id\":\"urn:limeiot:action:remote-press:1\",\"input\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"left\",\"right\",\"select\",\"back\",\"home\",\"menu\",\"play_pause\"]}},\"required\":[\"key\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"apps\",\"semantic_id\":\"urn:limeiot:service:applications:1\",\"properties\":[],\"actions\":[{\"id\":\"launch\",\"semantic_id\":\"urn:limeiot:action:application-launch:1\",\"input\":{\"type\":\"object\",\"properties\":{\"application_id\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":255}},\"required\":[\"application_id\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"audio\",\"semantic_id\":\"urn:limeiot:service:audio:1\",\"properties\":[{\"id\":\"volume\",\"semantic_id\":\"urn:limeiot:property:volume:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":15000},{\"id\":\"muted\",\"semantic_id\":\"urn:limeiot:property:muted:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":15000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_model_structure"
+    },
+    {
+      "name": "action-unknown-fields",
+      "raw": "{\"schema_version\":2,\"model_id\":\"urn:limeiot:model:android-tv:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"remote\",\"semantic_id\":\"urn:limeiot:service:remote:1\",\"properties\":[],\"actions\":[{\"id\":\"press\",\"semantic_id\":\"urn:limeiot:action:remote-press:1\",\"input\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"up\",\"down\",\"left\",\"right\",\"select\",\"back\",\"home\",\"menu\",\"play_pause\"]}},\"required\":[\"key\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\",\"shell\":\"input keyevent HOME\"}],\"events\":[]},{\"id\":\"apps\",\"semantic_id\":\"urn:limeiot:service:applications:1\",\"properties\":[],\"actions\":[{\"id\":\"launch\",\"semantic_id\":\"urn:limeiot:action:application-launch:1\",\"input\":{\"type\":\"object\",\"properties\":{\"application_id\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":255}},\"required\":[\"application_id\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"audio\",\"semantic_id\":\"urn:limeiot:service:audio:1\",\"properties\":[{\"id\":\"volume\",\"semantic_id\":\"urn:limeiot:property:volume:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":15000},{\"id\":\"muted\",\"semantic_id\":\"urn:limeiot:property:muted:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":15000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "invalid_model_structure"
+    },
+    {
+      "name": "action-enum-duplicates",
+      "raw": "{\"schema_version\":2,\"model_id\":\"urn:limeiot:model:android-tv:1\",\"model_version\":\"1.0.0\",\"services\":[{\"id\":\"remote\",\"semantic_id\":\"urn:limeiot:service:remote:1\",\"properties\":[],\"actions\":[{\"id\":\"press\",\"semantic_id\":\"urn:limeiot:action:remote-press:1\",\"input\":{\"type\":\"object\",\"properties\":{\"key\":{\"type\":\"string\",\"enum\":[\"home\",\"home\"]}},\"required\":[\"key\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"apps\",\"semantic_id\":\"urn:limeiot:service:applications:1\",\"properties\":[],\"actions\":[{\"id\":\"launch\",\"semantic_id\":\"urn:limeiot:action:application-launch:1\",\"input\":{\"type\":\"object\",\"properties\":{\"application_id\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":255}},\"required\":[\"application_id\"],\"additionalProperties\":false},\"output\":{\"type\":\"object\",\"properties\":{},\"required\":[],\"additionalProperties\":false},\"idempotent\":false,\"risk\":\"low\",\"completion\":\"submitted\"}],\"events\":[]},{\"id\":\"audio\",\"semantic_id\":\"urn:limeiot:service:audio:1\",\"properties\":[{\"id\":\"volume\",\"semantic_id\":\"urn:limeiot:property:volume:1\",\"schema\":{\"type\":\"integer\",\"minimum\":0,\"maximum\":100},\"access\":[\"read\",\"write\",\"notify\"],\"unit\":\"percent\",\"max_age_ms\":15000},{\"id\":\"muted\",\"semantic_id\":\"urn:limeiot:property:muted:1\",\"schema\":{\"type\":\"boolean\"},\"access\":[\"read\",\"write\",\"notify\"],\"max_age_ms\":15000}],\"actions\":[],\"events\":[]}]}",
+      "valid": false,
+      "code": "duplicate_enum_value"
+    }
+  ]
+}

@@ -48,7 +48,7 @@ func testMachineConnections(t *testing.T, store *mysqlstore.Store) {
 	server := httptest.NewUnstartedServer(nil)
 	origin := "https://" + server.Listener.Addr().String()
 	cfg := control.Config{Mode: "private", Origin: origin, Key: make([]byte, 32), Logins: map[string]control.LoginConfig{"console": {Origin: origin, LocalToken: control.Random()}, "admin": {Origin: origin, LocalToken: control.Random()}}}
-	app, err := control.New(cfg, store, store, store, store, nil)
+	app, err := control.New(cfg, control.Dependencies{Sessions: store, Registry: store, Machines: store, Remote: store, Native: store, Products: store, Readiness: store})
 	if err != nil {
 		t.Fatal(err)
 	}

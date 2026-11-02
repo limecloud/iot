@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT explicit model release trust",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "issuer",
+    "publisher_id",
+    "namespace",
+    "signing_key_id",
+    "public_key"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "issuer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 400
+    },
+    "publisher_id": {
+      "type": "string",
+      "pattern": "^publisher-[a-f0-9]{64}$"
+    },
+    "namespace": {
+      "type": "string",
+      "pattern": "^p-[a-f0-9]{30}$"
+    },
+    "signing_key_id": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "public_key": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{43}=$"
+    }
+  }
+}

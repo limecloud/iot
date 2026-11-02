@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFile, writeFile, stat } from 'node:fs/promises';
+import { readFile, writeFile, stat, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { root, startStack, freePort, stop, until } from '../tools/dev-stack.mjs';
 
@@ -11,6 +11,8 @@ const manager = path.join(root, 'deploy/nas/manage.py');
 test('NAS 初始化、耐久备份、新目录恢复、凭据与损坏拒绝', { timeout: 45000 }, async t => {
   const directory = path.join(root, '.dev', `nas-test-${Date.now()}`);
   await exec('python3', [manager, 'init', '--directory', directory, '--origin', 'https://127.0.0.1:18443']);
+  assert.deepEqual(await readdir(path.join(directory, 'firmware')), []);
+  await writeFile(path.join(directory, 'firmware/backup-fixture.bin'), 'artifact-cache');
   assert.equal((await stat(path.join(directory, 'secrets/owner-token'))).mode & 0o777, 0o600);
   await exec('openssl', ['verify', '-CAfile', path.join(directory, 'authority/ca.crt'), '-verify_ip', '127.0.0.1', path.join(directory, 'tls/server.crt')]);
   const secret = async file => (await readFile(path.join(directory, 'secrets', file), 'utf8')).trim();
@@ -33,6 +35,9 @@ test('NAS 初始化、耐久备份、新目录恢复、凭据与损坏拒绝', {
   const backup = `${directory}-backup`, restored = `${directory}-restored`;
   await exec('python3', [manager, 'backup', '--directory', directory, '--output', backup]);
   await exec('python3', [manager, 'restore', '--directory', restored, '--backup', backup]);
+  assert.deepEqual(await readdir(path.join(restored, 'firmware')), ['backup-fixture.bin']);
+  assert.equal(await readFile(path.join(restored, 'firmware/backup-fixture.bin'), 'utf8'), 'artifact-cache');
+  assert.equal((await stat(path.join(restored, 'firmware'))).mode & 0o777, 0o700);
   await exec('python3', [issuer, 'revoke', '--directory', restored, '--serial', identity.serial]);
   await assert.rejects(exec('openssl', ['verify', '-crl_check', '-CRLfile', path.join(restored, 'broker-tls/revoked.crl'), '-CAfile', path.join(restored, 'device-authority/ca.crt'), `${directory}-identity/device.crt`]), /certificate revoked/);
   await exec('openssl', ['verify', '-crl_check', '-CRLfile', path.join(directory, 'broker-tls/revoked.crl'), '-CAfile', path.join(directory, 'device-authority/ca.crt'), `${directory}-identity/device.crt`]);

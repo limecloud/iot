@@ -1,4 +1,4 @@
-//! 出站机器连接独立于浏览器会话；当前只认证和保活，不转发设备动作。
+//! 出站机器连接独立于浏览器会话；受限动作另经当前本地域授权。
 use crate::{application::App, control_client::ControlAccess};
 use chrono::{DateTime, Utc};
 use futures_util::{SinkExt, StreamExt};
@@ -81,6 +81,7 @@ impl Challenge {
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 enum Incoming {
+    Request(crate::relay_rpc::Request),
     Ready {
         connection_id: String,
         binding_revision: String,
@@ -259,9 +260,11 @@ async fn dial(
     .map_err(|_| err("relay_unavailable"))?
 }
 async fn send(socket: &mut Socket, value: serde_json::Value) -> Result<()> {
+    let text = value.to_string();
+    ensure(text.len() <= 16384, "relay_result_too_large")?;
     timeout(
         Duration::from_secs(2),
-        socket.send(Message::Text(value.to_string().into())),
+        socket.send(Message::Text(text.into())),
     )
     .await
     .map_err(|_| err("relay_disconnected"))?
@@ -335,17 +338,37 @@ async fn session(
     let mut ticker = tokio::time::interval(Duration::from_secs(5));
     ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     let mut sequence = 0u64;
+    let mut awaiting: Option<(u64, tokio::time::Instant)> = None;
     loop {
         tokio::select! {
             _ = updates.recv() => ensure(still_current(app, link).await, "relay_local_authorization_changed")?,
             _ = ticker.tick() => {
+                ensure(awaiting.is_none(),"relay_disconnected")?;
                 ensure(still_current(app, link).await, "relay_local_authorization_changed")?;
                 sequence = sequence.checked_add(1).ok_or_else(|| err("relay_invalid_response"))?;
                 send(&mut socket, serde_json::json!({"type":"heartbeat","connection_id":challenge.connection_id,"sequence":sequence})).await?;
-                let response: Incoming = timeout(Duration::from_secs(3), read(&mut socket)).await.map_err(|_| err("relay_disconnected"))??;
-                ensure(matches!(response, Incoming::Heartbeat { connection_id, sequence: returned } if connection_id == challenge.connection_id && returned == sequence), "relay_invalid_response")?;
+                awaiting=Some((sequence,tokio::time::Instant::now()+Duration::from_secs(3)));
             },
+            _ = async { if let Some((_,deadline))=awaiting { tokio::time::sleep_until(deadline).await } else { std::future::pending::<()>().await } } => return Err(err("relay_disconnected")),
             message = socket.next() => match message {
+                Some(Ok(Message::Text(text))) => {
+                    let incoming:Incoming=serde_json::from_str(&text).map_err(|_|err("relay_invalid_response"))?;
+                    match incoming {
+                        Incoming::Heartbeat { connection_id,sequence:returned } => {
+                            ensure(connection_id==challenge.connection_id && awaiting.is_some_and(|(expected,_)|expected==returned),"relay_invalid_response")?;
+                            awaiting=None;
+                        }
+                        Incoming::Request(request) => {
+                            let request_id=request.request_id.clone();
+                            let result=crate::relay_rpc::execute(app,link,&challenge.connection_id,request).await;
+                            let (value,error)=match result {Ok(value)=>(value,None),Err(error)=>(serde_json::Value::Null,Some(error.code))};
+                            let mut response=serde_json::json!({"type":"result","connection_id":challenge.connection_id,"request_id":request_id,"binding_revision":binding.revision,"result":value,"error":error});
+                            if response.to_string().len()>16384 { response["result"]=serde_json::Value::Null;response["error"]=serde_json::json!("relay_result_too_large"); }
+                            send(&mut socket,response).await?;
+                        }
+                        _=>return Err(err("relay_invalid_response")),
+                    }
+                }
                 Some(Ok(Message::Ping(_))) => socket.flush().await.map_err(|_| err("relay_disconnected"))?,
                 Some(Ok(Message::Pong(_))) => {},
                 _ => return Err(err("relay_disconnected")),

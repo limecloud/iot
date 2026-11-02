@@ -6,18 +6,24 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
 
 type LoginConfig struct {
 	Origin, Issuer, ClientID, ClientSecret, LocalToken string
+	CloudEnvironment, ApplicationID                    string
+	InstallationID, SpaceID                            string
 	Operators                                          map[string]bool
 }
 type Config struct {
 	Address, Mode, Origin, EdgeToken string
 	Key                              []byte
 	Logins                           map[string]LoginConfig
+	WebDirs                          map[string]string
+	ModelValidatorPath               string
+	ModelReleaseKeyFile              string
 }
 
 func secretFile(name string, minimum int) (string, error) {
@@ -54,7 +60,7 @@ func validIssuer(value string) bool {
 	return exactOrigin(copy.String())
 }
 func FromEnv() (Config, error) {
-	cfg := Config{Address: os.Getenv("LIMEIOT_CONTROL_LISTEN"), Mode: os.Getenv("LIMEIOT_CONTROL_MODE"), Origin: os.Getenv("LIMEIOT_CONTROL_ORIGIN"), Logins: map[string]LoginConfig{}}
+	cfg := Config{Address: os.Getenv("LIMEIOT_CONTROL_LISTEN"), Mode: os.Getenv("LIMEIOT_CONTROL_MODE"), Origin: os.Getenv("LIMEIOT_CONTROL_ORIGIN"), Logins: map[string]LoginConfig{}, WebDirs: map[string]string{"console": os.Getenv("LIMEIOT_CONSOLE_WEB_DIR"), "admin": os.Getenv("LIMEIOT_ADMIN_WEB_DIR")}}
 	if cfg.Address == "" {
 		cfg.Address = "127.0.0.1:17890"
 		if value := os.Getenv("PORT"); value != "" {
@@ -65,6 +71,8 @@ func FromEnv() (Config, error) {
 			cfg.Address = net.JoinHostPort("0.0.0.0", value)
 		}
 	}
+	cfg.ModelValidatorPath = os.Getenv("LIMEIOT_MODEL_VALIDATOR")
+	cfg.ModelReleaseKeyFile = os.Getenv("LIMEIOT_MODEL_RELEASE_KEY_FILE")
 	if cfg.Mode == "" {
 		cfg.Mode = "private"
 	}
@@ -90,7 +98,7 @@ func FromEnv() (Config, error) {
 		if err != nil {
 			return cfg, err
 		}
-		login := LoginConfig{Origin: os.Getenv(prefix + "ORIGIN"), Issuer: os.Getenv(prefix + "OIDC_ISSUER"), ClientID: os.Getenv(prefix + "OIDC_CLIENT_ID"), ClientSecret: clientSecret, LocalToken: local, Operators: map[string]bool{}}
+		login := LoginConfig{Origin: os.Getenv(prefix + "ORIGIN"), Issuer: os.Getenv(prefix + "OIDC_ISSUER"), ClientID: os.Getenv(prefix + "OIDC_CLIENT_ID"), ClientSecret: clientSecret, LocalToken: local, CloudEnvironment: os.Getenv(prefix + "CLOUD_ENVIRONMENT"), ApplicationID: os.Getenv(prefix + "APPLICATION_ID"), InstallationID: os.Getenv(prefix + "INSTALLATION_ID"), SpaceID: os.Getenv(prefix + "SPACE_ID"), Operators: map[string]bool{}}
 		if login.Origin == "" {
 			login.Origin = cfg.Origin
 		}
@@ -104,6 +112,12 @@ func FromEnv() (Config, error) {
 	return cfg, cfg.Validate()
 }
 func (cfg Config) Validate() error {
+	if cfg.ModelReleaseKeyFile != "" && !filepath.IsAbs(cfg.ModelReleaseKeyFile) {
+		return errors.New("absolute_model_release_key_path_required")
+	}
+	if cfg.ModelValidatorPath != "" && !filepath.IsAbs(cfg.ModelValidatorPath) {
+		return errors.New("absolute_model_validator_path_required")
+	}
 	if !exactOrigin(cfg.Origin) || len(cfg.Key) != 32 || (cfg.Mode != "private" && cfg.Mode != "cloud") {
 		return errors.New("invalid_control_configuration")
 	}
@@ -117,6 +131,12 @@ func (cfg Config) Validate() error {
 		}
 		if login.Issuer != "" && (!validIssuer(login.Issuer) || login.ClientID == "" || len(login.ClientID) > 512 || login.ClientSecret == "" || len(login.ClientSecret) > 4096) {
 			return errors.New("invalid_oidc_configuration")
+		}
+		if login.CloudEnvironment != "" && ((login.CloudEnvironment != "production" && login.CloudEnvironment != "sandbox") || login.Issuer == "" || !cloudIdentifier.MatchString(login.ApplicationID)) {
+			return errors.New("invalid_cloud_identity_configuration")
+		}
+		if (login.InstallationID != "" || login.SpaceID != "") && (login.CloudEnvironment != "production" || !cloudIdentifier.MatchString(login.InstallationID) || !cloudIdentifier.MatchString(login.SpaceID)) {
+			return errors.New("invalid_cloud_installation_selection")
 		}
 		if cfg.Mode == "private" && len(login.LocalToken) < 32 {
 			return errors.New("local_credentials_required")

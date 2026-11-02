@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile,writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { request as httpRequest } from 'node:http';
 import { setTimeout as delay } from 'node:timers/promises';
 import path from 'node:path';
 import { root,startStack,until } from '../tools/dev-stack.mjs';
@@ -68,6 +69,15 @@ test('本地会话、来源、CSRF、撤销、重启失效与限流', {timeout:3
   const stack=await startStack();t.after(()=>stack.close());
   const origin=stack.env.LIMEIOT_ENDPOINT;
   const call=(resource,options={})=>fetch(origin+resource,{...options,signal:AbortSignal.timeout(4000)});
+  const entryCall=(resource,headers)=>new Promise((resolve,reject)=>{
+    const request=httpRequest(origin+resource,{headers},response=>{response.resume();response.once('end',()=>resolve({status:response.statusCode,headers:response.headers}));});
+    request.setTimeout(4000,()=>request.destroy(new Error('request_timeout')));request.on('error',reject);request.end();
+  });
+  const navigation={'Sec-Fetch-Site':'cross-site','Sec-Fetch-Mode':'navigate','Sec-Fetch-Dest':'document'};
+  const entry=await entryCall('/',navigation);assert.equal(entry.status,200);assert.match(entry.headers['content-type'],/text\/html/);
+  assert.equal((await entryCall('/',{...navigation,'Sec-Fetch-Dest':'iframe'})).status,403);
+  assert.equal((await entryCall('/',{...navigation,Origin:'https://other.invalid'})).status,403);
+  assert.equal((await entryCall('/api/v1/auth/session',navigation)).status,403);
   assert.equal((await call('/api/v1/auth/session',post({token:stack.env.LIMEIOT_TOKEN}))).status,403);
   assert.equal((await call('/api/v1/auth/session',post({token:stack.env.LIMEIOT_TOKEN},{Origin:'https://other.invalid'}))).status,403);
   assert.equal((await stack.request(`${prefix}/devices`,{headers:{Origin:origin}})).status,403);

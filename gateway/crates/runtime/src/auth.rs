@@ -127,10 +127,20 @@ pub async fn boundary(State(app): State<App>, request: Request, next: Next) -> R
         .authority()
         .map(|v| v.as_str())
         .or_else(|| headers.get(header::HOST).and_then(|v| v.to_str().ok()));
+    // 外部链接可打开公开入口；家庭 API、嵌入页面和跨来源写入仍拒绝。
+    let entry_navigation = request.method() == Method::GET
+        && request.uri().path() == "/"
+        && headers
+            .get("sec-fetch-mode")
+            .is_some_and(|v| v == "navigate")
+        && headers
+            .get("sec-fetch-dest")
+            .is_some_and(|v| v == "document");
     let rejected = authority != Some(app.auth.authority.as_str())
         || headers
             .get("sec-fetch-site")
             .is_some_and(|v| v == "cross-site")
+            && !entry_navigation
         || (headers.contains_key(header::ORIGIN) && !app.auth.same_origin(headers));
     let private = request.uri().path().starts_with("/api/") || request.uri().path() == "/healthz";
     let mut response = if rejected {

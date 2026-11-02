@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.run/contracts/execution-bindings.schema.json",
+  "title": "Explicit local execution bindings",
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "route": {
+      "type": "object",
+      "properties": {
+        "adapter_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "revision": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "required": [
+        "adapter_id",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "bind": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "bindings.bind"
+        },
+        "device_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "route": {
+          "$ref": "#/$defs/route"
+        },
+        "expected_binding_revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "expected_model_revision": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "required": [
+        "type",
+        "device_id",
+        "route",
+        "expected_binding_revision",
+        "expected_model_revision"
+      ],
+      "additionalProperties": false
+    },
+    "revoke": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "bindings.revoke"
+        },
+        "device_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "expected_binding_revision": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "required": [
+        "type",
+        "device_id",
+        "expected_binding_revision"
+      ],
+      "additionalProperties": false
+    },
+    "change": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/bind"
+        },
+        {
+          "$ref": "#/$defs/revoke"
+        },
+        {
+          "$ref": "#/$defs/compose"
+        }
+      ]
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "space_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/identifier"
+        },
+        "change": {
+          "$ref": "#/$defs/change"
+        }
+      },
+      "required": [
+        "space_id",
+        "idempotency_key",
+        "change"
+      ],
+      "additionalProperties": false
+    },
+    "binding": {
+      "type": "object",
+      "properties": {
+        "device_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "model_revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "state": {
+          "enum": [
+            "native",
+            "bound",
+            "composed",
+            "revoked"
+          ]
+        },
+        "routes": {
+          "type": "object",
+          "maxProperties": 512,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_-]{0,63}\\.[a-z][a-z0-9_-]{0,63}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/route"
+          }
+        },
+        "native_paths": {
+          "$ref": "#/$defs/nativePaths"
+        }
+      },
+      "required": [
+        "device_id",
+        "model_revision",
+        "revision",
+        "state",
+        "routes"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "composed"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "native_paths"
+            ],
+            "properties": {
+              "native_paths": {
+                "$ref": "#/$defs/nativePaths"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "native_paths": false
+            }
+          }
+        }
+      ]
+    },
+    "operation": {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^executionop-[A-Za-z0-9_-]{1,100}$"
+        },
+        "request": {
+          "$ref": "#/$defs/request"
+        },
+        "request_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "status": {
+          "enum": [
+            "applied",
+            "conflict",
+            "rejected"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/binding"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "operation_id",
+        "request",
+        "request_digest",
+        "status",
+        "reason",
+        "result",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "nativePaths": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]{0,63}\\.[a-z][a-z0-9_-]{0,63}$"
+      },
+      "description": "按字典顺序排列的唯一原生动作路径；数组顺序由消费者显式验证。"
+    },
+    "compose": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "bindings.compose"
+        },
+        "device_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "route": {
+          "$ref": "#/$defs/route"
+        },
+        "expected_binding_revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "expected_model_revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "native_paths": {
+          "$ref": "#/$defs/nativePaths"
+        },
+        "expected_native_session": {
+          "$ref": "#/$defs/identifier"
+        }
+      },
+      "required": [
+        "type",
+        "device_id",
+        "route",
+        "expected_binding_revision",
+        "expected_model_revision",
+        "native_paths",
+        "expected_native_session"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$ref": "#/$defs/change"
+}

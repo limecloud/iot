@@ -1,9 +1,9 @@
 [workspace]
-members = ["gateway/crates/core", "gateway/crates/runtime", "tools/simulator"]
+members = ["gateway/crates/core", "gateway/crates/runtime", "gateway/adapters/android-tv", "tools/simulator", "tools/model-validator"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.85"
 license = "Apache-2.0"
@@ -12,10 +12,14 @@ license = "Apache-2.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 serde_jcs = "0.1.0"
+serde_path_to_error = "=0.1.20"
 chrono = { version = "0.4.43", features = ["serde"] }
 sha2 = "0.10.9"
 thiserror = "2.0.18"
 uuid = { version = "1.21.0", features = ["v4", "serde"] }
+ring = "=0.17.14"
+base64 = "=0.22.1"
+url = "=2.5.8"
 tokio = { version = "1.49.0", features = ["full"] }
 rumqttc = { version = "0.25.1", default-features = false }
 limeiot-core = { path = "gateway/crates/core" }

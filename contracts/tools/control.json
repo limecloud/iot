@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "contract_version": "0.1.0",
+  "mode": "control_plane",
+  "authentication": "independent_console_cookie_and_current_csrf",
+  "authorization": "catalog_does_not_grant_access; current_principal_space_binding_and_gateway_authority_required",
+  "auth_commands": {
+    "auth.login": "private_instance_token_file",
+    "auth.import": "explicit_console_cli_session_file",
+    "auth.status": "current_identity_without_secret_output",
+    "auth.logout": "revoke_current_cli_session"
+  },
+  "operations": [
+    {"operation_id":"publisher.get","method":"GET","path":"/api/console/v1/publisher","space_required":false},
+    {"operation_id":"releases.list","method":"GET","path":"/api/console/v1/products/{id}/releases","space_required":false,"pagination":"after"},
+    {"operation_id":"releases.head","method":"GET","path":"/api/console/v1/products/{id}/releases/head","space_required":false},
+    {"operation_id":"releases.get","method":"GET","path":"/api/catalog/v1/model-releases/{id}","space_required":false},
+    {"operation_id":"releases.create","method":"POST","path":"/api/console/v1/products/{id}/releases","space_required":false,"input_schema":"ModelPublishInput","original_request":true,"recovery_operation":"releases.resolve","description":"明确公开发布已保存草稿，固定草稿修订和上一发布ID；请求先落盘，旧键只查询原决定，包括404，不自动重发。"},
+    {"operation_id":"releases.resolve","method":"GET","path":"/api/console/v1/release-operations/by-key/{id}","space_required":false},
+    {
+      "operation_id": "spaces.list",
+      "method": "GET",
+      "path": "/api/console/v1/spaces",
+      "space_required": false
+    },
+    {
+      "operation_id": "spaces.create",
+      "method": "POST",
+      "path": "/api/console/v1/spaces",
+      "space_required": false,
+      "input_schema": "space",
+      "original_request": true,
+      "recovery_operation": "spaces.create"
+    },
+    {
+      "operation_id": "gateways.list",
+      "method": "GET",
+      "path": "/api/console/v1/spaces/{space_id}/gateways",
+      "space_required": true
+    },
+    {
+      "operation_id": "gateways.connection",
+      "method": "GET",
+      "path": "/api/console/v1/spaces/{space_id}/gateways/{id}/connection",
+      "space_required": true
+    },
+    {
+      "operation_id": "gateways.revoke",
+      "method": "POST",
+      "path": "/api/console/v1/spaces/{space_id}/gateways/{id}/revoke",
+      "space_required": true,
+      "input_schema": "revocation"
+    },
+    {
+      "operation_id": "pairings.create",
+      "method": "POST",
+      "path": "/api/console/v1/spaces/{space_id}/pairings",
+      "space_required": true,
+      "input_schema": "pairing",
+      "original_request": true,
+      "recovery_operation": "pairings.create",
+      "sensitive_output": true
+    },
+    {
+      "operation_id": "devices.list",
+      "method": "GET",
+      "path": "/api/console/v1/spaces/{space_id}/devices",
+      "space_required": true,
+      "pagination": "after",
+      "required_binding_scope": "devices.read"
+    },
+    {
+      "operation_id": "models.get",
+      "method": "GET",
+      "path": "/api/console/v1/spaces/{space_id}/model-releases/{id}",
+      "space_required": true,
+      "required_binding_scope": "devices.read"
+    },
+    {
+      "operation_id": "commands.create",
+      "method": "POST",
+      "path": "/api/console/v1/spaces/{space_id}/remote-commands",
+      "space_required": true,
+      "input_schema": "remote-command",
+      "original_request": true,
+      "recovery_operation": "commands.resolve",
+      "required_binding_scope": "commands.write"
+    },
+    {
+      "operation_id": "commands.get",
+      "method": "GET",
+      "path": "/api/console/v1/spaces/{space_id}/remote-commands/{id}",
+      "space_required": true
+    },
+    {
+      "operation_id": "commands.resolve",
+      "method": "GET",
+      "path": "/api/console/v1/spaces/{space_id}/remote-commands/by-key/{id}",
+      "space_required": true
+    },
+    {
+      "operation_id": "commands.reconcile",
+      "method": "POST",
+      "path": "/api/console/v1/spaces/{space_id}/remote-commands/{id}/reconcile",
+      "space_required": true,
+      "side_effects": "queries_original_remote_only",
+      "required_binding_scope": "commands.write"
+    },
+    {
+      "operation_id": "products.list",
+      "method": "GET",
+      "path": "/api/console/v1/products",
+      "space_required": false,
+      "pagination": "after"
+    },
+    {
+      "operation_id": "products.create",
+      "method": "POST",
+      "path": "/api/console/v1/products",
+      "space_required": false,
+      "input_schema": "product-create",
+      "original_request": true,
+      "recovery_operation": "products.resolve"
+    },
+    {
+      "operation_id": "products.get",
+      "method": "GET",
+      "path": "/api/console/v1/products/{id}",
+      "space_required": false
+    },
+    {
+      "operation_id": "products.save",
+      "method": "POST",
+      "path": "/api/console/v1/products/{id}/drafts",
+      "space_required": false,
+      "input_schema": "product-save",
+      "original_request": true,
+      "recovery_operation": "products.resolve"
+    },
+    {
+      "operation_id": "products.resolve",
+      "method": "GET",
+      "path": "/api/console/v1/product-operations/by-key/{id}",
+      "space_required": false
+    },
+    {
+      "operation_id": "models.compare",
+      "method": "POST",
+      "path": "/api/console/v1/models/compare",
+      "space_required": false,
+      "input_schema": "ModelCompare",
+      "side_effect": "none",
+      "description": "比较两个模型定义，不保存或发布；兼容退出0，不兼容或定义无效退出2，组件不可用退出5。"
+    },
+    {
+      "operation_id": "models.validate",
+      "method": "POST",
+      "path": "/api/console/v1/models/validate",
+      "space_required": false,
+      "input_schema": "ModelValidate",
+      "side_effect": "none",
+      "description": "检查输入物模型，不保存、不发布、不安装；有效退出0，模型错误退出2，组件不可用退出5。"
+    }
+  ],
+  "schemas": {
+    "ModelPublishInput": {
+      "type":"object",
+      "required":["request_key","expected_revision","expected_release_id","visibility"],
+      "properties":{
+        "request_key":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,128}$"},
+        "expected_revision":{"type":"string","pattern":"^prodrev-[a-f0-9]{64}$"},
+        "expected_release_id":{"oneOf":[{"type":"string","pattern":"^release-[a-f0-9]{64}$"},{"type":"null"}]},
+        "visibility":{"const":"public"}
+      },
+      "additionalProperties":false
+    },
+    "space": {
+      "type": "object",
+      "required": [
+        "request_key",
+        "name"
+      ],
+      "properties": {
+        "request_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      },
+      "additionalProperties": false
+    },
+    "pairing": {
+      "type": "object",
+      "required": [
+        "request_key",
+        "scopes"
+      ],
+      "properties": {
+        "request_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "scopes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "devices.read",
+              "commands.write",
+              "rules.read",
+              "rules.write"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "revocation": {
+      "type": "object",
+      "required": [
+        "revision"
+      ],
+      "properties": {
+        "revision": {
+          "type": "string",
+          "pattern": "^rev-[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "remote-command": {
+      "type": "object",
+      "required": [
+        "request_key",
+        "gateway_id",
+        "binding_revision",
+        "device_id",
+        "model_revision",
+        "expires_at",
+        "operation"
+      ],
+      "properties": {
+        "request_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "gateway_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "binding_revision": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "device_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "model_revision": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "operation": {
+          "type": "object",
+          "required": [
+            "type",
+            "path",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "enum": ["property.set", "action.invoke"]
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 129,
+              "pattern": "^[a-z][a-z0-9_-]{0,63}\\.[a-z][a-z0-9_-]{0,63}$"
+            },
+            "value": {}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "product-create": {
+      "type": "object",
+      "required": [
+        "request_key",
+        "name",
+        "model"
+      ],
+      "properties": {
+        "request_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "model": {
+          "type": "object",
+          "description": "允许不完整JSON对象；UTF8原文及JCS正文均不超过8192字节，深度不超过16，节点不超过2048。拒绝重复键、非有限数与绝对值超过2^53-1的整数；不代表正式模型语义校验。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "product-save": {
+      "type": "object",
+      "required": [
+        "request_key",
+        "expected_revision",
+        "name",
+        "model"
+      ],
+      "properties": {
+        "request_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "model": {
+          "type": "object",
+          "description": "允许不完整JSON对象；UTF8原文及JCS正文均不超过8192字节，深度不超过16，节点不超过2048。拒绝重复键、非有限数与绝对值超过2^53-1的整数；不代表正式模型语义校验。"
+        },
+        "expected_revision": {
+          "type": "string",
+          "pattern": "^prodrev-[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ModelCompare": {
+      "type": "object",
+      "required": ["baseline", "candidate"],
+      "properties": {"baseline": {"type": "object"}, "candidate": {"type": "object"}},
+      "additionalProperties": false
+    },
+    "ModelValidate": {
+      "type": "object",
+      "required": [
+        "model"
+      ],
+      "properties": {
+        "model": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "exit_codes": {
+    "0": "request_accepted_or_read",
+    "2": "invalid_request",
+    "3": "authentication_or_authorization",
+    "4": "conflict",
+    "5": "service_or_local_storage_failure",
+    "6": "unknown_operation_result",
+    "7": "confirmed_terminal_failure"
+  }
+}

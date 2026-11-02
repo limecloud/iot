@@ -1,0 +1,18 @@
+@import './colors.css';
+@import './fonts.css';
+:root {
+  color-scheme: light dark;
+  --bg: var(--slate-2);
+  --surface: var(--slate-1);
+  --ink: var(--slate-12);
+  --muted: var(--slate-11);
+  --line: var(--slate-6);
+  --font-small: 12px;
+  --font-body: 14px;
+  --font-title: 20px;
+  --radius-control: 4px;
+  --radius-panel: 4px;
+  --overlay: var(--black-a8);
+}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }

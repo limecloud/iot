@@ -5,17 +5,420 @@ info:
   description: >-
     已实现的账户、空间和网关配对接口。独立于本地网关 /api/v1。
     所有响应禁止缓存。Console 与 Admin Cookie、CSRF 和权限分离。
-    本地所有者批准由独立网关工具合同定义；本合同不声明远程中继已交付。
+    本地所有者批准由独立网关工具合同定义；受限远程动作须通过当前两端授权。
 servers:
   - url: /
 paths:
+  /api/console/v1/publisher:
+    get:
+      operationId: control.publisher.get
+      description: 当前Console主体在本实例的发布者标识和命名空间；不暴露OIDC subject。未配置签名器时trust为null。
+      responses:
+        '200':
+          description: 发布身份；返回的公钥须由消费者另行确认，不能自举信任
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [issuer, publisher_id, namespace, trust]
+                properties:
+                  issuer: { type: string }
+                  publisher_id: { type: string, pattern: '^publisher-[a-f0-9]{64}$' }
+                  namespace: { type: string, pattern: '^p-[a-f0-9]{30}$' }
+                  trust: { oneOf: [{ $ref: './model-release-trust.schema.json' }, { type: 'null' }] }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/products/{product}/releases:
+    parameters:
+      - { name: product, in: path, required: true, schema: { $ref: '#/components/schemas/ProductID' } }
+    get:
+      operationId: control.releases.list
+      description: 当前主体产品的不可变发布，按release_id升序；不包含私有草稿或未提交候选签名。
+      parameters:
+        - { name: after, in: query, schema: { $ref: '#/components/schemas/ReleaseID' } }
+      responses:
+        '200':
+          description: 每页最多16项
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next]
+                properties:
+                  items: { type: array, maxItems: 16, items: { $ref: '#/components/schemas/ModelPublication' } }
+                  next: { oneOf: [{ $ref: '#/components/schemas/ReleaseID' }, { type: 'null' }] }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+    post:
+      operationId: control.releases.create
+      description: >-
+        明确公开发布冻结草稿，必须同时提供草稿修订和上一发布ID，首次为null。
+        校验、向后兼容检查、签名及验签后，在同一事务重查两种修订并保存发布、原决定与审计。
+        HTTP200须读取published/rejected/conflict；草稿保持draft/unvalidated，不安装或改变设备绑定。
+        新发布与models.validate共用限流。每主体最多1024条发布决定，不回收旧键。
+        同键同参返回不可变原决定；恢复只GET原键，404不自动补发。
+      parameters:
+        - { $ref: '#/components/parameters/Origin' }
+        - { $ref: '#/components/parameters/CSRF' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ModelPublishInput' }
+      responses:
+        '200':
+          description: 耐久的业务决定，只有published包含可下载制品
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelPublishOperation' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/products/{product}/releases/head:
+    parameters:
+      - { name: product, in: path, required: true, schema: { $ref: '#/components/schemas/ProductID' } }
+    get:
+      operationId: control.releases.head
+      description: 当前主体产品最近一次成功提交的发布；首次发布前release为null，不从列表顺序推断基线。
+      responses:
+        '200':
+          description: 最近发布；读取不改变基线，也不授予后续写入权限
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [release]
+                properties:
+                  release: { oneOf: [{ $ref: '#/components/schemas/ModelPublication' }, { type: 'null' }] }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/release-operations/by-key/{key}:
+    parameters:
+      - { name: key, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9_-]{1,128}$' } }
+    get:
+      operationId: control.releases.resolve
+      description: 当前Console主体的原发布决定；与草稿原键独立，跨产品共享。无权访问和未查到均为404。
+      responses:
+        '200':
+          description: 原决定，包括历史拒绝或冲突，不依赖当前签名器可用性
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelPublishOperation' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/catalog/v1/model-releases/{release}:
+    parameters:
+      - { name: release, in: path, required: true, schema: { $ref: '#/components/schemas/ReleaseID' } }
+    get:
+      operationId: catalog.releases.get
+      description: >-
+        无需Console会话的公开制品下载；仍须正确Host与所配置的边缘回源凭据。
+        仅返回已提交的签名模型与公开信任材料，不暴露主体ID、私有草稿或操作。
+        下载结果本身不授予信任或本地安装权限。
+      responses:
+        '200':
+          description: 不可变已发布制品
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelPublication' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/models/compare:
+    post:
+      operationId: control.models.compare
+      description: >-
+        无副作用的定义向后兼容检查；baseline和candidate分别完整校验。
+        写入保持旧值可接受，上报及事件保持新值可被旧读取者解析；读写属性须同时满足。
+        与models.validate共用每地址每分钟30次、全进程4并发及单次3秒预算。
+        不保存、签名、发布或安装，不证明硬件能力；Admin身份无效。
+      parameters:
+        - { $ref: '#/components/parameters/Origin' }
+        - { $ref: '#/components/parameters/CSRF' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ModelCompare' }
+      responses:
+        '200':
+          description: 读取valid区分定义错误，再读取compatible判断是否兼容
+          content:
+            application/json:
+              schema: { $ref: './model-compatibility-report.schema.json' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { description: 'validator_unavailable，组件缺失、超时、并发满或报告合同不符' }
+  /api/console/v1/models/validate:
+    post:
+      operationId: control.models.validate
+      description: >-
+        当前Console身份及Origin/CSRF检查后的无副作用校验。正文遵守产品草稿JSON安全边界。
+        每地址每分钟30次、全进程并发4个、单次最长3秒。报告绑定输入摘要，候选修订基于规范投影。
+        不保存报告、不发布或安装模型、不修改产品validation字段；Admin身份无效。
+      parameters:
+        - { $ref: '#/components/parameters/Origin' }
+        - { $ref: '#/components/parameters/CSRF' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ModelValidate' }
+      responses:
+        '200':
+          description: 校验报告，模型有效和模型错误均返回200；读取valid及issues
+          content:
+            application/json:
+              schema: { $ref: './model-validation-report.schema.json' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '503': { description: 'validator_unavailable，组件缺失、超时、并发满或报告合同不符' }
+  /api/console/v1/products:
+    get:
+      operationId: control.products.list
+      description: 当前Console主体的私有产品草稿，独立于家庭空间；每页最多16个，按product_id升序。
+      parameters:
+        - { name: after, in: query, schema: { $ref: '#/components/schemas/ProductID' } }
+      responses:
+        '200':
+          description: 草稿列表，next为下一页after
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next]
+                properties:
+                  items: { type: array, maxItems: 16, items: { $ref: '#/components/schemas/ProductDraft' } }
+                  next: { oneOf: [{ $ref: '#/components/schemas/ProductID' }, { type: 'null' }] }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+    post:
+      operationId: control.products.create
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/CSRF'
+      description: >-
+        新建私有草稿及不可变原决定，不发布/校验模型或改变设备绑定。
+        同主体原键跨create/save唯一；同键同规范化输入返回原快照，异参409。
+        每主体最多128个产品与1024条操作，满额429，不回收原键。恢复只GET原键。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductCreate' }
+      responses:
+        '200':
+          description: 原决定；消费者须读取status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductOperation' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/products/{product}:
+    parameters:
+      - { name: product, in: path, required: true, schema: { $ref: '#/components/schemas/ProductID' } }
+    get:
+      operationId: control.products.get
+      description: 当前主体的最新草稿；无权访问与不存在均返回404，Admin身份无效。
+      responses:
+        '200':
+          description: 未发布草稿
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductDraft' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/products/{product}/drafts:
+    parameters:
+      - { name: product, in: path, required: true, schema: { $ref: '#/components/schemas/ProductID' } }
+      - $ref: '#/components/parameters/Origin'
+      - $ref: '#/components/parameters/CSRF'
+    post:
+      operationId: control.products.save
+      description: >-
+        expected_revision必须等于当前聚合修订，成功产生新的随机修订。
+        不匹配仍以HTTP200返回status=conflict并耐久保存当时决定，不能自动改基线重发。
+        同键重试不会覆盖后来版本；恢复只GET原键。document_digest不是发布revision。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductSave' }
+      responses:
+        '200':
+          description: saved或conflict的原决定与当时快照
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductOperation' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/product-operations/by-key/{key}:
+    parameters:
+      - { name: key, in: path, required: true, schema: { type: string, pattern: '^[A-Za-z0-9_-]{1,128}$' } }
+    get:
+      operationId: control.products.resolve
+      description: 当前主体的不可变原决定；404只表示未查到，消费者不自动补发原POST。
+      responses:
+        '200':
+          description: 原决定；product为当时快照，最新值另读products.get
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductOperation' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/native/v1/authorizations:
+    post:
+      operationId: control.native.create
+      description: >-
+        原生应用先在安全存储保存随机request_key与PKCE verifier，再提交S256 challenge。
+        五分钟窗口内同键同参恢复同一授权码与期限，异参409，过期410，不自动延长。
+        拒绝Origin、Cookie、Authorization与URL参数；每客户端地址每分钟30次，实例最多保留4096条授权。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NativeStart' }
+      responses:
+        '200':
+          description: 仅原生端持有授权码与原随机键；浏览器只打开同源verification_uri。
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NativeInitiation' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/native/v1/authorizations/poll:
+    post:
+      operationId: control.native.poll
+      description: >-
+        原随机键与PKCE verifier认证，不使用浏览器Cookie。建议前台每三秒显式查询，隐藏时暂停。
+        pending/denied/cancelled不含会话；approved只读原加密材料并重查子会话、父登录及当前外部身份。
+        响应丢失、服务重启和再次查询不新建会话。父登录或原授权窗口到期后不能领取。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NativeProof' }
+      responses:
+        '200':
+          description: 原请求状态；material仅在当前approved授权下返回
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NativePoll' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/native/v1/authorizations/cancel:
+    post:
+      operationId: control.native.cancel
+      description: 原随机键与PKCE verifier明确取消原请求，同事务撤销已签发子会话；迟到批准不能恢复。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NativeProof' }
+      responses:
+        '200':
+          description: 原请求已取消，重复取消仍成功
+          content:
+            application/json:
+              schema: { type: object, required: [status], properties: { status: { const: cancelled } }, additionalProperties: false }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/native-authorizations/{authorization}:
+    parameters:
+      - { name: authorization, in: path, required: true, schema: { type: string, pattern: '^na-[a-f0-9]{64}$' } }
+    get:
+      operationId: control.native.review
+      description: 当前Console网页登录读取公开授权请求，不返回授权码、PKCE、原随机键或会话材料；Admin身份无效。
+      responses:
+        '200':
+          description: 当前平台、期限与状态
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NativeReview' }
+        default: { $ref: '#/components/responses/Error' }
+    post:
+      operationId: control.native.decide
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/CSRF'
+      description: >-
+        本人网页登录输入手机上的授权码并明确approve/deny；不允许已有子会话再次委派。
+        授权码错误五次后拒绝该请求。批准与独立会话同事务提交，重复批准不再次签发。
+        原生会话最长一小时、受父登录及当前身份约束；不授予Admin或越过网关本地批准。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, user_code]
+              properties:
+                decision: { enum: [approve, deny] }
+                user_code: { type: string, minLength: 8, maxLength: 8 }
+              additionalProperties: false
+      responses:
+        '200':
+          description: 当前决定，不向浏览器返回原生会话材料
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [authorization_id, status]
+                properties:
+                  authorization_id: { type: string, pattern: '^na-[a-f0-9]{64}$' }
+                  status: { enum: [approved, denied] }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/auth/cli:
+    parameters:
+      - $ref: '#/components/parameters/Origin'
+      - $ref: '#/components/parameters/CSRF'
+    post:
+      operationId: control.auth.cli
+      description: >-
+        当前Console登录显式创建最长一小时的独立CLI会话，不改变浏览器Cookie。
+        每次使用重新核对父会话及当前外部身份，父会话退出/到期或身份撤销即失效。
+        CLI会话不能再次委派，不提供Admin导出或外部Token；响应秘密仅交给当前用户保存。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: false }
+      responses:
+        '200':
+          description: 独立会话材料；不记录日志、加入URL或传入模型上下文
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, origin, audience, session, principal_id, expires_at]
+                properties:
+                  version: { const: 1 }
+                  origin: { type: string, format: uri }
+                  audience: { const: console }
+                  session: { type: string, pattern: '^[a-f0-9]{64}$' }
+                  principal_id: { $ref: '#/components/schemas/Identifier' }
+                  expires_at: { type: string, format: date-time }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/admin/v1/status:
+    get:
+      operationId: control.admin.status
+      description: 当前Admin会话读取实例运行摘要，不返回家庭、主体、连接密钥或设备数据。
+      responses:
+        '200':
+          description: 当前实例状态，连接计数只表示已完成ready的传输
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [storage, connections, connection_capacity, sampled_at]
+                properties:
+                  storage: { enum: [ready, degraded] }
+                  connections: { type: integer, minimum: 0 }
+                  connection_capacity: { const: 128 }
+                  sampled_at: { type: string, format: date-time }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
   /api/gateway/v1/connect:
     get:
       operationId: control.machines.connect
       description: >-
         独立机器WebSocket，子协议limeiot.relay.v1。拒绝Origin、Cookie、Authorization和URL参数。
         升级后15秒挑战，Ed25519证明绑定当前revision；每5秒心跳重新检查当前绑定。
-        连接合同见control-relay.md，当前只提供机器连接，不提供远程命令。
+        连接及受限动作合同见control-relay.md，不提供任意HTTP或工具隧道。
       responses:
         '101': { description: WebSocket已升级，仍须完成机器证明，不能视为已认证 }
         '400': { description: 无效握手或子协议 }
@@ -43,6 +446,119 @@ paths:
                   connected_at: { type: string, format: date-time }
                   last_seen_at: { type: string, format: date-time }
                 additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/spaces/{space}/devices:
+    parameters:
+      - $ref: '#/components/parameters/Space'
+      - { name: after, in: query, schema: { $ref: '#/components/schemas/Identifier' } }
+    get:
+      operationId: control.devices.list
+      description: 当前Console所有者经原绑定devices.read读取最多8个设备。next为下一页after；不含内部会话及去重历史。
+      responses:
+        '200':
+          description: 当前网关设备投影，未缓存。reported遵循本地命令API合同。
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next, binding_revision]
+                properties:
+                  items: { type: array, maxItems: 8, items: { type: object, required: [device_id, model_revision, ready, state_revision, reported, last_seen] } }
+                  next: { type: [string, 'null'] }
+                  binding_revision: { $ref: '#/components/schemas/Identifier' }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/spaces/{space}/model-releases/{revision}:
+    parameters:
+      - $ref: '#/components/parameters/Space'
+      - { name: revision, in: path, required: true, schema: { type: string, pattern: '^sha256:[a-f0-9]{64}$' } }
+    get:
+      operationId: control.models.get
+      description: 通过当前devices.read读取本地正式物模型，不接受自选URL。
+      responses:
+        '200':
+          description: 精确revision与物模型
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [revision, model]
+                properties:
+                  revision: { type: string }
+                  model: { $ref: './model.schema.json' }
+                additionalProperties: false
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/spaces/{space}/remote-commands:
+    parameters:
+      - $ref: '#/components/parameters/Space'
+      - $ref: '#/components/parameters/Origin'
+      - $ref: '#/components/parameters/CSRF'
+    post:
+      operationId: control.remoteCommands.create
+      description: >-
+        commands.write且当前在线才受理新原键；每空间最多1024条保留记录。
+        先提交unknown发送意图再发送，原键同参只返回云端记录，异参409。
+        网络未知不能通过换键或重连重放；200仅表示云记录可读，设备完成须status=confirmed。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RemoteInput' }
+      responses:
+        '200':
+          description: 耐久原操作
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RemoteCommand' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/spaces/{space}/remote-commands/by-key/{key}:
+    parameters:
+      - $ref: '#/components/parameters/Space'
+      - { name: key, in: path, required: true, schema: { $ref: '#/components/schemas/Identifier' } }
+    get:
+      operationId: control.remoteCommands.resolve
+      description: 当前空间owner只读本人原键对应云记录，离线及原期限过去后仍可读。
+      responses:
+        '200':
+          description: 原操作；不调用网关
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RemoteCommand' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/spaces/{space}/remote-commands/{remote}:
+    parameters:
+      - $ref: '#/components/parameters/Space'
+      - { name: remote, in: path, required: true, schema: { $ref: '#/components/schemas/Identifier' } }
+    get:
+      operationId: control.remoteCommands.get
+      description: 当前空间owner只读本人原操作；不按本地command_id读取任意命令。
+      responses:
+        '200':
+          description: 原操作；不调用网关
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RemoteCommand' }
+        default: { $ref: '#/components/responses/Error' }
+  /api/console/v1/spaces/{space}/remote-commands/{remote}/reconcile:
+    parameters:
+      - $ref: '#/components/parameters/Space'
+      - { name: remote, in: path, required: true, schema: { $ref: '#/components/schemas/Identifier' } }
+      - $ref: '#/components/parameters/Origin'
+      - $ref: '#/components/parameters/CSRF'
+    post:
+      operationId: control.remoteCommands.reconcile
+      description: 显式通过当前原revision及commands.write查询旧remote_id。未找到保持原状态；只读原命令，不重发create。终态直接返回原记录。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: false }
+      responses:
+        '200':
+          description: 当前可确认的原操作，断流不擦除已有结果
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RemoteCommand' }
         default: { $ref: '#/components/responses/Error' }
   /health/live:
     get:
@@ -99,6 +615,15 @@ paths:
     post:
       operationId: control.auth.start
       description: 建立五分钟、单次使用的持久 flow Cookie，返回标准 OIDC Code+PKCE 授权地址。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                native_authorization: { type: string, pattern: '^na-[a-f0-9]{64}$', description: 仅Console当前pending原生授权。加密绑定到OIDC flow，回调后固定返回同站确认页，登录不自动批准。 }
+              additionalProperties: false
       responses:
         '200':
           description: 客户端导航至 authorize_url
@@ -120,7 +645,7 @@ paths:
         - { name: state, in: query, required: true, schema: { type: string, minLength: 64, maxLength: 64 } }
         - { name: code, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 8192 } }
       responses:
-        '303': { description: Cookie 建立后转到 /console/ 或 /admin/；这些页面尚未交付 }
+        '303': { description: Cookie 建立后转到 /console/ 或 /admin/ }
         default: { $ref: '#/components/responses/Error' }
   /api/{audience}/v1/auth/session:
     parameters:
@@ -395,6 +920,179 @@ components:
                 additionalProperties: false
             additionalProperties: false
   schemas:
+    ReleaseID: { type: string, pattern: '^release-[a-f0-9]{64}$' }
+    ModelPublishInput:
+      type: object
+      required: [request_key, expected_revision, expected_release_id, visibility]
+      properties:
+        request_key: { type: string, pattern: '^[A-Za-z0-9_-]{1,128}$' }
+        expected_revision: { type: string, pattern: '^prodrev-[a-f0-9]{64}$' }
+        expected_release_id: { oneOf: [{ $ref: '#/components/schemas/ReleaseID' }, { type: 'null' }] }
+        visibility: { const: public }
+      additionalProperties: false
+    ModelPublication:
+      type: object
+      required: [artifact, trust]
+      properties:
+        artifact: { $ref: './model-release.schema.json' }
+        trust: { $ref: './model-release-trust.schema.json' }
+      additionalProperties: false
+    ModelPublishOperation:
+      type: object
+      required: [operation_id, principal_id, product_id, request_digest, request, status, reason, source_revision, source_document_digest, head_release_id, validation, compatibility, release, created_at]
+      properties:
+        operation_id: { type: string, pattern: '^relop-[a-f0-9]{64}$' }
+        principal_id: { $ref: '#/components/schemas/Identifier' }
+        product_id: { $ref: '#/components/schemas/ProductID' }
+        request_digest: { type: string, pattern: '^[a-f0-9]{64}$' }
+        request: { $ref: '#/components/schemas/ModelPublishInput' }
+        status: { enum: [published, rejected, conflict] }
+        reason: { type: [string, 'null'] }
+        source_revision: { type: string, pattern: '^prodrev-[a-f0-9]{64}$' }
+        source_document_digest: { type: string, pattern: '^sha256:[a-f0-9]{64}$' }
+        head_release_id: { oneOf: [{ $ref: '#/components/schemas/ReleaseID' }, { type: 'null' }] }
+        validation: { oneOf: [{ $ref: './model-validation-report.schema.json' }, { type: 'null' }] }
+        compatibility: { oneOf: [{ $ref: './model-compatibility-report.schema.json' }, { type: 'null' }] }
+        release: { oneOf: [{ $ref: '#/components/schemas/ModelPublication' }, { type: 'null' }] }
+        created_at: { type: string, format: date-time }
+      additionalProperties: false
+      allOf:
+        - if: { properties: { status: { const: published } } }
+          then:
+            properties:
+              reason: { type: 'null' }
+              validation: { $ref: './model-validation-report.schema.json' }
+              release: { $ref: '#/components/schemas/ModelPublication' }
+          else:
+            properties:
+              reason: { type: string, minLength: 1 }
+              release: { type: 'null' }
+    ProductID: { type: string, pattern: '^product-[a-f0-9]{64}$' }
+    ProductDraft:
+      type: object
+      required: [product_id, principal_id, name, revision, document_digest, model, status, validation, created_at, updated_at]
+      properties:
+        product_id: { $ref: '#/components/schemas/ProductID' }
+        principal_id: { $ref: '#/components/schemas/Identifier' }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        revision: { type: string, pattern: '^prodrev-[a-f0-9]{64}$' }
+        document_digest: { type: string, pattern: '^sha256:[a-f0-9]{64}$' }
+        model: { type: object }
+        status: { const: draft }
+        validation: { const: unvalidated }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+      additionalProperties: false
+    ProductOperation:
+      type: object
+      required: [operation_id, principal_id, kind, product_id, request_digest, request, status, product, created_at]
+      properties:
+        operation_id: { type: string, pattern: '^prodop-[a-f0-9]{64}$' }
+        principal_id: { $ref: '#/components/schemas/Identifier' }
+        kind: { enum: [products.create, products.save] }
+        product_id: { $ref: '#/components/schemas/ProductID' }
+        request_digest: { type: string, pattern: '^[a-f0-9]{64}$' }
+        request: { oneOf: [{ $ref: '#/components/schemas/ProductCreate' }, { $ref: '#/components/schemas/ProductSave' }] }
+        status: { enum: [saved, conflict] }
+        product: { $ref: '#/components/schemas/ProductDraft' }
+        created_at: { type: string, format: date-time }
+      additionalProperties: false
+    ModelValidate: {"type": "object", "required": ["model"], "properties": {"model": {"type": "object"}}, "additionalProperties": false}
+    ModelCompare: {"type": "object", "required": ["baseline", "candidate"], "properties": {"baseline": {"type": "object"}, "candidate": {"type": "object"}}, "additionalProperties": false}
+    ProductCreate: {"type": "object", "required": ["request_key", "name", "model"], "properties": {"request_key": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$"}, "name": {"type": "string", "minLength": 1, "maxLength": 80}, "model": {"type": "object", "description": "允许不完整JSON对象；UTF8原文及JCS正文均不超过8192字节，深度不超过16，节点不超过2048。拒绝重复键、非有限数与绝对值超过2^53-1的整数；不代表正式模型语义校验。"}}, "additionalProperties": false}
+    ProductSave: {"type": "object", "required": ["request_key", "expected_revision", "name", "model"], "properties": {"request_key": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$"}, "name": {"type": "string", "minLength": 1, "maxLength": 80}, "model": {"type": "object", "description": "允许不完整JSON对象；UTF8原文及JCS正文均不超过8192字节，深度不超过16，节点不超过2048。拒绝重复键、非有限数与绝对值超过2^53-1的整数；不代表正式模型语义校验。"}, "expected_revision": {"type": "string", "pattern": "^prodrev-[a-f0-9]{64}$"}}, "additionalProperties": false}
+    NativeStart:
+      type: object
+      required: [request_key, code_challenge, platform]
+      properties:
+        request_key: { type: string, pattern: '^[a-f0-9]{64}$', description: 原生端生成的256位随机秘密，只放安全存储与JSON正文 }
+        code_challenge: { type: string, pattern: '^[A-Za-z0-9_-]{43}$', description: S256，无填充的规范base64url，必须解码为32字节 }
+        platform: { enum: [ios, android] }
+      additionalProperties: false
+    NativeProof:
+      type: object
+      required: [request_key, code_verifier]
+      properties:
+        request_key: { type: string, pattern: '^[a-f0-9]{64}$' }
+        code_verifier: { type: string, pattern: '^[A-Za-z0-9._~-]{43,128}$' }
+      additionalProperties: false
+    NativeInitiation:
+      type: object
+      required: [authorization_id, user_code, verification_uri, expires_at, interval_seconds, status]
+      properties:
+        authorization_id: { type: string, pattern: '^na-[a-f0-9]{64}$' }
+        user_code: { type: string, pattern: '^[A-F0-9]{8}$' }
+        verification_uri: { type: string, format: uri, description: 精确Console origin的 /console/?native=原公开ID，无任意redirect_uri }
+        expires_at: { type: string, format: date-time }
+        interval_seconds: { const: 3 }
+        status: { enum: [pending, approved, denied, cancelled] }
+      additionalProperties: false
+    NativeReview:
+      type: object
+      required: [authorization_id, platform, status, expires_at]
+      properties:
+        authorization_id: { type: string, pattern: '^na-[a-f0-9]{64}$' }
+        platform: { enum: [ios, android] }
+        status: { enum: [pending, approved, denied, cancelled] }
+        expires_at: { type: string, format: date-time }
+      additionalProperties: false
+    NativePoll:
+      type: object
+      required: [status, expires_at]
+      properties:
+        status: { enum: [pending, approved, denied, cancelled] }
+        expires_at: { type: string, format: date-time }
+        material: { $ref: '#/components/schemas/SessionMaterial' }
+      additionalProperties: false
+      oneOf:
+        - properties: { status: { const: approved }, material: true }
+          required: [material]
+        - properties: { status: { enum: [pending, denied, cancelled] }, material: false }
+    SessionMaterial:
+      type: object
+      required: [version, origin, audience, session, principal_id, expires_at]
+      properties:
+        version: { const: 1 }
+        origin: { type: string, format: uri }
+        audience: { const: console }
+        session: { type: string, pattern: '^[a-f0-9]{64}$' }
+        principal_id: { $ref: '#/components/schemas/Identifier' }
+        expires_at: { type: string, format: date-time }
+      additionalProperties: false
+    RemoteInput:
+      type: object
+      required: [request_key, gateway_id, binding_revision, device_id, model_revision, expires_at, operation]
+      properties:
+        request_key: { $ref: '#/components/schemas/Identifier' }
+        gateway_id: { $ref: '#/components/schemas/Identifier' }
+        binding_revision: { $ref: '#/components/schemas/Identifier' }
+        device_id: { $ref: '#/components/schemas/Identifier' }
+        model_revision: { type: string, pattern: '^sha256:[a-f0-9]{64}$' }
+        expires_at: { type: string, format: date-time, description: 新请求必须在未来30秒内；恢复原键不延长原期限 }
+        operation:
+          type: object
+          required: [type, path, value]
+          properties:
+            type: { enum: [property.set, action.invoke] }
+            path: { type: string, minLength: 1, maxLength: 129, pattern: '^[a-z][a-z0-9_-]{0,63}\.[a-z][a-z0-9_-]{0,63}$' }
+            value: { description: 必须满足已发布物模型；输入JSON最多4096字节 }
+          additionalProperties: false
+      additionalProperties: false
+    RemoteCommand:
+      type: object
+      required: [remote_id, space_id, principal_id, local_space_id, request_digest, request, status, local_result, created_at, updated_at]
+      properties:
+        remote_id: { type: string, pattern: '^remote-[a-f0-9]{64}$' }
+        space_id: { $ref: '#/components/schemas/Identifier' }
+        principal_id: { $ref: '#/components/schemas/Identifier' }
+        local_space_id: { $ref: '#/components/schemas/Identifier' }
+        request_digest: { type: string, pattern: '^[a-f0-9]{64}$', description: 原RemoteInput的RFC8785/SHA256；与网关原命令摘要分开 }
+        request: { $ref: '#/components/schemas/RemoteInput' }
+        status: { enum: [unknown, accepted, dispatched, confirmed, failed, rejected, expired] }
+        local_result: { type: [object, 'null'], description: 原命令的command_id/request/request_digest/status/evidence/error，或明确拒绝的error；没有MQTT信封和机器授权 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+      additionalProperties: false
     Identifier: { type: string, pattern: '^[A-Za-z0-9_-]{1,128}$' }
     Scopes:
       type: array

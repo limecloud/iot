@@ -1,0 +1,123 @@
+{
+  "schema_version": 2,
+  "model_id": "urn:limeiot:model:android-tv:1",
+  "model_version": "1.0.0",
+  "services": [
+    {
+      "id": "remote",
+      "semantic_id": "urn:limeiot:service:remote:1",
+      "properties": [],
+      "actions": [
+        {
+          "id": "press",
+          "semantic_id": "urn:limeiot:action:remote-press:1",
+          "input": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "enum": [
+                  "up",
+                  "down",
+                  "left",
+                  "right",
+                  "select",
+                  "back",
+                  "home",
+                  "menu",
+                  "play_pause"
+                ]
+              }
+            },
+            "required": [
+              "key"
+            ],
+            "additionalProperties": false
+          },
+          "output": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": false
+          },
+          "idempotent": false,
+          "risk": "low",
+          "completion": "submitted"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "apps",
+      "semantic_id": "urn:limeiot:service:applications:1",
+      "properties": [],
+      "actions": [
+        {
+          "id": "launch",
+          "semantic_id": "urn:limeiot:action:application-launch:1",
+          "input": {
+            "type": "object",
+            "properties": {
+              "application_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              }
+            },
+            "required": [
+              "application_id"
+            ],
+            "additionalProperties": false
+          },
+          "output": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": false
+          },
+          "idempotent": false,
+          "risk": "low",
+          "completion": "submitted"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "audio",
+      "semantic_id": "urn:limeiot:service:audio:1",
+      "properties": [
+        {
+          "id": "volume",
+          "semantic_id": "urn:limeiot:property:volume:1",
+          "schema": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "access": [
+            "read",
+            "write",
+            "notify"
+          ],
+          "unit": "percent",
+          "max_age_ms": 15000
+        },
+        {
+          "id": "muted",
+          "semantic_id": "urn:limeiot:property:muted:1",
+          "schema": {
+            "type": "boolean"
+          },
+          "access": [
+            "read",
+            "write",
+            "notify"
+          ],
+          "max_age_ms": 15000
+        }
+      ],
+      "actions": [],
+      "events": []
+    }
+  ]
+}

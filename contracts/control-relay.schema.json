@@ -1,72 +1,397 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://limeiot.dev/contracts/control-relay.schema.json",
-  "title": "LimeIoT机器连接帧",
+  "title": "LimeIoT机器连接及受限动作帧",
   "oneOf": [
-    { "$ref": "#/$defs/challenge" },
-    { "$ref": "#/$defs/authenticate" },
-    { "$ref": "#/$defs/ready" },
-    { "$ref": "#/$defs/heartbeat" },
-    { "$ref": "#/$defs/error" }
+    {
+      "$ref": "#/$defs/challenge"
+    },
+    {
+      "$ref": "#/$defs/authenticate"
+    },
+    {
+      "$ref": "#/$defs/ready"
+    },
+    {
+      "$ref": "#/$defs/heartbeat"
+    },
+    {
+      "$ref": "#/$defs/error"
+    },
+    {
+      "$ref": "#/$defs/request"
+    },
+    {
+      "$ref": "#/$defs/result"
+    }
   ],
   "$defs": {
-    "identifier": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$" },
-    "connection_id": { "type": "string", "pattern": "^conn-[a-f0-9]{64}$" },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "connection_id": {
+      "type": "string",
+      "pattern": "^conn-[a-f0-9]{64}$"
+    },
     "challenge": {
       "type": "object",
-      "required": ["type", "control_origin", "connection_id", "challenge", "expires_at"],
+      "required": [
+        "type",
+        "control_origin",
+        "connection_id",
+        "challenge",
+        "expires_at"
+      ],
       "properties": {
-        "type": { "const": "challenge" },
-        "control_origin": { "type": "string", "format": "uri", "maxLength": 2048 },
-        "connection_id": { "$ref": "#/$defs/connection_id" },
-        "challenge": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-        "expires_at": { "type": "string", "format": "date-time" }
+        "type": {
+          "const": "challenge"
+        },
+        "control_origin": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048
+        },
+        "connection_id": {
+          "$ref": "#/$defs/connection_id"
+        },
+        "challenge": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       },
       "additionalProperties": false
     },
     "authenticate": {
       "type": "object",
-      "required": ["type", "gateway_id", "space_id", "local_space_id", "principal_id", "revision", "signature"],
+      "required": [
+        "type",
+        "gateway_id",
+        "space_id",
+        "local_space_id",
+        "principal_id",
+        "revision",
+        "signature"
+      ],
       "properties": {
-        "type": { "const": "authenticate" },
-        "gateway_id": { "type": "string", "pattern": "^gw-[a-f0-9]{64}$" },
-        "space_id": { "$ref": "#/$defs/identifier" },
-        "local_space_id": { "$ref": "#/$defs/identifier" },
-        "principal_id": { "$ref": "#/$defs/identifier" },
-        "revision": { "$ref": "#/$defs/identifier" },
-        "signature": { "type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$" }
+        "type": {
+          "const": "authenticate"
+        },
+        "gateway_id": {
+          "type": "string",
+          "pattern": "^gw-[a-f0-9]{64}$"
+        },
+        "space_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "local_space_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "principal_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "revision": {
+          "$ref": "#/$defs/identifier"
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$"
+        }
       },
       "additionalProperties": false
     },
     "ready": {
       "type": "object",
-      "required": ["type", "connection_id", "binding_revision", "heartbeat_seconds"],
+      "required": [
+        "type",
+        "connection_id",
+        "binding_revision",
+        "heartbeat_seconds"
+      ],
       "properties": {
-        "type": { "const": "ready" },
-        "connection_id": { "$ref": "#/$defs/connection_id" },
-        "binding_revision": { "$ref": "#/$defs/identifier" },
-        "heartbeat_seconds": { "const": 5 }
+        "type": {
+          "const": "ready"
+        },
+        "connection_id": {
+          "$ref": "#/$defs/connection_id"
+        },
+        "binding_revision": {
+          "$ref": "#/$defs/identifier"
+        },
+        "heartbeat_seconds": {
+          "const": 5
+        }
       },
       "additionalProperties": false
     },
     "heartbeat": {
       "type": "object",
-      "required": ["type", "connection_id", "sequence"],
+      "required": [
+        "type",
+        "connection_id",
+        "sequence"
+      ],
       "properties": {
-        "type": { "const": "heartbeat" },
-        "connection_id": { "$ref": "#/$defs/connection_id" },
-        "sequence": { "type": "integer", "minimum": 1, "maximum": 18446744073709551615 }
+        "type": {
+          "const": "heartbeat"
+        },
+        "connection_id": {
+          "$ref": "#/$defs/connection_id"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 18446744073709551615
+        }
       },
       "additionalProperties": false
     },
     "error": {
       "type": "object",
-      "required": ["type", "code"],
+      "required": [
+        "type",
+        "code"
+      ],
       "properties": {
-        "type": { "const": "error" },
-        "code": { "const": "machine_already_connected" }
+        "type": {
+          "const": "error"
+        },
+        "code": {
+          "const": "machine_already_connected"
+        }
       },
       "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "type",
+        "connection_id",
+        "request_id",
+        "binding_revision",
+        "space_id",
+        "local_space_id",
+        "principal_id",
+        "expires_at",
+        "action",
+        "payload"
+      ],
+      "properties": {
+        "type": {
+          "const": "request"
+        },
+        "connection_id": {
+          "$ref": "#/$defs/connection_id"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^rpc-[a-f0-9]{64}$"
+        },
+        "binding_revision": {
+          "$ref": "#/$defs/identifier"
+        },
+        "space_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "local_space_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "principal_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "action": {
+          "enum": [
+            "devices.list",
+            "models.get",
+            "commands.create",
+            "commands.get"
+          ]
+        },
+        "payload": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "devices.list"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": [
+                  "after"
+                ],
+                "properties": {
+                  "after": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{0,128}$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "models.get"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": [
+                  "revision"
+                ],
+                "properties": {
+                  "revision": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "commands.create"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": [
+                  "remote_id",
+                  "command"
+                ],
+                "properties": {
+                  "remote_id": {
+                    "type": "string",
+                    "pattern": "^remote-[a-f0-9]{64}$"
+                  },
+                  "command": {
+                    "$ref": "./command-request.schema.json"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "commands.get"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": [
+                  "remote_id"
+                ],
+                "properties": {
+                  "remote_id": {
+                    "type": "string",
+                    "pattern": "^remote-[a-f0-9]{64}$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    "result": {
+      "type": "object",
+      "required": [
+        "type",
+        "connection_id",
+        "request_id",
+        "binding_revision",
+        "result",
+        "error"
+      ],
+      "properties": {
+        "type": {
+          "const": "result"
+        },
+        "connection_id": {
+          "$ref": "#/$defs/connection_id"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^rpc-[a-f0-9]{64}$"
+        },
+        "binding_revision": {
+          "$ref": "#/$defs/identifier"
+        },
+        "result": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z0-9_]{1,128}$"
+        }
+      },
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "result": {
+              "type": "object"
+            },
+            "error": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "result": {
+              "type": "null"
+            },
+            "error": {
+              "type": "string"
+            }
+          }
+        }
+      ]
     }
   }
 }

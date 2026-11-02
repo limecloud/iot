@@ -6,6 +6,7 @@ license.workspace = true
 
 [dependencies]
 limeiot-core.workspace = true
+limeiot-android-tv = { path = "../../adapters/android-tv" }
 serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true

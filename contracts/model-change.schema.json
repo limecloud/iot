@@ -1,0 +1,794 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT local model change",
+  "description": "仅本地所有者授权。原键与空间位于HTTP路径/Idempotency-Key，正文为单一明确动作。结构Schema不替代Rust验签、兼容性或授权检查。",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "trust",
+        "expected_signing_key_id"
+      ],
+      "properties": {
+        "type": {
+          "const": "trust.add"
+        },
+        "trust": {
+          "$ref": "#/$defs/trust"
+        },
+        "expected_signing_key_id": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "trust_id",
+        "expected_revision"
+      ],
+      "properties": {
+        "type": {
+          "const": "trust.revoke"
+        },
+        "trust_id": {
+          "type": "string",
+          "pattern": "^trust-[a-f0-9]{64}$"
+        },
+        "expected_revision": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "trust_id",
+        "artifact",
+        "expected_release_id"
+      ],
+      "properties": {
+        "type": {
+          "const": "models.install"
+        },
+        "trust_id": {
+          "type": "string",
+          "pattern": "^trust-[a-f0-9]{64}$"
+        },
+        "artifact": {
+          "$ref": "#/$defs/release"
+        },
+        "expected_release_id": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^release-[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "device_id",
+        "installation_id",
+        "expected_model_revision",
+        "expected_binding_revision"
+      ],
+      "properties": {
+        "type": {
+          "const": "devices.bind"
+        },
+        "device_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "installation_id": {
+          "type": "string",
+          "pattern": "^install-[a-f0-9]{64}$"
+        },
+        "expected_model_revision": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_binding_revision": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "trust": {
+      "title": "LimeIoT explicit model release trust",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "issuer",
+        "publisher_id",
+        "namespace",
+        "signing_key_id",
+        "public_key"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "issuer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "publisher_id": {
+          "type": "string",
+          "pattern": "^publisher-[a-f0-9]{64}$"
+        },
+        "namespace": {
+          "type": "string",
+          "pattern": "^p-[a-f0-9]{30}$"
+        },
+        "signing_key_id": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "public_key": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{43}=$"
+        }
+      }
+    },
+    "release": {
+      "title": "LimeIoT signed model release",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "algorithm",
+        "signing_key_id",
+        "statement",
+        "signature"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "algorithm": {
+          "const": "Ed25519"
+        },
+        "signing_key_id": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "statement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "issuer",
+            "publisher_id",
+            "namespace",
+            "product_id",
+            "release_id",
+            "source_revision",
+            "source_document_digest",
+            "visibility",
+            "validator",
+            "compatibility_checker",
+            "model_revision",
+            "model",
+            "baseline",
+            "published_at"
+          ],
+          "properties": {
+            "issuer": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 400
+            },
+            "publisher_id": {
+              "type": "string",
+              "pattern": "^publisher-[a-f0-9]{64}$"
+            },
+            "namespace": {
+              "type": "string",
+              "pattern": "^p-[a-f0-9]{30}$"
+            },
+            "product_id": {
+              "type": "string",
+              "pattern": "^product-[a-f0-9]{64}$"
+            },
+            "release_id": {
+              "type": "string",
+              "pattern": "^release-[a-f0-9]{64}$"
+            },
+            "source_revision": {
+              "type": "string",
+              "pattern": "^prodrev-[a-f0-9]{64}$"
+            },
+            "source_document_digest": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            "visibility": {
+              "const": "public"
+            },
+            "validator": {
+              "enum": [
+                "limeiot.model/1.0.0",
+                "limeiot.model/1.1.0"
+              ]
+            },
+            "compatibility_checker": {
+              "enum": [
+                "limeiot.model-compatibility/1.0.0",
+                "limeiot.model-compatibility/1.1.0"
+              ]
+            },
+            "model_revision": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            "model": {
+              "$ref": "#/$defs/model"
+            },
+            "baseline": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": false,
+              "required": [
+                "release_id",
+                "model_revision",
+                "model_version"
+              ],
+              "properties": {
+                "release_id": {
+                  "type": "string",
+                  "pattern": "^release-[a-f0-9]{64}$"
+                },
+                "model_revision": {
+                  "type": "string",
+                  "pattern": "^sha256:[a-f0-9]{64}$"
+                },
+                "model_version": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+                }
+              }
+            },
+            "published_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+            }
+          }
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]{86}==$"
+        }
+      }
+    },
+    "model": {
+      "title": "LimeIoT supported model schemas 1 and 2",
+      "$comment": "结构检查子集。完整规则调用 limeiot.model/1.1.0；schema_version=1 保持无动作，schema_version=2 支持类型化动作。",
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "model_id": {
+          "$ref": "#/$defs/model/$defs/urn"
+        },
+        "model_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,9})\\.(0|[1-9][0-9]{0,9})\\.(0|[1-9][0-9]{0,9})$"
+        },
+        "services": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/model/$defs/service"
+          }
+        }
+      },
+      "required": [
+        "schema_version",
+        "model_id",
+        "model_version",
+        "services"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+        },
+        "urn": {
+          "type": "string",
+          "maxLength": 512,
+          "pattern": "^urn:[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?:[A-Za-z0-9_:.-]+$"
+        },
+        "schema0": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/model/$defs/schemaShape"
+            },
+            {
+              "properties": {
+                "properties": {
+                  "maxProperties": 32,
+                  "additionalProperties": {
+                    "$ref": "#/$defs/model/$defs/schema1"
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            }
+          ]
+        },
+        "schema1": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/model/$defs/schemaShape"
+            },
+            {
+              "properties": {
+                "properties": {
+                  "maxProperties": 32,
+                  "additionalProperties": {
+                    "$ref": "#/$defs/model/$defs/schema2"
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            }
+          ]
+        },
+        "schema2": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/model/$defs/schemaShape"
+            },
+            {
+              "properties": {
+                "properties": {
+                  "maxProperties": 32,
+                  "additionalProperties": {
+                    "$ref": "#/$defs/model/$defs/schema3"
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            }
+          ]
+        },
+        "schema3": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/model/$defs/schemaShape"
+            },
+            {
+              "properties": {
+                "properties": {
+                  "maxProperties": 32,
+                  "additionalProperties": {
+                    "$ref": "#/$defs/model/$defs/schema4"
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            }
+          ]
+        },
+        "schema4": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/model/$defs/schemaShape"
+            },
+            {
+              "properties": {
+                "properties": {
+                  "maxProperties": 0,
+                  "additionalProperties": false,
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            }
+          ]
+        },
+        "property": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/model/$defs/id"
+            },
+            "semantic_id": {
+              "$ref": "#/$defs/model/$defs/urn"
+            },
+            "schema": {
+              "$ref": "#/$defs/model/$defs/schema0"
+            },
+            "access": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 3,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "read",
+                  "write",
+                  "notify"
+                ]
+              }
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^[!-~]+$"
+            },
+            "max_age_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "id",
+            "semantic_id",
+            "schema",
+            "access",
+            "max_age_ms"
+          ],
+          "additionalProperties": false
+        },
+        "event": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/model/$defs/id"
+            },
+            "semantic_id": {
+              "$ref": "#/$defs/model/$defs/urn"
+            },
+            "schema": {
+              "$ref": "#/$defs/model/$defs/schema0"
+            }
+          },
+          "required": [
+            "id",
+            "semantic_id",
+            "schema"
+          ],
+          "additionalProperties": false
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/model/$defs/id"
+            },
+            "semantic_id": {
+              "$ref": "#/$defs/model/$defs/urn"
+            },
+            "properties": {
+              "type": "array",
+              "maxItems": 32,
+              "items": {
+                "$ref": "#/$defs/model/$defs/property"
+              }
+            },
+            "events": {
+              "type": "array",
+              "maxItems": 32,
+              "items": {
+                "$ref": "#/$defs/model/$defs/event"
+              }
+            },
+            "actions": {
+              "type": "array",
+              "maxItems": 32,
+              "items": {
+                "$ref": "#/$defs/model/$defs/action"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "semantic_id",
+            "properties",
+            "events",
+            "actions"
+          ],
+          "additionalProperties": false,
+          "anyOf": [
+            {
+              "properties": {
+                "properties": {
+                  "type": "array",
+                  "minItems": 1
+                }
+              },
+              "type": "object"
+            },
+            {
+              "properties": {
+                "events": {
+                  "type": "array",
+                  "minItems": 1
+                }
+              },
+              "type": "object"
+            },
+            {
+              "properties": {
+                "actions": {
+                  "type": "array",
+                  "minItems": 1
+                }
+              },
+              "type": "object"
+            }
+          ]
+        },
+        "schemaShape": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "boolean",
+                "integer",
+                "number",
+                "string",
+                "object"
+              ]
+            },
+            "minimum": {
+              "type": "number",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "maximum": {
+              "type": "number",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "enum": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 32,
+              "uniqueItems": true
+            },
+            "minLength": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4096
+            },
+            "maxLength": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4096
+            },
+            "properties": {
+              "type": "object",
+              "maxProperties": 32,
+              "propertyNames": {
+                "$ref": "#/$defs/model/$defs/id"
+              }
+            },
+            "required": {
+              "type": "array",
+              "maxItems": 32,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/model/$defs/id"
+              }
+            },
+            "additionalProperties": {
+              "const": false
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "integer",
+                      "number"
+                    ]
+                  }
+                },
+                "type": "object"
+              },
+              "else": {
+                "properties": {
+                  "minimum": false,
+                  "maximum": false
+                },
+                "type": "object"
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "integer"
+                  }
+                },
+                "type": "object"
+              },
+              "then": {
+                "properties": {
+                  "minimum": {
+                    "type": "integer"
+                  },
+                  "maximum": {
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "else": {
+                "properties": {
+                  "minLength": false,
+                  "maxLength": false
+                },
+                "type": "object"
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "object"
+                  }
+                },
+                "type": "object"
+              },
+              "else": {
+                "properties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": "object",
+                    "maxProperties": 0
+                  },
+                  "required": {
+                    "type": "array",
+                    "maxItems": 0
+                  }
+                },
+                "type": "object"
+              }
+            }
+          ]
+        },
+        "action": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "semantic_id",
+            "input",
+            "output",
+            "idempotent",
+            "risk",
+            "completion"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/model/$defs/id"
+            },
+            "semantic_id": {
+              "$ref": "#/$defs/model/$defs/urn"
+            },
+            "input": {
+              "$ref": "#/$defs/model/$defs/schema0"
+            },
+            "output": {
+              "$ref": "#/$defs/model/$defs/schema0"
+            },
+            "idempotent": {
+              "type": "boolean"
+            },
+            "risk": {
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            "completion": {
+              "enum": [
+                "submitted",
+                "observed"
+              ]
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": 1
+              }
+            },
+            "type": "object"
+          },
+          "then": {
+            "properties": {
+              "services": {
+                "type": "array",
+                "items": {
+                  "properties": {
+                    "actions": {
+                      "type": "array",
+                      "maxItems": 0
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "type": "object"
+          }
+        }
+      ]
+    }
+  }
+}

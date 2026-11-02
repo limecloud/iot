@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "record_id": "EVID-TV-20261102-01",
+  "candidate_id": "DEV-CAND-08",
+  "observed_on": "2026-11-02",
+  "scope": "standalone_readonly_device_inspection",
+  "publication": "redacted_observation_excerpt_not_original_rea_bundle",
+  "tool_versions": {
+    "rea": "6.7.0",
+    "adb": "37.0.1-15733141"
+  },
+  "observations": [
+    {
+      "id": "TV-OBS-01",
+      "source": {
+        "operation": "list_adb_devices",
+        "evidence_id": "ev_9ac1e5dcbaf0e4f9225adab0c16e981f0e5970314f7bbc74b6854df1126692dc"
+      },
+      "status": "pass",
+      "observed": {
+        "transport": "tcp",
+        "state": "device",
+        "product": "xmen",
+        "model": "MiTV4_ANSM0"
+      }
+    },
+    {
+      "id": "TV-OBS-02",
+      "source": {
+        "operation": "inspect_adb_device",
+        "evidence_id": "ev_3bd06bdba44dc1119f9d4dce5c84c3c500b4e94a21e50520c10b664f14cda945"
+      },
+      "status": "pass",
+      "observed": {
+        "properties": [
+          {
+            "name": "ro.build.version.release",
+            "value": "6.0.1"
+          },
+          {
+            "name": "ro.build.version.sdk",
+            "value": "23"
+          },
+          {
+            "name": "ro.build.version.security_patch",
+            "value": "2017-04-01"
+          },
+          {
+            "name": "ro.build.id",
+            "value": "MHC19J"
+          },
+          {
+            "name": "ro.build.fingerprint",
+            "value": "Xiaomi/xmen/xmen:6.0.1/MHC19J/2061:user/release-keys"
+          },
+          {
+            "name": "ro.build.characteristics",
+            "value": "tv"
+          },
+          {
+            "name": "ro.debuggable",
+            "value": "0"
+          },
+          {
+            "name": "ro.product.brand",
+            "value": "Xiaomi"
+          },
+          {
+            "name": "ro.product.device",
+            "value": "xmen"
+          },
+          {
+            "name": "ro.product.manufacturer",
+            "value": "xiaomi"
+          },
+          {
+            "name": "ro.product.model",
+            "value": "MiTV4-ANSM0"
+          },
+          {
+            "name": "ro.product.cpu.abilist",
+            "value": "armeabi-v7a,armeabi"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TV-OBS-03",
+      "source": {
+        "operation": "SSDP_HTTP_SOAP_GetVolume",
+        "tool": "Python standard library network probe",
+        "rea_evidence": false
+      },
+      "status": "pass",
+      "observed": {
+        "manufacturer": "Xiaomi",
+        "service": "urn:schemas-upnp-org:service:RenderingControl:1",
+        "action": "GetVolume",
+        "http_status": 200,
+        "returned_volume": 0
+      }
+    }
+  ],
+  "not_run": [
+    "remote_keys",
+    "application_launch",
+    "volume_write",
+    "notification_subscription",
+    "disconnect_recovery",
+    "standby_wake",
+    "tv_agent_installation",
+    "tv_agent_runtime",
+    "screen_preview",
+    "limeiot_platform_integration",
+    "ota"
+  ],
+  "limitations": [
+    "Excerpt of earlier observations; no new device actions were executed while preparing these documents.",
+    "Original REA records are not included; their evidence IDs identify the source records, not the redacted excerpt.",
+    "IP/MAC addresses, device display name, local host paths and credentials are omitted.",
+    "ADB authorization and build properties do not establish TV control, physical output or LimeIoT integration.",
+    "GetVolume=0 is a service response, not independently verified physical audio or a successful write.",
+    "Hardware/PCB revision, other models/firmware, long-term operation and distribution suitability are unverified."
+  ]
+}

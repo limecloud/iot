@@ -17,6 +17,8 @@ typedef struct {
     li_apply_result_t outcome;
     bool power;
     int64_t brightness;
+    li_device_info_t device_info;
+    bool fail_info;
 } fixture_t;
 static bool random_bytes(void *context, uint8_t *bytes, size_t length) { (void)context; return RAND_bytes(bytes, (int)length) == 1; }
 static int64_t monotonic(void *context) { return ((fixture_t *)context)->mono; }
@@ -51,9 +53,12 @@ static li_apply_result_t write_property(void *context, const char *path, li_valu
     return fixture->outcome;
 }
 static const li_config_t lamp_config = {"space-demo", "device-lamp", LI_LAMP_REVISION, "0.1.0", "host-test", LI_LAMP_PROPERTIES, LI_LAMP_PROPERTY_COUNT, NULL, 0, "host-fixture"};
+static bool read_device_info(void *context, li_device_info_t *info) {
+    fixture_t *f = context; *info = f->device_info; return !f->fail_info;
+}
 static fixture_t *fixture(void) { fixture_t *result = calloc(1, sizeof(*result)); CHECK(result); result->mono = 1000; return result; }
 static li_core_t *create(fixture_t *fixture, const li_config_t *config) {
-    li_ports_t ports = {fixture, random_bytes, monotonic, sha256, load, save, publish, read_property, write_property};
+    li_ports_t ports = {fixture, random_bytes, monotonic, sha256, load, save, publish, read_property, write_property, fixture->device_info.product_id ? read_device_info : NULL};
     li_error_t error; li_core_t *core = li_core_create(config, &ports, &error); CHECK(core && error == LI_OK); return core;
 }
 static cJSON *last(fixture_t *fixture, const char *kind) {
@@ -110,7 +115,7 @@ static void storage_failure_before_side_effect(void) {
     char packet[2048]; make_command(packet, sizeof(packet), "command-no-write", "session-test", "true", false);
     f->fail_store = 1; CHECK(receive(core, packet) == LI_STORAGE); CHECK(f->writes == 0 && !f->power);
     li_core_destroy(core); strcpy(f->storage[0], "{broken");
-    li_ports_t ports = {f, random_bytes, monotonic, sha256, load, save, publish, read_property, write_property}; li_error_t error;
+    li_ports_t ports = {f, random_bytes, monotonic, sha256, load, save, publish, read_property, write_property, NULL}; li_error_t error;
     CHECK(li_core_create(&lamp_config, &ports, &error) == NULL && error == LI_STORAGE); free(f);
 }
 static void session_expiry_and_clock(void) {
@@ -174,7 +179,64 @@ static void expiry_during_storage_never_reaches_driver(void) {
     CHECK(receive(core, packet) == LI_OK && f->writes == 0); status(f, "failed");
     li_core_destroy(core); free(f);
 }
+static void utc_observations_preserve_milliseconds_and_calendar_boundaries(void) {
+    static const struct { const char *anchor, *expected; int64_t elapsed; } cases[] = {
+        {"2020-02-29T23:59:59.999Z", "2020-03-01T00:00:00.000Z", 1},
+        {"2038-01-19T03:14:07.001Z", "2038-01-19T03:14:08.001Z", 1000},
+        {"2099-12-31T23:59:59.987Z", "2100-01-01T00:00:00.001Z", 14},
+        {"2100-02-28T23:59:59.999Z", "2100-03-01T00:00:00.000Z", 1},
+    };
+    for (size_t i = 0; i < sizeof(cases)/sizeof(cases[0]); i++) {
+        fixture_t *f = fixture(); li_core_t *core = create(f, &lamp_config);
+        handshake(core, f, &lamp_config, "calendar-session", cases[i].anchor);
+        f->mono += cases[i].elapsed; CHECK(li_report_snapshot(core) == LI_OK);
+        cJSON *message = last(f, "state");
+        cJSON *properties = cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(message, "body"), "properties");
+        CHECK(cJSON_GetArraySize(properties) == LI_LAMP_PROPERTY_COUNT);
+        for (const cJSON *entry = properties->child; entry; entry = entry->next) {
+            const cJSON *observed = cJSON_GetObjectItemCaseSensitive(entry, "observed_at");
+            CHECK(cJSON_IsString(observed) && strcmp(observed->valuestring, cases[i].expected) == 0);
+        }
+        cJSON_Delete(message); li_core_destroy(core); free(f);
+    }
+}
+static void device_information_uses_current_session_and_rejects_invalid_ports(void) {
+    fixture_t *f = fixture();
+    f->device_info = (li_device_info_t){.product_id="desk-node-lamp-host", .architecture="native", .chip="host", .board="host-fixture", .bootloader_version="0.0.1", .ota_capacity_bytes=1966080, .external_power=true};
+    li_core_t *core = create(f, &lamp_config);
+    handshake(core, f, &lamp_config, "info-session", "2026-11-01T00:00:00Z");
+    cJSON *message = last(f, "device_info"); cJSON *body = cJSON_GetObjectItemCaseSensitive(message, "body");
+    CHECK(strcmp(cJSON_GetObjectItemCaseSensitive(message, "session_id")->valuestring, "info-session") == 0);
+    CHECK(strcmp(cJSON_GetObjectItemCaseSensitive(body, "device_id")->valuestring, lamp_config.device_id) == 0);
+    CHECK(strcmp(cJSON_GetObjectItemCaseSensitive(body, "model_revision")->valuestring, LI_LAMP_REVISION) == 0);
+    CHECK(strcmp(cJSON_GetObjectItemCaseSensitive(body, "firmware_version")->valuestring, "0.1.0") == 0);
+    CHECK(cJSON_IsNull(cJSON_GetObjectItemCaseSensitive(body, "battery_percent")));
+    CHECK(cJSON_IsFalse(cJSON_GetObjectItemCaseSensitive(body, "safe_to_update")));
+    cJSON_Delete(message);
+    f->device_info.has_battery = true; f->device_info.battery_percent = 75; f->device_info.pending_update = true;
+    f->device_info.bootloader_version = "0.0.4294967295";
+    f->mono += 2000; CHECK(li_tick(core) == LI_OK);
+    message = last(f, "device_info"); body = cJSON_GetObjectItemCaseSensitive(message, "body");
+    CHECK(cJSON_GetObjectItemCaseSensitive(body, "battery_percent")->valueint == 75);
+    CHECK(cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(body, "pending_update")));
+    double previous = cJSON_GetObjectItemCaseSensitive(message, "seq")->valuedouble; cJSON_Delete(message);
+    f->device_info.battery_percent = 101; CHECK(li_report_snapshot(core) == LI_INVALID);
+    f->device_info.battery_percent = 75; f->device_info.bootloader_version = "0.0.4294967296"; CHECK(li_report_snapshot(core) == LI_INVALID);
+    f->device_info.bootloader_version = "0.0.1"; f->device_info.board = NULL; CHECK(li_report_snapshot(core) == LI_INVALID);
+    f->device_info.board = "host-fixture"; f->device_info.ota_capacity_bytes = 0; CHECK(li_report_snapshot(core) == LI_INVALID);
+    f->device_info.ota_capacity_bytes = 33554433; CHECK(li_report_snapshot(core) == LI_INVALID);
+    f->device_info.ota_capacity_bytes = 1966080; f->fail_info = true; CHECK(li_report_snapshot(core) == LI_DRIVER);
+    message = last(f, "device_info"); CHECK(cJSON_GetObjectItemCaseSensitive(message, "seq")->valuedouble == previous); cJSON_Delete(message);
+    f->fail_info = false; li_disconnected(core); CHECK(li_tick(core) == LI_IGNORED);
+    handshake(core, f, &lamp_config, "next-info-session", "2026-11-01T00:00:03Z");
+    message = last(f, "device_info");
+    CHECK(strcmp(cJSON_GetObjectItemCaseSensitive(message, "session_id")->valuestring, "next-info-session") == 0);
+    CHECK(cJSON_GetObjectItemCaseSensitive(message, "seq")->valuedouble > previous);
+    cJSON_Delete(message); li_core_destroy(core); free(f);
+}
 int main(void) {
     duplicate_and_conflict(); durable_intent_and_power_loss(); storage_failure_before_side_effect(); session_expiry_and_clock(); bounded_journal_does_not_replay_evicted_commands(); malformed_packets_never_execute(); unknown_driver_and_transport_result_retry(); button_event_binding_and_snapshot(); expiry_during_storage_never_reaches_driver();
-    puts("{\"firmware_core_checks\":9,\"physical_hardware\":false}"); return 0;
+    utc_observations_preserve_milliseconds_and_calendar_boundaries();
+    device_information_uses_current_session_and_rejects_invalid_ports();
+    puts("{\"firmware_core_checks\":11,\"physical_hardware\":false}"); return 0;
 }

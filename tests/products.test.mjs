@@ -1,0 +1,100 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdtemp,mkdir,readFile,writeFile,stat,rm,realpath } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { randomBytes } from 'node:crypto';
+import path from 'node:path';
+import { chromium,expect } from '@playwright/test';
+import { root } from '../tools/dev-stack.mjs';
+import { cloudClient,fixture,origin } from './helpers/control.mjs';
+
+const exec=promisify(execFile),base='/api/console/v1/products';
+test('产品草稿真实控制面：浏览器/CLI原请求、丢响应重启、修订冲突及存储失败零发送',{timeout:150000,skip:!process.env.LIMEIOT_TEST_CONTROL_TOKEN_FILE},async()=>{
+  const evidence=path.join(root,'.dev','products-'+randomBytes(8).toString('hex'));await mkdir(evidence,{recursive:true});
+  const secretDir=await mkdtemp(path.join(await realpath(tmpdir()),'limeiot-products-cli-'));
+  const token=(await readFile(process.env.LIMEIOT_TEST_CONTROL_TOKEN_FILE,'utf8')).trim();
+  let browser;
+  try {
+    browser=await chromium.launch({headless:true,executablePath:process.env.LIMEIOT_BROWSER_EXECUTABLE});
+    const context=await browser.newContext({viewport:{width:1440,height:960}}),page=await context.newPage(),errors=[];
+    let browserPosts=0;context.on('request',r=>{if(r.method()==='POST'&&/\/api\/console\/v1\/products(?:\/[^/]+\/drafts)?$/.test(new URL(r.url()).pathname))browserPosts++});
+    context.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));page.on('pageerror',e=>errors.push(e.message));
+    await page.goto(origin+'/console/?view=products&new=1');await page.getByLabel('实例凭据',{exact:true}).fill(token);await page.getByRole('button',{name:'登录私有实例',exact:true}).click();
+    await expect(page.getByRole('button', { name: '创建产品', exact: true })).toBeEnabled();
+    await page.evaluate(()=>{const set=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key.startsWith('limeiot.official:v1:'))throw new DOMException('fixture','QuotaExceededError');return set.call(this,key,value)}});
+    await page.getByLabel('产品名称', { exact: true }).fill('组合玩具');
+    await page.getByRole('button', { name: '创建产品', exact: true }).click();
+    await page.getByRole('alert').filter({ hasText: '浏览器无法保存请求记录' }).waitFor();
+    assert.equal(browserPosts, 0);
+    await page.reload();
+    await expect(page.getByRole('button', { name: '创建产品', exact: true })).toBeEnabled();
+    await page.getByLabel('产品名称', { exact: true }).fill('组合玩具');
+    await page.getByLabel('物模型 JSON', { exact: true }).fill('{"x":1,"x":2}');
+    await page.getByRole('button', { name: '创建产品', exact: true }).click();
+    await page.getByRole('alert').filter({ hasText: '不含重复字段' }).waitFor();
+    assert.equal(browserPosts, 0);
+    const model = { services: [], description: '可组合玩具草稿' };
+    await page.getByLabel('物模型 JSON', { exact: true }).fill(JSON.stringify(model));
+    await fixture({ drop_product_responses: true });
+    await page.getByRole('button', { name: '创建产品', exact: true }).click();
+    await page.getByRole('alert').waitFor();
+    // 无需刷新就能查询刚刚产生的未知记录；查询不得补发原 POST。
+    await expect(page.getByRole('button', { name: '查询结果', exact: true })).toBeEnabled();
+    const before = (await fixture()).product_posts;
+    assert.equal(browserPosts, 1);
+    await fixture({ restart_api: true });
+    await page.getByRole('button', { name: '查询结果', exact: true }).click();
+    await page.getByRole('cell', { name: '草稿已保存', exact: true }).waitFor();
+    assert.equal((await fixture()).product_posts, before);
+    assert.equal(browserPosts, 1);
+    await page.getByRole('link', { name: '编辑', exact: true }).click();
+    await expect(page.getByLabel('产品名称', { exact: true })).toHaveValue('组合玩具');
+    const product = new URL(page.url()).searchParams.get('product');
+    assert.match(product, /^product-[a-f0-9]{64}$/);
+    const other = await context.newPage();
+    await other.goto(page.url());
+    await expect(other.getByRole('button', { name: '保存草稿', exact: true })).toBeEnabled();
+    await other.getByLabel('物模型 JSON', { exact: true }).fill('{"variant":"second"}');
+    await page.getByLabel('物模型 JSON', { exact: true }).fill('{"variant":"first"}');
+    await page.getByRole('button', { name: '保存草稿', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: '草稿已保存' }).waitFor();
+    await other.getByRole('button', { name: '保存草稿', exact: true }).click();
+    await other.getByRole('status').filter({ hasText: '草稿已变化' }).waitFor();
+    await expect(other.getByLabel('物模型 JSON', { exact: true })).toHaveValue('{"variant":"second"}');
+    await other.getByRole('button', { name: '采用最新修订', exact: true }).click();
+    await other.getByRole('button', { name: '保存草稿', exact: true }).click();
+    await other.getByRole('status').filter({ hasText: '草稿已保存' }).waitFor();
+    const productCloud = await cloudClient();
+    const latest = await productCloud.call('/api/console/v1/products/' + product);
+    assert.deepEqual(latest.model, { variant: 'second' });
+    assert.equal((await productCloud.call('/api/console/v1/products')).items.length, 1);
+    await other.close();
+    const adminContext=await browser.newContext(),admin=await adminContext.newPage();await admin.goto(origin+'/admin/');await admin.getByLabel('实例凭据',{exact:true}).fill((await readFile(process.env.LIMEIOT_TEST_ADMIN_TOKEN_FILE,'utf8')).trim());await admin.getByRole('button',{name:'登录私有实例',exact:true}).click();await admin.getByRole('heading',{name:'运营管理',exact:true}).waitFor();assert.equal((await admin.request.get(origin+base)).status(),401);
+    const cloud=await cloudClient();
+    // CLI私有原记录与浏览器使用同一HTTP合同，不依赖网关或模拟设备。
+    const session=path.join(secretDir,'session.json'),inputFile=path.join(secretDir,'input.json');
+    async function cli(args,code=0){let result;try{result=await exec(process.execPath,['packages/cli/src/main.mjs','control','--session-file',session,...args],{cwd:root,env:process.env,timeout:20000})}catch(e){result=e}assert.equal(result.code??0,code,result.stderr);return result}
+    async function invoke(args,code=0){return JSON.parse((await cli(args,code)).stdout)}
+    async function input(value){await writeFile(inputFile,JSON.stringify(value));return ['--input',inputFile]}
+    const logged=await invoke(['auth','login','--endpoint',origin,'--token-file',process.env.LIMEIOT_TEST_CONTROL_TOKEN_FILE]);assert.ok(logged.authenticated);
+    const create={request_key:'cli-product-original',name:'CLI环境灯',model:{z:1,a:true}};
+    const blocked=path.join(secretDir,'blocked');await mkdir(blocked,{mode:0o700});const badSession=path.join(blocked,'session.json');await writeFile(badSession,await readFile(session),{mode:0o600});await writeFile(path.join(blocked,'operations'),'occupied');
+    const cliBefore=(await fixture()).product_posts;await cli(['products','create',...await input(create),'--session-file',badSession],5);assert.equal((await fixture()).product_posts,cliBefore);
+    await writeFile(inputFile,'{"request_key":"dup","name":"CLI","model":{"a":1,"a":2}}');await cli(['products','create','--input',inputFile],2);assert.equal((await fixture()).product_posts,cliBefore);
+    await fixture({drop_product_responses:true});const lost=await cli(['products','create',...await input(create)],6);assert.equal(JSON.parse(lost.stderr).error.code,'operation_unknown');const record=JSON.parse(lost.stderr).original.record_file;assert.deepEqual(JSON.parse(await readFile(record,'utf8')).input,create);assert.equal((await stat(record)).mode&0o777,0o600);
+    await fixture({restart_api:true});const restored=await invoke(['products','create',...await input(create)]);assert.equal(restored.status,'saved');assert.equal((await fixture()).product_posts,cliBefore+1);
+    const cliProduct=restored.product_id;assert.equal((await invoke(['products','resolve',create.request_key])).operation_id,restored.operation_id);assert.equal((await invoke(['products','get',cliProduct])).product_id,cliProduct);assert.ok((await invoke(['products','list'])).items.some(v=>v.product_id===cliProduct));
+    const save={request_key:'cli-product-save',name:'CLI v2',model:{},expected_revision:restored.product.revision};
+    const saved=await invoke(['products','save',cliProduct,...await input(save)]);assert.equal(saved.status,'saved');
+    const conflict=await invoke(['products','save',cliProduct,...await input({...save,request_key:'cli-product-stale'})],4);assert.equal(conflict.status,'conflict');
+    await cloud.call(base+'/'+cliProduct+'/drafts',{...save,request_key:'newer',expected_revision:saved.product.revision,name:'CLI v3'});
+    const old=await invoke(['products','save',cliProduct,...await input(save)]);assert.equal(old.product.revision,saved.product.revision);assert.equal((await cloud.call(base+'/'+cliProduct)).name,'CLI v3');
+    const changed=await cli(['products','save',product,...await input(save)],4);assert.equal(JSON.parse(changed.stderr).error.code,'idempotency_conflict');
+    await cli(['products','resolve','does-not-exist'],6);
+    await fixture({reject_product_writes:true});const unsent={...create,request_key:'cli-unsent'};await cli(['products','create',...await input(unsent)],6);const attempted=(await fixture()).product_posts;await fixture({});await cli(['products','create',...await input(unsent)],6);assert.equal((await fixture()).product_posts,attempted);
+    const secrets=JSON.parse(await readFile(session,'utf8'));assert.ok(!JSON.stringify(await page.evaluate(()=>({...localStorage}))).includes(secrets.session));await invoke(['auth','logout']);assert.deepEqual(errors,[]);
+    await writeFile(path.join(evidence,'result.json'),JSON.stringify({passed:true,real_mysql:true,browser:true,cli:true,response_lost_recovered:true,process_restart:true,cli_no_resend_after_404:true,revision_conflict:true,browser_create_fetches:1,browser_initial_transport_posts:before,hardware:false,transport:'loopback_http'}));
+  } finally {await fixture({});await browser?.close();await rm(secretDir,{recursive:true,force:true})}
+});

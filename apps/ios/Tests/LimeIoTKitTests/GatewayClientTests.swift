@@ -116,8 +116,18 @@ private func actualGatewayDeviceResultAndSessionRevocation() async throws {
         try endpointsRequireSecureExactOrigins()
         try await sessionHeadersAndUnknownSubmissionDoNotRetry()
         try await timedOutDraftRecoversOriginalWithoutAnotherSubmission()
+        let otaChecks = try await otaContractChecks()
+        let controlChecks = try await controlContractChecks()
+        let commandChecks = try await controlCommandContractChecks()
+        let actionChecks = try await controlActionContractChecks()
         let live = ProcessInfo.processInfo.environment["LIMEIOT_ENDPOINT"] != nil
-        if live { try await actualGatewayDeviceResultAndSessionRevocation() }
-        print("{\"contract_checks\":4,\"gateway_integration\":\"\(live ? "passed" : "skipped")\"}")
+        let actions = ProcessInfo.processInfo.environment["LIMEIOT_ACTION_CHECK"] == "1"
+        let otaLive = ProcessInfo.processInfo.environment["LIMEIOT_OTA_CHECK"] == "1"
+        if live && !actions && !otaLive { try await actualGatewayDeviceResultAndSessionRevocation() }
+        if otaLive { try await actualOtaChecks() }
+        if actions { try await actualActionChecks() }
+        let controlLive = ProcessInfo.processInfo.environment["LIMEIOT_NATIVE_CONTROL_CHECK"] == "1"
+        if controlLive { try await actualControlClientCheck() }
+        print("{\"contract_checks\":4,\"ota_contract_checks\":\(otaChecks),\"control_contract_checks\":\(controlChecks),\"remote_contract_checks\":\(commandChecks),\"action_contract_checks\":\(actionChecks),\"gateway_integration\":\"\(live ? "passed" : "skipped")\",\"control_integration\":\"\(controlLive ? "passed" : "skipped")\"}")
     }
 }

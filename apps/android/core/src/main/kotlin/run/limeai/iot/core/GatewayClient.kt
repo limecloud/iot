@@ -70,7 +70,7 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
     }
     private fun segment(value: String) = URLEncoder.encode(value, "UTF-8").replace("+", "%20")
     private fun base(space: String) = "/api/v1/spaces/${segment(space)}"
-    private suspend inline fun <reified T> call(path: String, method: String = "GET", body: String? = null, key: String? = null, authenticated: Boolean = true): T = mutex.withLock {
+    private suspend inline fun <reified T> call(path: String, method: String = "GET", body: String? = null, key: String? = null, authenticated: Boolean = true, ota: Boolean = false): T = mutex.withLock {
         if (authenticated && saved == null) throw GatewayException("unauthenticated", 401)
         val headers = mutableMapOf("Origin" to origin, "Cache-Control" to "no-store")
         saved?.let { headers["Cookie"] = it.cookie; headers["X-CSRF-Token"] = it.session.csrfToken }
@@ -88,7 +88,7 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
             saved = SavedSession(json.decodeFromString(response.body), cookie)
             store?.save(origin, json.encodeToString(saved))
         }
-        json.decodeFromString(response.body.ifEmpty { "{}" })
+        if (ota) json.decodeFromJsonElement(OtaJSON.parse(response.body, response = true)) else json.decodeFromString(response.body.ifEmpty { "{}" })
     }
     suspend fun login(token: String) { mutex.withLock { saved = null }; call<Session>("/api/v1/auth/session", "POST", json.encodeToString(Login(token)), authenticated = false) }
     suspend fun restore() {
@@ -106,6 +106,7 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
     suspend fun create(space: String, intent: CommandIntent): Command = call(base(space) + "/commands", "POST", json.encodeToString(intent.input), intent.key)
     suspend fun resolve(space: String, key: String): Command = call(base(space) + "/commands/by-key/" + segment(key))
     suspend fun command(space: String, id: String): Command = call(base(space) + "/commands/" + segment(id))
+    internal suspend fun otaCall(space: String, suffix: String, method: String = "GET", body: String? = null, key: String? = null): JsonObject = call(base(space) + suffix, method, body, key, ota = true)
     suspend fun createDraft(reference: DraftReference, input: DraftInput): RuleDraft = call(base(reference.space) + "/rule-drafts", "POST", json.encodeToString(input), reference.key)
     suspend fun resolveDraft(reference: DraftReference): RuleDraft = call(base(reference.space) + "/rule-drafts/by-key/" + segment(reference.key))
     suspend fun simulate(space: String, rule: Rule, eventData: JsonElement): Simulation {

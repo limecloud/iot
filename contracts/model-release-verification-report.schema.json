@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT model release verification report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "verifier",
+    "valid",
+    "artifact_digest",
+    "trust_digest",
+    "release",
+    "issues"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "verifier": {
+      "const": "limeiot.model-release/1.0.0"
+    },
+    "valid": {
+      "type": "boolean"
+    },
+    "artifact_digest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "trust_digest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "release": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "issues": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "code"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 1024,
+            "pattern": "^(?:/(?:[^~/]|~[01])*)*$"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,63}$"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "valid": {
+            "const": true
+          }
+        },
+        "type": "object"
+      },
+      "then": {
+        "properties": {
+          "artifact_digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "trust_digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "release": {
+            "$ref": "./model-release.schema.json"
+          },
+          "issues": {
+            "maxItems": 0,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "else": {
+        "properties": {
+          "release": {
+            "type": "null"
+          },
+          "issues": {
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_digest": {
+            "type": "null"
+          }
+        },
+        "type": "object"
+      },
+      "then": {
+        "properties": {
+          "trust_digest": {
+            "type": "null"
+          },
+          "valid": {
+            "const": false
+          }
+        },
+        "type": "object"
+      },
+      "else": {
+        "properties": {
+          "trust_digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        },
+        "type": "object"
+      }
+    }
+  ]
+}

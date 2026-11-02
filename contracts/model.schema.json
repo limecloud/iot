@@ -1,145 +1,493 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "LimeIoT 0.1 model.schema.json",
+  "title": "LimeIoT supported model schemas 1 and 2",
+  "$comment": "结构检查子集。完整规则调用 limeiot.model/1.1.0；schema_version=1 保持无动作，schema_version=2 支持类型化动作。",
   "type": "object",
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "model_id": {
+      "$ref": "#/$defs/urn"
+    },
+    "model_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,9})\\.(0|[1-9][0-9]{0,9})\\.(0|[1-9][0-9]{0,9})$"
+    },
+    "services": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/service"
+      }
+    }
+  },
   "required": [
     "schema_version",
     "model_id",
     "model_version",
     "services"
   ],
-  "properties": {
-    "schema_version": {
-      "const": 1
-    },
-    "model_id": {
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
       "type": "string",
-      "pattern": "^urn:[a-z0-9-]+:"
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
     },
-    "model_version": {
+    "urn": {
       "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+      "maxLength": 512,
+      "pattern": "^urn:[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?:[A-Za-z0-9_:.-]+$"
     },
-    "services": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "semantic_id",
-          "properties",
-          "actions",
-          "events"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^[a-z][a-z0-9_-]{0,63}$"
-          },
-          "semantic_id": {
-            "type": "string",
-            "pattern": "^urn:[a-z0-9-]+:"
-          },
+    "schema0": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/schemaShape"
+        },
+        {
           "properties": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "id",
-                "semantic_id",
-                "schema",
-                "access"
-              ],
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "pattern": "^[a-z][a-z0-9_-]{0,63}$"
-                },
-                "semantic_id": {
-                  "type": "string",
-                  "pattern": "^urn:[a-z0-9-]+:"
-                },
-                "schema": {
-                  "type": "object"
-                },
-                "access": {
-                  "type": "array",
-                  "minItems": 1,
-                  "uniqueItems": true,
-                  "items": {
-                    "enum": [
-                      "read",
-                      "write",
-                      "notify"
-                    ]
-                  }
-                },
-                "unit": {
-                  "type": "string"
-                },
-                "max_age_ms": {
-                  "type": "integer",
-                  "minimum": 1
-                }
+            "properties": {
+              "maxProperties": 32,
+              "additionalProperties": {
+                "$ref": "#/$defs/schema1"
               },
-              "additionalProperties": false
-            }
-          },
-          "actions": {
-            "type": "array",
-            "items": {
               "type": "object"
             }
           },
-          "events": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "id",
-                "semantic_id",
-                "schema"
-              ],
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "pattern": "^[a-z][a-z0-9_-]{0,63}$"
-                },
-                "semantic_id": {
-                  "type": "string",
-                  "pattern": "^urn:[a-z0-9-]+:"
-                },
-                "schema": {
-                  "type": "object"
-                },
-                "access": {
-                  "type": "array",
-                  "minItems": 1,
-                  "uniqueItems": true,
-                  "items": {
-                    "enum": [
-                      "read",
-                      "write",
-                      "notify"
-                    ]
-                  }
-                },
-                "unit": {
-                  "type": "string"
-                },
-                "max_age_ms": {
-                  "type": "integer",
-                  "minimum": 1
-                }
+          "type": "object"
+        }
+      ]
+    },
+    "schema1": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/schemaShape"
+        },
+        {
+          "properties": {
+            "properties": {
+              "maxProperties": 32,
+              "additionalProperties": {
+                "$ref": "#/$defs/schema2"
               },
-              "additionalProperties": false
+              "type": "object"
             }
+          },
+          "type": "object"
+        }
+      ]
+    },
+    "schema2": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/schemaShape"
+        },
+        {
+          "properties": {
+            "properties": {
+              "maxProperties": 32,
+              "additionalProperties": {
+                "$ref": "#/$defs/schema3"
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      ]
+    },
+    "schema3": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/schemaShape"
+        },
+        {
+          "properties": {
+            "properties": {
+              "maxProperties": 32,
+              "additionalProperties": {
+                "$ref": "#/$defs/schema4"
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      ]
+    },
+    "schema4": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/schemaShape"
+        },
+        {
+          "properties": {
+            "properties": {
+              "maxProperties": 0,
+              "additionalProperties": false,
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      ]
+    },
+    "property": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "semantic_id": {
+          "$ref": "#/$defs/urn"
+        },
+        "schema": {
+          "$ref": "#/$defs/schema0"
+        },
+        "access": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "read",
+              "write",
+              "notify"
+            ]
           }
         },
-        "additionalProperties": false
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^[!-~]+$"
+        },
+        "max_age_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "id",
+        "semantic_id",
+        "schema",
+        "access",
+        "max_age_ms"
+      ],
+      "additionalProperties": false
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "semantic_id": {
+          "$ref": "#/$defs/urn"
+        },
+        "schema": {
+          "$ref": "#/$defs/schema0"
+        }
+      },
+      "required": [
+        "id",
+        "semantic_id",
+        "schema"
+      ],
+      "additionalProperties": false
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "semantic_id": {
+          "$ref": "#/$defs/urn"
+        },
+        "properties": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/property"
+          }
+        },
+        "events": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "semantic_id",
+        "properties",
+        "events",
+        "actions"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "properties": {
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object"
+        },
+        {
+          "properties": {
+            "events": {
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object"
+        },
+        {
+          "properties": {
+            "actions": {
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "type": "object"
+        }
+      ]
+    },
+    "schemaShape": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "boolean",
+            "integer",
+            "number",
+            "string",
+            "object"
+          ]
+        },
+        "minimum": {
+          "type": "number",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "maximum": {
+          "type": "number",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "enum": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096
+        },
+        "properties": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "required": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "additionalProperties": {
+          "const": false
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "integer",
+                  "number"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "else": {
+            "properties": {
+              "minimum": false,
+              "maximum": false
+            },
+            "type": "object"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "then": {
+            "properties": {
+              "minimum": {
+                "type": "integer"
+              },
+              "maximum": {
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "string"
+              }
+            },
+            "type": "object"
+          },
+          "else": {
+            "properties": {
+              "minLength": false,
+              "maxLength": false
+            },
+            "type": "object"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "object"
+              }
+            },
+            "type": "object"
+          },
+          "else": {
+            "properties": {
+              "additionalProperties": false,
+              "properties": {
+                "type": "object",
+                "maxProperties": 0
+              },
+              "required": {
+                "type": "array",
+                "maxItems": 0
+              }
+            },
+            "type": "object"
+          }
+        }
+      ]
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "semantic_id",
+        "input",
+        "output",
+        "idempotent",
+        "risk",
+        "completion"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "semantic_id": {
+          "$ref": "#/$defs/urn"
+        },
+        "input": {
+          "$ref": "#/$defs/schema0"
+        },
+        "output": {
+          "$ref": "#/$defs/schema0"
+        },
+        "idempotent": {
+          "type": "boolean"
+        },
+        "risk": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "completion": {
+          "enum": [
+            "submitted",
+            "observed"
+          ]
+        }
       }
     }
   },
-  "additionalProperties": false
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": 1
+          }
+        },
+        "type": "object"
+      },
+      "then": {
+        "properties": {
+          "services": {
+            "type": "array",
+            "items": {
+              "properties": {
+                "actions": {
+                  "type": "array",
+                  "maxItems": 0
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "type": "object"
+      }
+    }
+  ]
 }

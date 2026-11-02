@@ -82,6 +82,10 @@ func (s *Store) Sweep(ctx context.Context) error {
 			return err
 		}
 	}
+	_, err := s.DB.ExecContext(ctx, `DELETE FROM control_native_authorizations WHERE expires_at<=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 1 DAY) LIMIT 1000`)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 func begin(ctx context.Context, db *sql.DB) (*sql.Tx, error) {

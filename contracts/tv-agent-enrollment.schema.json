@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.run/contracts/tv-agent-enrollment.schema.json",
+  "title": "TV Agent local enrollment material",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "space_id", "device_id", "broker", "ca_pem", "certificate_pem", "private_key_pem"],
+  "properties": {
+    "schema_version": { "enum": [1, 2] },
+    "model_profile": { "enum": ["android-tv-agent", "android-tv-remote"] },
+    "space_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" },
+    "device_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" },
+    "broker": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^ssl://[^/?#@]+:[1-9][0-9]{0,4}$" },
+    "ca_pem": { "type": "string", "minLength": 1, "maxLength": 4096 },
+    "certificate_pem": { "type": "string", "minLength": 1, "maxLength": 4096 },
+    "private_key_pem": { "type": "string", "minLength": 1, "maxLength": 4096 }
+  },
+  "allOf": [{
+    "if": { "properties": { "schema_version": { "const": 2 } }, "required": ["schema_version"] },
+    "then": { "properties": { "model_profile": { "enum": ["android-tv-agent", "android-tv-remote"] } }, "required": ["model_profile"] },
+    "else": { "properties": { "model_profile": false } }
+  }]
+}
