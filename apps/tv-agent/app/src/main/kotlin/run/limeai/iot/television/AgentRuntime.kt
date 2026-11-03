@@ -18,17 +18,20 @@ class TelevisionApplication : Application() {
     val runtime: AgentRuntime by lazy { AgentRuntime(this) }
 }
 
-data class EnrollmentSummary(val space: String, val device: String, val broker: String, val ca: String, val certificate: String, val expires: String, val model: String, val revision: String)
+data class EnrollmentSummary(val space: String, val device: String, val broker: String, val ca: String, val certificate: String, val expires: String, val model: String, val revision: String, val expired: Boolean)
 data class AgentScreen(
     val status: String = "stopped", val notice: String = "", val summary: EnrollmentSummary? = null,
     val applications: List<AndroidApplications.Entry> = emptyList(), val allowed: Set<String> = emptySet(),
+    val identityRequest: IdentityRequestView? = null,
+    val rotation: RotationRequestView? = null,
+    val retirements: List<KeyRetirementView> = emptyList(),
 )
 
 /** 单进程、单运行实例；Activity不是连接Owner，旧许可从不复活。 */
 class AgentRuntime(private val context: Context) {
     private val main = Handler(Looper.getMainLooper())
     private val io = Executors.newSingleThreadExecutor { Thread(it, "tv-agent-storage") }
-    private val store = AndroidAgentStore(context)
+    private var store = AndroidAgentStore(context)
     private val lock = Any()
     private val observers = CopyOnWriteArraySet<() -> Unit>()
     private var permit: RunPermit? = null
@@ -41,35 +44,207 @@ class AgentRuntime(private val context: Context) {
     fun setVisible(value: Boolean) { synchronized(lock) { visible = value } }
     private fun update(change: (AgentScreen) -> AgentScreen) { main.post { screen = change(screen); observers.forEach { it() } } }
     fun notice(value: String) { update { it.copy(notice = value) } }
-    private fun failure(error: Exception): String = when (error) {
-        is AgentStoreFault -> error.code
-        is DeviceFault -> error.code
-        else -> "storage_or_credentials_unavailable"
+    private fun failure(error: Exception): String {
+        val code = when (error) {
+            is AgentStoreFault -> error.code
+            is DeviceFault -> error.code
+            else -> "storage_or_credentials_unavailable"
+        }
+        return when (code) {
+            "storage_reopen_required" -> "保存结果需要核对。请停止连接后选择“重新核对已保存记录”，再恢复原申请。"
+            "identity_rotation_required" -> "设备已有身份，请保留原记录。首次接入不能替代换钥流程。"
+            "identity_request_conflict" -> "配置与已保存的申请不一致，请恢复原申请。"
+            "identity_request_required" -> "请先核对首次连接配置并保存申请；已有申请不能被其他材料覆盖。"
+            "identity_request_not_ready" -> "申请尚未完成，请先恢复原申请。"
+            "identity_key_unavailable" -> "原设备密钥不可用，已拒绝继续。请保留应用数据，不要重新申请另一身份。"
+            "identity_not_expired" -> "当前证书仍有效，请使用换钥流程。"
+            "expired_identity_requires_recovery" -> "设备证书已过期，仅可维护。请明确申请过期恢复，连接和控制继续停用。"
+            "rotation_in_progress" -> "原换钥尚未完成。请恢复原申请，切换后导出激活证明，由管理者完成撤旧。"
+            "rotation_receipt_mismatch", "invalid_rotation_receipt" -> "换钥回执与原申请或证书不一致，已拒绝保存。请核对原管理操作。"
+            "rotation_not_completed" -> "尚未取得原管理操作的完整撤旧结果。请导出激活证明并查询原轮换。"
+            "invalid_revocation_proof" -> "撤销列表无效或不包含原旧证书，已拒绝清理。请核对固定CA签署的完整有效CRL。"
+            "key_retirement_untracked" -> "该记录未保存可核对的原键引用，已拒绝自动清理。请保留原记录。"
+            "key_retirement_current_key", "key_retirement_conflict" -> "原清理记录与当前密钥状态不一致，已拒绝删除。请保留记录并核对原操作。"
+            "revocation_proof_required" -> "请提供固定CA签署的原撤销列表；管理完成JSON不能代替CRL。"
+            else -> code
+        }
     }
-    fun summary(enrollment: DeviceEnrollment) = EnrollmentSummary(enrollment.identity.space, enrollment.identity.device, enrollment.broker,
-        enrollment.caFingerprint, enrollment.certificateFingerprint, DateFormat.getDateTimeInstance().format(Date(enrollment.certificateExpiresAt)), enrollment.identity.profile.id, enrollment.identity.profile.revision)
+    fun summary(enrollment: DeviceIdentityMetadata) = EnrollmentSummary(enrollment.identity.space, enrollment.identity.device, enrollment.broker,
+        enrollment.caFingerprint, enrollment.certificateFingerprint, DateFormat.getDateTimeInstance().format(Date(enrollment.certificateExpiresAt)), enrollment.identity.profile.id, enrollment.identity.profile.revision, System.currentTimeMillis() >= enrollment.certificateExpiresAt)
 
     fun refresh() { io.execute {
         try {
-            val enrollment = store.load(); val allowed = store.allowed(); val applications = AndroidApplications.discover(context)
-            update { it.copy(summary = enrollment?.let(::summary), applications = applications, allowed = allowed) }
-        } catch (error: Exception) { notice(failure(error)) }
+            val enrollment = store.maintenance(); val request = store.identityRequest(); val rotation = store.rotationRequest(); val retirements = store.keyRetirements(); val allowed = store.allowed(); val applications = AndroidApplications.discover(context)
+            update { it.copy(summary = enrollment?.let(::summary), applications = applications, allowed = allowed, identityRequest = request, rotation = rotation, retirements = retirements) }
+        } catch (error: Exception) { update { it.copy(summary = null, identityRequest = null, rotation = null, retirements = emptyList(), notice = failure(error)) } }
     } }
+
+    private fun read(uri: Uri, maximum: Int): ByteArray = context.contentResolver.openInputStream(uri)?.use { input ->
+        val output = ByteArrayOutputStream(); val block = ByteArray(4096)
+        while (true) {
+            val count = input.read(block); if (count < 0) break
+            if (output.size() + count > maximum) throw DeviceFault("import_too_large")
+            output.write(block, 0, count)
+        }
+        output.toByteArray()
+    } ?: throw DeviceFault("import_unavailable")
 
     fun readEnrollment(uri: Uri, callback: (DeviceEnrollment) -> Unit) { io.execute {
         try {
-            val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
-                val output = ByteArrayOutputStream(); val block = ByteArray(4096)
-                while (true) {
-                    val n = input.read(block); if (n < 0) break
-                    if (output.size() + n > 32768) throw DeviceFault("invalid_enrollment")
-                    output.write(block, 0, n)
-                }
-                output.toByteArray()
-            } ?: throw DeviceFault("invalid_enrollment")
+            val bytes = read(uri, 32768)
             val enrollment = try { DeviceEnrollment.parse(bytes) } finally { bytes.fill(0) }
             main.post { callback(enrollment) }
         } catch (error: Exception) { notice(failure(error)) }
+    } }
+
+    fun readIdentitySetup(uri: Uri, callback: (DeviceIdentitySetup) -> Unit) { io.execute {
+        try {
+            val setup = DeviceIdentitySetup.parse(read(uri, 16384))
+            main.post { callback(setup) }
+        } catch (error: Exception) { notice(failure(error)) }
+    } }
+
+    fun requestIdentity(setup: DeviceIdentitySetup? = null) { io.execute {
+        try {
+            val request = synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                val original = setup ?: store.identityRequest()?.setup ?: throw AgentStoreFault("identity_request_required")
+                store.requestIdentity(original)
+            }
+            update { it.copy(identityRequest = request, notice = if (request.phase == "active") "原申请与已保存的设备证书已核对。" else "原申请已保存。请导出申请并由管理者核对公钥、签发证书。") }
+            refresh()
+        } catch (error: Exception) { notice(failure(error)); refresh() }
+    } }
+
+    fun exportIdentityRequest(uri: Uri) { io.execute {
+        try {
+            val view = synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                store.identityRequest()?.takeIf { it.request != null } ?: throw AgentStoreFault("identity_request_not_ready")
+            }
+            context.contentResolver.openOutputStream(uri, "wt")?.use { output -> output.write(view.request!!.pem.toByteArray(Charsets.US_ASCII)); output.flush() }
+                ?: throw DeviceFault("export_unavailable")
+            notice(if (view.phase == "active") "原申请已导出，用于核对现有证书；更换证书须走换钥流程。" else "原申请已导出。请将公钥指纹与管理端独立核对，再导入签发的设备证书。")
+        } catch (error: Exception) { notice(failure(error)) }
+    } }
+
+    fun readIdentityCertificate(uri: Uri, callback: (DeviceEnrollment) -> Unit) { io.execute {
+        try {
+            val certificate = read(uri, 4096)
+            val enrollment = synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                store.previewCertificate(certificate)
+            }
+            main.post { callback(enrollment) }
+        } catch (error: Exception) { notice(failure(error)) }
+    } }
+
+    fun activateIdentity(enrollment: DeviceEnrollment) { io.execute {
+        try {
+            synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                store.activateIdentity(enrollment)
+            }
+            notice("设备证书已保存。请确认允许的应用，再开始连接。")
+            refresh()
+        } catch (error: Exception) { notice(failure(error)); refresh() }
+    } }
+
+    fun reopenRecords() { io.execute {
+        try {
+            synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                store.close(); store = AndroidAgentStore(context)
+            }
+            update { it.copy(summary = null, identityRequest = null, notice = "已重新打开记录。未完成的申请请使用恢复原申请继续核对。") }
+            refresh()
+        } catch (error: Exception) { notice(failure(error)) }
+    } }
+
+    fun requestRotation(requestId: String, expiredRecovery: Boolean = false) { io.execute {
+        try {
+            synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                if (expiredRecovery) store.requestExpiredRecovery(requestId) else store.requestRotation(requestId)
+            }
+            notice(if (expiredRecovery) "过期恢复申请已保存，连接仍停用。请管理者独立核对新公钥及过期旧证书，使用原请求恢复。" else "原换钥申请已保存。原身份继续保留，请独立核对新公钥和前证书后签发。")
+            refresh()
+        } catch (error: Exception) { notice(failure(error)); refresh() }
+    } }
+
+    fun readRotationReceipt(uri: Uri, callback: (DeviceRotationReceipt) -> Unit) { io.execute {
+        try {
+            val receipt = DeviceRotationReceipt.parse(read(uri, 16384))
+            main.post { callback(receipt) }
+        } catch (error: Exception) { notice(failure(error)) }
+    } }
+
+    fun readRotationCertificate(uri: Uri, receipt: DeviceRotationReceipt, callback: (RotationCandidate) -> Unit) { io.execute {
+        try {
+            val certificate = read(uri, 4096)
+            val candidate = synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                store.previewRotation(certificate, receipt)
+            }
+            main.post { callback(candidate) }
+        } catch (error: Exception) { notice(failure(error)) }
+    } }
+
+    fun activateRotation(candidate: RotationCandidate) { io.execute {
+        try {
+            synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                store.activateRotation(candidate)
+            }
+            notice("新身份已保存。请导出激活证明，由管理者完成原轮换、撤旧及Broker重载。")
+            refresh()
+        } catch (error: Exception) { notice(failure(error)); refresh() }
+    } }
+
+    fun exportRotation(uri: Uri, proof: Boolean) { io.execute {
+        try {
+            val bytes = synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                val view = store.rotationRequest() ?: throw AgentStoreFault("identity_request_required")
+                if (proof) store.activationProof(view.candidate.setup.requestId).toByteArray(Charsets.US_ASCII)
+                else (view.candidate.request ?: throw AgentStoreFault("identity_request_not_ready")).pem.toByteArray(Charsets.US_ASCII)
+            }
+            context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(bytes); it.flush() } ?: throw DeviceFault("export_unavailable")
+            notice(if (proof) "原激活证明已导出。管理者须明确完成原轮换，再重载Broker并核对新旧身份连接。" else "原换钥CSR已导出，请独立核对新公钥、前证书指纹及序列号。")
+        } catch (error: Exception) { notice(failure(error)); refresh() }
+    } }
+
+    fun confirmRotationManagement(receipt: DeviceRotationReceipt) { io.execute {
+        try {
+            synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                store.confirmRotationManagement(receipt)
+            }
+            notice("已记录原管理操作完成。该回执不证明Broker已重载；请分别核对旧身份拒绝和新身份连接。")
+            refresh()
+        } catch (error: Exception) { notice(failure(error)); refresh() }
+    } }
+
+    fun previewKeyRetirement(requestId: String, uri: Uri?, callback: (KeyRetirementPreview) -> Unit) { io.execute {
+        try {
+            val crl = uri?.let { read(it, 16384) }
+            val preview = synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                store.previewKeyRetirement(requestId, crl)
+            }
+            main.post { callback(preview) }
+        } catch (error: Exception) { notice(failure(error)); refresh() }
+    } }
+
+    fun retirePreviousKey(preview: KeyRetirementPreview) { io.execute {
+        try {
+            synchronized(lock) {
+                if (permit != null) throw AgentStoreFault("stop_before_import")
+                store.retirePreviousKey(preview)
+            }
+            notice("原旧签名键已核对为缺席，当前身份、应用授权和命令记录保留。此操作不证明Broker已重载或备份已擦除。")
+            refresh()
+        } catch (error: Exception) { notice(failure(error)); refresh() }
     } }
 
     fun install(enrollment: DeviceEnrollment) { io.execute {
@@ -85,7 +260,10 @@ class AgentRuntime(private val context: Context) {
 
     fun authorize(application: String, allow: Boolean) { io.execute {
         try {
-            synchronized(lock) { store.authorize(application, allow) }
+            synchronized(lock) {
+                if (allow && store.maintenance()?.expired == true) throw AgentStoreFault("expired_identity_requires_recovery")
+                store.authorize(application, allow)
+            }
             val allowed = store.allowed()
             update { it.copy(allowed = allowed, notice = "") }
         } catch (error: Exception) { notice(failure(error)); refresh() }
@@ -109,11 +287,13 @@ class AgentRuntime(private val context: Context) {
                         backend.commit(bytes)
                     }
                 }
-                val applications = AndroidApplications(context, { it in store.allowed() }, lock, current) { visible }
-                val client = DeviceMqtt(enrollment.identity, enrollment.broker, enrollment.tls(), storage, applications,
+                val tls = enrollment.tls()
+                val applications = AndroidApplications(context, { it in store.allowed() }, lock, current, { tls.current }) { visible }
+                val client = DeviceMqtt(enrollment.identity, enrollment.broker, tls, storage, applications,
                     object : DeviceClock { override fun elapsedMillis() = SystemClock.elapsedRealtime() }) { state ->
                     if (current.active) update {
                         if (!current.active) return@update it
+                        if (state == "invalid_credentials" && !tls.current) return@update it.copy(status = "stopped", notice = "设备证书已到期，连接已停止。请使用过期身份维护。")
                         if (state in setOf("connecting", "handshaking", "ready", "stopped", "connection_unavailable")) it.copy(status = state)
                         else it.copy(status = state, notice = state)
                     }
@@ -126,6 +306,7 @@ class AgentRuntime(private val context: Context) {
                 val lastFailure = failed
                 update { if (lastFailure == null) it.copy(status = "stopped") else it.copy(status = "stopped", notice = lastFailure) }
                 main.post { if (!running) finished() }
+                refresh()
             }
         }, "tv-agent-mqtt").start()
     }

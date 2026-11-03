@@ -249,12 +249,9 @@ fn same_sequence_different_body_and_old_boot_cannot_change_state() {
 #[test]
 fn unsafe_rules_and_incomplete_snapshots_are_rejected() {
     let mut data = ready();
-    let mut unsafe_rule = rule();
-    unsafe_rule.conditions = vec![json!({"shell":"anything"})];
-    assert_eq!(
-        data.deploy(unsafe_rule).err().unwrap().code,
-        "unsupported_rule"
-    );
+    let mut unsafe_rule = serde_json::to_value(rule()).unwrap();
+    unsafe_rule["conditions"] = json!([{"shell":"anything"}]);
+    assert!(serde_json::from_value::<Rule>(unsafe_rule).is_err());
     let incomplete = message(
         &data,
         "device-lamp",

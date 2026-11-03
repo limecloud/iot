@@ -4,20 +4,27 @@
   "title": "TV Agent local enrollment material",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "space_id", "device_id", "broker", "ca_pem", "certificate_pem", "private_key_pem"],
+  "required": ["schema_version", "space_id", "device_id", "broker", "ca_pem", "certificate_pem"],
   "properties": {
-    "schema_version": { "enum": [1, 2] },
+    "schema_version": { "enum": [1, 2, 3] },
     "model_profile": { "enum": ["android-tv-agent", "android-tv-remote"] },
     "space_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" },
     "device_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" },
     "broker": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^ssl://[^/?#@]+:[1-9][0-9]{0,4}$" },
     "ca_pem": { "type": "string", "minLength": 1, "maxLength": 4096 },
     "certificate_pem": { "type": "string", "minLength": 1, "maxLength": 4096 },
-    "private_key_pem": { "type": "string", "minLength": 1, "maxLength": 4096 }
+    "private_key_pem": { "type": "string", "minLength": 1, "maxLength": 4096 },
+    "key_reference": { "type": "string", "pattern": "^limeiot-tv-identity-[0-9a-f]{32}$" },
+    "public_key_fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "request_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" }
   },
   "allOf": [{
-    "if": { "properties": { "schema_version": { "const": 2 } }, "required": ["schema_version"] },
+    "if": { "properties": { "schema_version": { "enum": [2, 3] } }, "required": ["schema_version"] },
     "then": { "properties": { "model_profile": { "enum": ["android-tv-agent", "android-tv-remote"] } }, "required": ["model_profile"] },
     "else": { "properties": { "model_profile": false } }
+  }, {
+    "if": { "properties": { "schema_version": { "const": 3 } }, "required": ["schema_version"] },
+    "then": { "required": ["key_reference", "public_key_fingerprint", "request_id"], "properties": { "private_key_pem": false, "key_reference": true, "public_key_fingerprint": true, "request_id": true } },
+    "else": { "required": ["private_key_pem"], "properties": { "private_key_pem": true, "key_reference": false, "public_key_fingerprint": false, "request_id": false } }
   }]
 }

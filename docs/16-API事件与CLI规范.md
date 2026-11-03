@@ -12,6 +12,10 @@
 | `models.get` | `GET /api/v1/model-releases/{revision}` | 精确模型正文 |
 | `commands.create` | `POST /api/v1/spaces/{space_id}/commands` | 校验、幂等受理控制 |
 | `commands.get` | `GET /api/v1/spaces/{space_id}/commands/{command_id}` | 原命令与证据 |
+| `execution-plans.list` | `GET /api/v1/spaces/{space_id}/execution-plans` | 已实现本地计划分页读取 |
+| `execution-plans.get` | `GET /api/v1/spaces/{space_id}/execution-plans/{id}` | 当前计划及原child证据 |
+| `execution-plan-changes.create` | `POST /api/v1/spaces/{space_id}/execution-plan-operations` | 明确创建、启动、取消、解除占用 |
+| `execution-plan-changes.resolve` | `GET /api/v1/spaces/{space_id}/execution-plan-operations/by-key/{id}` | 只读恢复原决定，不补发 |
 | `drafts.create` | `POST /api/v1/spaces/{space_id}/rule-drafts` | 幂等创建文字联动草案，202 仅表示推理已受理 |
 | `drafts.list` | `GET /api/v1/spaces/{space_id}/rule-drafts` | 有界草案列表 |
 | `drafts.get` | `GET /api/v1/spaces/{space_id}/rule-drafts/{draft_id}` | 查询原草案、状态和错误 |
@@ -23,11 +27,17 @@
 | `tasks.cancel` | `POST /api/v1/spaces/{space_id}/tasks/{task_id}:cancel` | 请求取消原任务 |
 | `capabilities.list` | `GET /api/v1/spaces/{space_id}/capabilities` | 当前可见能力与合同 |
 | `models.invoke` | `POST /api/v1/spaces/{space_id}/model-invocations` | 有预算的模型调用 |
-| `media.create` | `POST /api/v1/spaces/{space_id}/media` | 取得受控上传任务 |
+| `media.list` | `GET /api/v1/spaces/{space_id}/media` | 已实现的有限音频与授权列表 |
+| `media-changes.create` | `POST /api/v1/spaces/{space_id}/media-operations` | 有限PCM WAV上传、授权、撤销、删除 |
+| `media-changes.resolve` | `GET /api/v1/spaces/{space_id}/media-operations/by-key/{key}` | 按原键读取历史决定，不重新授权 |
 | `packages.validate` | `POST /api/v1/spaces/{space_id}/packages:validate` | 校验组合包 |
 | `packages.deploy` | `POST /api/v1/spaces/{space_id}/package-deployments` | 部署固定组合包 |
 
 每项正式入口有认证、scope、资源和字段限制；尚未支持的动作不得出现在可执行目录中。列表采用有上限的 `limit`、不透明 `cursor` 和 `next_cursor`，游标绑定当前空间、主体及筛选条件，换条件时重新开始分页。
+
+有界执行计划已实现本地所有者HTTP/CLI入口，正式边界见[计划合同](../contracts/execution-plans.md)及[机器Schema](../contracts/execution-plans.schema.json)。创建为零命令草稿，显式start后逐阶段等待原命令或关联任务事件；最多8台、16步、15分钟，子命令仍不超过30秒。已启动计划在明确release前持续占用设备；cancel阻止未来阶段，不能证明物理停车，重启Running保留Unknown且不重放。本地分页使用按计划ID的`after`、每页16项，不扩展云relay工具目录。`tasks.*`目标接口不能当作这些已实现入口的别名。
+
+有限媒体接口现已进入本地机器目录，正式结构与边界见[媒体合同](../contracts/media.md)；当前固定有界列表`next_cursor=null`，不提供目标上传任务或转码。CLI、家庭网页与AI共享输入/响应检查，上传记录仅保留正文/请求摘要。公开回执、列表与工具输出不包含音频正文、下载地址或凭证。媒体不加入受限远程转发目录，官方云不因此获得家庭媒体权限。
 
 草案正式输入见 `contracts/draft-request.schema.json`。CLI 将 `space_id` 映射到路径、`idempotency_key` 映射到 `Idempotency-Key` 请求头；HTTP 正文仅为 `prompt/expires_at`。需求不超过 512 字符和 2048 字节，截止时间在未来 120 秒内。响应含 `draft_id`、状态、请求/上下文摘要、提供方/模型、可选规则/修订、用量和错误。`completed` 不表示部署或执行；原生端和 PWA 均需预演与明确启用。并发忙返回 429 `inference_busy`，未配置模型返回 503；不自动重试或切云。其余状态与恢复语义见 [11](11-AI与Agent接入设计.md)。
 
@@ -69,9 +79,15 @@ CLI/Agent 的命令创建输入示例见 [command-request.json](examples/command
 
 离散按键具有短期限、有界顺序和原命令去重，未知时只核实原操作；不跨 Agent/ADB 路径补发，不以进程退出码证明目标界面已变化。Rust 核心、Go 远程输入/回执及控制面 CLI 已加入动作分支；CLI 重新核对完整原请求 JCS 摘要和动作证据，精确模型校验仍归 Rust。远程与本地 path 均最多129个字符、每段最多64个字符。
 
-家庭网页及Swift/Kotlin客户端按模型提供遥控、应用启动和其他动作参数，并按证据显示“输入已提交”或“效果已观测”。原生云回执现接受属性/动作；两端绑定完整原输入、核对证据外壳，正式JCS摘要与精确模型规则仍由Go/Rust验证。软件入口分别为 `npm run test:actions`、`npm run test:actions:native` 和 `npm run test:control:native`。第一方路由与受限ADB已有软件证据；DSL invoke、TV Agent及原生界面端上仍需实现或验收。具体路径见 [34](34-电视终端与AndroidTV接入.md)，当前结果统一见 [24](24-实施计划与进度.md)。
+家庭网页及Swift/Kotlin客户端按模型提供遥控、应用启动和其他动作参数，并按证据显示“输入已提交”或“效果已观测”。原生云回执现接受属性/动作；两端绑定完整原输入、核对证据外壳，正式JCS摘要与精确模型规则仍由Go/Rust验证。软件入口分别为 `npm run test:actions`、`npm run test:actions:native` 和 `npm run test:control:native`。DSL的invoke已通过[规则合同](../contracts/rules.md)复用同一命令链路，对应`test:rules:actions`和`test:rules:actions:native`；AI草案继续只生成属性设置，云入口不增加规则权限。第一方路由与受限ADB已有软件证据，TV Agent当前组合及原生界面端上仍按各自范围验收。具体路径见 [34](34-电视终端与AndroidTV接入.md)，当前结果统一见 [24](24-实施计划与进度.md)。
 
 现有空间的本地执行接入另提供 execution-adapters.list、execution-bindings.get、device-applications.list、execution-changes.create/resolve，复用所有者会话或Bearer，未自动加入控制面远程目录。绑定/撤销正文、HTTP路径、当前修订、原请求先保存及只读恢复规则统一见[执行合同](../contracts/execution-routes.md)和[机器Schema](../contracts/execution-bindings.schema.json)，不另建电视命令入口。HTTP 200须读取applied/conflict/rejected；候选兼容不授信，旧applied不复活撤销。本地接入与事件刷新已有完整软件旅程，实机与生产仍另验，详见24第4.7节。
+
+### 3.2 内置模型目录与绑定
+
+本地所有者范围的 `model-bundles.list/get` 与 `devices.bind-bundle` 已接入正式Schema、HTTP、工具目录、共享协议/类型、CLI和网页；目录只读，变更复用 `model-operations` 原键与决定账本。它们不自动加入控制面远程管理目录，签名安装/绑定保持独立来源；正式入口和资源格式见 [模型发布合同](../contracts/model-release.md#本地信任安装和设备绑定)。
+
+目录响应须核对正文、模型修订与目录标识；绑定请求固定精确目录项、当前模型及模型绑定修订，首次基线显式null。客户端先保存完整原请求，未知只查原键；网页中安装来源和内置来源的换绑属于同一设备变更，不能通过换动作类型绕开未决原操作。来源严格互斥，响应绑定完整原请求；软件证据与尚未完成的实际组合/端上范围见 [24第4.19节](24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)，验收要求见 [23](23-测试策略与验收矩阵.md)。
 
 ## 4. 错误与未知恢复
 
@@ -83,9 +99,13 @@ CLI/Agent 的命令创建输入示例见 [command-request.json](examples/command
 
 本地可采用 SSE，必要双向通道采用独立 WebSocket 合同。事件含 event_id、space_id、aggregate_id/version、type、source、occurred_at、received_at、correlation_id 和有类型数据。
 
+当前已实现的外层为 `{event_id,type,space_id,payload}`，上文完整字段集是目标规范；本地 `device.event` 的严格业务投影见[实时设备事件合同](../contracts/device-events.md)（[English](../contracts/device-events.en.md)）及[Schema](../contracts/device-event.schema.json)。外层 `event_id` 是恢复游标，`payload.data.event_id` 才是设备业务身份；只有完整校验、首次出现且实时的新事件有投影。合法历史、过期或重复消息的 `payload.data=null` 通知不代表新业务事件，非法消息不产生投影。该能力不增加控制面事件转发或证明实物效果。
+
 订阅先鉴权并持续响应撤权；以游标恢复，有界保留，游标过旧返回 gap 并提供快照重建方法。关键事件持久化语义见 [09](09-Rust网关内核设计.md)，不保证无限历史或跨设备全局顺序。
 
 ## 6. CLI 与 Agent 工具
+
+当前本地终端入口：`node packages/cli/src/main.mjs tui schema`离线发现，`tui --space-id ID`打开交互菜单，`tui --stdio --space-id ID`提供逐行机器任务，`tui --snapshot --space-id ID`读取当前快照。输入合同为[task-session.json](../contracts/tools/task-session.json)，任务顺序、明确commit及只读恢复见[终端任务合同](../contracts/terminal-tasks.md)。原命令丢响应后只GET；规则缺少原请求耐久决定，当前部署仅作observation，不能转成原提交成功。后续示意命令是否可用仍须以当前正式目录为准。
 
 ```text
 limeiot schema [operation_id]

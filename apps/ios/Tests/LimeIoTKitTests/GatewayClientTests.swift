@@ -117,15 +117,42 @@ private func actualGatewayDeviceResultAndSessionRevocation() async throws {
         try await sessionHeadersAndUnknownSubmissionDoNotRetry()
         try await timedOutDraftRecoversOriginalWithoutAnotherSubmission()
         let otaChecks = try await otaContractChecks()
+        let mediaChecks = try await mediaContractChecks()
+        print("{\"media_contract_checks\":\(mediaChecks)}")
+        let mediaTargetChecks = try await mediaTargetContractChecks()
+        print("{\"media_target_contract_checks\":\(mediaTargetChecks)}")
         let controlChecks = try await controlContractChecks()
         let commandChecks = try await controlCommandContractChecks()
         let actionChecks = try await controlActionContractChecks()
+        let ruleChecks = try ruleActionContractChecks()
+        let environmentChecks = try environmentContractChecks()
+        let thresholdChecks = try thresholdContractChecks()
+        let scheduleChecks = try scheduleContractChecks()
+        print("{\"schedule_contract_checks\":\(scheduleChecks)}")
+        let conditionChecks = try conditionContractChecks()
+        print("{\"condition_contract_checks\":\(conditionChecks)}")
+        print("{\"threshold_contract_checks\":\(thresholdChecks)}")
         let live = ProcessInfo.processInfo.environment["LIMEIOT_ENDPOINT"] != nil
         let actions = ProcessInfo.processInfo.environment["LIMEIOT_ACTION_CHECK"] == "1"
         let otaLive = ProcessInfo.processInfo.environment["LIMEIOT_OTA_CHECK"] == "1"
-        if live && !actions && !otaLive { try await actualGatewayDeviceResultAndSessionRevocation() }
+        let ruleLive = ProcessInfo.processInfo.environment["LIMEIOT_RULE_ACTION_CHECK"] == "1"
+        let environmentLive = ProcessInfo.processInfo.environment["LIMEIOT_ENVIRONMENT_CHECK"] == "1"
+        let thresholdLive = ProcessInfo.processInfo.environment["LIMEIOT_THRESHOLD_CHECK"] == "1"
+        let conditionLive = ProcessInfo.processInfo.environment["LIMEIOT_CONDITION_CHECK"] == "1"
+        let scheduleLive = ProcessInfo.processInfo.environment["LIMEIOT_SCHEDULE_CHECK"] == "1"
+        let mediaLive = ProcessInfo.processInfo.environment["LIMEIOT_MEDIA_CHECK"] == "1"
+        if mediaLive { try await actualMediaChecks(); print("{\"media_integration\":\"passed\"}") }
+        if scheduleLive { try await actualScheduleChecks(); print("{\"schedule_integration\":\"passed\"}") }
+        if live && !actions && !otaLive && !ruleLive && !environmentLive && !thresholdLive && !conditionLive && !scheduleLive && !mediaLive { try await actualGatewayDeviceResultAndSessionRevocation() }
+        if conditionLive { try await actualConditionChecks(); print("{\"condition_integration\":\"passed\"}") }
         if otaLive { try await actualOtaChecks() }
         if actions { try await actualActionChecks() }
+        if ruleLive { try await actualRuleActionChecks() }
+        if environmentLive { try await actualEnvironmentChecks() }
+        if thresholdLive { try await actualThresholdChecks() }
+        print("{\"threshold_integration\":\"\(thresholdLive ? "passed" : "skipped")\"}")
+        print("{\"environment_contract_checks\":\(environmentChecks),\"environment_integration\":\"\(environmentLive ? "passed" : "skipped")\"}")
+        print("{\"rule_action_contract_checks\":\(ruleChecks),\"rule_action_integration\":\"\(ruleLive ? "passed" : "skipped")\"}")
         let controlLive = ProcessInfo.processInfo.environment["LIMEIOT_NATIVE_CONTROL_CHECK"] == "1"
         if controlLive { try await actualControlClientCheck() }
         print("{\"contract_checks\":4,\"ota_contract_checks\":\(otaChecks),\"control_contract_checks\":\(controlChecks),\"remote_contract_checks\":\(commandChecks),\"action_contract_checks\":\(actionChecks),\"gateway_integration\":\"\(live ? "passed" : "skipped")\",\"control_integration\":\"\(controlLive ? "passed" : "skipped")\"}")

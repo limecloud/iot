@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -30,6 +31,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import run.limeai.iot.core.*
 import java.util.UUID
 
@@ -63,18 +66,24 @@ class MainActivity : ComponentActivity() {
     LaunchedEffect(vm, lifecycle, cloud) {
         if (cloud) return@LaunchedEffect
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            if (!vm.state.value.connected && vm.state.value.origin.isNotEmpty()) vm.connect(vm.state.value.origin, null, true)
-            while (true) { vm.refresh(); delay(5000) }
+            try {
+                if (!vm.state.value.connected && vm.state.value.origin.isNotEmpty()) vm.connect(vm.state.value.origin, null, true)
+                while (true) { vm.refresh(); delay(5000) }
+            } finally { vm.pauseMedia() }
         }
     }
     if (cloud) { CloudHome { selectCloud(false) }; return }
     if (!state.connected) { Login(state, vm) { selectCloud(true) }; return }
     var tab by remember { mutableIntStateOf(0) }
     var firmwareOpen by remember { mutableStateOf(false) }
+    var mediaOpen by remember { mutableStateOf(false) }
     val firmwareController = state.firmware
+    val firmwareBusy = firmwareController?.state?.collectAsStateWithLifecycle()?.value?.busy == true
+    val mediaController = state.media
+    val mediaBusy = mediaController?.state?.collectAsStateWithLifecycle()?.value?.busy == true
     Scaffold(bottomBar = { NavigationBar(containerColor = Sand1, tonalElevation = 0.dp) { listOf("设备", "自动化", "执行记录", "设置").forEachIndexed { index, label -> NavigationBarItem(modifier = Modifier.testTag("nas-tab-$index"), selected = tab == index, onClick = { tab = index }, icon = {}, label = { Text(label, fontSize = 14.sp) }) } } }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            Text(if (tab == 3 && firmwareOpen) "固件升级" else listOf("我的设备", "自动化", "执行记录", "设置")[tab], fontSize = 28.sp)
+            Text(if (tab == 3 && firmwareOpen) "固件升级" else if (tab == 3 && mediaOpen) "音频" else listOf("我的设备", "自动化", "执行记录", "设置")[tab], fontSize = 28.sp)
             if (!state.online) Text("连接中断，当前显示上次观测", fontSize = 12.sp, color = Amber11)
             if (state.message.isNotEmpty()) Text(state.message, fontSize = 14.sp, color = Amber11)
             when (tab) {
@@ -84,10 +93,14 @@ class MainActivity : ComponentActivity() {
                 else -> if (firmwareOpen && firmwareController != null) {
                     TextButton(onClick = { firmwareOpen = false }) { Text("返回设置") }
                     FirmwarePanel(firmwareController, state.snapshot?.devices.orEmpty(), state.online && !state.busy)
+                } else if (mediaOpen && mediaController != null) {
+                    TextButton(onClick = { mediaOpen = false }) { Text("返回设置") }
+                    MediaPanel(mediaController, state.snapshot?.let { snapshot -> snapshot.devices.associate { it.deviceId to snapshot.name(it) } }.orEmpty(), state.online && !state.busy)
                 } else {
                     Text(state.origin, fontSize = 14.sp); Text(if (state.online) "本地已连接" else "连接中断", fontSize = 14.sp)
-                    if (state.firmware != null) TextButton(onClick = { firmwareOpen = true }, modifier = Modifier.testTag("nas-firmware")) { Text("固件升级") }
-                    TextButton(onClick = vm::logout, enabled = !state.busy && state.firmware?.state?.value?.busy != true) { Text("退出登录") }
+                    if (state.firmware != null) TextButton(onClick = { firmwareOpen = true; mediaOpen = false }, modifier = Modifier.testTag("nas-firmware")) { Text("固件升级") }
+                    if (mediaController != null) TextButton(onClick = { mediaOpen = true; firmwareOpen = false }, modifier = Modifier.testTag("nas-media")) { Text("音频") }
+                    TextButton(onClick = vm::logout, enabled = !state.busy && !firmwareBusy && !mediaBusy) { Text("退出登录") }
                 }
             }
             TextButton(onClick = vm::refreshNow) { Text("刷新") }
@@ -119,9 +132,15 @@ class MainActivity : ComponentActivity() {
                     service.properties.forEach { property ->
                         val path = "${service.id}.${property.id}"
                         val observed = device.reported[path]
-                        val name = when (property.id) { "power" -> "电源"; "brightness" -> "亮度"; else -> property.id }
+                        val name = property.displayName
                         val writable = property.access.contains("write")
-                        when (property.schema.type) {
+                        if (!writable) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(name, fontSize = 14.sp)
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(property.displayValue(observed?.value), fontSize = 14.sp)
+                                if (observed?.quality == "stale") Text("已过期", fontSize = 12.sp, color = Sand11)
+                            }
+                        } else when (property.schema.type) {
                             "boolean" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text(name, fontSize = 14.sp); Switch(checked = observed?.value?.toString() == "true", enabled = !disabled && writable && observed != null, onCheckedChange = { vm.control(device, path, JsonPrimitive(it)) }) }
                             "integer" -> {
                                 var value by remember(device.deviceId, path) { mutableStateOf(observed?.value?.toString() ?: "0") }
@@ -145,37 +164,122 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-private data class Source(val device: String, val event: String, val label: String, val schema: ValueSchema)
-private data class Target(val device: String, val path: String, val label: String)
+private data class Source(val device: String, val event: String, val label: String, val schema: ValueSchema, val property: Property? = null) {
+    fun matches(trigger: Trigger) = device == trigger.device && if (property == null) event == trigger.event else event == trigger.property?.path && property.unit == trigger.property?.unit
+}
+private data class Target(val device: String, val path: String, val label: String, val type: String, val sample: JsonElement, val schema: ValueSchema)
 @Composable private fun Automations(state: HomeState, vm: HomeViewModel) {
     val snapshot = state.snapshot ?: return
     DraftEditor(state, vm)
-    val sources = snapshot.devices.flatMap { device -> snapshot.models[device.modelRevision]?.services?.flatMap { service -> service.events.map { Source(device.deviceId, "${service.id}.${it.id}", "${snapshot.name(device)} ${if (it.id == "pressed") "按下时" else it.id}", it.schema) } }.orEmpty() }
-    val targets = snapshot.devices.flatMap { device -> snapshot.models[device.modelRevision]?.services?.flatMap { service -> service.properties.filter { it.schema.type == "boolean" && "write" in it.access }.map { Target(device.deviceId, "${service.id}.${it.id}", "${snapshot.name(device)} ${if (it.id == "power") "电源" else it.id}") } }.orEmpty() }
+    val sources = snapshot.devices.flatMap { device -> snapshot.models[device.modelRevision]?.services?.flatMap { service ->
+        service.events.map { Source(device.deviceId, "${service.id}.${it.id}", "${snapshot.name(device)} ${if (it.id == "pressed") "按下时" else it.id}", it.schema) } +
+        service.properties.filter { it.schema.type in listOf("integer", "number") && "read" in it.access && "notify" in it.access && it.unit != null }.map { Source(device.deviceId, "${service.id}.${it.id}", "${snapshot.name(device)} ${it.displayName}", it.schema, it) }
+    }.orEmpty() }.sortedBy { if (it.property == null) 0 else 1 }
+    val targets = snapshot.devices.flatMap { device -> snapshot.models[device.modelRevision]?.services?.flatMap { service ->
+        service.properties.filter { it.schema.type in listOf("boolean", "integer", "number") && "write" in it.access }.map { Target(device.deviceId, "${service.id}.${it.id}", "${snapshot.name(device)} ${it.displayName}", "property.set", it.schema.sample(), it.schema) } +
+        service.actions.map { Target(device.deviceId, "${service.id}.${it.id}", "${snapshot.name(device)} ${service.id}.${it.id}", "action.invoke", it.input.sample(), it.input) }
+    }.orEmpty() }
     var sourceIndex by remember { mutableIntStateOf(0) }; var targetIndex by remember { mutableIntStateOf(0) }
+    var scheduled by remember { mutableStateOf(false) }; var scheduleTime by remember { mutableStateOf("22:00") }
+    var timeZone by remember { mutableStateOf(java.time.ZoneId.systemDefault().id) }; var weekdays by remember { mutableStateOf(listOf(1,2,3,4,5,6,7)) }
     var value by remember { mutableStateOf(true) }; var cooldown by remember { mutableStateOf("10") }
+    var threshold by remember { mutableStateOf("28") }; var hysteresis by remember { mutableStateOf("1") }; var edge by remember { mutableStateOf(ThresholdEdge.Rising) }
+    var actionInput by remember { mutableStateOf<String?>(null) }
     var ruleId by remember { mutableStateOf("rule-${UUID.randomUUID()}") }; var reviewed by remember { mutableStateOf<Rule?>(null) }; var simulating by remember { mutableStateOf(false) }
+    var conditions by remember { mutableStateOf<List<ConditionForm>>(emptyList()) }; var preview by remember { mutableStateOf<Simulation?>(null) }; var editing by remember { mutableStateOf(false) }
+    val conditionSources = ConditionEditor.sources(snapshot)
+    fun reset() { ruleId = "rule-${UUID.randomUUID()}"; sourceIndex = 0; scheduled = false; scheduleTime = "22:00"; timeZone = java.time.ZoneId.systemDefault().id; weekdays = listOf(1,2,3,4,5,6,7); targetIndex = 0; value = true; actionInput = null; cooldown = "10"; threshold = "28"; hysteresis = "1"; edge = ThresholdEdge.Rising; conditions = emptyList(); reviewed = null; preview = null; editing = false }
     val scope = rememberCoroutineScope()
     val source = sources.getOrNull(sourceIndex); val target = targets.getOrNull(targetIndex)
-    if (source != null && target != null) {
+    if (target != null) {
         Text("设置联动", fontSize = 16.sp)
-        Text("当", fontSize = 14.sp); sources.forEachIndexed { index, item -> Row { RadioButton(selected = sourceIndex == index, onClick = { sourceIndex = index }); Text(item.label, fontSize = 14.sp) } }
-        Text("执行", fontSize = 14.sp); targets.forEachIndexed { index, item -> Row { RadioButton(selected = targetIndex == index, onClick = { targetIndex = index }); Text(item.label, fontSize = 14.sp) } }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("开启设备", fontSize = 14.sp); Switch(value, { value = it }) }
-        OutlinedTextField(cooldown, { cooldown = it }, label = { Text("冷却时间（秒）") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-        val seconds = cooldown.toIntOrNull()?.takeIf { it in 0..86400 }
-        val rule = seconds?.let { Rule(id = ruleId, trigger = Trigger(source.device, source.event), actions = listOf(Action(target.device, SetValue(target.path, JsonPrimitive(value)))), cooldownMs = it * 1000) }
-        OutlinedButton(onClick = { if (rule != null) { reviewed = null; simulating = true; scope.launch { try { val result = vm.simulate(rule, source.schema.sample()); if (result.matched && !result.executed) reviewed = rule } catch (error: Exception) { vm.report(error) } finally { simulating = false } } } }, enabled = state.online && !state.busy && !simulating && rule != null) { Text(if (simulating) "正在预演" else "校验并预演") }
-        if (reviewed == rule && rule != null) Text("预演通过，设备尚未执行", color = Grass11, fontSize = 12.sp)
+        ConditionChoice("触发方式", if (scheduled) "schedule" else "device", listOf("device" to "设备事件或属性", "schedule" to "定时"), !state.busy && !simulating) { scheduled = it == "schedule" }
+        if (scheduled) {
+            OutlinedTextField(scheduleTime, { scheduleTime = it }, label = { Text("时间（HH:MM）") }, singleLine = true)
+            OutlinedTextField(timeZone, { timeZone = it }, label = { Text("IANA 时区") }, singleLine = true)
+            Text("重复", fontSize = 14.sp)
+            listOf("周一","周二","周三","周四","周五","周六","周日").forEachIndexed { index, label -> Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(index + 1 in weekdays, { checked -> weekdays = if (checked) weekdays + (index + 1) else weekdays - (index + 1) }); Text(label, fontSize = 14.sp) } }
+        } else { Text("当", fontSize = 14.sp); sources.forEachIndexed { index, item -> Row { RadioButton(selected = sourceIndex == index, onClick = { sourceIndex = index }); Text(item.label, fontSize = 14.sp) } } }
+        source?.property?.takeUnless { scheduled }?.let { property ->
+            Row { RadioButton(edge == ThresholdEdge.Rising, { edge = ThresholdEdge.Rising }); Text("上升越过", fontSize = 14.sp); RadioButton(edge == ThresholdEdge.Falling, { edge = ThresholdEdge.Falling }); Text("下降越过", fontSize = 14.sp) }
+            OutlinedTextField(threshold, { threshold = it }, label = { Text("阈值（${ThresholdEditor.label(property.unit!!)}）") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+            OutlinedTextField(hysteresis, { hysteresis = it }, label = { Text("滞回（${ThresholdEditor.label(property.unit!!)}）") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+        }
+        Text("执行", fontSize = 14.sp); targets.forEachIndexed { index, item -> Row { RadioButton(selected = targetIndex == index, onClick = { targetIndex = index; actionInput = null }); Text(item.label, fontSize = 14.sp) } }
+        if (target.type == "action.invoke") OutlinedTextField(actionInput ?: target.sample.toString(), { actionInput = it }, label = { Text("动作参数（JSON）") }, minLines = 2, maxLines = 5, modifier = Modifier.fillMaxWidth())
+        else if (target.schema.type == "boolean") Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("开启设备", fontSize = 14.sp); Switch(value, { value = it }) }
+        else OutlinedTextField(actionInput ?: target.sample.toString(), { actionInput = it }, label = { Text("设为") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+        OutlinedTextField(cooldown, { cooldown = it }, label = { Text("冷却时间（秒）") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+        Text("仅当", fontSize = 14.sp)
+        ConditionForms(conditions, conditionSources, { conditions = it; reviewed = null; preview = null }, !state.busy && !simulating, ConditionEditor.count(conditions))
+        val compiled = ConditionEditor.compile(conditions, conditionSources)
+        if (compiled == null) Text("请检查条件值、组合层级和数量。每组最多16项，共32项，最多4层。", color = Amber11, fontSize = 12.sp)
+        val cooldownMs = ConditionEditor.cooldown(cooldown)
+        val input = if (target.type == "action.invoke") runCatching { Json.parseToJsonElement(actionInput ?: target.sample.toString()) }.getOrNull() else if (target.schema.type == "boolean") JsonPrimitive(value) else ThresholdEditor.number(actionInput ?: target.sample.toString(), target.schema)
+        val property = source?.property?.takeUnless { scheduled }?.let { ThresholdEditor.property(source.event, it.unit!!, it.schema, edge, threshold, hysteresis) }
+        val trigger = if (scheduled) ScheduleTrigger.fromForm(scheduleTime, timeZone, weekdays)?.let { Trigger(schedule = it) } else source?.let { if (it.property == null) Trigger(it.device, it.event) else property?.let { p -> Trigger(source.device, property = p) } }
+        val sample = if (scheduled) JsonNull else source?.let { if (it.property == null) it.schema.sample() else property?.let { p -> ThresholdEditor.samples(p, source.schema) } }
+        val rule = if (cooldownMs != null && compiled != null && input != null && trigger != null && sample != null) Rule(id = ruleId, trigger = trigger, conditions = compiled, actions = listOf(if (target.type == "action.invoke") Action(target.device, invoke = InvokeValue(target.path, input)) else Action(target.device, SetValue(target.path, input))), cooldownMs = cooldownMs) else null
+        OutlinedButton(onClick = { if (rule != null && sample != null) { reviewed = null; preview = null; simulating = true; scope.launch { try { val result = vm.simulate(rule, sample); if (result.canDeploy) { reviewed = rule; preview = result } } catch (error: Exception) { vm.report(error) } finally { simulating = false } } } }, enabled = state.online && !state.busy && !simulating && rule != null) { Text(if (simulating) "正在预演" else "校验并预演") }
+        if (!scheduled && source?.property != null) Text("预演使用示例采样，不控制设备。", color = Sand11, fontSize = 12.sp)
+        if (reviewed == rule && rule != null) { Text(if (preview?.matched == true) "预演通过，设备尚未执行" else "触发样例有效，当前条件未满足。启用后等待新的触发，不会补执行。", color = Grass11, fontSize = 12.sp); preview?.conditionEvaluation?.let { ConditionEvidence(it) } }
         Button(onClick = { rule?.let(vm::deploy); reviewed = null }, enabled = state.online && !state.busy && !simulating && rule != null && reviewed == rule) { Text("启用自动化") }
-    } else Text("连接支持事件和控制的设备后，可以创建联动。", fontSize = 14.sp)
+        if (editing) TextButton(onClick = ::reset, enabled = !state.busy && !simulating) { Text("取消编辑") }
+    } else Text("连接支持控制的设备后，可以创建联动。", fontSize = 14.sp)
     HorizontalDivider(thickness = 0.5.dp); Text("已启用", fontSize = 16.sp)
     snapshot.deployments.forEach { deployment ->
-        Text(sources.firstOrNull { it.device == deployment.rule.trigger.device && it.event == deployment.rule.trigger.event }?.label ?: deployment.rule.id, fontSize = 14.sp)
+        Text(deployment.rule.trigger.schedule?.summary ?: deployment.rule.trigger.property?.summary ?: sources.firstOrNull { it.matches(deployment.rule.trigger) }?.label ?: deployment.rule.id, fontSize = 14.sp)
+        deployment.rule.actions.forEach { Text("${it.device} ${it.operation.summary}", fontSize = 12.sp) }
+        if (deployment.rule.conditions.isNotEmpty()) { Text("条件：全部满足", fontSize = 12.sp); ConditionEditor.rows(deployment.rule.conditions).forEach { Text(it, fontSize = 12.sp) } }
         Text("最近触发 ${deployment.lastRun ?: "尚无记录"}", fontSize = 12.sp, color = Sand11)
+        val first = deployment.rule.actions.singleOrNull()
+        val editable = first?.let { item -> targets.indexOfFirst { it.device == item.device && it.path == item.operation.path && it.type == item.operation.type } } ?: -1
+        val trigger = sources.indexOfFirst { it.matches(deployment.rule.trigger) }
+        val forms = ConditionEditor.restore(deployment.rule.conditions, conditionSources)
+        if (first != null && editable >= 0 && (trigger >= 0 || deployment.rule.trigger.schedule != null) && deployment.rule.version == 1 && forms != null) OutlinedButton(onClick = { ruleId = deployment.rule.id; sourceIndex = trigger.coerceAtLeast(0); scheduled = deployment.rule.trigger.schedule != null; deployment.rule.trigger.schedule?.let { scheduleTime = it.time; timeZone = it.timeZone; weekdays = it.weekdays.toList() }; targetIndex = editable; value = first.operation.value == JsonPrimitive(true); actionInput = first.operation.value.toString(); cooldown = ConditionEditor.cooldownText(deployment.rule.cooldownMs); conditions = forms; editing = true; deployment.rule.trigger.property?.let { edge = it.edge; threshold = ThresholdEditor.display(it.threshold, it.unit); hysteresis = ThresholdEditor.display(it.hysteresis, it.unit) }; reviewed = null; preview = null }, enabled = !state.busy && !simulating) { Text("编辑") }
         OutlinedButton(onClick = { vm.stop(deployment) }, enabled = state.online && !state.busy) { Text("停用") }
     }
-    TextButton(onClick = { ruleId = "rule-${UUID.randomUUID()}"; reviewed = null }) { Text("新建自动化") }
+    TextButton(onClick = ::reset, enabled = !state.busy && !simulating) { Text("新建自动化") }
+}
+@Composable private fun ConditionChoice(label: String, selected: String, choices: List<Pair<String, String>>, enabled: Boolean, onChange: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedButton(onClick = { expanded = true }, enabled = enabled) { Text("$label：${choices.firstOrNull { it.first == selected }?.second ?: selected}", fontSize = 14.sp) }
+        DropdownMenu(expanded, { expanded = false }) { choices.forEach { (value, text) -> DropdownMenuItem(text = { Text(text) }, onClick = { expanded = false; onChange(value) }) } }
+    }
+}
+@Composable private fun ConditionForms(forms: List<ConditionForm>, sources: List<ConditionSource>, onChange: (List<ConditionForm>) -> Unit, enabled: Boolean, total: Int, depth: Int = 1, prefix: String = "") {
+    forms.forEachIndexed { index, node ->
+        fun replace(value: ConditionForm) { onChange(forms.mapIndexed { i, form -> if (i == index) value else form }) }
+        Column(Modifier.fillMaxWidth().padding(start = if (depth == 1) 0.dp else 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val number = prefix + (index + 1)
+            Text("条件 $number", fontSize = 12.sp)
+            if (node.kind == "compare") {
+                ConditionChoice("属性", node.source, sources.map { it.id to it.name }, enabled) { selected -> sources.firstOrNull { it.id == selected }?.let { replace(ConditionEditor.new(it)) } }
+                val source = sources.firstOrNull { it.id == node.source }
+                if (source != null) {
+                    ConditionChoice("比较", node.comparison, ConditionEditor.operators(source.schema).map { it to ConditionEditor.label(it) }, enabled) { replace(node.copy(comparison = it)) }
+                    if (source.schema.type == "boolean") ConditionChoice("比较值", node.value, listOf("true" to "是", "false" to "否"), enabled) { replace(node.copy(value = it)) }
+                    else OutlinedTextField(node.value, { replace(node.copy(value = it)) }, label = { Text("比较值" + (source.unit?.let { "（${ThresholdEditor.label(it)}）" } ?: "")) }, enabled = enabled, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = if (source.schema.type in listOf("integer", "number")) KeyboardType.Decimal else KeyboardType.Text))
+                }
+            } else {
+                ConditionChoice("组合方式", node.kind, listOf("all" to "全部满足", "any" to "任一满足"), enabled) { replace(node.copy(kind = it)) }
+                ConditionForms(node.children, sources, { replace(node.copy(children = it)) }, enabled, total, depth + 1, "$number-")
+            }
+            TextButton(onClick = { onChange(forms.filterIndexed { i, _ -> i != index }) }, enabled = enabled) { Text("移除条件 $number") }
+            HorizontalDivider(thickness = 0.5.dp)
+        }
+    }
+    var adding by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = { adding = true }, enabled = enabled && sources.isNotEmpty() && forms.size < 16 && total < 32) { Text("添加条件") }
+        DropdownMenu(adding, { adding = false }) { listOf("compare" to "属性比较", "all" to "全部满足组", "any" to "任一满足组").forEach { (kind, text) -> DropdownMenuItem(text = { Text(text) }, enabled = (kind == "compare" || depth < 4) && total + (if (kind == "compare") 1 else 2) <= 32, onClick = { adding = false; sources.firstOrNull()?.let { val node = ConditionEditor.new(it); onChange(forms + if (kind == "compare") node else ConditionForm(kind = kind, children = listOf(node))) } }) } }
+    }
+}
+@Composable private fun ConditionEvidence(evaluation: JsonElement) {
+    var expanded by remember(evaluation) { mutableStateOf(false) }
+    TextButton(onClick = { expanded = !expanded }) { Text("条件判断") }
+    if (expanded) { ConditionEditor.evidenceRows(evaluation).forEach { Text(it, fontSize = 12.sp) }; var raw by remember(evaluation) { mutableStateOf(false) }; TextButton(onClick = { raw = !raw }) { Text("原始条件证据") }; if (raw) Text(evaluation.toString(), fontSize = 12.sp) }
 }
 @Composable private fun DraftEditor(state: HomeState, vm: HomeViewModel) {
     val snapshot = state.snapshot ?: return
@@ -194,11 +298,9 @@ private data class Target(val device: String, val path: String, val label: Strin
         draft.error?.let { Text(GatewayException(it, 422).displayMessage, fontSize = 14.sp, color = Amber11) }
         val rule = draft.rule
         if (draft.status == "completed" && rule != null && state.draftPrompt == draft.request.prompt) {
-            Text("当${name(rule.trigger.device)}${if (rule.trigger.event == "button.pressed") "按下时" else "发生 ${rule.trigger.event}"}：", fontSize = 14.sp)
+            Text("当${name(rule.trigger.device)}${rule.trigger.summary}：", fontSize = 14.sp)
             rule.actions.forEach { action ->
-                val path = when (action.set.path) { "light.power" -> "电源"; "light.brightness" -> "亮度"; else -> action.set.path }
-                val value = when (action.set.value.toString()) { "true" -> "开启"; "false" -> "关闭"; else -> action.set.value.toString() }
-                Text("${name(action.device)}${path}设为$value", fontSize = 14.sp)
+                Text("${name(action.device)} ${action.operation.summary}", fontSize = 14.sp)
             }
             Text("冷却时间 ${rule.cooldownMs / 1000} 秒", fontSize = 12.sp, color = Sand11)
             OutlinedButton(onClick = vm::simulateDraft, enabled = state.online && !state.busy && !state.draftBusy) { Text("预演草案") }
@@ -222,5 +324,5 @@ private data class Target(val device: String, val path: String, val label: Strin
         HorizontalDivider(thickness = 0.5.dp)
     }
     Text("自动化运行", fontSize = 16.sp)
-    state.snapshot?.runs?.forEach { run -> Text("${run.commandIds.size} 个关联操作", fontSize = 14.sp); Text(run.runId, fontSize = 12.sp); run.commandIds.forEach { Text(it, fontSize = 12.sp) } }
+    state.snapshot?.runs?.forEach { run -> Text(if (run.error == "automation_budget_exceeded") "自动化操作过于频繁，本次未执行" else if (run.error == "rule_conditions_not_met") "条件未满足，本次未执行" else if (run.error != null) "运行未完成" else "${run.commandIds.size} 个关联操作", fontSize = 14.sp); Text(run.runId, fontSize = 12.sp); run.error?.let { Text(it, fontSize = 12.sp) }; run.commandIds.forEach { Text(it, fontSize = 12.sp) }; run.conditionEvaluation?.let { ConditionEvidence(it) } }
 }

@@ -1,0 +1,12 @@
+{
+  "file": "gootuan-master.png",
+  "sha256": "dd62e5e0ebf3960c44fc0f45393a8d36e5a723c84bf50494168f36f24f26197e",
+  "source_repository": "limecloud/gootuan-web",
+  "source_path": "assets/reference/gootuan-master.png",
+  "visual_baseline": "v0.2",
+  "role": "generated concept reference, not a physical prototype",
+  "localized_text": false,
+  "reuse_date": "2026-11-03",
+  "source_generation_record": "https://github.com/limecloud/gootuan-web/blob/main/docs/evidence/master-generation.json",
+  "notes": "Shared unlettered asset for English and Simplified Chinese; copied for independent documentation. No new image generation was requested."
+}

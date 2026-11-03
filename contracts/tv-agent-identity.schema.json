@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.run/contracts/tv-agent-identity.schema.json",
+  "title": "TV Agent public initial identity setup",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_id", "space_id", "device_id", "broker", "model_profile", "ca_pem"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "request_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" },
+    "space_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" },
+    "device_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" },
+    "broker": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^ssl://[^/?#@]+:[1-9][0-9]{0,4}$" },
+    "model_profile": { "enum": ["android-tv-agent", "android-tv-remote"] },
+    "ca_pem": { "type": "string", "minLength": 1, "maxLength": 4096 }
+  }
+}

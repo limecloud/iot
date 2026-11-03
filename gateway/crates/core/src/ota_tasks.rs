@@ -438,6 +438,10 @@ impl Data {
     }
     fn check_ota_commands(&self, device_id: &str) -> Result<()> {
         ensure(
+            !self.execution_plan_reserves_device(device_id),
+            "execution_plan_conflict",
+        )?;
+        ensure(
             !self.commands.values().any(|command| {
                 command.request.device_id == device_id
                     && matches!(

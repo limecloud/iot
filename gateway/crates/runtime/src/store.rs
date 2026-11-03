@@ -11,12 +11,23 @@ pub struct Store {
     connection: Connection,
     pub data: Data,
     config_hash: String,
+    snapshot_version: u32,
 }
+#[cfg(test)]
+#[path = "execution_plan_store_tests.rs"]
+mod execution_plan_store_tests;
+#[cfg(test)]
+#[path = "rule_condition_tests.rs"]
+mod rule_condition_tests;
+#[cfg(test)]
+#[path = "rule_schedule_tests.rs"]
+mod rule_schedule_tests;
 impl Store {
     pub fn open(path: &str, config: Config) -> Result<Self> {
         let connection = Connection::open(path).map_err(|_| err("storage_unavailable"))?;
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS snapshot (id INTEGER PRIMARY KEY CHECK(id=1), version INTEGER NOT NULL, config_hash TEXT NOT NULL, body TEXT NOT NULL); CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, data TEXT NOT NULL);").map_err(|_|err("storage_unavailable"))?;
         let config_hash = digest(&config)?;
+        let mut snapshot_version = 10;
         let data: Data = match connection.query_row(
             "SELECT version,config_hash,body FROM snapshot WHERE id=1",
             [],
@@ -29,8 +40,9 @@ impl Store {
             },
         ) {
             Ok((version, hash, body)) => {
+                snapshot_version = version.max(10);
                 ensure(
-                    matches!(version, 1..=7) && hash == config_hash,
+                    matches!(version, 1..=12) && hash == config_hash,
                     "storage_config_mismatch",
                 )?;
                 let value: Value =
@@ -39,6 +51,10 @@ impl Store {
                     value.get("model_registry").is_some() == (version >= 2)
                         && value.get("ota_registry").is_some() == (version >= 3)
                         && value.get("execution_registry").is_some() == (version >= 6),
+                    "storage_corrupt",
+                )?;
+                ensure(
+                    value.get("execution_plans").is_some() == (version >= 12),
                     "storage_corrupt",
                 )?;
                 if version >= 3 {
@@ -86,6 +102,79 @@ impl Store {
                         "storage_corrupt",
                     )?;
                 }
+                if version < 8 {
+                    let registry = &value["model_registry"];
+                    ensure(
+                        registry["bindings"].as_object().is_none_or(|bindings| {
+                            bindings
+                                .values()
+                                .all(|binding| binding.get("bundle_id").is_none())
+                        }) && registry["operations"].as_object().is_none_or(|operations| {
+                            operations.values().all(|operation| {
+                                operation["request"]["change"]["type"] != "devices.bind-bundle"
+                                    && operation["result"]["value"].get("bundle_id").is_none()
+                            })
+                        }),
+                        "storage_corrupt",
+                    )?;
+                }
+                if version < 9 {
+                    ensure(
+                        value["deployments"].as_object().is_some_and(|deployments| {
+                            deployments
+                                .values()
+                                .all(|d| d["rule"]["trigger"].get("property").is_none())
+                        }) && value["runs"].as_object().is_some_and(|runs| {
+                            runs.values()
+                                .all(|run| run.get("property_trigger").is_none())
+                        }) && value["rule_drafts"].as_object().is_none_or(|drafts| {
+                            drafts
+                                .values()
+                                .all(|draft| draft["rule"]["trigger"].get("property").is_none())
+                        }),
+                        "storage_corrupt",
+                    )?;
+                }
+                if version < 10 {
+                    ensure(
+                        value["deployments"].as_object().is_some_and(|items| {
+                            items.values().all(|d| {
+                                d["rule"]["conditions"]
+                                    .as_array()
+                                    .is_some_and(Vec::is_empty)
+                            })
+                        }) && value["runs"].as_object().is_some_and(|items| {
+                            items
+                                .values()
+                                .all(|r| r.get("condition_evaluation").is_none())
+                        }) && value["rule_drafts"].as_object().is_none_or(|items| {
+                            items.values().all(|d| {
+                                d["rule"].is_null()
+                                    || d["rule"]["conditions"]
+                                        .as_array()
+                                        .is_some_and(Vec::is_empty)
+                            })
+                        }),
+                        "storage_corrupt",
+                    )?;
+                }
+                if version < 11 {
+                    ensure(
+                        value["deployments"].as_object().is_some_and(|items| {
+                            items.values().all(|d| {
+                                d["rule"]["trigger"].get("schedule").is_none()
+                                    && d.get("schedule_cursor").is_none()
+                            })
+                        }) && value["runs"].as_object().is_some_and(|items| {
+                            items.values().all(|r| r.get("schedule_trigger").is_none())
+                        }) && value["rule_drafts"].as_object().is_none_or(|items| {
+                            items
+                                .values()
+                                .all(|d| d["rule"]["trigger"].get("schedule").is_none())
+                        }),
+                        "storage_corrupt",
+                    )?;
+                }
                 serde_json::from_str(&body).map_err(|_| err("storage_corrupt"))?
             }
             Err(rusqlite::Error::QueryReturnedNoRows) => Data::new(config)?,
@@ -101,10 +190,19 @@ impl Store {
             .map_err(|_| err("storage_corrupt"))?;
         data.validate_command_receipts()
             .map_err(|_| err("storage_corrupt"))?;
+        data.validate_rule_graph()
+            .map_err(|_| err("storage_corrupt"))?;
+        data.validate_saved_conditions()
+            .map_err(|_| err("storage_corrupt"))?;
+        data.validate_saved_schedules()
+            .map_err(|_| err("storage_corrupt"))?;
+        data.validate_execution_plan_registry()
+            .map_err(|_| err("storage_corrupt"))?;
         let mut store = Self {
             connection,
             data,
             config_hash,
+            snapshot_version,
         };
         store.update("gateway.recovered", |data| {
             data.recover();
@@ -133,7 +231,19 @@ impl Store {
             .connection
             .transaction()
             .map_err(|_| err("storage_unavailable"))?;
-        transaction.execute("INSERT INTO snapshot(id,version,config_hash,body) VALUES(1,7,?1,?2) ON CONFLICT(id) DO UPDATE SET version=excluded.version,body=excluded.body",params![self.config_hash,body]).map_err(|_|err("storage_unavailable"))?;
+        let version = if !next.execution_plans.is_empty() || self.snapshot_version >= 12 {
+            12
+        } else if next
+            .deployments
+            .values()
+            .any(|d| d.schedule_cursor.is_some())
+            || next.runs.values().any(|r| r.schedule_trigger.is_some())
+        {
+            11
+        } else {
+            self.snapshot_version
+        };
+        transaction.execute("INSERT INTO snapshot(id,version,config_hash,body) VALUES(1,?1,?2,?3) ON CONFLICT(id) DO UPDATE SET version=excluded.version,body=excluded.body",params![version,self.config_hash,body]).map_err(|_|err("storage_unavailable"))?;
         transaction
             .execute(
                 "INSERT INTO events(type,data) VALUES(?1,?2)",
@@ -150,6 +260,7 @@ impl Store {
             .commit()
             .map_err(|_| err("storage_unavailable"))?;
         self.data = next;
+        self.snapshot_version = version;
         Ok(output)
     }
     pub fn events(&self, after: i64) -> Result<Vec<Value>> {
@@ -181,6 +292,276 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn bundle_config() -> Config {
+        let bundle = limeiot_core::model_bundles::catalog().unwrap().remove(0);
+        serde_json::from_value(json!({"space_id":"home","models":[bundle.model],
+            "devices":[{"device_id":"tv","model_revision":bundle.model_revision}]}))
+        .unwrap()
+    }
+    fn bind_bundle_request(data: &Data) -> limeiot_core::model_registry::Request {
+        limeiot_core::model_registry::Request {
+            space_id: data.space_id.clone(),
+            idempotency_key: "original-bundle".into(),
+            change: limeiot_core::model_registry::Change::BindBundle {
+                device_id: "tv".into(),
+                bundle_id: limeiot_core::model_bundles::catalog().unwrap()[1]
+                    .bundle_id
+                    .clone(),
+                expected_model_revision: Some(data.devices["tv"].model_revision.clone()),
+                expected_binding_revision: None,
+            },
+        }
+    }
+    #[test]
+    fn v7_upgrades_and_bundle_binding_and_original_decision_survive_v8_restart() {
+        let path = std::env::temp_dir().join(format!(
+            "limeiot-bundle-recovery-{}.sqlite",
+            limeiot_core::id()
+        ));
+        let config = bundle_config();
+        let store = Store::open(path.to_str().unwrap(), config.clone()).unwrap();
+        store
+            .connection
+            .execute("UPDATE snapshot SET version=7", [])
+            .unwrap();
+        drop(store);
+        let mut store = Store::open(path.to_str().unwrap(), config.clone()).unwrap();
+        let version: i64 = store
+            .connection
+            .query_row("SELECT version FROM snapshot", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(version, 10);
+        let request = bind_bundle_request(&store.data);
+        let original = store
+            .update("model.operation", |data| {
+                data.apply_model_change(request.clone(), chrono::Utc::now())
+            })
+            .unwrap();
+        assert_eq!(original.status, "applied");
+        let binding = serde_json::to_value(&store.data.model_registry.bindings["tv"]).unwrap();
+        let original = serde_json::to_value(original).unwrap();
+        drop(store);
+        let mut store = Store::open(path.to_str().unwrap(), config).unwrap();
+        assert_eq!(
+            serde_json::to_value(&store.data.model_registry.bindings["tv"]).unwrap(),
+            binding
+        );
+        assert!(!store.data.devices["tv"].ready);
+        let before = serde_json::to_value(&store.data).unwrap();
+        let events = store.events(0).unwrap().len();
+        let replay = store
+            .update("model.operation", |data| {
+                data.apply_model_change(request, chrono::Utc::now())
+            })
+            .unwrap();
+        assert_eq!(serde_json::to_value(replay).unwrap(), original);
+        assert_eq!(serde_json::to_value(&store.data).unwrap(), before);
+        assert_eq!(store.events(0).unwrap().len(), events);
+    }
+    #[test]
+    fn bundle_commit_failure_publishes_no_model_binding_decision_or_event() {
+        let mut store = Store::open(":memory:", bundle_config()).unwrap();
+        let request = bind_bundle_request(&store.data);
+        let before = serde_json::to_value(&store.data).unwrap();
+        let events = store.events(0).unwrap().len();
+        store
+            .connection
+            .execute_batch("PRAGMA query_only=ON")
+            .unwrap();
+        let error = store
+            .update("model.operation", |data| {
+                data.apply_model_change(request, chrono::Utc::now())
+            })
+            .unwrap_err();
+        assert_eq!(error.code, "storage_unavailable");
+        assert_eq!(serde_json::to_value(&store.data).unwrap(), before);
+        let raw: String = store
+            .connection
+            .query_row("SELECT body FROM snapshot", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(serde_json::from_str::<Value>(&raw).unwrap(), before);
+        assert_eq!(store.events(0).unwrap().len(), events);
+    }
+    #[test]
+    fn legacy_signed_binding_upgrades_unchanged_and_its_revocation_does_not_revoke_bundle() {
+        use limeiot_core::model_registry::{Change, Request};
+        let path = std::env::temp_dir().join(format!(
+            "limeiot-legacy-source-{}.sqlite",
+            limeiot_core::id()
+        ));
+        let config = bundle_config();
+        let mut store = Store::open(path.to_str().unwrap(), config.clone()).unwrap();
+        let vector: Value = serde_json::from_str(include_str!(
+            "../../../../contracts/examples/model-release.json"
+        ))
+        .unwrap();
+        let apply = |store: &mut Store, key: &str, change: Change| {
+            store
+                .update("model.operation", |data| {
+                    data.apply_model_change(
+                        Request {
+                            space_id: "home".into(),
+                            idempotency_key: key.into(),
+                            change,
+                        },
+                        chrono::Utc::now(),
+                    )
+                })
+                .unwrap()
+        };
+        let trust = apply(
+            &mut store,
+            "trust",
+            Change::TrustAdd {
+                trust: vector["trust"].clone(),
+                expected_signing_key_id: vector["trust"]["signing_key_id"].as_str().unwrap().into(),
+            },
+        );
+        let trust = serde_json::to_value(trust.result.unwrap()).unwrap()["value"].clone();
+        let installed = apply(
+            &mut store,
+            "install",
+            Change::Install {
+                trust_id: trust["trust_id"].as_str().unwrap().into(),
+                artifact: vector["artifact"].clone(),
+                expected_release_id: None,
+            },
+        );
+        let installed = serde_json::to_value(installed.result.unwrap()).unwrap()["value"].clone();
+        let bound = apply(
+            &mut store,
+            "bind",
+            Change::Bind {
+                device_id: "legacy".into(),
+                installation_id: installed["installation_id"].as_str().unwrap().into(),
+                expected_model_revision: None,
+                expected_binding_revision: None,
+            },
+        );
+        assert_eq!(bound.status, "applied");
+        let old = serde_json::to_value(&store.data.model_registry.bindings["legacy"]).unwrap();
+        assert!(old.get("bundle_id").is_none());
+        store
+            .connection
+            .execute("UPDATE snapshot SET version=7", [])
+            .unwrap();
+        drop(store);
+        let mut store = Store::open(path.to_str().unwrap(), config).unwrap();
+        assert_eq!(
+            serde_json::to_value(&store.data.model_registry.bindings["legacy"]).unwrap(),
+            old
+        );
+        assert!(store.data.check_model_authority("legacy").is_ok());
+        let request = bind_bundle_request(&store.data);
+        store
+            .update("model.operation", |data| {
+                data.apply_model_change(request, chrono::Utc::now())
+            })
+            .unwrap();
+        let revoked = apply(
+            &mut store,
+            "revoke",
+            Change::TrustRevoke {
+                trust_id: trust["trust_id"].as_str().unwrap().into(),
+                expected_revision: trust["revision"].as_str().unwrap().into(),
+            },
+        );
+        assert_eq!(revoked.status, "applied");
+        assert_eq!(
+            store.data.check_model_authority("legacy").unwrap_err().code,
+            "model_trust_revoked"
+        );
+        assert!(store.data.check_model_authority("tv").is_ok());
+        drop(store);
+        let store = Store::open(path.to_str().unwrap(), bundle_config()).unwrap();
+        assert!(store.data.check_model_authority("tv").is_ok());
+        assert!(store.data.check_model_authority("legacy").is_err());
+    }
+    #[test]
+    fn hidden_bundle_sources_and_corrupt_or_future_snapshots_fail_without_rewriting() {
+        let config = bundle_config();
+        let mut fixture = Data::new(config.clone()).unwrap();
+        fixture
+            .apply_model_change(bind_bundle_request(&fixture), chrono::Utc::now())
+            .unwrap();
+        let original = serde_json::to_value(fixture).unwrap();
+        let mut cases = Vec::new();
+        for version in 1..=7 {
+            // 新来源不能藏入旧快照；v1连模型注册表也不可携带。
+            let mut body = original.clone();
+            if version < 6 {
+                body.as_object_mut().unwrap().remove("execution_registry");
+            }
+            if version < 5 {
+                body["devices"]["tv"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("routes");
+            }
+            if version < 3 {
+                body.as_object_mut().unwrap().remove("ota_registry");
+            }
+            cases.push((version, body, "storage_corrupt"));
+        }
+        // 分别证明当前来源、原请求和原结果的门禁，不能只靠某一字段碰巧失败。
+        let mut binding_only = original.clone();
+        binding_only["model_registry"]["operations"] = json!({});
+        cases.push((7, binding_only, "storage_corrupt"));
+        let mut request_only = original.clone();
+        request_only["model_registry"]["bindings"] = json!({});
+        let op = &mut request_only["model_registry"]["operations"]["original-bundle"];
+        op["status"] = json!("rejected");
+        op["reason"] = json!("revision_conflict");
+        op["result"] = Value::Null;
+        cases.push((7, request_only, "storage_corrupt"));
+        let mut result_only = original.clone();
+        result_only["model_registry"]["bindings"] = json!({});
+        let op = &mut result_only["model_registry"]["operations"]["original-bundle"];
+        op["request"]["change"] = json!({"type":"devices.bind","device_id":"tv","installation_id":format!("install-{}","0".repeat(64)),"expected_model_revision":null,"expected_binding_revision":null});
+        op["request_digest"] = json!(digest(&op["request"]).unwrap());
+        cases.push((7, result_only, "storage_corrupt"));
+        let mut corrupt = original.clone();
+        corrupt["model_registry"]["bindings"]["tv"]["bundle_id"] =
+            json!(format!("bundle-{}", "0".repeat(64)));
+        cases.push((8, corrupt, "storage_corrupt"));
+        cases.push((13, original, "storage_config_mismatch"));
+        for (version, body, expected) in cases {
+            let path = std::env::temp_dir().join(format!(
+                "limeiot-bundle-reject-{}.sqlite",
+                limeiot_core::id()
+            ));
+            let store = Store::open(path.to_str().unwrap(), config.clone()).unwrap();
+            let raw = body.to_string();
+            store
+                .connection
+                .execute(
+                    "UPDATE snapshot SET version=?1,body=?2",
+                    params![version, raw],
+                )
+                .unwrap();
+            let events = store.events(0).unwrap().len();
+            drop(store);
+            assert_eq!(
+                Store::open(path.to_str().unwrap(), config.clone())
+                    .err()
+                    .unwrap()
+                    .code,
+                expected,
+                "version {version}"
+            );
+            let disk = Connection::open(path).unwrap();
+            let saved: (i64, String) = disk
+                .query_row("SELECT version,body FROM snapshot", [], |r| {
+                    Ok((r.get(0)?, r.get(1)?))
+                })
+                .unwrap();
+            assert_eq!(saved, (version, raw));
+            let count: i64 = disk
+                .query_row("SELECT COUNT(*) FROM events", [], |r| r.get(0))
+                .unwrap();
+            assert_eq!(count as usize, events);
+        }
+    }
     #[test]
     fn receipt_ack_is_not_released_when_original_result_transaction_fails() {
         use limeiot_core::protocol::{CommandRequest, Envelope};
@@ -359,7 +740,7 @@ mod tests {
                     .query_row("SELECT version FROM snapshot", [], |row| row
                         .get::<_, i64>(0))
                     .unwrap(),
-                7
+                10
             );
             let mut body = serde_json::to_value(&store.data).unwrap();
             body.as_object_mut().unwrap().remove("execution_registry");
@@ -423,7 +804,7 @@ mod tests {
                 Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
             })
             .unwrap();
-        assert_eq!(version, 7);
+        assert_eq!(version, 10);
         assert_eq!(body, saved);
         assert_eq!(
             connection
@@ -618,7 +999,7 @@ mod tests {
             .connection
             .query_row("SELECT version FROM snapshot", [], |row| row.get(0))
             .unwrap();
-        assert_eq!(version, 7);
+        assert_eq!(version, 10);
     }
 
     #[test]
@@ -639,7 +1020,7 @@ mod tests {
             .connection
             .query_row("SELECT version FROM snapshot", [], |row| row.get(0))
             .unwrap();
-        assert_eq!(version, 7);
+        assert_eq!(version, 10);
         let before = store.data.execution_binding("tv").unwrap();
         let mut body: Value = serde_json::from_str(
             &store
@@ -708,7 +1089,7 @@ mod tests {
                     row.get::<_, i64>(0)
                 })
                 .unwrap();
-            assert_eq!(version, 7);
+            assert_eq!(version, 10);
             store
                 .connection
                 .execute("UPDATE snapshot SET version=5", [])
@@ -826,7 +1207,7 @@ mod tests {
                     .query_row("SELECT version FROM snapshot", [], |row| row
                         .get::<_, i64>(0))
                     .unwrap(),
-                7
+                10
             );
             assert_eq!(
                 connection
@@ -1110,7 +1491,7 @@ mod tests {
         store.data.validate_ota_registry().unwrap();
     }
     #[test]
-    fn v3_ota_tasks_upgrade_to_v7_but_a_current_task_missing_execution_is_not_rewritten() {
+    fn v3_ota_tasks_upgrade_to_v8_but_a_current_task_missing_execution_is_not_rewritten() {
         let (mut store, task_id) = ota_execution_store();
         // 使用尚未执行的旧任务形态，模拟v3；旧版本不能携带新增执行字段或状态。
         let task = store.data.ota_registry.tasks.get_mut(&task_id).unwrap();
@@ -1143,7 +1524,7 @@ mod tests {
                     Ok((r.get(0)?, r.get(1)?))
                 })
                 .unwrap();
-            assert_eq!(version, 7);
+            assert_eq!(version, 10);
             let mut value: Value = serde_json::from_str(&raw).unwrap();
             assert!(value["ota_registry"]["tasks"][&task_id]["execution"].is_null());
             value["ota_registry"]["tasks"][&task_id]
@@ -1192,7 +1573,7 @@ mod tests {
                     Ok((row.get(0)?, row.get(1)?))
                 })
                 .unwrap();
-            assert_eq!(version, 7);
+            assert_eq!(version, 10);
             let mut body: Value = serde_json::from_str(&raw).unwrap();
             assert!(body["model_registry"].is_object() && body["ota_registry"].is_object());
             body.as_object_mut().unwrap().remove("ota_registry");
@@ -1214,7 +1595,379 @@ mod tests {
         std::fs::remove_file(file).unwrap();
     }
     #[test]
-    fn old_snapshot_upgrades_to_v7_and_future_versions_are_not_rewritten() {
+    fn automation_budget_commit_failure_and_restart_keep_original_ledger() {
+        use chrono::{DateTime, Duration, Utc};
+        use limeiot_core::protocol::{Envelope, Rule};
+        fn report(
+            store: &mut Store,
+            device: &str,
+            kind: &str,
+            body: Value,
+            now: DateTime<Utc>,
+        ) -> Result<()> {
+            let binding = &store.data.devices[device];
+            let message: Envelope = serde_json::from_value(json!({"v":1,"kind":kind,
+                "message_id":format!("message-{}",binding.last_seq+1),"device_id":device,
+                "model_revision":binding.model_revision,"boot_id":format!("boot-{device}"),
+                "session_id":binding.session_id,"seq":binding.last_seq+1,"body":body}))
+            .unwrap();
+            store
+                .update("device.message", |data| data.ingest(message, now))
+                .map(|_| ())
+        }
+        fn connect(store: &mut Store, now: DateTime<Utc>) {
+            for (device, properties) in [
+                ("device-button", json!([])),
+                (
+                    "device-lamp",
+                    json!([
+                        {"path":"light.power","value":true,"observed_at":now,"quality":"confirmed","source":"fixture"},
+                        {"path":"light.brightness","value":50,"observed_at":now,"quality":"confirmed","source":"fixture"}
+                    ]),
+                ),
+            ] {
+                report(store, device, "hello", json!({"challenge":"fixture"}), now).unwrap();
+                report(
+                    store,
+                    device,
+                    "state",
+                    json!({"type":"snapshot","revision":1,"properties":properties}),
+                    now,
+                )
+                .unwrap();
+            }
+        }
+        fn event(store: &mut Store, id: &str, now: DateTime<Utc>) -> Result<()> {
+            report(
+                store,
+                "device-button",
+                "event",
+                json!({"event_id":id,"path":"button.pressed",
+                "occurred_at":now,"historical":false,"data":{"count":1}}),
+                now,
+            )
+        }
+        let now: DateTime<Utc> = "2026-11-03T00:00:00Z".parse().unwrap();
+        let path =
+            std::env::temp_dir().join(format!("limeiot-budget-{}.sqlite", limeiot_core::id()));
+        let config = config();
+        let mut store = Store::open(path.to_str().unwrap(), config.clone()).unwrap();
+        connect(&mut store, now);
+        let mut rule: Rule = serde_json::from_str(include_str!(
+            "../../../../contracts/examples/button-light.json"
+        ))
+        .unwrap();
+        rule.cooldown_ms = 0;
+        store
+            .update("rule.deployed", |data| data.deploy(rule.clone()))
+            .unwrap();
+        for index in 0..63 {
+            event(&mut store, &format!("press-{index}"), now).unwrap();
+            let commands = store
+                .update("dispatch", |data| Ok(data.prepare_dispatch(now)))
+                .unwrap();
+            assert_eq!(commands.len(), 1);
+            let operation = &commands[0].body["operation"];
+            let mut reported = serde_json::Map::new();
+            reported.insert(
+                operation["path"].as_str().unwrap().into(),
+                operation["value"].clone(),
+            );
+            report(
+                &mut store,
+                "device-lamp",
+                "result",
+                json!({"command_id":commands[0].body["command_id"],
+                "status":"confirmed","evidence":{"type":"device_result","reported":reported}}),
+                now,
+            )
+            .unwrap();
+        }
+        assert_eq!(store.data.commands.len(), 63);
+        store
+            .connection
+            .execute_batch("PRAGMA query_only=ON")
+            .unwrap();
+        let before = serde_json::to_value(&store.data).unwrap();
+        let events = store.events(0).unwrap().len();
+        assert_eq!(
+            event(&mut store, "last-slot", now).unwrap_err().code,
+            "storage_unavailable"
+        );
+        assert_eq!(serde_json::to_value(&store.data).unwrap(), before);
+        assert_eq!(store.events(0).unwrap().len(), events);
+        store
+            .connection
+            .execute_batch("PRAGMA query_only=OFF")
+            .unwrap();
+        event(&mut store, "last-slot", now).unwrap();
+        assert_eq!(store.data.commands.len(), 64);
+        let command_ids = store.data.commands.keys().cloned().collect::<Vec<_>>();
+        // 超预算运行本身也必须原子落盘；失败不能提前消耗事件身份或公布拒绝记录。
+        store
+            .connection
+            .execute_batch("PRAGMA query_only=ON")
+            .unwrap();
+        let before = serde_json::to_value(&store.data).unwrap();
+        let events = store.events(0).unwrap().len();
+        assert_eq!(
+            event(&mut store, "exhausted", now).unwrap_err().code,
+            "storage_unavailable"
+        );
+        assert_eq!(serde_json::to_value(&store.data).unwrap(), before);
+        assert_eq!(store.events(0).unwrap().len(), events);
+        store
+            .connection
+            .execute_batch("PRAGMA query_only=OFF")
+            .unwrap();
+        event(&mut store, "exhausted", now).unwrap();
+        let rejected = store
+            .data
+            .runs
+            .values()
+            .find(|r| r.event_id == "exhausted")
+            .unwrap()
+            .clone();
+        assert_eq!(
+            rejected.error.as_deref(),
+            Some("automation_budget_exceeded")
+        );
+        assert!(rejected.command_ids.is_empty());
+        assert_eq!(
+            store.data.commands.keys().cloned().collect::<Vec<_>>(),
+            command_ids
+        );
+        drop(store);
+        let mut store = Store::open(path.to_str().unwrap(), config).unwrap();
+        connect(&mut store, now + Duration::milliseconds(1));
+        event(&mut store, "after-restart", now + Duration::milliseconds(2)).unwrap();
+        assert_eq!(
+            store.data.commands.keys().cloned().collect::<Vec<_>>(),
+            command_ids
+        );
+        assert_eq!(store.data.runs[&rejected.run_id].error, rejected.error);
+        assert!(
+            store
+                .data
+                .runs
+                .values()
+                .filter(|r| r.error.as_deref() == Some("automation_budget_exceeded"))
+                .count()
+                == 2
+        );
+        assert!(store
+            .data
+            .prepare_dispatch(now + Duration::milliseconds(3))
+            .is_empty());
+        assert_eq!(
+            store
+                .connection
+                .query_row("SELECT version FROM snapshot", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
+            10
+        );
+    }
+    #[test]
+    fn cyclic_rule_rejection_and_snapshot_recovery_never_publish_or_rewrite() {
+        let config = config();
+        let path =
+            std::env::temp_dir().join(format!("limeiot-rule-cycle-{}.sqlite", limeiot_core::id()));
+        let mut store = Store::open(path.to_str().unwrap(), config.clone()).unwrap();
+        let rule: limeiot_core::protocol::Rule = serde_json::from_value(json!({
+            "version":1,"id":"cyclic","trigger":{"device":"device-lamp",
+            "property":{"path":"light.brightness","unit":"percent","edge":"rising","threshold":50,"hysteresis":5}},
+            "conditions":[],"actions":[{"device":"device-lamp","set":{"path":"light.brightness","value":20}}],"cooldown_ms":10000
+        })).unwrap();
+        let before = serde_json::to_value(&store.data).unwrap();
+        let event_count = store.events(0).unwrap().len();
+        assert_eq!(
+            store
+                .update("rule.deployed", |data| data.deploy(rule.clone()))
+                .unwrap_err()
+                .code,
+            "rule_cycle"
+        );
+        assert_eq!(serde_json::to_value(&store.data).unwrap(), before);
+        assert_eq!(store.events(0).unwrap().len(), event_count);
+        let saved: String = store
+            .connection
+            .query_row("SELECT body FROM snapshot", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(serde_json::from_str::<Value>(&saved).unwrap(), before);
+        drop(store);
+        // 模拟旧程序已经保存的环路；启动必须在写gateway.recovered之前拒绝。
+        let mut corrupt = before;
+        corrupt["deployments"]["cyclic"] =
+            json!({"rule":rule,"revision":digest(&rule).unwrap(),"last_run":null});
+        let body = corrupt.to_string();
+        let connection = Connection::open(&path).unwrap();
+        connection
+            .execute("UPDATE snapshot SET body=?1", [&body])
+            .unwrap();
+        assert!(
+            matches!(Store::open(path.to_str().unwrap(), config), Err(error) if error.code == "storage_corrupt")
+        );
+        assert_eq!(
+            connection
+                .query_row("SELECT body FROM snapshot", [], |row| row
+                    .get::<_, String>(0))
+                .unwrap(),
+            body
+        );
+        assert_eq!(
+            connection
+                .query_row("SELECT version FROM snapshot", [], |row| row
+                    .get::<_, i64>(0))
+                .unwrap(),
+            10
+        );
+        assert_eq!(
+            connection
+                .query_row("SELECT COUNT(*) FROM events", [], |row| row
+                    .get::<_, usize>(0))
+                .unwrap(),
+            event_count
+        );
+    }
+    #[test]
+    fn property_threshold_commit_is_atomic_and_v10_recovery_never_replays_edges() {
+        use chrono::{DateTime, Duration, Utc};
+        use limeiot_core::{
+            model::Model,
+            protocol::{Envelope, Rule},
+        };
+        fn report(
+            store: &mut Store,
+            device: &str,
+            kind: &str,
+            body: Value,
+            now: DateTime<Utc>,
+        ) -> Result<()> {
+            let binding = &store.data.devices[device];
+            let message: Envelope = serde_json::from_value(json!({"v":1,"kind":kind,
+                "message_id":format!("message-{}",binding.last_seq+1),"device_id":device,
+                "model_revision":binding.model_revision,"boot_id":binding.boot_id.clone().unwrap_or_else(||format!("boot-{device}")),
+                "session_id":binding.session_id,"seq":binding.last_seq+1,"body":body})).unwrap();
+            store
+                .update("device.message", |data| data.ingest(message, now))
+                .map(|_| ())
+        }
+        fn sample(store: &mut Store, value: i64, now: DateTime<Utc>) -> Result<()> {
+            report(
+                store,
+                "sensor",
+                "state",
+                json!({"type":"snapshot","revision":store.data.devices["sensor"].state_revision+1,
+                "properties":[{"path":"environment.temperature","value":value,"observed_at":now,"quality":"confirmed","source":"fixture.sht3x"},
+                    {"path":"environment.humidity","value":5000,"observed_at":now,"quality":"confirmed","source":"fixture.sht3x"}]}),
+                now,
+            )
+        }
+        let now: DateTime<Utc> = "2026-11-03T00:00:00Z".parse().unwrap();
+        let lamp: Model =
+            serde_json::from_str(include_str!("../../../../contracts/models/lamp.json")).unwrap();
+        let sensor: Model = serde_json::from_str(include_str!(
+            "../../../../contracts/models/environment.json"
+        ))
+        .unwrap();
+        let config: Config =
+            serde_json::from_value(json!({"space_id":"home","models":[lamp,sensor],"devices":[
+            {"device_id":"lamp","model_revision":digest(&lamp).unwrap()},
+            {"device_id":"sensor","model_revision":digest(&sensor).unwrap()}]}))
+            .unwrap();
+        let path =
+            std::env::temp_dir().join(format!("limeiot-threshold-{}.sqlite", limeiot_core::id()));
+        let mut store = Store::open(path.to_str().unwrap(), config.clone()).unwrap();
+        for device in ["lamp", "sensor"] {
+            report(
+                &mut store,
+                device,
+                "hello",
+                json!({"challenge":"challenge"}),
+                now,
+            )
+            .unwrap();
+        }
+        report(&mut store,"lamp","state",json!({"type":"snapshot","revision":1,"properties":[
+            {"path":"light.power","value":true,"observed_at":now,"quality":"confirmed","source":"fixture"},
+            {"path":"light.brightness","value":50,"observed_at":now,"quality":"confirmed","source":"fixture"}]}),now).unwrap();
+        let rule:Rule=serde_json::from_value(json!({"version":1,"id":"threshold","trigger":{"device":"sensor","property":{
+            "path":"environment.temperature","unit":"celsius_x100","edge":"rising","threshold":2800,"hysteresis":100}},
+            "conditions":[],"actions":[{"device":"lamp","set":{"path":"light.brightness","value":30}}],"cooldown_ms":0})).unwrap();
+        store
+            .update("rules.deployed", |data| data.deploy(rule))
+            .unwrap();
+        sample(&mut store, 2700, now + Duration::seconds(1)).unwrap();
+        let before = serde_json::to_value(&store.data).unwrap();
+        let events = store.events(0).unwrap().len();
+        store
+            .connection
+            .execute_batch("PRAGMA query_only=ON")
+            .unwrap();
+        assert_eq!(
+            sample(&mut store, 2900, now + Duration::seconds(2))
+                .unwrap_err()
+                .code,
+            "storage_unavailable"
+        );
+        assert_eq!(serde_json::to_value(&store.data).unwrap(), before);
+        assert_eq!(store.events(0).unwrap().len(), events);
+        store
+            .connection
+            .execute_batch("PRAGMA query_only=OFF")
+            .unwrap();
+        sample(&mut store, 2900, now + Duration::seconds(2)).unwrap();
+        assert_eq!(store.data.runs.len(), 1);
+        store
+            .update("dispatch", |data| {
+                Ok(data.prepare_dispatch(now + Duration::seconds(2)))
+            })
+            .unwrap();
+        let original = store.data.commands.keys().next().unwrap().clone();
+        assert!(store
+            .data
+            .runs
+            .values()
+            .next()
+            .unwrap()
+            .property_trigger
+            .is_some());
+        drop(store);
+        let mut store = Store::open(path.to_str().unwrap(), config.clone()).unwrap();
+        assert_eq!(store.data.commands[&original].status, "unknown");
+        report(
+            &mut store,
+            "sensor",
+            "hello",
+            json!({"challenge":"new-challenge"}),
+            now + Duration::seconds(3),
+        )
+        .unwrap();
+        sample(&mut store, 2900, now + Duration::seconds(4)).unwrap();
+        assert_eq!(store.data.runs.len(), 1);
+        let raw: String = store
+            .connection
+            .query_row("SELECT body FROM snapshot", [], |r| r.get(0))
+            .unwrap();
+        assert!(!raw.contains("threshold_cursors"));
+        store
+            .connection
+            .execute("UPDATE snapshot SET version=8", [])
+            .unwrap();
+        drop(store);
+        assert!(
+            matches!(Store::open(path.to_str().unwrap(),config),Err(error) if error.code=="storage_corrupt")
+        );
+        let disk = Connection::open(path).unwrap();
+        let stored: (i64, String) = disk
+            .query_row("SELECT version,body FROM snapshot", [], |r| {
+                Ok((r.get(0)?, r.get(1)?))
+            })
+            .unwrap();
+        assert_eq!(stored, (8, raw));
+    }
+    #[test]
+    fn old_snapshot_upgrades_to_v10_and_future_versions_are_not_rewritten() {
         let file =
             std::env::temp_dir().join(format!("limeiot-registry-{}.sqlite", limeiot_core::id()));
         let path = file.to_str().unwrap();
@@ -1243,12 +1996,12 @@ mod tests {
                     Ok((row.get(0)?, row.get(1)?))
                 })
                 .unwrap();
-            assert_eq!(version, 7);
+            assert_eq!(version, 10);
             assert!(serde_json::from_str::<Value>(&body).unwrap()["model_registry"].is_object());
             assert!(serde_json::from_str::<Value>(&body).unwrap()["ota_registry"].is_object());
             store
                 .connection
-                .execute("UPDATE snapshot SET version=8", [])
+                .execute("UPDATE snapshot SET version=13", [])
                 .unwrap();
         }
         assert!(
@@ -1260,7 +2013,7 @@ mod tests {
                 .query_row("SELECT version FROM snapshot", [], |row| row
                     .get::<_, i64>(0))
                 .unwrap(),
-            8
+            13
         );
         drop(connection);
         std::fs::remove_file(file).unwrap();

@@ -11,6 +11,9 @@ use tokio::{
     time::{timeout_at, Instant},
 };
 
+// 整段为固定远端只读命令，不拼接配置或调用方输入；兼容 API 23 的 sh -c。
+const IDENTITY_QUERY: &str = "getprop ro.build.fingerprint && getprop ro.serialno";
+
 #[derive(Clone, Copy, Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum Key {
@@ -176,18 +179,16 @@ impl Adapter {
     }
 
     async fn identity(&self, deadline: Instant) -> Result<()> {
-        let fingerprint = self
-            .read(&["shell", "getprop", "ro.build.fingerprint"], deadline)
-            .await?;
+        let output = self.read(&["shell", IDENTITY_QUERY], deadline).await?;
+        let mut lines = output.lines();
+        let fingerprint = lines.next().ok_or_else(|| err("tv_probe_failed"))?;
+        let serial = lines.next().ok_or_else(|| err("tv_probe_failed"))?;
         ensure(
-            fingerprint.trim_end_matches(['\r', '\n']) == self.config.fingerprint,
-            "tv_identity_mismatch",
+            output.ends_with('\n') && lines.next().is_none(),
+            "tv_probe_failed",
         )?;
-        let serial = self
-            .read(&["shell", "getprop", "ro.serialno"], deadline)
-            .await?;
         ensure(
-            serial.trim_end_matches(['\r', '\n']) == self.config.device_serial,
+            fingerprint == self.config.fingerprint && serial == self.config.device_serial,
             "tv_identity_mismatch",
         )
     }

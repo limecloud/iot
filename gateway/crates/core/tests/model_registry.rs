@@ -81,7 +81,7 @@ fn bind(data: &mut Data, device: &str, installation: &str, key: &str) -> Operati
         .model_registry
         .bindings
         .get(device)
-        .map(|v| v.revision.clone());
+        .map(|v| v.revision().to_owned());
     change(
         data,
         key,
@@ -398,6 +398,77 @@ fn binding_retires_old_sessions_and_revocation_blocks_control_without_falsifying
 }
 
 #[test]
+fn replacing_a_condition_source_cannot_break_a_deployed_comparison() {
+    let mut config: Config =
+        serde_json::from_str(include_str!("../../../../deploy/dev/config.json")).unwrap();
+    let tv: limeiot_core::model::Model =
+        serde_json::from_str(include_str!("../../../../contracts/models/android-tv.json")).unwrap();
+    config.devices.push(limeiot_core::engine::Binding {
+        device_id: "condition-tv".into(),
+        model_revision: digest(&tv).unwrap(),
+        routes: Default::default(),
+    });
+    config.models.push(tv);
+    let mut data = Data::new(config).unwrap();
+    let trusted = trust(&mut data);
+    let installed = installation(&install(
+        &mut data,
+        &trusted.trust_id,
+        "install",
+        fixture()["artifact"].clone(),
+        None,
+    ));
+    let mut rule: Rule = serde_json::from_str(include_str!(
+        "../../../../contracts/examples/button-light.json"
+    ))
+    .unwrap();
+    rule.conditions=serde_json::from_value(json!([{"all":[{"device":"condition-tv","property":"audio.volume","operator":"gte","value":20,"unit":"percent"}]}])).unwrap();
+    let deployed = data.deploy(rule).unwrap();
+    let before = digest(&data.devices).unwrap();
+    let rejected = bind(
+        &mut data,
+        "condition-tv",
+        &installed.installation_id,
+        "break-condition",
+    );
+    assert_eq!(rejected.reason.as_deref(), Some("bound_rules_incompatible"));
+    assert_eq!(digest(&data.devices).unwrap(), before);
+    assert_eq!(
+        data.deployments.values().next().unwrap().revision,
+        deployed.revision
+    );
+}
+
+#[test]
+fn replacing_an_action_model_cannot_break_deployed_invoke_rules() {
+    let mut config: Config =
+        serde_json::from_str(include_str!("../../../../deploy/dev/config.json")).unwrap();
+    config.models[0] =
+        serde_json::from_str(include_str!("../../../../contracts/models/android-tv.json")).unwrap();
+    config.devices[0].model_revision = digest(&config.models[0]).unwrap();
+    let mut data = Data::new(config).unwrap();
+    let trusted = trust(&mut data);
+    let installed = installation(&install(
+        &mut data,
+        &trusted.trust_id,
+        "install",
+        fixture()["artifact"].clone(),
+        None,
+    ));
+    let rule: Rule = serde_json::from_value(json!({"version":1,"id":"button-tv","trigger":{"device":"device-button","event":"button.pressed"},"conditions":[],"cooldown_ms":0,"actions":[{"device":"device-lamp","invoke":{"path":"remote.press","input":{"key":"home"}}}]})).unwrap();
+    let deployed = data.deploy(rule).unwrap();
+    let before = digest(&data.devices).unwrap();
+    let rejected = bind(
+        &mut data,
+        "device-lamp",
+        &installed.installation_id,
+        "break-invoke",
+    );
+    assert_eq!(rejected.reason.as_deref(), Some("bound_rules_incompatible"));
+    assert_eq!(digest(&data.devices).unwrap(), before);
+    assert_eq!(data.deployments["button-tv"].revision, deployed.revision);
+}
+#[test]
 fn new_devices_are_explicit_and_existing_rules_cannot_be_silently_broken() {
     let mut data = initial_data();
     let trusted = trust(&mut data);
@@ -465,12 +536,17 @@ fn snapshots_preserve_registry_history_and_old_snapshots_default_to_empty() {
         restored.model_operation("bind").unwrap().operation_id,
         data.model_operation("bind").unwrap().operation_id
     );
-    restored
+    let binding = restored
         .model_registry
         .bindings
         .get_mut("device-lamp")
-        .unwrap()
-        .model_revision = "sha256:wrong".into();
+        .unwrap();
+    match binding {
+        limeiot_core::model_registry::DeviceBinding::Installation { model_revision, .. }
+        | limeiot_core::model_registry::DeviceBinding::Bundle { model_revision, .. } => {
+            *model_revision = "sha256:wrong".into();
+        }
+    }
     assert_eq!(
         restored.validate_model_registry(now()).unwrap_err().code,
         "storage_corrupt"

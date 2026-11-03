@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ValueSchema } from "../../../protocol/action-form.mjs";
 
 const id = z.string().min(1).max(255);
 const date = z.iso.datetime({ offset: true });
@@ -86,6 +87,7 @@ export const deviceSchema = z.object({
     z.string(),
     z.object({ value: z.unknown(), observed_at: date, quality: z.string() }),
   ),
+  action_availability: z.record(z.string(), z.boolean()).optional(),
 });
 export type Device = z.infer<typeof deviceSchema>;
 export const devicesSchema = z.object({
@@ -93,24 +95,36 @@ export const devicesSchema = z.object({
   next: z.string().nullable(),
   binding_revision: id,
 });
+const valueSchema: z.ZodType<ValueSchema> = z.lazy(() => z.looseObject({
+  type: z.string(),
+  minimum: z.number().optional(), maximum: z.number().optional(),
+  minLength: z.number().int().nonnegative().optional(), maxLength: z.number().int().nonnegative().optional(),
+  enum: z.array(z.unknown()).optional(),
+  properties: z.record(z.string(), valueSchema).optional(),
+  required: z.array(z.string()).optional(), additionalProperties: z.boolean().optional(),
+}));
+export const actionSchema = z.looseObject({
+  id, semantic_id: id, input: valueSchema, output: valueSchema,
+  idempotent: z.boolean(), risk: z.enum(["low", "medium", "high"]),
+  completion: z.enum(["submitted", "observed"]),
+});
+export type Action = z.infer<typeof actionSchema>;
 export const modelSchema = z.object({
   revision: id,
-  model: z.object({
+  model: z.looseObject({
+    schema_version: z.union([z.literal(1), z.literal(2)]),
     model_id: id,
     services: z.array(
-      z.object({
+      z.looseObject({
         id,
         properties: z.array(
-          z.object({
+          z.looseObject({
             id,
-            schema: z.object({
-              type: z.string(),
-              minimum: z.number().optional(),
-              maximum: z.number().optional(),
-            }),
+            schema: valueSchema,
             access: z.array(z.string()),
           }),
         ),
+        actions: z.array(actionSchema).optional(),
       }),
     ),
   }),
@@ -119,6 +133,8 @@ export type Model = z.infer<typeof modelSchema>["model"];
 export const remoteSchema = z
   .object({
     remote_id: z.string().regex(/^remote-[a-f0-9]{64}$/),
+    space_id: id, principal_id: id, local_space_id: id,
+    request_digest: z.string().regex(/^[a-f0-9]{64}$/),
     status: z.enum([
       "accepted",
       "dispatched",
@@ -128,18 +144,31 @@ export const remoteSchema = z
       "rejected",
       "expired",
     ]),
-    request: z.record(z.string(), z.unknown()),
+    request: z.strictObject({
+      request_key: id, gateway_id: id, binding_revision: id, device_id: id,
+      model_revision: z.string().regex(/^sha256:[a-f0-9]{64}$/), expires_at: date,
+      operation: z.strictObject({
+        type: z.enum(["property.set", "action.invoke"]),
+        path: z.string().regex(/^[a-z][a-z0-9_-]{0,63}\.[a-z][a-z0-9_-]{0,63}$/),
+        value: z.unknown(),
+      }),
+    }),
     local_result: z
       .looseObject({
-        evidence: z.looseObject({ type: z.string().optional() }).nullish(),
+        evidence: z.looseObject({
+          type: z.string().optional(),
+          completion: z.enum(["submitted", "observed"]).optional(),
+        }).nullish(),
       })
       .nullable(),
     created_at: date,
+    updated_at: date,
   })
   .refine(
     (value) =>
       value.status !== "confirmed" ||
-      value.local_result?.evidence?.type === "device_result",
+      value.local_result?.evidence?.type ===
+        (value.request.operation.type === "action.invoke" ? "action_result" : "device_result"),
   );
 export type Remote = z.infer<typeof remoteSchema>;
 export const terminal = (value: unknown) =>

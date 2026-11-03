@@ -28,10 +28,17 @@ export function verifyExecutionBinding(value, deviceID) {
   return value;
 }
 export function verifyExecutionAdapters(value) {
+  const television = item => fields(item, 'device_id,route,compatible,target,fingerprint,device_serial,applications') &&
+    ['fingerprint', 'device_serial'].every(key => typeof item[key] === 'string' && item[key].length > 0 && item[key].length <= 512) &&
+    Array.isArray(item.applications) && item.applications.length <= 32 && item.applications.every(app => fields(app, 'application_id,category') && typeof app.application_id === 'string' && app.application_id.length <= 255 && ['leanback', 'launcher'].includes(app.category));
+  const audio = item => fields(item, item.managed_media === true ? 'kind,device_id,route,compatible,target,udn,volume_limit,playback_volume,media,managed_media' : 'kind,device_id,route,compatible,target,udn,volume_limit,playback_volume,media') && item.kind === 'dlna' &&
+    typeof item.udn === 'string' && /^uuid:[A-Za-z0-9:_-]{1,123}$/.test(item.udn) &&
+    Number.isInteger(item.volume_limit) && item.volume_limit >= 1 && item.volume_limit <= 30 &&
+    Number.isInteger(item.playback_volume) && item.playback_volume >= 0 && item.playback_volume <= item.volume_limit &&
+    Array.isArray(item.media) && item.media.length <= 32 && item.media.every(m => fields(m, 'media_id,expires_at') && id(m.media_id) && typeof m.expires_at === 'string' && Number.isFinite(Date.parse(m.expires_at))) && new Set(item.media.map(m => m.media_id)).size === item.media.length;
   if (!fields(value, 'items,next_cursor') || value.next_cursor !== null || !Array.isArray(value.items) || value.items.length > 16 ||
-    value.items.some(item => !fields(item, 'device_id,route,compatible,target,fingerprint,device_serial,applications') || !id(item.device_id) || !route(item.route) || typeof item.compatible !== 'boolean' ||
-      !['target', 'fingerprint', 'device_serial'].every(key => typeof item[key] === 'string' && item[key].length > 0 && item[key].length <= 512) ||
-      !Array.isArray(item.applications) || item.applications.length > 32 || item.applications.some(app => !fields(app, 'application_id,category') || typeof app.application_id !== 'string' || app.application_id.length > 255 || !['leanback', 'launcher'].includes(app.category))) ||
+    value.items.some(item => !object(item) || !television(item) && !audio(item) || !id(item.device_id) || !route(item.route) || typeof item.compatible !== 'boolean' ||
+      typeof item.target !== 'string' || item.target.length === 0 || item.target.length > 512) ||
     new Set(value.items.map(item => item.route.adapter_id)).size !== value.items.length || new Set(value.items.map(item => item.device_id)).size !== value.items.length) fail();
   return value;
 }

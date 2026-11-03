@@ -1,0 +1,40 @@
+{
+  "schema_version": 2,
+  "model_id": "urn:limeiot:model:dlna-speaker:1",
+  "model_version": "1.0.0",
+  "services": [{
+    "id": "playback",
+    "semantic_id": "urn:limeiot:service:audio-playback:1",
+    "properties": [],
+    "actions": [
+      {
+        "id": "play",
+        "semantic_id": "urn:limeiot:action:audio-play:1",
+        "input": {"type":"object","properties":{"media_id":{"type":"string","minLength":1,"maxLength":128}},"required":["media_id"],"additionalProperties":false},
+        "output": {"type":"object","properties":{},"required":[],"additionalProperties":false},
+        "idempotent": false,
+        "risk": "low",
+        "completion": "submitted"
+      },
+      {
+        "id": "stop",
+        "semantic_id": "urn:limeiot:action:audio-stop:1",
+        "input": {"type":"object","properties":{},"required":[],"additionalProperties":false},
+        "output": {"type":"object","properties":{},"required":[],"additionalProperties":false},
+        "idempotent": false,
+        "risk": "low",
+        "completion": "submitted"
+      },
+      {
+        "id": "set_volume",
+        "semantic_id": "urn:limeiot:action:audio-set-volume:1",
+        "input": {"type":"object","properties":{"volume":{"type":"integer","minimum":0,"maximum":30}},"required":["volume"],"additionalProperties":false},
+        "output": {"type":"object","properties":{},"required":[],"additionalProperties":false},
+        "idempotent": false,
+        "risk": "low",
+        "completion": "submitted"
+      }
+    ],
+    "events": []
+  }]
+}

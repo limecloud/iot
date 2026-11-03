@@ -1,16 +1,21 @@
 mod api;
 mod application;
+mod audio;
 mod auth;
 mod control_api;
 mod control_client;
 mod execution_api;
+mod execution_plan_api;
 mod identity;
 mod inference;
+mod media;
+mod media_store;
 mod model_api;
 mod mqtt;
 mod ota_api;
 mod relay;
 mod relay_rpc;
+mod speech;
 mod store;
 mod tv;
 

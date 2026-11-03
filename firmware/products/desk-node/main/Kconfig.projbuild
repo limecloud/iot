@@ -12,6 +12,8 @@ menu "LimeIoT development node"
             bool "Lamp"
         config LIMEIOT_ROLE_BUTTON
             bool "Button"
+        config LIMEIOT_ROLE_ENVIRONMENT
+            bool "SHT30 temperature and humidity"
     endchoice
     config LIMEIOT_LED_GPIO
         int "WS2812 data GPIO"
@@ -28,6 +30,21 @@ menu "LimeIoT development node"
         range 0 21
         default 3
         depends on LIMEIOT_ROLE_BUTTON
+    config LIMEIOT_SHT30_SDA_GPIO
+        int "SHT30 SDA GPIO (external 3.3V pull-up required)"
+        range 0 21
+        default 4
+        depends on LIMEIOT_ROLE_ENVIRONMENT
+    config LIMEIOT_SHT30_SCL_GPIO
+        int "SHT30 SCL GPIO (external 3.3V pull-up required)"
+        range 0 21
+        default 5
+        depends on LIMEIOT_ROLE_ENVIRONMENT
+    config LIMEIOT_SHT30_ADDRESS
+        hex "SHT30 7-bit I2C address"
+        range 0x44 0x45
+        default 0x44
+        depends on LIMEIOT_ROLE_ENVIRONMENT
     config LIMEIOT_DEVELOPMENT_USB_CLOCK
         bool "Allow physical USB time bootstrap for development"
         default y
@@ -35,4 +52,13 @@ menu "LimeIoT development node"
             Development boards without a trusted RTC require the owner to enter
             a Unix timestamp through USB after each cold boot. TLS verification
             stays enabled. Production hardware needs a protected clock adapter.
+    config LIMEIOT_DEVELOPMENT_IDENTITY_MAINTENANCE
+        bool "Enter explicit USB identity maintenance before MQTT"
+        depends on LIMEIOT_DEVICE_LOCAL_IDENTITY
+        default n
+        help
+            Dedicated development maintenance image. Always stop before MQTT
+            until the operator enters identity continue with valid credentials.
+            Allow public CSR, staged rotation, certificate import and activation
+            proof. This is not a physical claim window or a production UI.
 endmenu

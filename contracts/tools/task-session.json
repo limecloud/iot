@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT local terminal task actions v1",
+  "description": "本地所有者终端与Agent共用的任务输入。prepare只读或预演；commit明确发送一次；resolve只查询原操作。身份与网关权限不由本合同授予。",
+  "oneOf": [
+    {
+      "type": "object", "required": ["action"], "additionalProperties": false,
+      "properties": {"action": {"const": "refresh"}, "cursor": {"$ref": "#/$defs/id"}}
+    },
+    {
+      "type": "object", "required": ["action"], "additionalProperties": false,
+      "properties": {"action": {"enum": ["snapshot", "cancel"]}}
+    },
+    {
+      "type": "object", "required": ["action", "device_id", "type", "path", "value"], "additionalProperties": false,
+      "properties": {
+        "action": {"const": "commands.prepare"}, "device_id": {"$ref": "#/$defs/id"},
+        "type": {"enum": ["property.set", "action.invoke"]},
+        "path": {"type": "string", "maxLength": 129, "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"}, "value": {}
+      }
+    },
+    {
+      "type": "object", "required": ["action", "rule", "event_data"], "additionalProperties": false,
+      "properties": {"action": {"const": "rules.prepare"}, "rule": {"$ref": "../rule.schema.json"}, "event_data": {}}
+    },
+    {
+      "type": "object", "required": ["action", "rule_id"], "additionalProperties": false,
+      "properties": {"action": {"const": "rules.stop.prepare"}, "rule_id": {"$ref": "#/$defs/id"}}
+    },
+    {
+      "type": "object", "required": ["action", "task_id"], "additionalProperties": false,
+      "properties": {"action": {"enum": ["commit", "resolve"]}, "task_id": {"$ref": "#/$defs/taskId"}}
+    }
+  ],
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$"},
+    "taskId": {"type": "string", "pattern": "^task-[a-f0-9]{64}$"},
+    "task": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "origin", "space_id", "task_id", "kind", "input", "request_digest", "result"],
+      "properties": {
+        "version": {"const": 1}, "origin": {"type": "string"}, "space_id": {"$ref": "#/$defs/id"},
+        "task_id": {"$ref": "#/$defs/taskId"}, "kind": {"enum": ["command", "rule.deploy", "rule.stop"]},
+        "input": {"type": "object"}, "request_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+        "result": {"type": ["object", "null"]}, "pending": {"type": "boolean"},
+        "unknown": {"const": true},
+        "observation": {"oneOf": [
+          {"type": "object", "required": ["currently_absent"], "additionalProperties": false, "properties": {"currently_absent": {"const": true}}},
+          {"type": "object", "required": ["currently_deployed", "revision"], "additionalProperties": false, "properties": {"currently_deployed": {"const": true}, "revision": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}}}
+        ]}
+      }
+    },
+    "state": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "origin", "space_id", "connected", "updated_at", "error", "snapshot", "sources", "operations", "review", "tasks"],
+      "properties": {
+        "version": {"const": 1}, "origin": {"type": "string"}, "space_id": {"$ref": "#/$defs/id"},
+        "connected": {"type": "boolean"}, "updated_at": {"type": ["string", "null"]}, "error": {"type": ["string", "null"]},
+        "snapshot": {"type": ["object", "null"]}, "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+        "condition_sources": {"type": "array", "items": {"type": "object", "required": ["key", "device", "path", "schema"], "additionalProperties": false, "properties": {"key": {"type": "string"}, "device": {"$ref": "#/$defs/id"}, "path": {"type": "string"}, "schema": {"type": "object"}, "unit": {"type": "string"}}}},
+        "operations": {"type": "object"}, "review": {"type": ["object", "null"]},
+        "tasks": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/task"}}
+      }
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object", "required": ["device_id", "path", "schema"], "additionalProperties": false,
+          "properties": {"device_id": {"$ref": "#/$defs/id"}, "path": {"type": "string"}, "schema": {"type": "object"}}
+        },
+        {
+          "type": "object", "required": ["kind", "device_id", "path", "unit", "schema"], "additionalProperties": false,
+          "properties": {"kind": {"const": "property"}, "device_id": {"$ref": "#/$defs/id"}, "path": {"type": "string"}, "unit": {"type": "string"}, "schema": {"type": "object"}}
+        }
+      ]
+    },
+    "response": {
+      "oneOf": [
+        {
+          "type": "object", "required": ["version", "sequence", "ok", "result"], "additionalProperties": false,
+          "properties": {"version": {"const": 1}, "sequence": {"type": "integer", "minimum": 1, "maximum": 1024}, "ok": {"const": true}, "result": {"oneOf": [{"$ref": "#/$defs/state"}, {"$ref": "#/$defs/task"}]}}
+        },
+        {
+          "type": "object", "required": ["version", "sequence", "ok", "error"], "additionalProperties": false,
+          "properties": {
+            "version": {"const": 1}, "sequence": {"type": "integer", "minimum": 1, "maximum": 1024}, "ok": {"const": false},
+            "error": {"type": "object", "required": ["code"], "additionalProperties": false, "properties": {"code": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}}}
+          }
+        }
+      ]
+    }
+  }
+}

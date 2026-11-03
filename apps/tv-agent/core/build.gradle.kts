@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import groovy.json.JsonOutput
 
 plugins { kotlin("jvm") }
 kotlin {
@@ -11,6 +12,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-core:2.18.5")
     implementation("org.eclipse.paho:org.eclipse.paho.mqttv5.client:1.2.5")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.86")
     testImplementation(kotlin("test"))
 }
 dependencyLocking { lockAllConfigurations() }
@@ -26,4 +28,21 @@ tasks.register<Test>("mqttJourney") {
     testClassesDirs = sourceSets.test.get().output.classesDirs
     classpath = sourceSets.test.get().runtimeClasspath
     filter { includeTestsMatching("*MqttJourneyTest") }
+}
+
+// 构建完成后导出测试 JVM 入口，网络旅程不再通过 Gradle 启动设备进程。
+tasks.register("journeyRuntime") {
+    dependsOn(tasks.testClasses)
+    doLast {
+        val launcher = javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }.get()
+        val output = layout.buildDirectory.file("journey/runtime.json").get().asFile
+        output.parentFile.mkdirs()
+        output.writeText(JsonOutput.toJson(mapOf(
+            "java" to launcher.executablePath.asFile.absolutePath,
+            "classpath" to sourceSets.test.get().runtimeClasspath.asPath,
+            "main" to "run.limeai.iot.device.MqttJourneyMain",
+        )))
+    }
 }

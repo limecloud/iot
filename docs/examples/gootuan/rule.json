@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "id": "gootuan-touch-team-lights",
+  "trigger": { "device": "device-button", "event": "touch.pressed" },
+  "conditions": [],
+  "actions": [
+    { "device": "device-lamp", "set": { "path": "light.power", "value": true } },
+    { "device": "device-button", "set": { "path": "light.power", "value": true } }
+  ],
+  "cooldown_ms": 0
+}

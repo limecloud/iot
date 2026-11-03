@@ -41,6 +41,13 @@ pub enum Change {
         expected_model_revision: Option<String>,
         expected_binding_revision: Option<String>,
     },
+    #[serde(rename = "devices.bind-bundle")]
+    BindBundle {
+        device_id: String,
+        bundle_id: String,
+        expected_model_revision: Option<String>,
+        expected_binding_revision: Option<String>,
+    },
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -68,13 +75,55 @@ pub struct Installation {
     pub installed_at: DateTime<Utc>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct DeviceBinding {
-    pub device_id: String,
-    pub model_revision: String,
-    pub installation_id: String,
-    pub revision: String,
-    pub bound_at: DateTime<Utc>,
+#[serde(untagged, deny_unknown_fields)]
+pub enum DeviceBinding {
+    Installation {
+        device_id: String,
+        model_revision: String,
+        installation_id: String,
+        revision: String,
+        bound_at: DateTime<Utc>,
+    },
+    Bundle {
+        device_id: String,
+        model_revision: String,
+        bundle_id: String,
+        revision: String,
+        bound_at: DateTime<Utc>,
+    },
+}
+impl DeviceBinding {
+    pub fn device_id(&self) -> &str {
+        match self {
+            Self::Installation { device_id, .. } | Self::Bundle { device_id, .. } => device_id,
+        }
+    }
+    pub fn model_revision(&self) -> &str {
+        match self {
+            Self::Installation { model_revision, .. } | Self::Bundle { model_revision, .. } => {
+                model_revision
+            }
+        }
+    }
+    pub fn revision(&self) -> &str {
+        match self {
+            Self::Installation { revision, .. } | Self::Bundle { revision, .. } => revision,
+        }
+    }
+    pub fn installation_id(&self) -> Option<&str> {
+        match self {
+            Self::Installation {
+                installation_id, ..
+            } => Some(installation_id),
+            Self::Bundle { .. } => None,
+        }
+    }
+    pub fn bundle_id(&self) -> Option<&str> {
+        match self {
+            Self::Bundle { bundle_id, .. } => Some(bundle_id),
+            Self::Installation { .. } => None,
+        }
+    }
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type", content = "value", rename_all = "snake_case")]
@@ -231,12 +280,12 @@ impl Data {
                     .bindings
                     .values()
                     .filter(|binding| {
-                        self.model_registry
-                            .installations
-                            .get(&binding.installation_id)
+                        binding
+                            .installation_id()
+                            .and_then(|id| self.model_registry.installations.get(id))
                             .is_some_and(|installation| installation.trust_id == *trust_id)
                     })
-                    .map(|binding| binding.device_id.clone())
+                    .map(|binding| binding.device_id().to_owned())
                     .collect();
                 let record = self.model_registry.trusts.get_mut(trust_id).unwrap();
                 record.active = false;
@@ -336,13 +385,10 @@ impl Data {
                 expected_model_revision,
                 expected_binding_revision,
             } => {
-                ensure(identifier(device_id), "invalid_device_id")?;
-                let current = self.devices.get(device_id);
-                let binding = self.model_registry.bindings.get(device_id);
-                ensure(
-                    current.map(|v| &v.model_revision) == expected_model_revision.as_ref()
-                        && binding.map(|v| &v.revision) == expected_binding_revision.as_ref(),
-                    "revision_conflict",
+                self.check_binding_baseline(
+                    device_id,
+                    expected_model_revision,
+                    expected_binding_revision,
                 )?;
                 let installed = self
                     .model_registry
@@ -356,117 +402,189 @@ impl Data {
                         .is_some_and(|v| v.active),
                     "model_trust_revoked",
                 )?;
-                let model = &installed.artifact.statement.model;
-                if let Some(device) = current {
-                    if !device.routes.is_empty() {
-                        ensure(
-                            model.services.iter().all(|service| {
-                                service.properties.is_empty()
-                                    && service.events.is_empty()
-                                    && self.models[&device.model_revision].services.iter().any(
-                                        |old| {
-                                            old.id == service.id
-                                                && old.semantic_id == service.semantic_id
-                                        },
-                                    )
-                                    && service.actions.iter().all(|action| {
-                                        device
-                                            .routes
-                                            .contains_key(&format!("{}.{}", service.id, action.id))
-                                    })
-                            }),
-                            "bound_routes_incompatible",
-                        )?;
-                    }
-                    for path in device.routes.keys() {
-                        ensure(
-                            model.action(path).is_ok_and(|action| {
-                                crate::execution::supports_action(action)
-                                    && self.models[&device.model_revision].action(path).is_ok_and(
-                                        |old| {
-                                            old.semantic_id == action.semantic_id
-                                                && old.idempotent == action.idempotent
-                                                && old.risk == action.risk
-                                                && crate::compatibility::schema_subset(
-                                                    &action.input,
-                                                    &old.input,
-                                                )
-                                        },
-                                    )
-                            }),
-                            "bound_routes_incompatible",
-                        )?;
-                    }
-                }
+                let model = installed.artifact.statement.model.clone();
                 ensure(
                     self.model_registry.heads.get(&model.model_id) == Some(installation_id),
                     "model_installation_superseded",
                 )?;
-                if let Some(binding) = binding.filter(|v| v.installation_id == *installation_id) {
-                    return Ok(Resource::Binding(binding.clone()));
-                }
-                ensure(
-                    !self.ota_reserves_device(device_id, now),
-                    "ota_task_conflict",
+                self.bind_device_model(
+                    DeviceBinding::Installation {
+                        device_id: device_id.clone(),
+                        model_revision: installed.artifact.statement.model_revision.clone(),
+                        installation_id: installation_id.clone(),
+                        revision: id(),
+                        bound_at: now,
+                    },
+                    model,
+                    now,
+                )
+            }
+            Change::BindBundle {
+                device_id,
+                bundle_id,
+                expected_model_revision,
+                expected_binding_revision,
+            } => {
+                self.check_binding_baseline(
+                    device_id,
+                    expected_model_revision,
+                    expected_binding_revision,
                 )?;
-                ensure(
-                    current.is_some() || self.devices.len() < 64,
-                    "capacity_exceeded",
-                )?;
-                // 不静默停用已有规则；不再支持规则中任一能力时先要求所有者处理规则。
-                for deployment in self.deployments.values() {
-                    let rule = &deployment.rule;
-                    if rule.trigger.device == *device_id {
-                        model
-                            .event(&rule.trigger.event)
-                            .map_err(|_| err("bound_rules_incompatible"))?;
-                    }
-                    for action in rule.actions.iter().filter(|v| v.device == *device_id) {
-                        model
-                            .write(&action.set.path, &action.set.value)
-                            .map_err(|_| err("bound_rules_incompatible"))?;
-                    }
-                }
-                let mut device = current.cloned().unwrap_or_else(|| {
-                    Device::new_binding(
-                        device_id.clone(),
-                        installed.artifact.statement.model_revision.clone(),
-                    )
-                });
-                if let Some(boot) = device.boot_id.take() {
-                    ensure(
-                        device.retired_boots.contains(&boot) || device.retired_boots.len() < 128,
-                        "capacity_exceeded",
-                    )?;
-                    device.retired_boots.insert(boot);
-                }
-                device.model_revision = installed.artifact.statement.model_revision.clone();
-                device.ready = false;
-                device.device_info = None;
-                device.adapter_sessions.clear();
-                device.session_id = None;
-                device.last_seq = 0;
-                device.last_seen = None;
-                device.state_revision = 0;
-                device.reported.clear();
-                device.seen.clear();
-                let binding = DeviceBinding {
-                    device_id: device_id.clone(),
-                    model_revision: device.model_revision.clone(),
-                    installation_id: installation_id.clone(),
-                    revision: id(),
-                    bound_at: now,
-                };
-                self.invalidate_model_device(device_id, "device_model_changed");
-                self.devices.insert(device_id.clone(), device);
-                self.model_registry
-                    .bindings
-                    .insert(device_id.clone(), binding.clone());
-                Ok(Resource::Binding(binding))
+                let bundle = crate::model_bundles::get(bundle_id)?;
+                self.bind_device_model(
+                    DeviceBinding::Bundle {
+                        device_id: device_id.clone(),
+                        model_revision: bundle.model_revision,
+                        bundle_id: bundle.bundle_id,
+                        revision: id(),
+                        bound_at: now,
+                    },
+                    bundle.model,
+                    now,
+                )
             }
         }
     }
+    fn check_binding_baseline(
+        &self,
+        device_id: &str,
+        expected_model: &Option<String>,
+        expected_binding: &Option<String>,
+    ) -> Result<()> {
+        ensure(identifier(device_id), "invalid_device_id")?;
+        ensure(
+            self.devices.get(device_id).map(|v| &v.model_revision) == expected_model.as_ref()
+                && self
+                    .model_registry
+                    .bindings
+                    .get(device_id)
+                    .map(|v| v.revision())
+                    == expected_binding.as_deref(),
+            "revision_conflict",
+        )
+    }
+    fn bind_device_model(
+        &mut self,
+        binding: DeviceBinding,
+        model: crate::model::Model,
+        now: DateTime<Utc>,
+    ) -> Result<Resource> {
+        let device_id_owned = binding.device_id().to_owned();
+        let device_id = &device_id_owned;
+        let current = self.devices.get(device_id);
+        if let Some(device) = current {
+            if !device.routes.is_empty() {
+                ensure(
+                    model.services.iter().all(|service| {
+                        service.properties.is_empty()
+                            && service.events.is_empty()
+                            && self.models[&device.model_revision]
+                                .services
+                                .iter()
+                                .any(|old| {
+                                    old.id == service.id && old.semantic_id == service.semantic_id
+                                })
+                            && service.actions.iter().all(|action| {
+                                device
+                                    .routes
+                                    .contains_key(&format!("{}.{}", service.id, action.id))
+                            })
+                    }),
+                    "bound_routes_incompatible",
+                )?;
+            }
+            for path in device.routes.keys() {
+                ensure(
+                    model.action(path).is_ok_and(|action| {
+                        crate::execution::supports_action(action)
+                            && self.models[&device.model_revision]
+                                .action(path)
+                                .is_ok_and(|old| {
+                                    old.semantic_id == action.semantic_id
+                                        && old.idempotent == action.idempotent
+                                        && old.risk == action.risk
+                                        && crate::compatibility::schema_subset(
+                                            &action.input,
+                                            &old.input,
+                                        )
+                                })
+                    }),
+                    "bound_routes_incompatible",
+                )?;
+            }
+        }
+        if let Some(previous) = self
+            .model_registry
+            .bindings
+            .get(device_id)
+            .filter(|previous| {
+                previous.installation_id() == binding.installation_id()
+                    && previous.bundle_id() == binding.bundle_id()
+            })
+        {
+            return Ok(Resource::Binding(previous.clone()));
+        }
+        ensure(
+            !self.ota_reserves_device(device_id, now),
+            "ota_task_conflict",
+        )?;
+        ensure(
+            !self.execution_plan_reserves_device(device_id),
+            "execution_plan_conflict",
+        )?;
+        ensure(
+            current.is_some() || self.devices.len() < 64,
+            "capacity_exceeded",
+        )?;
+        // 不静默停用已有规则；不再支持规则中任一能力时先要求所有者处理规则。
+        for deployment in self.deployments.values() {
+            let rule = &deployment.rule;
+            self.validate_condition_binding(&rule.conditions, device_id, &model)
+                .map_err(|_| err("bound_rules_incompatible"))?;
+            if rule.trigger.device() == Some(device_id.as_str()) {
+                rule.trigger
+                    .validate_model(&model)
+                    .map_err(|_| err("bound_rules_incompatible"))?;
+            }
+            for action in rule.actions.iter().filter(|v| v.device() == device_id) {
+                model
+                    .operation(&action.operation())
+                    .map_err(|_| err("bound_rules_incompatible"))?;
+            }
+        }
+        let mut device = current.cloned().unwrap_or_else(|| {
+            Device::new_binding(device_id.clone(), binding.model_revision().to_owned())
+        });
+        if let Some(boot) = device.boot_id.take() {
+            ensure(
+                device.retired_boots.contains(&boot) || device.retired_boots.len() < 128,
+                "capacity_exceeded",
+            )?;
+            device.retired_boots.insert(boot);
+        }
+        device.model_revision = binding.model_revision().to_owned();
+        device.ready = false;
+        device.device_info = None;
+        device.adapter_sessions.clear();
+        device.session_id = None;
+        device.last_seq = 0;
+        device.last_seen = None;
+        device.state_revision = 0;
+        device.reported.clear();
+        device.seen.clear();
+        device.receipt_ledger = false;
+        device.native_actions = None;
+        self.invalidate_model_device(device_id, "device_model_changed");
+        self.models
+            .insert(binding.model_revision().to_owned(), model);
+        self.devices.insert(device_id.clone(), device);
+        self.model_registry
+            .bindings
+            .insert(device_id.clone(), binding.clone());
+        Ok(Resource::Binding(binding))
+    }
     fn invalidate_model_device(&mut self, device: &str, reason: &str) {
+        self.reset_threshold_source(device);
         if let Some(device) = self.devices.get_mut(device) {
             device.ready = false;
             device.device_info = None;
@@ -490,20 +608,52 @@ impl Data {
             }
         }
     }
-    pub fn check_model_authority(&self, device: &str) -> Result<()> {
-        if let Some(binding) = self.model_registry.bindings.get(device) {
-            let installed = self
+    fn validate_binding_source(&self, binding: &DeviceBinding) -> Result<()> {
+        let model = match binding {
+            DeviceBinding::Installation {
+                installation_id, ..
+            } => self
                 .model_registry
                 .installations
-                .get(&binding.installation_id)
-                .ok_or_else(|| err("storage_corrupt"))?;
-            ensure(
-                self.model_registry
-                    .trusts
-                    .get(&installed.trust_id)
-                    .is_some_and(|v| v.active),
-                "model_trust_revoked",
-            )?;
+                .get(installation_id)
+                .ok_or_else(|| err("storage_corrupt"))?
+                .artifact
+                .statement
+                .model
+                .clone(),
+            DeviceBinding::Bundle { bundle_id, .. } => crate::model_bundles::get(bundle_id)?.model,
+        };
+        ensure(
+            identifier(binding.device_id())
+                && identifier(binding.revision())
+                && binding.model_revision() == digest(&model)?
+                && self
+                    .models
+                    .get(binding.model_revision())
+                    .map(digest)
+                    .transpose()?
+                    == Some(digest(&model)?),
+            "storage_corrupt",
+        )
+    }
+    pub fn check_model_authority(&self, device: &str) -> Result<()> {
+        if let Some(binding) = self.model_registry.bindings.get(device) {
+            if let Some(installation_id) = binding.installation_id() {
+                let installed = self
+                    .model_registry
+                    .installations
+                    .get(installation_id)
+                    .ok_or_else(|| err("storage_corrupt"))?;
+                ensure(
+                    self.model_registry
+                        .trusts
+                        .get(&installed.trust_id)
+                        .is_some_and(|v| v.active),
+                    "model_trust_revoked",
+                )?;
+            } else {
+                self.validate_binding_source(binding)?;
+            }
         }
         Ok(())
     }
@@ -564,18 +714,13 @@ impl Data {
             )?;
         }
         for (device, binding) in &registry.bindings {
-            let installed = registry
-                .installations
-                .get(&binding.installation_id)
-                .ok_or_else(|| err("storage_corrupt"))?;
+            self.validate_binding_source(binding)?;
             ensure(
-                *device == binding.device_id
-                    && binding.model_revision == installed.artifact.statement.model_revision
+                device == binding.device_id()
                     && self
                         .devices
                         .get(device)
-                        .is_some_and(|v| v.model_revision == binding.model_revision)
-                    && identifier(&binding.revision),
+                        .is_some_and(|v| v.model_revision == binding.model_revision()),
                 "storage_corrupt",
             )?;
         }
@@ -594,6 +739,41 @@ impl Data {
                     },
                 "storage_corrupt",
             )?;
+            if operation.status == "applied" {
+                match &operation.request.change {
+                    Change::Bind {
+                        device_id,
+                        installation_id,
+                        ..
+                    } => {
+                        let Some(Resource::Binding(binding)) = &operation.result else {
+                            return Err(err("storage_corrupt"));
+                        };
+                        self.validate_binding_source(binding)?;
+                        ensure(
+                            binding.device_id() == device_id
+                                && binding.installation_id() == Some(installation_id.as_str()),
+                            "storage_corrupt",
+                        )?;
+                    }
+                    Change::BindBundle {
+                        device_id,
+                        bundle_id,
+                        ..
+                    } => {
+                        let Some(Resource::Binding(binding)) = &operation.result else {
+                            return Err(err("storage_corrupt"));
+                        };
+                        self.validate_binding_source(binding)?;
+                        ensure(
+                            binding.device_id() == device_id
+                                && binding.bundle_id() == Some(bundle_id.as_str()),
+                            "storage_corrupt",
+                        )?;
+                    }
+                    _ => {}
+                }
+            }
         }
         Ok(())
     }

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT protected NVS preparation receipt v1",
+  "type": "object",
+  "required": ["schema", "version", "device_id", "space_id", "image", "partition", "offset", "size", "encrypted", "hardware", "ota_signing_key_configured", "ota_policy_configured", "ota_https_trust_configured", "storage"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "limeiot.protected-storage"}, "version": {"const": 1},
+    "device_id": {"$ref": "#/$defs/id"}, "space_id": {"$ref": "#/$defs/id"},
+    "image": {"type": "string", "minLength": 1}, "partition": {"const": "nvs"},
+    "offset": {"const": "0x9000"}, "size": {"const": 24576}, "encrypted": {"const": true},
+    "hardware": {"const": false}, "ota_signing_key_configured": {"type": "boolean"},
+    "ota_policy_configured": {"type": "boolean"}, "ota_https_trust_configured": {"type": "boolean"},
+    "device_local_identity": {"const": true},
+    "storage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scheme", "key_id", "key_fingerprint", "binding_image", "binding_offset", "binding_size", "image_sha256", "binding_sha256", "automatic_efuse_writes"],
+      "properties": {
+        "scheme": {"const": "hmac-nvs-v1"}, "key_id": {"type": "integer", "minimum": 0, "maximum": 5},
+        "key_fingerprint": {"$ref": "#/$defs/digest"}, "binding_image": {"type": "string", "minLength": 1},
+        "binding_offset": {"const": "0x3ff000"}, "binding_size": {"const": 4096},
+        "image_sha256": {"$ref": "#/$defs/digest"}, "binding_sha256": {"$ref": "#/$defs/digest"},
+        "automatic_efuse_writes": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"},
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+  }
+}

@@ -151,7 +151,7 @@ test('真实MQTT安装意图先提交，CLI执行仅一次，重启未知只查�
   const requestDigest = await documentDigest(message);
   // 在设备回执前直接检查独立SQLite连接，证明发送意图已经耐久提交。
   const disk = await exec('python3', ['-c', 'import sqlite3,json,sys; c=sqlite3.connect("file:"+sys.argv[1]+"?mode=ro",uri=True); v,b=c.execute("SELECT version,body FROM snapshot").fetchone(); print(json.dumps({"version":v,"task":json.loads(b)["ota_registry"]["tasks"][sys.argv[2]]}))', stack.env.LIMEIOT_DB, taskID]);
-  const saved = JSON.parse(disk.stdout); assert.equal(saved.version, 7); assert.ok(saved.task.execution.attempted_at); assert.equal(saved.task.execution.request_digest, requestDigest);
+  const saved = JSON.parse(disk.stdout); assert.equal(saved.version, 10); assert.ok(saved.task.execution.attempted_at); assert.equal(saved.task.execution.request_digest, requestDigest);
   assert.equal((await change(executeBody, 'exec-install', true)).operation_id, executed.operation_id);
   await assert.rejects(device.message(150), /mqtt_packet_timeout/);
   await stack.restartGateway();
@@ -180,5 +180,5 @@ test('真实MQTT安装意图先提交，CLI执行仅一次，重启未知只查�
   assert.equal((await change(executeBody, 'exec-install', true)).operation_id, executed.operation_id);
   await assert.rejects(device.message(150), /mqtt_packet_timeout/);
   assert.equal((await stack.request(base + '/commands')).value.items.length, 0);
-  await writeFile(path.join(stack.directory, 'ota-execution-result.json'), JSON.stringify({ passed: true, durable_before_publish: true, install_messages: 1, query_messages: 1, cli_original_recovery: true, sqlite_restart_unknown: true, terminal_receipt_restored: true, snapshot_version: 7, hardware: false, device_installation: false }));
+  await writeFile(path.join(stack.directory, 'ota-execution-result.json'), JSON.stringify({ passed: true, durable_before_publish: true, install_messages: 1, query_messages: 1, cli_original_recovery: true, sqlite_restart_unknown: true, terminal_receipt_restored: true, snapshot_version: 8, hardware: false, device_installation: false }));
 });

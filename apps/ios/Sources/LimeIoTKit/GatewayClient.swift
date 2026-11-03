@@ -17,6 +17,8 @@ public enum GatewayError: Error, Equatable, Sendable {
         case .server(let code, _): [
             "unauthenticated": "所有者凭据无效", "forbidden": "请求未获授权", "device_offline": "设备已离线",
             "rate_limited": "尝试次数过多，请一分钟后重试", "revision_conflict": "规则已更新，请刷新后重试",
+            "invalid_threshold": "阈值、单位或滞回不符合设备要求", "invalid_condition": "条件的属性、单位或比较值不符合设备要求", "invalid_simulation": "预演结果未通过核对，请重新预演", "rule_cycle": "联动形成循环，请调整触发条件或执行设备",
+            "invalid_schedule": "请检查定时时间、时区和星期", "invalid_schedule_time": "当前时间无法计算定时，请检查网关时钟",
             "inference_not_configured": "网关尚未配置本地模型", "inference_busy": "已有草案正在生成，请稍后再试",
             "inference_unavailable": "无法连接本地模型", "inference_rejected": "本地模型拒绝了请求",
             "inference_unknown": "生成结果未知，请查询原草案", "inference_timeout": "模型响应超时，请查询原草案",
@@ -68,7 +70,7 @@ public actor GatewayClient {
     }
     private static func encoder() -> JSONEncoder { let encoder = JSONEncoder(); encoder.keyEncodingStrategy = .convertToSnakeCase; return encoder }
     private static func decoder() -> JSONDecoder { let decoder = JSONDecoder(); decoder.keyDecodingStrategy = .convertFromSnakeCase; return decoder }
-    private func call<T: Decodable & Sendable>(_ path: String, method: String = "GET", body: Data? = nil, key: String? = nil, authenticated: Bool = true, ota: Bool = false) async throws -> T {
+    private func call<T: Decodable & Sendable>(_ path: String, method: String = "GET", body: Data? = nil, key: String? = nil, authenticated: Bool = true, strictJSON: Bool = false) async throws -> T {
         guard let url = URL(string: origin + path) else { throw GatewayError.invalidEndpoint }
         if authenticated && saved == nil { throw GatewayError.unauthenticated }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData)
@@ -92,8 +94,8 @@ public actor GatewayClient {
             saved = SavedSession(session: session, cookie: cookie)
             try await store?.save(origin: origin, data: Self.encoder().encode(saved))
         }
-        if ota {
-            guard let text = String(data: data, encoding: .utf8), let result = try OtaJSON.parse(text, response: true) as? T else { throw OtaJSON.fail() }
+        if strictJSON {
+            guard let text = String(data: data, encoding: .utf8), let result = try IntegerJSON.parse(text) as? T else { throw GatewayError.invalidResponse }
             return result
         }
         return try Self.decoder().decode(T.self, from: data.isEmpty ? Data("{}".utf8) : data)
@@ -132,7 +134,10 @@ public actor GatewayClient {
     public func resolve(space: String, key: String) async throws -> Command { try await call(base(space) + "/commands/by-key/" + Self.segment(key)) }
     public func command(space: String, id: String) async throws -> Command { try await call(base(space) + "/commands/" + Self.segment(id)) }
     func otaCall(space: String, suffix: String, method: String = "GET", body: JSONValue? = nil, key: String? = nil) async throws -> JSONValue {
-        try await call(base(space) + suffix, method: method, body: body.map { Data(OtaJSON.canonical($0).utf8) }, key: key, ota: true)
+        try await call(base(space) + suffix, method: method, body: body.map { Data(OtaJSON.canonical($0).utf8) }, key: key, strictJSON: true)
+    }
+    func mediaCall(space: String, suffix: String, method: String = "GET", body: JSONValue? = nil, key: String? = nil) async throws -> JSONValue {
+        try await call(base(space) + suffix, method: method, body: body.map { Data(IntegerJSON.canonical($0).utf8) }, key: key, strictJSON: true)
     }
     public func createDraft(reference: DraftReference, input: DraftInput) async throws -> RuleDraft {
         try await call(base(reference.space) + "/rule-drafts", method: "POST", body: Self.encoder().encode(input), key: reference.key)
@@ -141,10 +146,20 @@ public actor GatewayClient {
         try await call(base(reference.space) + "/rule-drafts/by-key/" + Self.segment(reference.key))
     }
     public func simulate(space: String, rule: Rule, eventData: JSONValue) async throws -> Simulation {
-        struct Validation: Decodable, Sendable { let valid: Bool; let revision: String }
-        let _: Validation = try await call(base(space) + "/rules:validate", method: "POST", body: Self.encoder().encode(rule))
-        struct Input: Encodable { struct Event: Encodable { let deviceId: String; let path: String; let historical: Bool; let data: JSONValue }; let rule: Rule; let event: Event }
-        return try await call(base(space) + "/rules:simulate", method: "POST", body: Self.encoder().encode(Input(rule: rule, event: .init(deviceId: rule.trigger.device, path: rule.trigger.event, historical: false, data: eventData))))
+        struct Validation: Decodable, Sendable { let valid: Bool; let revision: String; let schedulePreview: JSONValue? }
+        let validation: Validation = try await call(base(space) + "/rules:validate", method: "POST", body: Self.encoder().encode(rule))
+        struct Input: Encodable { let rule: Rule; let event: JSONValue }
+        var sample: [String: JSONValue] = ["device_id": .string(rule.trigger.device), "historical": .bool(false)]
+        if rule.trigger.schedule != nil {
+            guard case .object(let preview) = validation.schedulePreview, case .string(let at) = preview["scheduled_at"] else { throw GatewayError.invalidResponse }
+            sample = ["scheduled_at": .string(at)]
+        } else if let property = rule.trigger.property {
+            sample["path"] = .string(property.path)
+            if case .object(let fields) = eventData { sample["previous"] = fields["previous"]; sample["current"] = fields["current"] }
+        } else { sample["path"] = .string(rule.trigger.event!); sample["data"] = eventData }
+        let proof: Simulation = try await call(base(space) + "/rules:simulate", method: "POST", body: Self.encoder().encode(Input(rule: rule, event: .object(sample))))
+        try RuleProof.verify(proof, rule: rule, valid: validation.valid, validationRevision: validation.revision)
+        return proof
     }
     public func deploy(space: String, rule: Rule) async throws -> Deployment { try await call(base(space) + "/rule-deployments", method: "POST", body: Self.encoder().encode(rule)) }
     public func stop(space: String, deployment: Deployment) async throws {

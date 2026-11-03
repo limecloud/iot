@@ -7,10 +7,12 @@ import { createWriteStream } from 'node:fs';
 import path from 'node:path';
 import { root,freePort,startStack,stop,until } from '../tools/dev-stack.mjs';
 import { mqttProbe } from './support/mqtt-probe.mjs';
+import { tvAgentRuntime } from './helpers/tv-agent.mjs';
 const exec=promisify(execFile);
 const base='/api/v1/spaces/space-demo';
 
 test('TV Agent设备核心：mTLS、超过128条回收、旧快照/网关重启核对与旧命令不重放', {timeout:240000}, async t=>{
+  const runtime=await tvAgentRuntime();
   const directory=await mkdtemp(path.join(root,'.dev/tv-agent-'));await mkdir(path.join(directory,'config'));
   const modelPath=path.join(root,'contracts/models/android-tv-agent.json');
   const validation=JSON.parse((await exec(process.execPath,['packages/cli/src/main.mjs','model','validate','--input',modelPath],{cwd:root,env:{...process.env,LIMEIOT_MODEL_VALIDATOR:process.env.LIMEIOT_MODEL_VALIDATOR??path.join(root,'target/debug/limeiot-model-validator')},timeout:5000})).stdout);
@@ -40,7 +42,7 @@ test('TV Agent设备核心：mTLS、超过128条回收、旧快照/网关重启�
   const workerEnv={...process.env,LIMEIOT_TV_AGENT_JOURNEY:'1',LIMEIOT_TV_AGENT_DIRECTORY:directory,LIMEIOT_TV_AGENT_BROKER:broker,LIMEIOT_TV_AGENT_PROBE_HOSTNAME:'1'};
   let worker;
   const launch=()=>{
-    worker=spawn('sh',[path.join(root,'apps/android/gradlew'),'--no-daemon','-p',path.join(root,'apps/tv-agent'),':core:mqttJourney','--rerun'],{cwd:root,env:workerEnv,stdio:['ignore','pipe','pipe']});
+    worker=spawn(runtime.executable,runtime.args,{cwd:root,env:workerEnv,stdio:['ignore','pipe','pipe']});
     const stream=createWriteStream(path.join(directory,'jvm.log'),{flags:'a'});worker.stdout.pipe(stream);worker.stderr.pipe(stream);worker.once('exit',()=>stream.end());
     const done=new Promise((resolve,reject)=>{worker.once('error',reject);worker.once('exit',code=>resolve(code));});
     done.catch(()=>{});return done;

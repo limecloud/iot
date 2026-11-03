@@ -8,7 +8,7 @@ import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { root } from '../tools/dev-stack.mjs';
 import { documentDigest } from '../packages/protocol/model-validation.mjs';
-import { parseModelChange, verifyModelOperation, verifyPublisherTrust, verifyModelInstallation, verifyModelBinding } from '../packages/protocol/model-registry.mjs';
+import { parseModelChange, verifyModelOperation, verifyPublisherTrust, verifyModelInstallation, verifyModelBinding, verifyModelBundle, verifyModelBundles } from '../packages/protocol/model-registry.mjs';
 
 const exec = promisify(execFile), vector = JSON.parse(await readFile(path.join(root, 'contracts/examples/model-release.json'), 'utf8'));
 const change = { type: 'trust.add', trust: vector.trust, expected_signing_key_id: vector.trust.signing_key_id };
@@ -22,6 +22,37 @@ test('本地模型输入拒绝重复键、缺少显式空基线及未知动作',
   assert.deepEqual(parseModelChange(JSON.stringify(change)), change);
   for (const value of [{ type: 'models.install', trust_id: 'trust-' + 'a'.repeat(64), artifact: vector.artifact }, { ...change, extra: true }, { type: 'device.install' }]) assert.throws(() => parseModelChange(JSON.stringify(value)));
   assert.throws(() => parseModelChange('{"type":"trust.add","type":"trust.revoke"}'));
+});
+
+test('内置模型与安装来源严格互斥，目录摘要、原请求及原结果不能替换', async () => {
+  const model=JSON.parse(await readFile(path.join(root,'contracts/models/android-tv-remote.json'),'utf8'));
+  const revision=await documentDigest(model),bundle={bundle_id:'bundle-'+revision.slice(7),model_revision:revision,model};
+  await verifyModelBundle(bundle);await verifyModelBundles({items:[bundle],next_cursor:null});
+  for (const bad of [{...bundle,bundle_id:'bundle-'+'0'.repeat(64)},{...bundle,model:{...model,model_version:'9.0.0'}},{...bundle,extra:true}]) await assert.rejects(verifyModelBundle(bad));
+  await assert.rejects(verifyModelBundles({items:[bundle,bundle],next_cursor:null}));
+  const change={type:'devices.bind-bundle',device_id:'tv',bundle_id:bundle.bundle_id,expected_model_revision:null,expected_binding_revision:null};
+  assert.deepEqual(parseModelChange(JSON.stringify(change)),change);
+  for(const bad of [{...change,model},{...change,installation_id:'install-'+'a'.repeat(64)},Object.fromEntries(Object.entries(change).filter(([key])=>key!=='expected_binding_revision'))]) assert.throws(()=>parseModelChange(JSON.stringify(bad)));
+  const request={space_id:'space',idempotency_key:'original-bundle',change};
+  const binding={device_id:'tv',bundle_id:bundle.bundle_id,model_revision:revision,revision:'binding',bound_at:'2026-11-02T00:00:00Z'};
+  const op={operation_id:'modelop-bundle',request,request_digest:await documentDigest(request),status:'applied',reason:null,result:{type:'binding',value:binding},created_at:binding.bound_at};
+  await verifyModelOperation(op,request);verifyModelBinding({device_id:'tv',model_revision:revision,binding,trust_active:true},'tv');
+  for(const edit of [v=>{v.result.value.installation_id='install-'+'a'.repeat(64);},v=>{delete v.result.value.bundle_id;},v=>{v.result.value.bundle_id='bundle-'+'a'.repeat(64);},v=>{v.result.value.model_revision='sha256:'+'a'.repeat(64);},v=>{v.result.value.device_id='other';}]) {
+    const bad=structuredClone(op);edit(bad);await assert.rejects(verifyModelOperation(bad,request));
+  }
+});
+
+test('内置目录CLI验证真实正文摘要与精确目标，拒绝篡改目录', {timeout:15000}, async t=>{
+  const model=JSON.parse(await readFile(path.join(root,'contracts/models/android-tv-agent.json'),'utf8'));
+  const revision=await documentDigest(model),bundle={bundle_id:'bundle-'+revision.slice(7),model_revision:revision,model};
+  let corrupt=false;
+  const server=createServer((req,res)=>{res.setHeader('Content-Type','application/json');const item=corrupt?{...bundle,model_revision:'sha256:'+'0'.repeat(64)}:bundle;res.end(JSON.stringify(req.url.endsWith('/model-bundles')?{items:[item],next_cursor:null}:item));});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve);}));
+  const env={...process.env,LIMEIOT_TOKEN:'owner',LIMEIOT_ENDPOINT:'http://127.0.0.1:'+server.address().port};delete env.LIMEIOT_TOKEN_FILE;
+  async function cli(operation,id,code=0) {let result;try{result=await exec(process.execPath,['packages/cli/src/main.mjs','invoke',operation,'--space-id','space',...(id?['--id',id]:[])],{cwd:root,env,timeout:6000});}catch(error){result=error;}assert.equal(result.code??0,code,result.stderr);return result;}
+  assert.equal(JSON.parse((await cli('model-bundles.list')).stdout).items[0].bundle_id,bundle.bundle_id);
+  assert.equal(JSON.parse((await cli('model-bundles.get',bundle.bundle_id)).stdout).model_revision,revision);
+  await cli('model-bundles.get','bundle-'+'0'.repeat(64),5);corrupt=true;await cli('model-bundles.list',null,5);
 });
 
 test('本地模型决定绑定完整原请求，拒绝伪造成功、跨空间及错误资源', async () => {

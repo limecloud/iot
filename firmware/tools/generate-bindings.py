@@ -90,7 +90,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    for name in ("lamp", "button"):
+    for name in ("lamp", "button", "environment"):
         target = ROOT / "firmware/generated" / f"{name}.h"
         content = generate(name)
         if args.check:

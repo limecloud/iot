@@ -1,4 +1,5 @@
 #include "limeiot_espidf.h"
+#include "credential_window.h"
 #include "crypto.h"
 #include "limeiot_ota_log.h"
 #include "limeiot_ota_device.h"
@@ -48,15 +49,26 @@ struct li_espidf {
     atomic_bool connected, ready, reconnect;
     atomic_uint generation;
     unsigned executing_generation;
+    li_credential_window_t credential_window;
     work_t incoming;
     size_t received;
     int subscription;
 };
 static const char *TAG = "limeiot";
+static bool credentials_current(li_espidf_t *adapter) {
+    bool trusted = adapter->options.trusted_clock(adapter->options.driver_context);
+    bool valid = li_credential_window_check(&adapter->credential_window, trusted)
+        && li_credential_window_check(&adapter->credential_window, adapter->options.trusted_clock(adapter->options.driver_context));
+    if (!valid) {
+        atomic_store(&adapter->ready, false);
+        if (atomic_exchange(&adapter->connected, false)) atomic_fetch_add(&adapter->generation, 1);
+    }
+    return valid;
+}
 static bool ota_time(void *, int64_t *);
 static bool ota_current(void *context) {
     li_espidf_t *adapter=context;
-    return atomic_load(&adapter->connected)&&adapter->executing_generation==atomic_load(&adapter->generation)
+    return credentials_current(adapter)&&atomic_load(&adapter->connected)&&adapter->executing_generation==atomic_load(&adapter->generation)
         &&adapter->options.trusted_clock(adapter->options.driver_context);
 }
 static li_error_t ota_stage(void *context, const li_ota_candidate_t *candidate, const li_ota_transfer_guard_t *guard,
@@ -127,12 +139,16 @@ static bool storage_write(void *context, unsigned slot, const char *data, size_t
 }
 static bool publish(void *context, const char *topic, const char *data, size_t length) {
     li_espidf_t *adapter = context;
-    if (!atomic_load(&adapter->connected) || adapter->executing_generation != atomic_load(&adapter->generation)) return false;
+    if (!credentials_current(adapter) || !atomic_load(&adapter->connected) || adapter->executing_generation != atomic_load(&adapter->generation)) return false;
     return esp_mqtt_client_enqueue(adapter->mqtt, topic, data, (int)length, 1, false, true) >= 0;
 }
 static bool read_property(void *context, const char *path, li_value_t *value) {
     li_espidf_t *adapter = context;
     return adapter->options.read_property(adapter->options.driver_context, path, value);
+}
+static bool read_observation(void *context, const char *path, li_observation_t *value) {
+    li_espidf_t *adapter = context;
+    return adapter->options.read_observation(adapter->options.driver_context, path, value);
 }
 static bool read_device_info(void *context, li_device_info_t *info) {
     li_espidf_t *adapter = context;
@@ -140,13 +156,14 @@ static bool read_device_info(void *context, li_device_info_t *info) {
 }
 static li_apply_result_t write_property(void *context, const char *path, li_value_t value) {
     li_espidf_t *adapter = context;
-    if (!atomic_load(&adapter->connected) || adapter->executing_generation != atomic_load(&adapter->generation) || !adapter->options.trusted_clock(adapter->options.driver_context)
+    if (!credentials_current(adapter) || !atomic_load(&adapter->connected) || adapter->executing_generation != atomic_load(&adapter->generation) || !adapter->options.trusted_clock(adapter->options.driver_context)
         || li_ota_log_blocked(adapter->ota_log)) return LI_NOT_APPLIED;
     return adapter->options.write_property(adapter->options.driver_context, path, value);
 }
 static void reset_incoming(li_espidf_t *adapter) { free(adapter->incoming.payload); memset(&adapter->incoming, 0, sizeof(adapter->incoming)); adapter->received = 0; }
 static void mqtt_event(void *context, esp_event_base_t base, int32_t event_id, void *event_data) {
     (void)base; li_espidf_t *adapter = context; esp_mqtt_event_handle_t event = event_data;
+    if (event_id != MQTT_EVENT_DISCONNECTED && !credentials_current(adapter)) { reset_incoming(adapter); return; }
     if (event_id == MQTT_EVENT_CONNECTED) {
         reset_incoming(adapter); atomic_fetch_add(&adapter->generation, 1); atomic_store(&adapter->connected, true);
         char topic[256]; snprintf(topic, sizeof(topic), "limeiot/v1/%s/%s/down/+", adapter->options.core.space_id, adapter->options.core.device_id);
@@ -154,6 +171,7 @@ static void mqtt_event(void *context, esp_event_base_t base, int32_t event_id, v
         if (adapter->subscription < 0) atomic_store(&adapter->reconnect, true);
     } else if (event_id == MQTT_EVENT_DISCONNECTED) {
         atomic_store(&adapter->connected, false); atomic_store(&adapter->ready, false); atomic_fetch_add(&adapter->generation, 1); reset_incoming(adapter);
+        atomic_store(&adapter->reconnect, true);
     } else if (event_id == MQTT_EVENT_SUBSCRIBED && event->msg_id == adapter->subscription) {
         if (event->data_len != 1 || !event->data || (unsigned char)event->data[0] > 2) { atomic_store(&adapter->reconnect, true); return; }
         work_t work = {.kind = WORK_CONNECTED, .generation = atomic_load(&adapter->generation)};
@@ -180,12 +198,28 @@ malformed:
 }
 static void worker(void *context) {
     li_espidf_t *adapter = context;
+    bool transport_stopped = false;
+    int64_t next_reconnect = 0;
     for (;;) {
-        if (atomic_exchange(&adapter->reconnect, false)) { li_disconnected(adapter->core); atomic_store(&adapter->ready, false); (void)esp_mqtt_client_reconnect(adapter->mqtt); }
+        if (!credentials_current(adapter)) {
+            li_disconnected(adapter->core);
+            if (!transport_stopped) transport_stopped = esp_mqtt_client_stop(adapter->mqtt) == ESP_OK;
+        } else if (atomic_exchange(&adapter->reconnect, false)) {
+            li_disconnected(adapter->core); atomic_store(&adapter->ready, false);
+            if (atomic_exchange(&adapter->connected, false)) atomic_fetch_add(&adapter->generation, 1);
+            int64_t now = monotonic_ms(adapter);
+            if (now >= next_reconnect) {
+                next_reconnect = now + 5000;
+                if (esp_mqtt_client_reconnect(adapter->mqtt) != ESP_OK) {
+                    (void)esp_mqtt_client_disconnect(adapter->mqtt);
+                    atomic_store(&adapter->reconnect, true);
+                }
+            } else atomic_store(&adapter->reconnect, true);
+        }
         work_t work = {0};
         if (xQueueReceive(adapter->queue, &work, pdMS_TO_TICKS(100)) == pdTRUE) {
             li_error_t error = LI_IGNORED;
-            if (atomic_load(&adapter->connected) && work.generation == atomic_load(&adapter->generation)) {
+            if (credentials_current(adapter) && atomic_load(&adapter->connected) && work.generation == atomic_load(&adapter->generation)) {
                 adapter->executing_generation = work.generation;
                 if (work.kind == WORK_CONNECTED) error = li_connected(adapter->core);
                 else if (work.kind == WORK_MESSAGE) error = li_receive(adapter->core, work.topic, work.payload, work.length, work.retained);
@@ -194,12 +228,12 @@ static void worker(void *context) {
             free(work.payload);
             if (error != LI_OK && error != LI_IGNORED) ESP_LOGW(TAG, "device operation: %s", li_error_code(error));
         }
-        if (!atomic_load(&adapter->connected) || adapter->executing_generation != atomic_load(&adapter->generation)) li_disconnected(adapter->core);
+        if (!credentials_current(adapter) || !atomic_load(&adapter->connected) || adapter->executing_generation != atomic_load(&adapter->generation)) li_disconnected(adapter->core);
         else {
             li_error_t error = li_tick(adapter->core);
             if (error == LI_CLOCK) atomic_store(&adapter->reconnect, true);
         }
-        atomic_store(&adapter->ready, li_ready(adapter->core) && atomic_load(&adapter->connected) && adapter->executing_generation == atomic_load(&adapter->generation));
+        atomic_store(&adapter->ready, credentials_current(adapter) && li_ready(adapter->core) && atomic_load(&adapter->connected) && adapter->executing_generation == atomic_load(&adapter->generation));
     }
 }
 li_error_t li_espidf_start(const li_espidf_options_t *options, li_espidf_t **result) {
@@ -227,13 +261,16 @@ li_error_t li_espidf_start(const li_espidf_options_t *options, li_espidf_t **res
     }
     li_espidf_t *adapter = calloc(1, sizeof(*adapter)); if (!adapter) return LI_CAPACITY;
     adapter->options = *options;
-    if (nvs_flash_init_partition("journal") != ESP_OK || nvs_open_from_partition("journal", "receipts", NVS_READWRITE, &adapter->journal) != ESP_OK) { free(adapter); return LI_STORAGE; }
+    if (!li_credential_window_open(&adapter->credential_window, options->private_key_pem, options->certificate_pem,
+            options->ca_pem, options->core.device_id)
+        || !credentials_current(adapter)) { free(adapter); return LI_INVALID; }
+    if (li_espidf_storage_init_partition("journal") != LI_OK || nvs_open_from_partition("journal", "receipts", NVS_READWRITE, &adapter->journal) != ESP_OK) { free(adapter); return LI_STORAGE; }
     if (nvs_open_from_partition("journal","ota",NVS_READWRITE,&adapter->ota_storage)!=ESP_OK) { nvs_close(adapter->journal); free(adapter); return LI_STORAGE; }
     li_ota_crypto_t ota_crypto; li_error_t log_error=LI_INVALID;
     li_ota_log_ports_t log_ports={adapter,ota_log_read,ota_log_write,ota_clock_ms};
     if (li_espidf_ota_crypto(&ota_crypto)) adapter->ota_log=li_ota_log_open(&options->core,&ota_crypto,&log_ports,&log_error);
     if (!adapter->ota_log) { close_ota_log(adapter); nvs_close(adapter->journal); free(adapter); return log_error; }
-    li_ports_t ports = {adapter, random_bytes, monotonic_ms, li_esp_sha256, storage_read, storage_write, publish, read_property, write_property, options->read_device_info ? read_device_info : NULL}; li_error_t error;
+    li_ports_t ports = {adapter, random_bytes, monotonic_ms, li_esp_sha256, storage_read, storage_write, publish, read_property, write_property, options->read_device_info ? read_device_info : NULL, options->read_observation ? read_observation : NULL}; li_error_t error;
     adapter->core = li_core_create(&options->core, &ports, &error);
     if (!adapter->core) { close_ota_log(adapter); nvs_close(adapter->journal); free(adapter); return error; }
     li_ota_device_ports_t device_ports={adapter,ota_running,ota_time};
@@ -255,7 +292,7 @@ li_error_t li_espidf_start(const li_espidf_options_t *options, li_espidf_t **res
         .credentials.client_id = options->core.device_id,
         .credentials.authentication = {.certificate = options->certificate_pem, .key = options->private_key_pem},
         .session = {.protocol_ver = MQTT_PROTOCOL_V_5, .keepalive = 10, .disable_clean_session = false},
-        .network = {.reconnect_timeout_ms = 5000, .timeout_ms = 8000},
+        .network = {.disable_auto_reconnect = true, .reconnect_timeout_ms = 5000, .timeout_ms = 8000},
         .buffer = {.size = 4096, .out_size = 4096}, .outbox.limit = 32768, .task = {.stack_size = 6144, .priority = 5},
     };
     adapter->mqtt = esp_mqtt_client_init(&config);
@@ -272,7 +309,10 @@ capacity_error:
     reset_incoming(adapter);
     vQueueDelete(adapter->queue); li_core_destroy(adapter->core); close_ota_log(adapter); nvs_close(adapter->journal); free(adapter); return LI_CAPACITY;
 }
-bool li_espidf_ready(const li_espidf_t *adapter) { return adapter && atomic_load(&adapter->ready); }
+bool li_espidf_ready(const li_espidf_t *adapter) {
+    return adapter && atomic_load(&adapter->ready)
+        && li_credential_window_current(&adapter->credential_window, adapter->options.trusted_clock(adapter->options.driver_context));
+}
 static bool ota_time(void *context, int64_t *seconds) {
     li_espidf_t *adapter = context;
     if (!adapter->options.trusted_clock(adapter->options.driver_context)) return false;

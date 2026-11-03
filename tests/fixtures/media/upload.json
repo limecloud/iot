@@ -1,0 +1,448 @@
+{
+  "change": {
+    "type": "media.upload",
+    "content_base64": "UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQIAAAAAAA==",
+    "retain_seconds": 600
+  },
+  "original": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "idempotency_key": "original",
+    "request_digest": "sha256:ac0fbee934b792b5bc413cfd8580a6b67577936f30bf3ec61e2a0ed59796eb43",
+    "change": {
+      "type": "media.upload",
+      "content_digest": "sha256:4aebda3a657a0d8f532d11ceacb1679081d7bdf7d7d301a53f1096af3580be91",
+      "byte_length": 46,
+      "audio": {
+        "sample_rate": 8000,
+        "channels": 1,
+        "bits_per_sample": 16,
+        "frames": 1
+      },
+      "retain_seconds": 600
+    }
+  },
+  "operation": {
+    "space_id": "space-demo",
+    "operation_id": "mediaop-original",
+    "idempotency_key": "original",
+    "request_digest": "sha256:ac0fbee934b792b5bc413cfd8580a6b67577936f30bf3ec61e2a0ed59796eb43",
+    "kind": "media.upload",
+    "created_at": "2026-11-03T00:00:00Z",
+    "result": {
+      "type": "uploaded",
+      "media": {
+        "media_id": "media-original",
+        "space_id": "space-demo",
+        "content_type": "audio/wav",
+        "purpose": "device_playback",
+        "actor": "local_owner",
+        "byte_length": 46,
+        "content_digest": "sha256:4aebda3a657a0d8f532d11ceacb1679081d7bdf7d7d301a53f1096af3580be91",
+        "audio": {
+          "sample_rate": 8000,
+          "channels": 1,
+          "bits_per_sample": 16,
+          "frames": 1
+        },
+        "created_at": "2026-11-03T00:00:00Z",
+        "expires_at": "2026-11-03T00:10:00Z"
+      }
+    }
+  },
+  "page": {
+    "space_id": "space-demo",
+    "configured": true,
+    "items": [
+      {
+        "metadata": {
+          "media_id": "media-original",
+          "space_id": "space-demo",
+          "content_type": "audio/wav",
+          "purpose": "device_playback",
+          "actor": "local_owner",
+          "byte_length": 46,
+          "content_digest": "sha256:4aebda3a657a0d8f532d11ceacb1679081d7bdf7d7d301a53f1096af3580be91",
+          "audio": {
+            "sample_rate": 8000,
+            "channels": 1,
+            "bits_per_sample": 16,
+            "frames": 1
+          },
+          "created_at": "2026-11-03T00:00:00Z",
+          "expires_at": "2026-11-03T00:10:00Z"
+        },
+        "available": true,
+        "deleted_at": null
+      }
+    ],
+    "grants": [
+      {
+        "grant_id": "grant-page",
+        "media_id": "media-original",
+        "device_id": "speaker",
+        "binding_revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "created_at": "2026-11-03T00:00:00Z",
+        "expires_at": "2026-11-03T00:05:00Z",
+        "active_in_process": true,
+        "binding_current": true,
+        "revoked_at": null,
+        "pulls": [
+          {
+            "prepared_at": "2026-11-03T00:00:01Z",
+            "method": "GET",
+            "range_start": 0,
+            "range_end": 45,
+            "status": 206
+          }
+        ]
+      }
+    ],
+    "next_cursor": null
+  },
+  "invalid_pages": [
+    {
+      "space_id": "space-demo",
+      "configured": true,
+      "items": [
+        {
+          "metadata": {
+            "media_id": "media-original",
+            "space_id": "space-demo",
+            "content_type": "audio/wav",
+            "purpose": "device_playback",
+            "actor": "local_owner",
+            "byte_length": 46,
+            "content_digest": "sha256:4aebda3a657a0d8f532d11ceacb1679081d7bdf7d7d301a53f1096af3580be91",
+            "audio": {
+              "sample_rate": 8000,
+              "channels": 1,
+              "bits_per_sample": 16,
+              "frames": 1
+            },
+            "created_at": "2026-11-03T00:00:00Z",
+            "expires_at": "2026-11-03T00:10:00Z"
+          },
+          "available": true,
+          "deleted_at": null
+        },
+        {
+          "metadata": {
+            "media_id": "media-original",
+            "space_id": "space-demo",
+            "content_type": "audio/wav",
+            "purpose": "device_playback",
+            "actor": "local_owner",
+            "byte_length": 46,
+            "content_digest": "sha256:4aebda3a657a0d8f532d11ceacb1679081d7bdf7d7d301a53f1096af3580be91",
+            "audio": {
+              "sample_rate": 8000,
+              "channels": 1,
+              "bits_per_sample": 16,
+              "frames": 1
+            },
+            "created_at": "2026-11-03T00:00:00Z",
+            "expires_at": "2026-11-03T00:10:00Z"
+          },
+          "available": true,
+          "deleted_at": null
+        }
+      ],
+      "grants": [
+        {
+          "grant_id": "grant-page",
+          "media_id": "media-original",
+          "device_id": "speaker",
+          "binding_revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "created_at": "2026-11-03T00:00:00Z",
+          "expires_at": "2026-11-03T00:05:00Z",
+          "active_in_process": true,
+          "binding_current": true,
+          "revoked_at": null,
+          "pulls": [
+            {
+              "prepared_at": "2026-11-03T00:00:01Z",
+              "method": "GET",
+              "range_start": 0,
+              "range_end": 45,
+              "status": 206
+            }
+          ]
+        }
+      ],
+      "next_cursor": null
+    },
+    {
+      "space_id": "space-demo",
+      "configured": true,
+      "items": [
+        {
+          "metadata": {
+            "media_id": "media-original",
+            "space_id": "space-demo",
+            "content_type": "audio/wav",
+            "purpose": "device_playback",
+            "actor": "local_owner",
+            "byte_length": 46,
+            "content_digest": "sha256:4aebda3a657a0d8f532d11ceacb1679081d7bdf7d7d301a53f1096af3580be91",
+            "audio": {
+              "sample_rate": 8000,
+              "channels": 1,
+              "bits_per_sample": 16,
+              "frames": 1
+            },
+            "created_at": "2026-11-03T00:00:00Z",
+            "expires_at": "2026-11-03T00:10:00Z"
+          },
+          "available": true,
+          "deleted_at": null
+        }
+      ],
+      "grants": [
+        {
+          "grant_id": "grant-page",
+          "media_id": "media-original",
+          "device_id": "speaker",
+          "binding_revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "created_at": "2026-11-03T00:00:00Z",
+          "expires_at": "2026-11-03T00:05:00Z",
+          "active_in_process": true,
+          "binding_current": true,
+          "revoked_at": null,
+          "pulls": [
+            {
+              "prepared_at": "2026-11-03T00:00:01Z",
+              "method": "GET",
+              "range_start": 0,
+              "range_end": 45,
+              "status": 206
+            }
+          ]
+        },
+        {
+          "grant_id": "grant-page",
+          "media_id": "media-original",
+          "device_id": "speaker",
+          "binding_revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "created_at": "2026-11-03T00:00:00Z",
+          "expires_at": "2026-11-03T00:05:00Z",
+          "active_in_process": true,
+          "binding_current": true,
+          "revoked_at": null,
+          "pulls": [
+            {
+              "prepared_at": "2026-11-03T00:00:01Z",
+              "method": "GET",
+              "range_start": 0,
+              "range_end": 45,
+              "status": 206
+            }
+          ]
+        }
+      ],
+      "next_cursor": null
+    },
+    {
+      "space_id": "space-demo",
+      "configured": true,
+      "items": [
+        {
+          "metadata": {
+            "media_id": "media-original",
+            "space_id": "space-demo",
+            "content_type": "audio/wav",
+            "purpose": "device_playback",
+            "actor": "local_owner",
+            "byte_length": 46,
+            "content_digest": "sha256:4aebda3a657a0d8f532d11ceacb1679081d7bdf7d7d301a53f1096af3580be91",
+            "audio": {
+              "sample_rate": 8000,
+              "channels": 1,
+              "bits_per_sample": 16,
+              "frames": 1
+            },
+            "created_at": "2026-11-03T00:00:00Z",
+            "expires_at": "2026-11-03T00:10:00Z"
+          },
+          "available": true,
+          "deleted_at": null
+        }
+      ],
+      "grants": [
+        {
+          "grant_id": "grant-page",
+          "media_id": "media-other",
+          "device_id": "speaker",
+          "binding_revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "created_at": "2026-11-03T00:00:00Z",
+          "expires_at": "2026-11-03T00:05:00Z",
+          "active_in_process": true,
+          "binding_current": true,
+          "revoked_at": null,
+          "pulls": [
+            {
+              "prepared_at": "2026-11-03T00:00:01Z",
+              "method": "GET",
+              "range_start": 0,
+              "range_end": 45,
+              "status": 206
+            }
+          ]
+        }
+      ],
+      "next_cursor": null
+    },
+    {
+      "space_id": "space-demo",
+      "configured": true,
+      "items": [
+        {
+          "metadata": {
+            "media_id": "media-original",
+            "space_id": "space-demo",
+            "content_type": "audio/wav",
+            "purpose": "device_playback",
+            "actor": "local_owner",
+            "byte_length": 46,
+            "content_digest": "sha256:4aebda3a657a0d8f532d11ceacb1679081d7bdf7d7d301a53f1096af3580be91",
+            "audio": {
+              "sample_rate": 8000,
+              "channels": 1,
+              "bits_per_sample": 16,
+              "frames": 1
+            },
+            "created_at": "2026-11-03T00:00:00Z",
+            "expires_at": "2026-11-03T00:10:00Z"
+          },
+          "available": true,
+          "deleted_at": null
+        }
+      ],
+      "grants": [
+        {
+          "grant_id": "grant-page",
+          "media_id": "media-original",
+          "device_id": "speaker",
+          "binding_revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "created_at": "2026-11-03T00:00:00Z",
+          "expires_at": "2026-11-03T00:05:00Z",
+          "active_in_process": true,
+          "binding_current": true,
+          "revoked_at": "2026-11-03T00:00:01Z",
+          "pulls": [
+            {
+              "prepared_at": "2026-11-03T00:00:01Z",
+              "method": "GET",
+              "range_start": 0,
+              "range_end": 45,
+              "status": 206
+            }
+          ]
+        }
+      ],
+      "next_cursor": null
+    },
+    {
+      "space_id": "space-demo",
+      "configured": true,
+      "items": [
+        {
+          "metadata": {
+            "media_id": "media-original",
+            "space_id": "space-demo",
+            "content_type": "audio/wav",
+            "purpose": "device_playback",
+            "actor": "local_owner",
+            "byte_length": 46,
+            "content_digest": "sha256:4aebda3a657a0d8f532d11ceacb1679081d7bdf7d7d301a53f1096af3580be91",
+            "audio": {
+              "sample_rate": 8000,
+              "channels": 1,
+              "bits_per_sample": 16,
+              "frames": 1
+            },
+            "created_at": "2026-11-03T00:00:00Z",
+            "expires_at": "2026-11-03T00:10:00Z"
+          },
+          "available": true,
+          "deleted_at": null
+        }
+      ],
+      "grants": [
+        {
+          "grant_id": "grant-page",
+          "media_id": "media-original",
+          "device_id": "speaker",
+          "binding_revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "created_at": "2026-11-03T00:00:00Z",
+          "expires_at": "2026-11-03T00:05:00Z",
+          "active_in_process": true,
+          "binding_current": true,
+          "revoked_at": null,
+          "pulls": [
+            {
+              "prepared_at": "2026-11-03T00:00:01Z",
+              "method": "GET",
+              "range_start": 0,
+              "range_end": 46,
+              "status": 206
+            }
+          ]
+        }
+      ],
+      "next_cursor": null
+    },
+    {
+      "space_id": "space-demo",
+      "configured": true,
+      "items": [
+        {
+          "metadata": {
+            "media_id": "media-original",
+            "space_id": "space-demo",
+            "content_type": "audio/wav",
+            "purpose": "device_playback",
+            "actor": "local_owner",
+            "byte_length": 46,
+            "content_digest": "sha256:4aebda3a657a0d8f532d11ceacb1679081d7bdf7d7d301a53f1096af3580be91",
+            "audio": {
+              "sample_rate": 8000,
+              "channels": 1,
+              "bits_per_sample": 16,
+              "frames": 1
+            },
+            "created_at": "2026-11-03T00:00:00Z",
+            "expires_at": "2026-11-03T00:10:00Z"
+          },
+          "available": true,
+          "deleted_at": null
+        }
+      ],
+      "grants": [
+        {
+          "grant_id": "grant-page",
+          "media_id": "media-original",
+          "device_id": "speaker",
+          "binding_revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "created_at": "2026-11-03T00:00:00Z",
+          "expires_at": "2026-11-03T00:05:00Z",
+          "active_in_process": true,
+          "binding_current": true,
+          "revoked_at": null,
+          "pulls": [
+            {
+              "prepared_at": "2026-11-03T00:00:01Z",
+              "method": "GET",
+              "range_start": 0,
+              "range_end": 45,
+              "status": 206
+            }
+          ],
+          "token": "not-public"
+        }
+      ],
+      "next_cursor": null
+    }
+  ]
+}

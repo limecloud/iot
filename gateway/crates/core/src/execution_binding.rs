@@ -424,6 +424,10 @@ impl Data {
                     "ota_task_conflict",
                 )?;
                 ensure(
+                    !self.execution_plan_reserves_device(device_id),
+                    "execution_plan_conflict",
+                )?;
+                ensure(
                     !self.commands.values().any(|command| {
                         command.request.device_id == *device_id && command.status == "dispatched"
                     }),

@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.dev/contracts/speech.schema.json",
+  "title": "有界本地文字转语音",
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "voice": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+    },
+    "input": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "voice": {
+          "$ref": "#/$defs/voice"
+        },
+        "retain_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 86400
+        },
+        "expires_at": {
+          "$ref": "#/$defs/time"
+        }
+      },
+      "required": [
+        "text",
+        "voice",
+        "retain_seconds",
+        "expires_at"
+      ],
+      "additionalProperties": false
+    },
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "adapter": {
+          "const": "local-http-speech-v1"
+        },
+        "revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_:./-]+$"
+        },
+        "data_location": {
+          "const": "local"
+        }
+      },
+      "required": [
+        "adapter",
+        "revision",
+        "model",
+        "data_location"
+      ],
+      "additionalProperties": false
+    },
+    "task": {
+      "type": "object",
+      "properties": {
+        "synthesis_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "space_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/identifier"
+        },
+        "request_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "input_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "input_characters": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "voice": {
+          "$ref": "#/$defs/voice"
+        },
+        "retain_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 86400
+        },
+        "expires_at": {
+          "$ref": "#/$defs/time"
+        },
+        "deployment": {
+          "$ref": "#/$defs/deployment"
+        },
+        "created_at": {
+          "$ref": "#/$defs/time"
+        },
+        "updated_at": {
+          "$ref": "#/$defs/time"
+        },
+        "status": {
+          "enum": [
+            "running",
+            "succeeded",
+            "failed",
+            "unknown",
+            "discarded"
+          ]
+        },
+        "media_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error_code": {
+          "oneOf": [
+            {
+              "enum": [
+                "speech_output_discarded",
+                "speech_provider_unknown",
+                "speech_deadline_exceeded",
+                "speech_interrupted",
+                "speech_provider_rejected",
+                "invalid_speech_audio",
+                "speech_output_too_large",
+                "speech_output_unavailable",
+                "speech_origin_not_local",
+                "speech_provider_unavailable"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "synthesis_id",
+        "space_id",
+        "idempotency_key",
+        "request_digest",
+        "input_digest",
+        "input_characters",
+        "voice",
+        "retain_seconds",
+        "expires_at",
+        "deployment",
+        "created_at",
+        "updated_at",
+        "status",
+        "media_id",
+        "error_code"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$ref": "#/$defs/input"
+}

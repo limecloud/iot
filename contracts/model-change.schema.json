@@ -124,6 +124,52 @@
           ]
         }
       }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "device_id",
+        "bundle_id",
+        "expected_model_revision",
+        "expected_binding_revision"
+      ],
+      "properties": {
+        "type": {
+          "const": "devices.bind-bundle"
+        },
+        "device_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "expected_model_revision": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_binding_revision": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bundle_id": {
+          "type": "string",
+          "pattern": "^bundle-[a-f0-9]{64}$"
+        }
+      }
     }
   ],
   "$defs": {

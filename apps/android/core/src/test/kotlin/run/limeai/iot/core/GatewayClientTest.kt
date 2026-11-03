@@ -54,7 +54,7 @@ class GatewayClientTest {
         assertEquals(42, body["operation"]!!.jsonObject["value"]!!.jsonPrimitive.int)
     }
     @Test fun actualGatewayDeviceEvidenceAndRevocation() = runBlocking {
-        if (System.getenv("LIMEIOT_ACTION_CHECK") == "1") return@runBlocking
+        if (System.getenv("LIMEIOT_ACTION_CHECK") == "1" || System.getenv("LIMEIOT_RULE_ACTION_CHECK") == "1") return@runBlocking
         val endpoint = System.getenv("LIMEIOT_ENDPOINT") ?: return@runBlocking
         val client = GatewayClient(endpoint, allowLoopbackHTTP = true)
         client.login(System.getenv("LIMEIOT_TOKEN"))

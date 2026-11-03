@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "case": "Gootuan light-and-touch integration",
+  "verified_at": "2026-11-03T02:52:50.616479+00:00",
+  "environment": {
+    "node": "v24.21.0",
+    "gateway_mode": "loopback_simulation",
+    "isolated_stack": true,
+    "public_network_services": false
+  },
+  "commands": [
+    {
+      "command": "cargo build --locked -p limeiot-model-validator -p limeiot-gateway -p limeiot-simulator",
+      "exit_code": 0,
+      "note": "Current workspace build completed with existing up-to-date targets."
+    },
+    {
+      "command": "npm exec --yes --package=node@24.21.0 -- node docs/examples/gootuan/verify.mjs --integration",
+      "exit_code": 0
+    }
+  ],
+  "result": {
+    "formal_schema": true,
+    "shared_rust_model_validator": "limeiot.model/1.1.0",
+    "model_revision": "sha256:684f4696d47162158da23e948ffe2e5e19677a270e4f9a96670fe42f10154039",
+    "invalid_touch_rejected": true,
+    "conflicting_rule_operations_rejected": true,
+    "real_http": true,
+    "real_mqtt": true,
+    "real_sqlite": true,
+    "hardware": false,
+    "motion": false,
+    "beat_synchronization": false,
+    "simulation_zero_effects": true,
+    "two_virtual_light_results": true,
+    "duplicate_and_historical_event_no_replay": true,
+    "rule_stopped": true
+  },
+  "artifacts": {
+    "local_ignored_record": ".dev/gootuan-example-MMmeKh/verification.json",
+    "credentials_in_record": false
+  },
+  "input_sha256": {
+    "docs/examples/gootuan/model.json": "6a9f62a0c5b255e664d9af70ffa9c8dd9af0b97cfa085d4ecee1041192040a52",
+    "docs/examples/gootuan/rule.json": "28ebe694457badf75be91cfd54b667bf79e6210b4a6f0baaab870a86e563a16f",
+    "docs/examples/gootuan/event.json": "c9dadaa02c10a1e317768c6b3475b3d56babedce7cb79fc7f6097e1c0d0e50a8",
+    "docs/examples/gootuan/verify.mjs": "b250cf096581ef5739ec3aae625a8e46db9d8c5fe66eec23c3aaf26d8ac54211"
+  },
+  "visual": {
+    "path": "assets/gootuan-master.png",
+    "sha256": "dd62e5e0ebf3960c44fc0f45393a8d36e5a723c84bf50494168f36f24f26197e",
+    "baseline": "v0.2",
+    "concept_only": true
+  },
+  "boundaries": [
+    "Both endpoints are Rust software simulators. No physical toy, real touch sensor, motor, camera or audio output was tested.",
+    "The rule independently sets two virtual lights. No simultaneous output or beat/speech synchronization bound is claimed.",
+    "The fixture has zero cooldown; the original occurred_at is preserved for an identical duplicate. Three accepted device.event notifications leave one run and two commands.",
+    "Stopping the rule prevents future triggers; it does not cancel accepted commands or turn off the lights.",
+    "No production database, existing gateway state, cloud control API, adjacent private checkout or physical enrollment was used."
+  ],
+  "documentation_checks": {
+    "integration_readmes": {
+      "command": "python3 .agents/skills/domain-knowledge-research/scripts/check_knowledge.py iot/docs/integrations/gootuan",
+      "exit_code": 0,
+      "markdown_files": 2
+    },
+    "example_readmes": {
+      "command": "python3 .agents/skills/domain-knowledge-research/scripts/check_knowledge.py iot/docs/examples/gootuan",
+      "exit_code": 0,
+      "markdown_files": 2
+    },
+    "script_syntax": {
+      "command": "node --check docs/examples/gootuan/verify.mjs",
+      "exit_code": 0
+    },
+    "targeted_git_diff_check": {
+      "paths": [
+        "README.md",
+        "docs/README.md",
+        "docs/examples/README.md",
+        "llms.txt",
+        "docs/catalog.json"
+      ],
+      "exit_code": 0
+    },
+    "recorded_input_hashes_match": true,
+    "visual_matches_provenance": true,
+    "catalog_entry_paths_exist": true,
+    "remote_urls_verified": false,
+    "new_diagrams": 0
+  }
+}

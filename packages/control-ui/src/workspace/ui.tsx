@@ -51,7 +51,7 @@ export function useResource<T>(
 export function useJournal(
   key: string,
   principal: string,
-  select: (entries: Entry[]) => Entry[],
+  select: (entries: Entry[]) => Entry[] | Promise<Entry[]>,
 ) {
   const records = useResource(key, async () =>
     select(journal(principal).list()),

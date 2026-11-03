@@ -1,0 +1,59 @@
+{
+  "schema_version": 2,
+  "model_id": "urn:limeiot:model:gootuan-show-simulator:2",
+  "model_version": "0.1.0",
+  "services": [
+    {
+      "id": "light",
+      "semantic_id": "urn:limeiot:service:light:1",
+      "properties": [{
+        "id": "level",
+        "semantic_id": "urn:limeiot:property:brightness:1",
+        "schema": {"type": "integer", "minimum": 0, "maximum": 100},
+        "access": ["read", "write", "notify"],
+        "max_age_ms": 15000
+      }],
+      "actions": [],
+      "events": []
+    },
+    {
+      "id": "show",
+      "semantic_id": "urn:limeiot:service:bounded-show:1",
+      "properties": [],
+      "actions": [{
+        "id": "run",
+        "semantic_id": "urn:limeiot:action:bounded-show:1",
+        "input": {
+          "type": "object",
+          "properties": {
+            "task_id": {"type": "string", "minLength": 1, "maxLength": 128},
+            "generation": {"type": "string", "minLength": 1, "maxLength": 128},
+            "step_id": {"type": "string", "minLength": 1, "maxLength": 128},
+            "duration_ms": {"type": "integer", "minimum": 1, "maximum": 900000}
+          },
+          "required": ["task_id", "generation", "step_id", "duration_ms"],
+          "additionalProperties": false
+        },
+        "output": {"type": "object", "additionalProperties": false},
+        "idempotent": false,
+        "risk": "low",
+        "completion": "submitted"
+      }],
+      "events": [{
+        "id": "finished",
+        "semantic_id": "urn:limeiot:event:bounded-show-finished:1",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "task_id": {"type": "string", "minLength": 1, "maxLength": 128},
+            "generation": {"type": "string", "minLength": 1, "maxLength": 128},
+            "step_id": {"type": "string", "minLength": 1, "maxLength": 128},
+            "status": {"type": "string", "enum": ["completed", "failed"]}
+          },
+          "required": ["task_id", "generation", "step_id", "status"],
+          "additionalProperties": false
+        }
+      }]
+    }
+  ]
+}

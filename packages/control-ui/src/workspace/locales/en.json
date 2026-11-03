@@ -7,6 +7,7 @@
   "gateways": "Gateways",
   "devices": "Devices",
   "firmware": "Firmware updates",
+  "media": "Audio",
   "operations": "Operations",
   "connections": "Developer connections",
   "account": "Account",
@@ -241,5 +242,12 @@
   "localControl": "Local maintenance",
   "automation": "Automations",
   "models": "Device onboarding",
-  "localGateway": "This gateway"
+  "localGateway": "This gateway",
+  "invokeAction": "Run action",
+  "includeActionField": "Include {{field}}",
+  "approveAction": "I approve running {{action}} with these inputs.",
+  "actionSubmissionBoundary": "Result boundary: input submission",
+  "actionObservationBoundary": "Result boundary: provider observation",
+  "actionInputSubmitted": "Input submitted to executor",
+  "actionEffectObserved": "Effect reported by provider"
 }

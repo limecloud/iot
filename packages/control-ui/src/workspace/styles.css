@@ -1186,3 +1186,5 @@ td button {
   .mobile-brand { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); font-weight: 600; }
   .bar-start:has(.space-picker) .mobile-brand span { display: none; }
 }
+
+.device-action{padding:20px 0;border-bottom:.5px solid var(--line)}.device-action fieldset{min-width:0;border:0;padding:0;margin:0;display:grid;gap:16px}.device-action legend{font-size:var(--font-small);font-weight:600;overflow-wrap:anywhere;padding-bottom:12px}.device-action .action-fields{gap:12px}.device-action label{display:grid;gap:8px;font-size:var(--font-small);overflow-wrap:anywhere}.device-action label.checkbox{display:flex;align-items:center;gap:8px}.device-action button{justify-self:start}.device-action input,.device-action select{max-width:100%;min-width:0}

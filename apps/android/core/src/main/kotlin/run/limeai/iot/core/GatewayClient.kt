@@ -4,6 +4,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import okhttp3.*
@@ -21,6 +22,8 @@ class GatewayException(val code: String, val status: Int = 0) : Exception(code) 
     val displayMessage: String get() = mapOf(
         "invalid_endpoint" to "请输入家庭网关的 HTTPS 地址", "unauthenticated" to "凭据无效或会话已过期", "forbidden" to "请求未获授权", "device_offline" to "设备已离线",
         "rate_limited" to "尝试次数过多，请一分钟后重试", "revision_conflict" to "规则已更新，请刷新后重试",
+        "invalid_threshold" to "阈值、单位或滞回不符合设备要求", "invalid_condition" to "条件的属性、单位或比较值不符合设备要求", "invalid_simulation" to "预演结果未通过核对，请重新预演", "rule_cycle" to "联动形成循环，请调整触发条件或执行设备",
+        "invalid_schedule" to "请检查定时时间、时区和星期", "invalid_schedule_time" to "当前时间无法计算定时，请检查网关时钟",
         "inference_not_configured" to "网关尚未配置本地模型", "inference_busy" to "已有草案正在生成，请稍后再试",
         "inference_unavailable" to "无法连接本地模型", "inference_rejected" to "本地模型拒绝了请求",
         "inference_unknown" to "生成结果未知，请查询原草案", "inference_timeout" to "模型响应超时，请查询原草案",
@@ -56,9 +59,8 @@ class OkHttpTransport : GatewayTransport {
 @Serializable private data class Failure(val error: Detail) { @Serializable data class Detail(val code: String) }
 @Serializable private data class Login(val token: String)
 @Serializable private data class Revision(val revision: String)
-@Serializable private data class Validation(val valid: Boolean, val revision: String)
-@Serializable private data class SimulatedEvent(@kotlinx.serialization.SerialName("device_id") val deviceId: String, val path: String, val historical: Boolean = false, val data: JsonElement)
-@Serializable private data class SimulationInput(val rule: Rule, val event: SimulatedEvent)
+@Serializable private data class Validation(val valid: Boolean, val revision: String, @SerialName("schedule_preview") val schedulePreview: JsonObject? = null)
+@Serializable private data class SimulationInput(val rule: Rule, val event: JsonObject)
 
 class GatewayClient(val origin: String, private val transport: GatewayTransport = OkHttpTransport(), private val store: SessionStore? = null, allowLoopbackHTTP: Boolean = false) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
@@ -70,7 +72,7 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
     }
     private fun segment(value: String) = URLEncoder.encode(value, "UTF-8").replace("+", "%20")
     private fun base(space: String) = "/api/v1/spaces/${segment(space)}"
-    private suspend inline fun <reified T> call(path: String, method: String = "GET", body: String? = null, key: String? = null, authenticated: Boolean = true, ota: Boolean = false): T = mutex.withLock {
+    private suspend inline fun <reified T> call(path: String, method: String = "GET", body: String? = null, key: String? = null, authenticated: Boolean = true, strictJSON: Boolean = false): T = mutex.withLock {
         if (authenticated && saved == null) throw GatewayException("unauthenticated", 401)
         val headers = mutableMapOf("Origin" to origin, "Cache-Control" to "no-store")
         saved?.let { headers["Cookie"] = it.cookie; headers["X-CSRF-Token"] = it.session.csrfToken }
@@ -88,7 +90,7 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
             saved = SavedSession(json.decodeFromString(response.body), cookie)
             store?.save(origin, json.encodeToString(saved))
         }
-        if (ota) json.decodeFromJsonElement(OtaJSON.parse(response.body, response = true)) else json.decodeFromString(response.body.ifEmpty { "{}" })
+        if (strictJSON) json.decodeFromJsonElement(IntegerJSON.parse(response.body)) else json.decodeFromString(response.body.ifEmpty { "{}" })
     }
     suspend fun login(token: String) { mutex.withLock { saved = null }; call<Session>("/api/v1/auth/session", "POST", json.encodeToString(Login(token)), authenticated = false) }
     suspend fun restore() {
@@ -106,12 +108,30 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
     suspend fun create(space: String, intent: CommandIntent): Command = call(base(space) + "/commands", "POST", json.encodeToString(intent.input), intent.key)
     suspend fun resolve(space: String, key: String): Command = call(base(space) + "/commands/by-key/" + segment(key))
     suspend fun command(space: String, id: String): Command = call(base(space) + "/commands/" + segment(id))
-    internal suspend fun otaCall(space: String, suffix: String, method: String = "GET", body: String? = null, key: String? = null): JsonObject = call(base(space) + suffix, method, body, key, ota = true)
+    internal suspend fun otaCall(space: String, suffix: String, method: String = "GET", body: String? = null, key: String? = null): JsonObject = call(base(space) + suffix, method, body, key, strictJSON = true)
+    internal suspend fun mediaCall(space: String, suffix: String, method: String = "GET", body: String? = null, key: String? = null): JsonObject = call(base(space) + suffix, method, body, key, strictJSON = true)
     suspend fun createDraft(reference: DraftReference, input: DraftInput): RuleDraft = call(base(reference.space) + "/rule-drafts", "POST", json.encodeToString(input), reference.key)
     suspend fun resolveDraft(reference: DraftReference): RuleDraft = call(base(reference.space) + "/rule-drafts/by-key/" + segment(reference.key))
     suspend fun simulate(space: String, rule: Rule, eventData: JsonElement): Simulation {
-        call<Validation>(base(space) + "/rules:validate", "POST", json.encodeToString(rule))
-        return call(base(space) + "/rules:simulate", "POST", json.encodeToString(SimulationInput(rule, SimulatedEvent(rule.trigger.device, rule.trigger.event, data = eventData))))
+        val validation = call<Validation>(base(space) + "/rules:validate", "POST", json.encodeToString(rule))
+        val sample = buildJsonObject {
+            if (rule.trigger.schedule != null) {
+                val at = validation.schedulePreview?.get("scheduled_at") as? JsonPrimitive ?: throw GatewayException("invalid_simulation", 502)
+                if (!at.isString) throw GatewayException("invalid_simulation", 502)
+                put("scheduled_at", at)
+                return@buildJsonObject
+            }
+            put("device_id", rule.trigger.device); put("historical", false)
+            val property = rule.trigger.property
+            if (property != null) {
+                put("path", property.path)
+                (eventData as? JsonObject)?.get("previous")?.let { put("previous", it) }
+                (eventData as? JsonObject)?.get("current")?.let { put("current", it) }
+            } else { put("path", rule.trigger.event!!); put("data", eventData) }
+        }
+        val proof = call<Simulation>(base(space) + "/rules:simulate", "POST", json.encodeToString(SimulationInput(rule, sample)))
+        try { RuleProof.verify(proof, rule, validation.valid, validation.revision) } catch (_: Exception) { throw GatewayException("invalid_simulation", 502) }
+        return proof
     }
     suspend fun deploy(space: String, rule: Rule): Deployment = call(base(space) + "/rule-deployments", "POST", json.encodeToString(rule))
     suspend fun stop(space: String, deployment: Deployment) { call<JsonObject>(base(space) + "/rule-deployments/" + segment(deployment.rule.id) + "/stop", "POST", json.encodeToString(Revision(deployment.revision))) }

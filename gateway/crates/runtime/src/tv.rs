@@ -122,6 +122,11 @@ fn build_configuration(file: File) -> Result<Adapters> {
 }
 
 impl Adapters {
+    pub fn identifiers(&self) -> impl Iterator<Item = (&str, &str)> {
+        self.entries
+            .iter()
+            .map(|entry| (entry.device_id.as_str(), entry.route.adapter_id.as_str()))
+    }
     pub fn offer(
         &self,
         data: &Data,

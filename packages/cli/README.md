@@ -1,6 +1,58 @@
 # LimeIoT CLI
 
-本地网关和独立控制面使用不同身份与工具目录。入口为仓库根的 `npm run cli --`；程序只输出 JSON/NDJSON，错误写入 stderr，不在终端输出会话材料。
+## 多设备分阶段计划
+
+使用当前本地所有者身份。先读取参与设备的精确模型、会话与可用能力，按[正式合同](../../contracts/execution-plans.md)准备创建正文：
+
+```sh
+npm run cli -- schema execution-plan-changes.create
+npm run cli -- execution-plan-changes create --space-id space-demo --input "./plan-create.json" --idempotency-key plan-create-001
+npm run cli -- execution-plans get --space-id space-demo --id family-show-001
+npm run cli -- execution-plan-changes resolve --space-id space-demo --id plan-create-001
+```
+
+创建仅保存草稿。显式启动、取消或解除占用分别使用 `plans.start`、`plans.cancel`、`plans.release` 正文，并带当前 `expected_revision`，每次明确操作使用自己的原幂等键。同键同参再次 `create` 只查询原决定；断网、404或坏摘要退出6且不补POST，异参退出4。不要删除私有原请求记录或换键绕过未知结果。
+
+当前最多8台设备、16步、15分钟，子命令仍限30秒。阶段等待实际命令证据，submitted动作还需精确关联的终态事件；重启不续演。启动过的计划明确release前保留占用。此本地软件能力不提供音频节拍、物理停车或远程云计划工具。
+
+DLNA音箱已复用`execution-adapters.list`、`execution-bindings.get`、`execution-changes.create/resolve`和`commands.create/get/resolve`。候选kind=dlna仅返回获准媒体ID/到期时间，不返回URL；`playback.play`输入`{media_id}`，`playback.stop`输入`{}`，`playback.set_volume`输入`{volume}`，仍须精确模型、期限及幂等键。先核对候选并明确bind，不凭compatible授予执行权；原请求unknown继续退出6且仅查询原键。完整配置和软件范围见[DLNA合同](../../contracts/dlna.md)，实机按用户要求跳过。
+
+本地有限音频通过`media.list`、`media-changes.create/resolve`管理，合同见[media.md](../../contracts/media.md)，机器输入见`schema media-changes.create`。上传文件可用：
+
+```bash
+npm run cli -- media upload --space-id space-demo --file "./chime.wav" \
+  --retain-seconds 600 --idempotency-key audio-upload-01
+npm run cli -- invoke media.list --space-id space-demo
+npm run cli -- invoke media-changes.resolve --space-id space-demo --id audio-upload-01
+```
+
+仅接受最长60秒、最大4MiB的16位PCM WAV，文件读取有界且拒绝符号链接。授权、撤销、删除使用`invoke media-changes.create --input "./media-change.json" --idempotency-key ...`；授权输入固定当前执行绑定修订，不在命令中提供媒体URL。先在设备页明确绑定`managed_media:true`音箱，授权后再通过原`commands.create`播放。
+
+原操作文件先同步到私有`--state-dir`，上传只保留正文摘要、格式和请求摘要，不保留base64或下载地址。同键同参再次创建只查询，异参退出4；断连或已有键查不到退出6并保留原记录，不自动补发。`resolve`有本机原记录时额外核对完整请求摘要，没有原记录时仍核对空间和原键。stdout不返回音频正文或下载凭证。
+
+本地网关和独立控制面使用不同身份与工具目录。入口为仓库根的 `npm run cli --`；命令默认输出 JSON/NDJSON，`tui` 提供交互菜单。错误写入 stderr，不在终端输出会话材料。
+
+## 本地终端任务
+
+```sh
+npm run cli -- tui --space-id space-demo
+node packages/cli/src/main.mjs tui schema
+node packages/cli/src/main.mjs tui --stdio --space-id space-demo
+```
+
+菜单按模型选择设备与能力、输入参数、核对差异后执行，支持完整多步规则的追加、编辑、重排、预演和明确启用/停用。Agent 使用无 npm 日志的 Node 入口，每行 JSON 输入和 NDJSON 输出；prepare 返回核对及 task_id，明确 commit 才发送。`--snapshot` 只读取，`--state-dir` 指定本人私有记录目录。
+
+交互菜单支持事件及属性阈值规则的创建/编辑。选择数值属性后，填写上升/下降、常用单位阈值与滞回；超精度输入拒绝重填，多步操作和毫秒冷却完整保留，`/cancel`保留原部署。预演使用simulation.tui双样本，不读取真实温度或控制设备。Agent从`state.sources`发现事件及带`kind:"property"`、`unit`的属性来源，使用`rules.prepare`提交完整规则与previous/current采样，见[自动化合同](../../contracts/rules.md)。
+
+身份沿用本地 LIMEIOT_TOKEN_FILE 或开发会话变量。原请求保存回读后单次发送，丢响应只查询，未知任务不能换键绕过。规则丢响应后的当前状态不能证明原提交决定；记录和未决状态保留。异常退出留下的锁保守拒绝写入，不自动删除。完整边界见 [终端任务合同](../../contracts/terminal-tasks.md)，检查入口 `npm run test:tui`。
+
+CLI/API与TUI可编辑有界比较与all/any条件，示例为`contracts/examples/button-conditional-light.json`。state.condition_sources发现全部可read标量，TUI支持完整树、精确单位、取消及毫秒冷却。预演条件读取网关当前快照，非空条件返回trigger_matched和condition_evaluation。Agent终端严格绑定规则摘要、完整条件证据及预计操作；触发样例有效但当前条件未满足时，可明确commit启用等待新触发，不接受伪造条件样本。直接CLI部署仍须明确调用rules.deploy。完整语义见[规则合同](../../contracts/rules.md#条件判断)。
+
+## 每周定时规则
+
+在TUI新建/编辑规则的触发列表选择“定时”，填写HH:MM、IANA时区和ISO星期（周一=1）。添加操作后预演并明确启用，支持1–16步和毫秒冷却，取消保留原部署。Agent机器流沿用rules.prepare，event_data填写null；任务会话从rules.validate取得schedule_preview.scheduled_at，预演不产生命令，commit才启用。
+
+CLI示例：`npm run cli -- invoke rules.validate --space-id space-demo --input "contracts/examples/bedtime-light.json"`。调用rules.simulate时提供完整rule及`event:{scheduled_at:"校验返回的UTC时刻"}`，再明确调用rules.deploy。部署、离线重启、漏轮询或回拨均不补发旧计划，规则触发来源不填写device。政策见[每周定时](../../contracts/rules.md#每周定时)，软件检查入口为`npm run test:rules:schedules`。
 
 ## 离线物模型校验
 
@@ -87,13 +139,15 @@ npm run cli -- invoke model-changes.create --space-id space-demo \
 npm run cli -- model-changes resolve "owner-approved-change" --space-id space-demo
 ```
 
-`model-change.json`是 `trust.add`、`trust.revoke`、`models.install` 或 `devices.bind` 其中一个动作。先由所有者独立核对公钥指纹，再保存信任，明确安装后单独绑定设备。安装预期固定网关当前发布ID，首次显式为null；绑定预期固定当前模型修订和绑定修订，新设备显式为null。完整输入和边界见[本地安装合同](../../contracts/model-release.md#本地信任安装和设备绑定)。
+`model-change.json`是 `trust.add`、`trust.revoke`、`models.install`、`devices.bind` 或 `devices.bind-bundle` 其中一个动作。先由所有者独立核对公钥指纹，再保存信任，明确安装后单独绑定设备。安装预期固定网关当前发布ID，首次显式为null；绑定预期固定当前模型修订和绑定修订，新设备显式为null。完整输入和边界见[本地安装合同](../../contracts/model-release.md#本地信任安装和设备绑定)。
 
 默认原记录保存在 `~/.local/state/limeiot/gateway/model-operations`，可通过 `--state-dir`指定父目录。文件0600、目录0700；完整origin、空间、键和原输入先耐久保存，失败零发送。同键同参再次create只GET原键，404也不补发；同键异参退出4。applied退出0、conflict退出4、未知退出6、rejected退出7。历史成功只能证明当时决定，当前信任、安装头和设备绑定须分别读取，不能据历史结果恢复已撤销资源。
 
 列表的 `next_cursor` 用 `--after "install-ID"`继续读取。`model-trusts get "trust-ID"`和`model-installations get "install-ID"`读取详情。CLI核对API资源摘要及完整原请求；密码学与兼容性由网关共享Rust执行。
 
 ### 电视适配绑定与应用发现
+
+已有设备也可明确选择随网关交付的模型：先运行 `npm run cli -- model-bundles list --space-id space-demo`，再以返回的精确ID运行 `model-bundles get "实际bundle_id" --space-id space-demo`。读取 `device-models get` 的当前模型/绑定修订后，用 `model-changes.create` 提交 `devices.bind-bundle`，正文包含device_id、bundle_id、expected_model_revision、expected_binding_revision；首次动态绑定的后者显式null。该动作不接收模型正文，不修改启动配置，不自动创建ADB执行组合或更新Agent材料。目录、来源及换模规则见 [模型合同](../../contracts/model-release.md#本地信任安装和设备绑定)，已有TV Agent跨模型的软件证据见 [24第4.19节](../../docs/24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)。
 
 使用本地所有者身份，先读取宿主候选和已有逻辑设备的当前绑定；候选配置由网关宿主准备，不接受 CLI 传入 ADB 地址或任意 Shell：
 
@@ -124,11 +178,11 @@ compose复用上面的invoke命令，输入增加native_paths与expected_native_
 }
 ```
 
-native_paths按字典序排列且唯一，须为仅动作模型的非空真子集；其余动作全部交给指定候选。当前一个原生端加一个外部候选，不支持属性/事件组合或离线切换。TV Agent材料v2可显式选择android-tv-remote逻辑模型，仍只执行并声明apps.launch；本机日志迁移不改变网关模型绑定、不批准compose。须先准备精确相同模型的网关设备，已有应用模型设备跨内置模型的完整绑定路线尚未验证。CLI可创建组合；网页当前只显示/控制/撤销组合，无创建组合的专用表单。
+native_paths按字典序排列且唯一，须为仅动作模型的非空真子集；其余动作全部交给指定候选。当前一个原生端加一个外部候选，不支持属性/事件组合或离线切换。TV Agent材料v2可显式选择android-tv-remote逻辑模型，仍只执行并声明apps.launch；本机日志迁移不改变网关模型绑定、不批准compose。须先准备精确相同模型的网关设备，已有应用模型设备可先按devices.bind-bundle明确换绑，跨模型软件证据见 [24第4.19节](../../docs/24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)，实际电视另验。CLI可创建组合；网页当前只显示/控制/撤销组合，无创建组合的专用表单。
 
 完整原请求默认先保存到 `~/.local/state/limeiot/gateway/execution-operations`；`--state-dir` 指定其父目录。落盘失败零 POST，同键同参再次 create 只 GET 原操作；404、丢响应或不能验证回执退出6，异参/修订冲突退出4，rejected退出7，applied退出0。恢复旧 applied 只读，不重新激活已撤销路径；另读 execution-bindings.get 核对当前状态。CLI 校验完整请求 JCS 摘要及结果与原输入的对应关系。
 
-device-applications.list返回当前绑定的后台发现缓存，读取fresh、observed_at、binding_revision和每个包的authorized；仅当apps.launch实际路由该ADB时可用，原生路径返回execution_offer_unavailable。发现不授权；启动仍走commands.create。宿主配置变更后需重启、读取新候选并明确绑定；核心初始配置须与数据库摘要一致，不能删库绕过。绑定/组合/撤销及快照v7读取v1–6的边界见 [执行合同](../../contracts/execution-routes.md)，协议夹具通过范围见 [进度4.14](../../docs/24-实施计划与进度.md#414-显式能力组合与文档同步)，真实JVM组合未通过及当前缺口见 [4.15](../../docs/24-实施计划与进度.md#415-tv-agent模型配置与日志迁移文档同步)。
+device-applications.list返回当前绑定的后台发现缓存，读取fresh、observed_at、binding_revision和每个包的authorized；仅当apps.launch实际路由该ADB时可用，原生路径返回execution_offer_unavailable。发现不授权；启动仍走commands.create。宿主配置变更后需重启、读取新候选并明确绑定；核心初始配置须与数据库摘要一致，不能删库绕过。绑定/组合/撤销及快照v8读取v1–8的边界见 [执行合同](../../contracts/execution-routes.md)，协议夹具通过范围见 [进度4.14](../../docs/24-实施计划与进度.md#414-显式能力组合与文档同步)，真实JVM组合未通过及当前缺口见 [4.15](../../docs/24-实施计划与进度.md#415-tv-agent模型配置与日志迁移文档同步)。
 
 电视软件套件会构建当前网页与Rust workspace，新增旅程固定使用构建的离线模型校验器，无需全局安装；显式LIMEIOT_MODEL_VALIDATOR仍优先。仓库根运行，Node版本以package.json为准：
 

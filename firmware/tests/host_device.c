@@ -5,6 +5,8 @@
 #include "ota_transfer_fixture.h"
 #include "lamp.h"
 #include "button.h"
+#include "environment.h"
+#include "limeiot_sht3x.h"
 #include "cJSON.h"
 #include <mosquitto.h>
 #include <mqtt_protocol.h>
@@ -37,7 +39,9 @@ typedef struct {
     uint32_t current_epoch;
     const li_config_t *config;
     char directory[PATH_MAX];
-    bool power, button, connected, ota_eligible;
+    bool power, button, environment, connected, ota_eligible, sensor_fault;
+    uint8_t sensor_packet[6];
+    li_sht3x_t sensor;
     int64_t brightness;
     unsigned store_calls, fail_store;
     unsigned ota_store_calls, ota_fail_store, drop_ota_results;
@@ -134,6 +138,24 @@ static bool read_property(void *context, const char *path, li_value_t *value) {
     if (strcmp(path, "light.brightness") == 0) { value->type = LI_INTEGER; value->integer = host->brightness; return true; }
     return false;
 }
+static bool sensor_write(void *context, const uint8_t *data, size_t size) {
+    (void)context; return size == 2 && data[0] == 0x24 && data[1] == 0;
+}
+static bool sensor_read(void *context, uint8_t *data, size_t size) {
+    host_t *host = context;
+    if (host->sensor_fault || size != 6) return false;
+    memcpy(data, host->sensor_packet, size); return true;
+}
+static bool sensor_wait(void *context, uint32_t milliseconds) {
+    (void)context; struct timespec delay = {0, (long)milliseconds * 1000000}; return nanosleep(&delay, NULL) == 0;
+}
+static bool read_observation(void *context, const char *path, li_observation_t *value) {
+    host_t *host = context; li_sht3x_sample_t sample;
+    if (strcmp(path, "environment.temperature") && strcmp(path, "environment.humidity")) return false;
+    if (!li_sht3x_read(&host->sensor, &sample)) return false;
+    *value = (li_observation_t){.value = {.type = LI_INTEGER, .integer = !strcmp(path, "environment.temperature") ? sample.temperature : sample.humidity}, .sampled_mono_ms = sample.sampled_mono_ms};
+    return true;
+}
 static li_apply_result_t write_property(void *context, const char *path, li_value_t value) {
     host_t *host = context; bool power = host->power; int64_t brightness = host->brightness;
     if (strcmp(path, "light.power") == 0) power = value.boolean; else if (strcmp(path, "light.brightness") == 0) brightness = value.integer; else return LI_NOT_APPLIED;
@@ -145,7 +167,7 @@ static bool read_device_info(void *context, li_device_info_t *info) {
     host_t *host = context;
     /* 测试端口报告虚拟容量，不能与 ESP 芯片或板卡身份混用。 */
     *info = (li_device_info_t){
-        .product_id = host->button ? "desk-node-button-host" : "desk-node-lamp-host",
+        .product_id = host->environment ? "desk-node-environment-host" : host->button ? "desk-node-button-host" : "desk-node-lamp-host",
         .architecture = "native", .chip = "host", .board = "host-fixture",
         .bootloader_version = "0.0.1", .security_epoch = host->current_epoch, .ota_capacity_bytes = 1966080,
         .external_power = !host->installer_power_lost, .safe_to_update = host->ota_eligible,
@@ -258,11 +280,15 @@ static void on_message(struct mosquitto *mqtt, void *context, const struct mosqu
     if (error != LI_OK && error != LI_IGNORED) fprintf(stderr, "{\"event\":\"firmware.rejected\",\"code\":\"%s\"}\n", li_error_code(error));
 }
 int main(int argc, char **argv) {
-    if (argc != 4 || (strcmp(argv[2], "lamp") != 0 && strcmp(argv[2], "button") != 0)) return 2;
+    if (argc != 4 || (strcmp(argv[2], "lamp") != 0 && strcmp(argv[2], "button") != 0 && strcmp(argv[2], "environment") != 0)) return 2;
     const char *broker = getenv("LIMEIOT_MQTT_HOST"), *password = getenv("LIMEIOT_MQTT_PASSWORD"), *port_text = getenv("LIMEIOT_MQTT_PORT");
     if (!broker || strcmp(broker, "127.0.0.1") != 0 || !password || !port_text) return 2;
     char *end; long port = strtol(port_text, &end, 10); if (*end || port < 1 || port > 65535) return 2;
     host_t host = {0}; host.button = strcmp(argv[2], "button") == 0;
+    host.environment = strcmp(argv[2], "environment") == 0;
+    const uint8_t sensor_packet[] = {0x66, 0x66, 0x93, 0x80, 0x00, 0xa2}; memcpy(host.sensor_packet, sensor_packet, 6);
+    li_sht3x_ports_t sensor_ports = {&host, sensor_write, sensor_read, sensor_wait, monotonic};
+    if (!li_sht3x_init(&host.sensor, &sensor_ports)) return 2;
     if (strlen(argv[3]) >= sizeof(host.directory)) return 2;
     strcpy(host.directory, argv[3]); if (mkdir(host.directory, 0700) != 0 && errno != EEXIST) return 2;
     struct stat directory; if (lstat(host.directory, &directory) != 0 || !S_ISDIR(directory.st_mode)) return 2;
@@ -275,6 +301,7 @@ int main(int argc, char **argv) {
         strcpy(host.current_version,version); host.current_epoch=(uint32_t)epoch; cJSON_Delete(selection);
     }
     li_config_t config = {"space-demo", argv[1], host.button ? LI_BUTTON_REVISION : LI_LAMP_REVISION, host.current_version, "host-fixture", host.button ? NULL : LI_LAMP_PROPERTIES, host.button ? 0 : LI_LAMP_PROPERTY_COUNT, host.button ? LI_BUTTON_EVENTS : NULL, host.button ? LI_BUTTON_EVENT_COUNT : 0, "host-fixture"};
+    if (host.environment) config = (li_config_t){"space-demo", argv[1], LI_ENVIRONMENT_REVISION, host.current_version, "host-fixture", LI_ENVIRONMENT_PROPERTIES, LI_ENVIRONMENT_PROPERTY_COUNT, NULL, 0, "host-fixture.sht3x"};
     host.config = &config;
     host.running_fault=getenv("LIMEIOT_FIRMWARE_RUNNING_FAULT");
     /* 仅限显式宿主夹具，测试预检通过但缺安装提供方的拒绝路径。 */
@@ -286,7 +313,7 @@ int main(int argc, char **argv) {
     FILE *state = fopen(state_path, "rb");
     if (state) { char data[128]; size_t count = fread(data, 1, sizeof(data)-1, state); fclose(state); data[count] = '\0'; cJSON *json = cJSON_Parse(data); if (!json) return 2; cJSON *power = cJSON_GetObjectItemCaseSensitive(json, "power"), *brightness = cJSON_GetObjectItemCaseSensitive(json, "brightness"); if (!cJSON_IsBool(power) || !cJSON_IsNumber(brightness) || brightness->valuedouble < 0 || brightness->valuedouble > 100) { cJSON_Delete(json); return 2; } host.power = cJSON_IsTrue(power); host.brightness = brightness->valueint; cJSON_Delete(json); }
     const char *failure = getenv("LIMEIOT_FIRMWARE_FAIL_STORE"); if (failure) host.fail_store = (unsigned)strtoul(failure, NULL, 10);
-    li_ports_t ports = {&host, random_bytes, monotonic, sha256, storage_read, storage_write, publish, read_property, write_property, read_device_info}; li_error_t error;
+    li_ports_t ports = {&host, random_bytes, monotonic, sha256, storage_read, storage_write, publish, read_property, write_property, read_device_info, host.environment ? read_observation : NULL}; li_error_t error;
     host.core = li_core_create(&config, &ports, &error); if (!host.core) return 2;
     li_ota_crypto_t ota_crypto={NULL,hash,verify};
     const char *policy_file=getenv("LIMEIOT_FIRMWARE_OTA_POLICY");
@@ -330,7 +357,25 @@ int main(int argc, char **argv) {
             if (count == 0) stdin_open = false;
             else if (count == 1 && byte == '\n') {
                 input[used] = '\0'; used = 0; cJSON *json = cJSON_Parse(input);
-                if (json) { cJSON *data = cJSON_GetObjectItemCaseSensitive(json, "data"), *value = cJSON_GetObjectItemCaseSensitive(data, "count"); if (host.button && cJSON_IsNumber(value)) (void)li_emit_event(host.core, "button.pressed", value->valueint); cJSON_Delete(json); }
+                if (json) {
+                    cJSON *data = cJSON_GetObjectItemCaseSensitive(json, "data"), *value = cJSON_GetObjectItemCaseSensitive(data, "count");
+                    if (host.button && cJSON_IsNumber(value)) (void)li_emit_event(host.core, "button.pressed", value->valueint);
+                    cJSON *fault = cJSON_GetObjectItemCaseSensitive(json, "sensor_fault");
+                    if (host.environment && cJSON_IsBool(fault)) host.sensor_fault = cJSON_IsTrue(fault);
+                    cJSON *packet = cJSON_GetObjectItemCaseSensitive(json, "sensor_packet");
+                    if (host.environment && cJSON_IsArray(packet) && cJSON_GetArraySize(packet) == 6) {
+                        uint8_t bytes[6]; bool valid = true;
+                        for (int i = 0; i < 6; i++) {
+                            cJSON *item = cJSON_GetArrayItem(packet, i);
+                            double value = cJSON_GetNumberValue(item);
+                            if (!cJSON_IsNumber(item) || !(value >= 0 && value <= 255) || value != (uint8_t)value) { valid = false; break; }
+                            bytes[i] = (uint8_t)value;
+                        }
+                        /* 仅替换下一次I2C读取的夹具字节，不绕过驱动的CRC、缓存或10秒采样间隔。 */
+                        if (valid) memcpy(host.sensor_packet, bytes, sizeof(bytes));
+                    }
+                    cJSON_Delete(json);
+                }
             } else if (count == 1 && used < sizeof(input)-1) input[used++] = byte;
         }
     }

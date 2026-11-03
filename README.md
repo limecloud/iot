@@ -4,7 +4,7 @@ AI-first 的开源智能物联与能力组合平台。连接文字、视觉、�
 
 仓库：<https://github.com/limecloud/iot>。中文名称：青柠物联。
 
-当前源码版本为 **v0.2.0**，变更与验收边界见 [版本记录](CHANGELOG.md)。版本标签不代表已发布镜像、手机安装包或完成硬件验收。
+当前源码版本为 **v0.3.0**，变更与验收边界见 [版本记录](CHANGELOG.md)。版本标签不代表已发布镜像、手机安装包或完成硬件验收。
 
 ## 当前状态
 
@@ -49,6 +49,8 @@ npm run cli -- rules deploy --space-id space-demo --input "contracts/examples/bu
 设备核心、ESP-IDF 产品工程及离线配置见 [固件入口](firmware/README.md)。`npm run test:firmware` 运行同一 C 核心的宿主和真实 Broker 检查，目标芯片与实机状态单独记录。
 
 从 [文档入口](docs/README.md) 开始，首次阅读建议按 [产品需求](docs/01-产品需求PRD.md) → [总体架构](docs/03-总体技术架构.md) → [MVP 落地蓝图](docs/29-MVP端到端落地蓝图.md) → [实施计划](docs/24-实施计划与进度.md) 进行。
+
+独立产品案例：[Gootuan 咕团](docs/integrations/gootuan/README.zh-CN.md)（[English](docs/integrations/gootuan/README.md)）提供共用平台边界、统一概念图和可执行的触摸/双虚拟灯例子；完整产品设计在[独立 Gootuan 仓库](https://github.com/limecloud/gootuan)。该案例不代表语音、视觉、机器人运动或同步合唱已经验收。
 
 Agent 入口：[llms.txt](llms.txt)、[机器文档目录](docs/catalog.json)、[需求追踪](docs/requirements.json)、[工具合同](contracts/tools/catalog.json)。执行 `npm run cli -- schema` 发现本版本工具；在线能力通过 `capabilities list --space-id space-demo` 获取。设计示例不自动变成设备控制输入。
 

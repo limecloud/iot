@@ -1,8 +1,38 @@
 # NAS 与 Linux 本地安装
 
+可选DLNA音箱已有[静态适配配置](../../gateway/adapters/dlna/README.md)和[正式合同](../../contracts/dlna.md)。将配置只读挂载到网关，并设置进程配置LIMEIOT_AUDIO_CONFIG的容器内绝对路径；音频由所有者准备的局域网HTTP服务提供，地址须从音箱网络可达，不能用容器localhost代替宿主地址。固定目标配置只准备候选，仍须所有者明确绑定。当前宿主回环软件通过结果不代表新NAS镜像已重建、容器网络可达或真实音箱支持；没有把SSDP扫描、媒体托管或原厂仲裁加入本套件。
+
+可选[有限音频服务](../../contracts/media.md)已接配置、媒体端口、备份恢复及家庭网页，使用方法见[下方步骤](#可选平台音频服务)。当前有真实宿主网关/SQLite/MQTT/软件音箱、快照恢复与实际Nginx入口检查；新NAS镜像和实际容器来源IPv4/路由仍单独验收，不能继承旧镜像的通过结论。
+
 本目录提供完整本地工作台和网关基础包，均可安装在 NAS 或常开的 Linux 主机。完整本地版把控制面、数据库和网关放在同一台机器，不依赖官网、云账号或模型服务。官网与文档中心在独立的 `iotweb` 仓库。
 
 2026-11-02：本轮 Linux ARM64 工作台验收镜像已通过真实 Compose 安装、显式迁移、统一登录、10个同页菜单、MQTT 控制、产品校验/签名发布、明确配对/WSS、故障维护及完整备份恢复。回执为 `.dev/nas-platform-6939c2d0e130e891/result.json`，记录实际镜像 ID；设备使用软件模拟器。x86_64、指定 NAS 实机、可选 Ollama 和官方云公网链路仍需分别验收。未发布正式镜像或升级用户设备，其他新增协议能力以各自证据为准。
+
+## 可选平台音频服务
+
+为现有安装明确配置音箱可达的私网IPv4与未占用端口：
+
+```bash
+python3 "deploy/nas/manage.py" media-config --directory "$PWD/.local/limeiot" \
+  --media-origin "http://192.168.1.10:17882"
+```
+
+新安装也可在`init`时传`--media-origin`。地址只接受规范普通HTTP私网/回环IPv4和1024以上端口，不能与实例HTTPS或默认MQTT TLS端口相同；实际部署另核对全部已占用端口。命令创建空`config/audio.json`并更新本安装的`installation.json`/`compose.env`；已有音箱配置保留。
+
+按[DLNA配置](../../gateway/adapters/dlna/README.md)在该`audio.json`中填写已核对音箱，将`managed_media`设为true、`media`设为空数组。为逻辑设备选择正式音箱模型，重启后明确绑定候选；配置文件本身不授予控制权。将可选文件加在原Compose文件之后：
+
+```bash
+docker compose --env-file "$PWD/.local/limeiot/compose.env" \
+  -f "deploy/nas/compose.yaml" -f "deploy/nas/compose.media.yaml" config
+```
+
+构建/启动时沿用相同文件组合；完整私有版也在原`compose.platform.yaml`等文件后加入`compose.media.yaml`。默认只将媒体端口绑定到上述origin的宿主IPv4；明确需要其他监听地址时设置`LIMEIOT_MEDIA_BIND_HOST`。服务通过独立网卡访问局域网音箱，管理仍经原HTTPS。两个HTTPS入口只为精确媒体变更路径放宽到5,596,504字节，其余请求保持原上限。
+
+在本地工作台的“音频”上传PCM WAV，选择当前已绑定音箱和授权期限，明确允许读取；随后在设备页读取接入信息并播放。单纯上传或授权不会发声。媒体HTTP没有传输加密，限可控局域网使用；来源IPv4是网络限制，实际Docker/NAS转发必须保留来源，否则下载将拒绝，不使用信任`X-Forwarded-For`绕过检查。
+
+当前备份额外包含`data/gateway.sqlite.media.json`，记录`media_snapshot`和文件摘要，不复制锁或临时文件；无快照也明确记录未包含。读取单个原子快照的完整字节，可在服务运行时备份；媒体与SQLite是分文件取样，不承诺同一事务时点。恢复先核对完整性、空间、版本和容量，网关重开再执行完整媒体领域校验。
+
+恢复后旧媒体地址全部失效，原授权查询不会重新激活权限，须明确新授权。旧备份可能恢复此前存在的音频正文；删除不承诺擦除历史备份。没有媒体标记的旧版备份可继续恢复已有功能，但不包含后来新增的媒体状态。`npm run test:nas:media`覆盖宿主软件与实际Nginx路径；新镜像、跨架构和实机结果分开报告。
 
 ## 选择部署方式
 
@@ -260,7 +290,13 @@ python3 "deploy/nas/device_identity.py" issue \
 
 将对应目录的 `ca.crt`、`device.crt`、`private.key` 交给[离线固件配置工具](../../firmware/README.md)。不要将 NAS 所有者 Token 或 HTTPS CA 私钥写入设备。
 
-设备证书有效期 90 天，Broker 服务证书 365 天；当前没有自动续签。轮换前先撤销旧序列号，再为同一设备签发到新目录。序列号见签发命令输出或 `identity.json`：
+设备端自行保留私钥时，可改用[外部CSR签发](../../contracts/device-enrollment.md)：安装`requirements-identity.txt`到项目虚拟环境，使用`inspect-csr`核对候选，再以独立渠道确认的公钥指纹、原请求ID和新目录明确`sign-csr`。此路径只接收公开CSR，交付证书/CA/原回执，不生成或交付设备私钥；仍要求设备已在NAS配置中绑定，不自动认领或修改ACL。C3可选HMAC档位的本机密钥、USB公开CSR及证书导入见[设备端步骤](../../contracts/device-enrollment.md#c3本机密钥与证书导入)；管理端不用接收设备私钥。
+
+签发前保存原意图；响应或交付丢失后使用`resolve-csr --request-id ID`读取原序列号。证据不足为unknown，不能用新请求或旧`issue`绕过；原证书仍有效时，可加`--output NEW_DIR`仅重导出原材料。CA、空间、设备、公钥及证书用途均再次核对。原意图随NAS备份恢复，设备私钥由设备侧独立保管。`csr-schema`输出机器合同，不需要密码库或NAS目录。
+
+设备证书有效期90天，Broker服务证书365天；当前没有自动续签。C3本机身份可使用[受控离线轮换](../../contracts/device-enrollment.md#保留旧身份的密钥轮换)：设备`identity rotate ID`保留旧凭据并暂存新键，NAS`rotate-csr`核对原序列号/证书指纹和新公钥后签发；设备导入切换并给出新键激活证明，NAS`complete-rotation`才撤销旧证书并刷新CRL，最后明确重启gateway。未知签发与未完成轮换禁止签发下一候选，CRL更新中断只能恢复原请求；返回`rotation_completed`不证明Broker已重载。
+
+原完整私钥开发路径仍可先撤销旧序列号，再为同一设备签发到新目录；这会中断原身份使用，不作为本机换钥流程。序列号见签发命令输出或`identity.json`：
 
 ```sh
 python3 "deploy/nas/device_identity.py" revoke \
@@ -271,7 +307,17 @@ docker compose --env-file ".dev/nas/compose.env" \
 
 序列号仅为示例，须替换为实际设备证书序列号。撤销命令更新 CRL，但不会自行关闭现有连接；必须重启 Broker 所在的 gateway 容器后才算完成撤销。此操作会中断网关连接，结果不明的原操作继续查询，不能自动重发。
 
-CRL 有效期 30 天，使用 `refresh-crl --directory ".dev/nas"` 刷新并重启 gateway。未完成证书/CRL续期和可信时钟准备时，设备连接会被拒绝。这些是开发身份工具，量产的认领、自动轮换、加密存储仍在开发。
+CRL有效期30天，使用`refresh-crl --directory ".dev/nas"`刷新并重启gateway。未完成证书/CRL续期和可信时钟准备时，设备连接会被拒绝。固件可选[HMAC加密NVS](../../contracts/device-storage.md)，只消费独立预置密钥并认证设备/空间绑定；NAS不持有设备运行时HMAC密钥。C3换钥必须走明确轮换流程；物理认领、自动续期、端侧完整过期恢复和CA迁移仍待实现。
+
+过期叶证书的[受控管理端恢复](../../contracts/device-enrollment.md#过期身份的受控管理端恢复)使用独立`recover-csr`，明确核对原序列号/证书指纹与不同新SPKI，只接受仍有效的原CA及唯一未撤销旧证书；未知或未完成候选即使过期也阻止新请求。新管理意图v3增加固定恢复用途并沿用原激活/撤销/CRL与备份合同，不延长旧证书或跳过TLS时间检查。当前只交付管理端与宿主软件闭环；TV/C3端侧维护尚未接入，旧消费者不能删除用途字段后当v2导入。范围与证据见 [24第4.31节](../../docs/24-实施计划与进度.md#431-过期身份恢复的管理端合同与软件闭环)。
+
+NAS备份包含原CSR意图、轮换激活证明、CA账本和CRL；轮换中断和完成后的资料恢复已通过软件检查，设备私钥不在NAS。旧备份可能回退撤销状态，须独立保留并恢复撤销记录；当前没有独立单调锚防止回退。资料备份检查的SQLite是专用夹具，不代表新增NAS整包运行已验收。
+
+## 可选环境节点
+
+新安装可在`manage.py init`追加`--with-environment`，增加SHT30环境模型、`device-environment`绑定、独立开发凭据及精确设备ACL。默认安装继续保留灯和按钮；此参数不修改已有目录，也不证明设备已接线或认领。通过同一设备CA签发或外部CSR路径准备身份，按[固件说明](../../firmware/README.md#sht30环境节点)构建和配置第三块C3。
+
+家庭网页将温湿度显示为只读观测，网关按原采样时刻计算15秒有效期。断开传感器或CRC失败不刷新旧时间，恢复后的新样本才能重新有效；CLI仍返回摄氏度/%RH各自100倍的整数。第三节点的签发资料与配置沿用现有备份范围；容器运行和物理读数分别验收，实机按用户要求跳过。
 
 ## 备份与恢复
 

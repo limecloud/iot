@@ -138,6 +138,16 @@ class AndroidBoundaryTest {
         }
     }
 
+    @Test fun credential_expiry_between_permission_review_and_submit_prevents_android_launch() {
+        installPlayer()
+        var current = true
+        val port = AndroidApplications(context, { true }, Any(), RunPermit(), { current }) { true }
+        assertTrue(port.permitted(PLAYER))
+        current = false
+        assertFalse(port.permitted(PLAYER)); assertFails { port.submit(PLAYER) }
+        assertNull(shadowOf(context).nextStartedActivity)
+    }
+
     @Test fun stop_revoke_and_disabled_component_refuse_old_or_new_runs_without_launch() {
         installPlayer()
         store().use {

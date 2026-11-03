@@ -7,6 +7,7 @@
   "gateways": "网关管理",
   "devices": "设备管理",
   "firmware": "固件升级",
+  "media": "音频",
   "operations": "操作记录",
   "connections": "开发连接",
   "account": "账号与安全",
@@ -241,5 +242,12 @@
   "localControl": "本地维护",
   "automation": "自动化",
   "models": "设备接入",
-  "localGateway": "本机网关"
+  "localGateway": "本机网关",
+  "invokeAction": "执行动作",
+  "includeActionField": "包含 {{field}}",
+  "approveAction": "我确认使用以上参数执行 {{action}}。",
+  "actionSubmissionBoundary": "回执范围：输入提交",
+  "actionObservationBoundary": "回执范围：提供方观测",
+  "actionInputSubmitted": "输入已提交给执行器",
+  "actionEffectObserved": "提供方已报告效果"
 }

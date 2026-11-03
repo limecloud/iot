@@ -14,6 +14,7 @@ import sqlite3
 import subprocess
 from urllib.parse import urlsplit
 from device_identity import initialize as initialize_device_identity, ca_config
+from media_state import backup_snapshot, verify_backup as verify_media_backup, media_origin
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -29,13 +30,15 @@ def save(path, content):
     path.chmod(0o600)
 
 
-def init(directory, origin, mode="gateway"):
+def init(directory, origin, mode="gateway", with_environment=False, audio_origin=None):
     if os.getuid() == 0:
         raise ValueError("initialize_as_non_root_owner")
     url = urlsplit(origin)
     if url.scheme != "https" or not url.hostname or url.path or url.query or url.fragment or url.username or url.password or origin != f"https://{url.netloc}":
         raise ValueError("exact_https_origin_required")
     host = url.hostname
+    if audio_origin is not None and media_origin(audio_origin) in (url.port or 443, 8883):
+        raise ValueError("media_port_conflict")
     try:
         ipaddress.ip_address(host)
         san = f"IP:{host}"
@@ -47,7 +50,8 @@ def init(directory, origin, mode="gateway"):
     for name in ("data", "config", "secrets", "tls", "authority", "firmware"):
         (directory / name).mkdir(mode=0o700)
     passwords = {}
-    for user in ("gateway", "device-lamp", "device-button"):
+    devices = ("device-lamp", "device-button", "device-environment") if with_environment else ("device-lamp", "device-button")
+    for user in ("gateway", *devices):
         password = secrets.token_hex(32)
         passwords[user] = password
         save(directory / "secrets" / f"{user}-password", password + "\n")
@@ -62,8 +66,16 @@ def init(directory, origin, mode="gateway"):
         lines.append(f"{user}:$7$210000${base64.b64encode(salt).decode()}${base64.b64encode(hashed).decode()}")
     save(directory / "secrets/mqtt-passwords", "\n".join(lines) + "\n")
     shutil.copyfile(ROOT / "deploy/dev/config.json", directory / "config/gateway.json")
+    if with_environment:
+        config = json.loads((directory / "config/gateway.json").read_text())
+        model = json.loads((ROOT / "contracts/models/environment.json").read_text())
+        # 正式环境模型只含ASCII和安全整数，此子集与RFC8785字节一致；运行时仍完整验证模型。
+        revision = "sha256:" + hashlib.sha256(json.dumps(model, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+        config["models"].append(model)
+        config["devices"].append({"device_id": "device-environment", "model_revision": revision})
+        save(directory / "config/gateway.json", json.dumps(config, indent=2) + "\n")
     acl = ["user gateway", "topic read limeiot/v1/space-demo/+/up/+", "topic write limeiot/v1/space-demo/+/down/+"]
-    for device in ("device-lamp", "device-button"):
+    for device in devices:
         acl.extend([f"user {device}", f"topic read limeiot/v1/space-demo/{device}/down/+", f"topic write limeiot/v1/space-demo/{device}/up/+"])
     save(directory / "config/mqtt-acl", "\n".join(acl) + "\n")
     authority, tls = directory / "authority", directory / "tls"
@@ -79,6 +91,9 @@ def init(directory, origin, mode="gateway"):
         from platform_install import configure
         configure(directory, save)
     metadata = {"schema_version": 1, "device_identity_version": 1, "origin": origin, "port": url.port or 443, "mode": "simulation", "deployment": mode, "uid": os.getuid(), "gid": os.getgid()}
+    if audio_origin is not None:
+        metadata["media_origin"] = audio_origin
+        save(directory / "config/audio.json", json.dumps({"schema_version": 1, "bindings": []}, indent=2) + "\n")
     save(directory / "installation.json", json.dumps(metadata, indent=2) + "\n")
     environment(directory, metadata)
 
@@ -87,7 +102,24 @@ def environment(directory, metadata):
     values = {"COMPOSE_PROJECT_NAME": "limeiot-" + hashlib.sha256(str(directory).encode()).hexdigest()[:12], "LIMEIOT_STATE_DIR": str(directory), "LIMEIOT_PUBLIC_ORIGIN": metadata["origin"], "LIMEIOT_HTTPS_PORT": metadata["port"], "LIMEIOT_UID": os.getuid(), "LIMEIOT_GID": os.getgid()}
     if values["LIMEIOT_UID"] == 0:
         raise ValueError("initialize_as_non_root_owner")
+    if metadata.get("media_origin") is not None:
+        port = media_origin(metadata["media_origin"])
+        if port in (metadata["port"], 8883):
+            raise ValueError("media_port_conflict")
+        values.update({"LIMEIOT_MEDIA_ORIGIN": metadata["media_origin"], "LIMEIOT_MEDIA_PORT": port, "LIMEIOT_MEDIA_BIND_HOST": urlsplit(metadata["media_origin"]).hostname})
     save(directory / "compose.env", "\n".join(f"{key}={json.dumps(str(value))}" for key, value in values.items()) + "\n")
+
+
+def configure_media(directory, origin):
+    metadata = json.loads((directory / "installation.json").read_text())
+    if media_origin(origin) in (metadata["port"], 8883):
+        raise ValueError("media_port_conflict")
+    metadata["media_origin"] = origin
+    audio = directory / "config/audio.json"
+    if not audio.exists():
+        save(audio, json.dumps({"schema_version": 1, "bindings": []}, indent=2) + "\n")
+    save(directory / "installation.json", json.dumps(metadata, indent=2) + "\n")
+    environment(directory, metadata)
 
 
 def backup(directory, output):
@@ -104,6 +136,8 @@ def backup(directory, output):
     with sqlite3.connect(f"file:{directory / 'data/gateway.sqlite'}?mode=ro", uri=True) as source:
         with sqlite3.connect(output / "data/gateway.sqlite") as target:
             source.backup(target)
+    space_id = json.loads((directory / "config/gateway.json").read_text())["space_id"]
+    media_policy = backup_snapshot(directory, output, space_id)
     # 设备模拟器各自保存的虚拟硬件状态不作为网关恢复事实。
     # 签发数据库、已签证书和 CRL 必须来自同一个管理状态。
     with (directory / "device-authority/.lock").open("a") as lock:
@@ -118,7 +152,7 @@ def backup(directory, output):
         if path.is_file():
             path.chmod(0o600)
             manifest[str(path.relative_to(output))] = hashlib.sha256(path.read_bytes()).hexdigest()
-    save(output / "backup.json", json.dumps({"schema_version": 1, "files": manifest}, indent=2) + "\n")
+    save(output / "backup.json", json.dumps({"schema_version": 1, "files": manifest, "media_snapshot": media_policy}, indent=2) + "\n")
 
 
 def restore(source, directory):
@@ -135,6 +169,10 @@ def restore(source, directory):
         if relative.is_absolute() or ".." in relative.parts or not path.is_relative_to(source.resolve()) or any(part.is_symlink() for part in [source / relative, *(source / relative).parents] if part.is_relative_to(source)) or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
             raise ValueError("invalid_backup")
     metadata = json.loads((source / "installation.json").read_text())
+    if metadata.get("media_origin") is not None:
+        if media_origin(metadata["media_origin"]) in (metadata["port"], 8883):
+            raise ValueError("media_port_conflict")
+    verify_media_backup(source, manifest, json.loads((source / "config/gateway.json").read_text())["space_id"])
     if metadata.get("deployment") == "private":
         platform_required = {"control.sql", "platform-secrets/control-key", "platform-secrets/admin-token", "platform-secrets/model-release-key.pem", "platform-secrets/mysql-root-password", "platform-secrets/mysql-init.sql", "platform-secrets/mysql-runtime.dsn", "platform-secrets/mysql-migrator.dsn", "platform-secrets/mysql-readonly.cnf", "platform-secrets/mysql-migrator.cnf", "config/control-ca.crt", "secrets/gateway-identity.pk8"}
         if not platform_required.issubset(manifest["files"]):
@@ -162,18 +200,28 @@ def restore(source, directory):
 if __name__ == "__main__":
     os.umask(0o077)
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("init", "backup", "restore", "restore-control"))
+    parser.add_argument("action", choices=("init", "backup", "restore", "restore-control", "media-config"))
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--origin")
+    parser.add_argument("--media-origin", help="局域网音箱可达的精确HTTP IPv4 origin及1024以上端口")
     parser.add_argument("--mode", choices=("gateway", "private"), default="gateway")
+    parser.add_argument("--with-environment", action="store_true", help="新安装增加SHT30环境节点及独立身份；不修改现有安装")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--backup", type=Path)
     args = parser.parse_args()
     directory = args.directory.expanduser().resolve()
+    if args.with_environment and args.action != "init":
+        parser.error("--with-environment只用于init新安装")
+    if args.media_origin is not None and args.action not in ("init", "media-config"):
+        parser.error("--media-origin只用于init或media-config")
     if args.action == "init":
         if not args.origin:
             parser.error("--origin required")
-        init(directory, args.origin, args.mode)
+        init(directory, args.origin, args.mode, args.with_environment, args.media_origin)
+    elif args.action == "media-config":
+        if not args.media_origin:
+            parser.error("--media-origin required")
+        configure_media(directory, args.media_origin)
     elif args.action == "backup":
         if not args.output:
             parser.error("--output required")

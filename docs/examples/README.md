@@ -2,6 +2,8 @@
 
 这些文件是设计阶段的机器可读夹具，供 Agent 理解输入、输出与失败语义。Schema 仅覆盖本组例子所需的规范子集，不是已经发布的正式合同；不用于生产部署。
 
+独立的 [Gootuan 可执行案例](gootuan/README.zh-CN.md)（[English](gootuan/README.md)）消费当前 `contracts/` 正式模型/规则 Schema 和共用 Rust 校验器，另有隔离 HTTP/MQTT/SQLite 旅程。它不属于下表历史设计夹具，不新增机器人运行时或实物验收声明。
+
 | 文件 | 用途 |
 | --- | --- |
 | [thing-model.json](thing-model.json) / [button-model.json](button-model.json) | 灯光和按钮模型正文 |

@@ -1,5 +1,9 @@
 //! MQTT 5 传输适配器，核心只接收自己的 Envelope。
-use crate::application::{setting, App};
+use crate::{
+    application::{setting, App},
+    store::Store,
+};
+use chrono::{DateTime, Utc};
 use limeiot_core::protocol::{Envelope, MAX_PACKET};
 use rumqttc::v5::{
     mqttbytes::{v5::Packet, QoS},
@@ -56,10 +60,25 @@ pub async fn run(app: App) {
                     continue;
                 }
                 let kind = format!("device.{}", message.kind);
-                match app
-                    .update(&kind, |data| data.ingest(message, chrono::Utc::now()))
+                let is_event = message.kind == "event";
+                let mut response = None;
+                let accepted = app
+                    .update(&kind, |data| {
+                        let ingested =
+                            data.ingest_with_event_projection(message, chrono::Utc::now())?;
+                        let output = if is_event {
+                            serde_json::to_value(ingested.event)
+                        } else {
+                            // 非事件仍保留原有输出形状；响应只在数据库提交成功后发送。
+                            serde_json::to_value(&ingested.response)
+                        }
+                        .map_err(|_| limeiot_core::err("invalid_json"))?;
+                        response = ingested.response;
+                        Ok(output)
+                    })
                     .await
-                {
+                    .map(|_| response);
+                match accepted {
                     Ok(Some(response)) => {
                         let topic = format!(
                             "limeiot/v1/{space}/{}/down/{}",
@@ -99,15 +118,9 @@ async fn dispatch(app: App, client: AsyncClient, space: String) {
             continue;
         }
         // 发送意图先耐久提交。崩溃后只能查询原操作，不能自动重发。
-        let messages = app
-            .update("commands.transitioned", |data| {
-                let now = chrono::Utc::now();
-                let mut messages = data.prepare_dispatch(now);
-                messages.extend(data.prepare_ota_dispatch(now));
-                Ok(messages)
-            })
-            .await;
+        let messages = pending_messages(&mut *app.store.lock().await, Utc::now());
         if let Ok(messages) = messages {
+            let _ = app.bus.send(());
             for message in messages {
                 let topic = format!(
                     "limeiot/v1/{space}/{}/down/{}",
@@ -119,4 +132,22 @@ async fn dispatch(app: App, client: AsyncClient, space: String) {
             }
         }
     }
+}
+
+pub(crate) fn pending_messages(
+    store: &mut Store,
+    now: DateTime<Utc>,
+) -> limeiot_core::Result<Vec<Envelope>> {
+    // 定时受理失败不能阻塞已有命令；每个事务仍须先耐久提交才公布结果。
+    if let Err(error) = store.update("rules.scheduled", |data| data.poll_schedules(now)) {
+        eprintln!(
+            "{}",
+            serde_json::json!({"event":"rules.schedule_failed","error":error.code})
+        );
+    }
+    store.update("commands.transitioned", |data| {
+        let mut messages = data.prepare_dispatch(now);
+        messages.extend(data.prepare_ota_dispatch(now));
+        Ok(messages)
+    })
 }

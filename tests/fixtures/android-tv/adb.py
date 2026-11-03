@@ -14,13 +14,21 @@ with open("calls.jsonl", "a") as log:
         "ANDROID_USER_HOME", "ADB_VENDOR_KEYS", "ADB_SERVER_SOCKET", "LIMEIOT_TOKEN"]}}) + "\n")
 assert args[:6] == ["-H", "127.0.0.1", "-P", "5049", "-s", "192.168.31.94:5555"]
 args = args[6:]
-if args == ["shell", "getprop", "ro.build.fingerprint"]:
+if args == ["shell", "getprop ro.build.fingerprint && getprop ro.serialno"]:
     if scenario.get("probe_failure"):
         sys.exit(1)
-    print(scenario.get("fingerprint", "Xiaomi/xmen/xmen:6.0.1/MHC19J/2061:user/release-keys"))
-elif args == ["shell", "getprop", "ro.serialno"]:
-    print(scenario.get("device_serial", "sample-tv-001"))
+    time.sleep(scenario.get("probe_delay_ms", 0) / 1000)
+    if scenario.get("probe_fault") == "stderr":
+        sys.stderr.write("private-device-diagnostic")
+    if scenario.get("probe_fault") == "invalid_utf8":
+        sys.stdout.buffer.write(bytes([255]))
+    elif scenario.get("raw_identity") is not None:
+        sys.stdout.write(scenario["raw_identity"])
+    else:
+        print(scenario.get("fingerprint", "Xiaomi/xmen/xmen:6.0.1/MHC19J/2061:user/release-keys"))
+        print(scenario.get("device_serial", "sample-tv-001"))
 elif args == ["shell", "pm", "list", "packages", "-e"]:
+    time.sleep(scenario.get("packages_delay_ms", 0) / 1000)
     if scenario.get("raw_packages") is not None:
         sys.stdout.write(scenario["raw_packages"])
     else:

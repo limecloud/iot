@@ -3,8 +3,10 @@ import { validExecutionChange, verifyApplications, verifyExecutionAdapters, veri
 import { sameJSON, parseBoundedJSON } from '../../../packages/protocol/products.mjs';
 import { errorText, request, type Device, type Session } from './api';
 interface Original {version:1;origin:string;request:ExecutionRequest}
-export function Television({device,prefix,session,online,refresh,onLaunch,disabled}: {device:Device;prefix:string;session:Session;online:boolean;refresh:()=>Promise<void>;onLaunch:(id:string)=>void;disabled:boolean}) {
+export function ExecutionBindingControls({device,prefix,session,online,refresh,onLaunch,onAudio,disabled,kind='television',audioPaths=[]}: {device:Device;prefix:string;session:Session;online:boolean;refresh:()=>Promise<void>;onLaunch?:(id:string)=>void;onAudio?:(path:string,value:unknown)=>void;disabled:boolean;kind?:'television'|'dlna';audioPaths?:string[]}) {
   const [binding,setBinding]=useState<ExecutionBinding|null>(null),[adapters,setAdapters]=useState<ExecutionAdapter[]>([]),[apps,setApps]=useState<ApplicationPage|null>(null);
+  const [mediaID,setMediaID]=useState(''),[volume,setVolume]=useState('10');
+  const audio=kind==='dlna',label=audio?'音箱':'电视';
   const [originals,setOriginals]=useState<Original[]>([]),[results,setResults]=useState<Record<string,ExecutionOperation>>({});
   const [busy,setBusy]=useState(false),[blocked,setBlocked]=useState(false),[confirmed,setConfirmed]=useState(false),[message,setMessage]=useState('');
   const sending=useRef(false),alive=useRef(true),known=useRef<Original[]>([]);
@@ -27,8 +29,8 @@ export function Television({device,prefix,session,online,refresh,onLaunch,disabl
   async function load() {
     setConfirmed(false);
     const [view,offers]=await Promise.all([request<unknown>(`${prefix}/devices/${encodeURIComponent(device.device_id)}/execution-binding`,session),request<unknown>(`${prefix}/execution-adapters`,session)]);
-    const binding=verifyExecutionBinding(view,device.device_id),available=verifyExecutionAdapters(offers).items.filter(item=>item.device_id===device.device_id);
-    if(alive.current){setBinding(binding);setAdapters(available);setApps(null);}
+    const binding=verifyExecutionBinding(view,device.device_id),available=verifyExecutionAdapters(offers).items.filter(item=>('kind' in item&&item.kind==='dlna')===audio&&item.device_id===device.device_id);
+    if(alive.current){setBinding(binding);setAdapters(available);setApps(null);if(audio&&available[0]&&'kind' in available[0])setVolume(String(available[0].playback_volume));}
   }
   async function resolve(original:Original) {
     const result=await verifyExecutionOperation(await request<unknown>(`${prefix}/execution-operations/by-key/${encodeURIComponent(original.request.idempotency_key)}`,session),original.request);
@@ -54,20 +56,27 @@ export function Television({device,prefix,session,online,refresh,onLaunch,disabl
     setResults(previous=>({...previous,[original.request.idempotency_key]:value}));
     await load();await refresh();setMessage(value.status==='applied'?'接入操作已完成':value.status==='conflict'?'接入信息已变化，请重新读取后操作':'接入操作已被拒绝');
   }
-  const candidate=adapters[0],unresolved=originals.filter(item=>!results[item.request.idempotency_key]);
-  return <details className="television-binding"><summary>电视接入与应用</summary>
+  const candidate=adapters[0],speaker=candidate&&'kind' in candidate?candidate:null,unresolved=originals.filter(item=>!results[item.request.idempotency_key]);
+  const boundAudio=speaker&&binding&&Object.values(binding.routes).some(route=>route.revision===speaker.route.revision&&route.adapter_id===speaker.route.adapter_id);
+  const audioDisabled=(path:string)=>busy||disabled||!boundAudio||!audioPaths.includes(path)||device.action_availability?.[path]===false;
+  return <details className="television-binding" open={audio}><summary>{audio?'音箱接入与播放':'电视接入与应用'}</summary>
     {message&&<p role="status" className="notice">{message}</p>}
     <button type="button" disabled={!online||busy} onClick={()=>void action(load)}>读取接入信息</button>
     {binding&&<><p>接入状态：{binding.state==='composed'?'已组合接入':binding.state==='bound'?'已绑定':binding.state==='revoked'?'已撤销':'尚未绑定适配器'}</p>
-      {candidate?<><p>电视地址：{candidate.target}<br/>电视序列号：{candidate.device_serial}</p><details><summary>系统与应用授权</summary><p className="mono">{candidate.fingerprint}</p>{candidate.applications.map(app=><p key={app.application_id}>{app.application_id}</p>)}</details>
-        <label><input type="checkbox" checked={confirmed} disabled={busy||blocked||!candidate.compatible} onChange={event=>setConfirmed(event.target.checked)}/>已在电视端核对设备并允许连接</label>
+      {candidate?<><p>{label}地址：{candidate.target}<br/>{'udn' in candidate?`设备标识：${candidate.udn}`:`电视序列号：${candidate.device_serial}`}</p>{'applications' in candidate&&<details><summary>系统与应用授权</summary><p className="mono">{candidate.fingerprint}</p>{candidate.applications.map(app=><p key={app.application_id}>{app.application_id}</p>)}</details>}
+        <label><input type="checkbox" checked={confirmed} disabled={busy||blocked||!candidate.compatible} onChange={event=>setConfirmed(event.target.checked)}/>{audio?'已核对音箱和获准音频':'已在电视端核对设备并允许连接'}</label>
         {!candidate.compatible&&<p>当前能力模型与此接入方式不兼容</p>}
-        <button type="button" disabled={!online||busy||blocked||!confirmed||!candidate.compatible||unresolved.length>0} onClick={()=>void action(()=>submit({type:'bindings.bind',device_id:device.device_id,route:candidate.route,expected_binding_revision:binding.revision,expected_model_revision:binding.model_revision}))}>确认绑定电视</button>
-      </>:<p>网关尚未准备此电视的接入配置</p>}
-      {['bound','composed'].includes(binding.state)&&<button type="button" disabled={!online||busy||blocked} onClick={()=>void action(()=>submit({type:'bindings.revoke',device_id:device.device_id,expected_binding_revision:binding.revision}))}>撤销电视接入</button>}
+        <button type="button" disabled={!online||busy||blocked||!confirmed||!candidate.compatible||unresolved.length>0} onClick={()=>void action(()=>submit({type:'bindings.bind',device_id:device.device_id,route:candidate.route,expected_binding_revision:binding.revision,expected_model_revision:binding.model_revision}))}>确认绑定{label}</button>
+      </>:<p>网关尚未准备此{label}的接入配置</p>}
+      {['bound','composed'].includes(binding.state)&&<button type="button" disabled={!online||busy||blocked} onClick={()=>void action(()=>submit({type:'bindings.revoke',device_id:device.device_id,expected_binding_revision:binding.revision}))}>撤销{label}接入</button>}
       {binding.routes['apps.launch']&&<button type="button" disabled={!online||busy} onClick={()=>void action(async()=>{const page=verifyApplications(await request<unknown>(`${prefix}/devices/${encodeURIComponent(device.device_id)}/applications`,session),device.device_id);if(page.binding_revision!==binding.revision)throw new Error('revision_conflict');setApps(page);})}>读取应用列表</button>}
     </>}
     {unresolved.map(original=><p key={original.request.idempotency_key}>接入结果待核对 <button type="button" disabled={!online||busy} onClick={()=>void action(async()=>{await resolve(original);await load();await refresh();})}>查询接入原操作</button></p>)}
-    {apps&&(apps.fresh?<div aria-label="已发现应用">{apps.items.map(app=><div className="property-row" key={app.application_id}><span>{app.application_id} {app.authorized?'已授权':'未授权'}</span><button type="button" disabled={disabled||busy||!app.authorized} onClick={()=>onLaunch(app.application_id)}>启动 {app.application_id}</button></div>)}</div>:<p>应用列表尚未就绪，请等待电视重新连接后读取</p>)}
+    {apps&&(apps.fresh?<div aria-label="已发现应用">{apps.items.map(app=><div className="property-row" key={app.application_id}><span>{app.application_id} {app.authorized?'已授权':'未授权'}</span><button type="button" disabled={disabled||busy||!app.authorized} onClick={()=>onLaunch?.(app.application_id)}>启动 {app.application_id}</button></div>)}</div>:<p>应用列表尚未就绪，请等待电视重新连接后读取</p>)}
+    {audio&&speaker&&<div aria-label="音频播放">
+      {audioPaths.includes('playback.play')&&<form className="property-form" onSubmit={event=>{event.preventDefault();onAudio?.('playback.play',{media_id:mediaID});}}><label>获准音频<select aria-label="获准音频" value={mediaID} disabled={audioDisabled('playback.play')} onChange={event=>setMediaID(event.target.value)} required><option value="">选择音频</option>{speaker.media.map(media=><option key={media.media_id} value={media.media_id} disabled={Date.parse(media.expires_at)<=Date.now()}>{media.media_id}{Date.parse(media.expires_at)<=Date.now()?'（已过期）':''}</option>)}</select></label><button disabled={audioDisabled('playback.play')||!speaker.media.some(m=>m.media_id===mediaID&&Date.parse(m.expires_at)>Date.now())}>播放音频</button></form>}
+      {audioPaths.includes('playback.set_volume')&&<form className="property-form" onSubmit={event=>{event.preventDefault();onAudio?.('playback.set_volume',{volume:Number(volume)});}}><label>音量<input aria-label="播放音量" type="number" min={0} max={speaker.volume_limit} required value={volume} disabled={audioDisabled('playback.set_volume')} onChange={event=>setVolume(event.target.value)}/></label><button disabled={audioDisabled('playback.set_volume')}>设置音量</button></form>}
+      {audioPaths.includes('playback.stop')&&<button type="button" disabled={audioDisabled('playback.stop')} onClick={()=>onAudio?.('playback.stop',{})}>停止播放</button>}
+    </div>}
   </details>;
 }

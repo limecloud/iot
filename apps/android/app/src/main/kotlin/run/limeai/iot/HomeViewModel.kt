@@ -13,7 +13,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import run.limeai.iot.core.*
 
-data class HomeState(val origin: String = "", val connected: Boolean = false, val online: Boolean = false, val busy: Boolean = false, val message: String = "", val snapshot: Snapshot? = null, val pending: Map<String, CommandIntent> = emptyMap(), val draftReference: DraftReference? = null, val draft: RuleDraft? = null, val draftPrompt: String = "", val draftBusy: Boolean = false, val draftProof: String? = null, val draftMessage: String = "", val firmware: FirmwareController? = null)
+data class HomeState(val origin: String = "", val connected: Boolean = false, val online: Boolean = false, val busy: Boolean = false, val message: String = "", val snapshot: Snapshot? = null, val pending: Map<String, CommandIntent> = emptyMap(), val draftReference: DraftReference? = null, val draft: RuleDraft? = null, val draftPrompt: String = "", val draftBusy: Boolean = false, val draftProof: String? = null, val draftMessage: String = "", val firmware: FirmwareController? = null, val media: MediaController? = null)
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val preferences = application.getSharedPreferences("home", Application.MODE_PRIVATE)
     private val mutable = MutableStateFlow(HomeState(origin = preferences.getString("origin", "").orEmpty()))
@@ -23,7 +23,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private var refreshing = false
     private var generation = 0
     fun connect(origin: String, token: String?, restore: Boolean = false) {
-        if (mutable.value.busy || mutable.value.draftBusy || mutable.value.firmware?.state?.value?.busy == true) return
+        if (mutable.value.busy || mutable.value.draftBusy || mutable.value.firmware?.state?.value?.busy == true || mutable.value.media?.state?.value?.busy == true) return
         mutable.update { it.copy(busy = true, message = "") }
         viewModelScope.launch {
             try {
@@ -31,9 +31,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 if (restore) next.restore() else next.login(token.orEmpty())
                 val pending = vault.load(origin.trim() + "#pending")?.let { Json.decodeFromString<Map<String, CommandIntent>>(it) }.orEmpty()
                 val reference = vault.load(origin.trim() + "#draft")?.let { Json.decodeFromString<DraftReference>(it) }
-                mutable.value.firmware?.close(); client = next; generation++
+                mutable.value.firmware?.close(); mutable.value.media?.close(); client = next; generation++
                 preferences.edit().putString("origin", origin.trim()).apply()
-                mutable.update { it.copy(origin = origin.trim(), connected = true, pending = pending, draftReference = reference, draft = null, draftPrompt = "", draftMessage = "", draftProof = null, firmware = null) }; refresh()
+                mutable.update { it.copy(origin = origin.trim(), connected = true, pending = pending, draftReference = reference, draft = null, draftPrompt = "", draftMessage = "", draftProof = null, firmware = null, media = null) }; refresh()
             } catch (error: Exception) { if (!(restore && error is GatewayException && error.status == 401)) report(error) }
             finally { mutable.update { it.copy(busy = false) } }
         }
@@ -45,11 +45,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         try {
             val next = current.snapshot()
             if (old == generation) {
-                mutable.update { it.copy(snapshot = next, online = true, message = "", firmware = it.firmware ?: FirmwareController(OtaClient(current, vault), next.space, viewModelScope, ::report)) }
+                val media = mutable.value.media?.takeIf { it.space == next.space } ?: run { mutable.value.media?.close(); MediaController(MediaClient(current, vault), next.space, viewModelScope, ::report) }
+                media.setOnline(true)
+                mutable.update { it.copy(snapshot = next, online = true, message = "", firmware = it.firmware ?: FirmwareController(OtaClient(current, vault), next.space, viewModelScope, ::report), media = media) }
                 if (!mutable.value.draftBusy && mutable.value.draftReference != null && (mutable.value.draft == null || mutable.value.draft?.status == "running")) loadDraft()
             }
         }
-        catch (error: Exception) { if (old == generation) { if (error !is CancellationException) mutable.update { it.copy(online = false) }; report(error) } }
+        catch (error: Exception) { if (old == generation) { if (error !is CancellationException) { mutable.value.media?.setOnline(false); mutable.update { it.copy(online = false) } }; report(error) } }
         finally { refreshing = false }
     }
     fun refreshNow() { viewModelScope.launch { refresh() } }
@@ -73,7 +75,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 if (error.definitiveRejection) {
                     runCatching { savePending(mutable.value.pending - device.deviceId) }; report(error)
                 } else mutable.update { it.copy(message = "操作结果尚未确认，请查询原操作") }
-            } catch (error: Exception) { if (error is CancellationException) throw error; mutable.update { if (submitted) it.copy(online = false, message = "操作结果尚未确认，请查询原操作") else it.copy(message = "无法保存本地操作记录，请稍后重试") } }
+            } catch (error: Exception) { if (error is CancellationException) throw error; if (submitted) mutable.value.media?.setOnline(false); mutable.update { if (submitted) it.copy(online = false, message = "操作结果尚未确认，请查询原操作") else it.copy(message = "无法保存本地操作记录，请稍后重试") } }
             finally { mutable.update { it.copy(busy = false) } }
         }
     }
@@ -163,9 +165,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun deploy(rule: Rule) = task { val current = client ?: return@task; val snapshot = mutable.value.snapshot ?: return@task; current.deploy(snapshot.space, rule); refresh(); mutable.update { it.copy(message = "自动化已启用") } }
     fun stop(deployment: Deployment) = task { val current = client ?: return@task; val snapshot = mutable.value.snapshot ?: return@task; current.stop(snapshot.space, deployment); refresh() }
     fun logout() = task {
-        if (mutable.value.draftBusy || mutable.value.firmware?.state?.value?.busy == true) return@task
+        if (mutable.value.draftBusy || mutable.value.firmware?.state?.value?.busy == true || mutable.value.media?.state?.value?.busy == true) return@task
         client?.logout(); generation++; client = null
         mutable.value.firmware?.close()
+        mutable.value.media?.close()
         mutable.update { HomeState(origin = it.origin) }
     }
     private fun task(action: suspend () -> Unit) {
@@ -176,8 +179,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun report(error: Exception) {
         if (error is CancellationException) throw error
         if (error is GatewayException) {
-            if (error.status == 401) { generation++; mutable.value.firmware?.close(); mutable.update { HomeState(origin = it.origin, message = error.displayMessage) } }
+            if (error.status == 401) { generation++; mutable.value.firmware?.close(); mutable.value.media?.close(); mutable.update { HomeState(origin = it.origin, message = error.displayMessage) } }
             else mutable.update { it.copy(message = error.displayMessage) }
-        } else mutable.update { it.copy(online = false, message = "无法连接家庭网关，请检查本地网络") }
+        } else { mutable.value.media?.setOnline(false); mutable.update { it.copy(online = false, message = "无法连接家庭网关，请检查本地网络") } }
     }
+    fun pauseMedia() { mutable.value.media?.pause() }
+    override fun onCleared() { mutable.value.media?.close(); super.onCleared() }
 }

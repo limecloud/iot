@@ -1,0 +1,511 @@
+{
+  "page": {
+    "items": [
+      {
+        "kind": "dlna",
+        "device_id": "speaker-bound",
+        "route": {
+          "adapter_id": "adapter-speaker-bound",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "compatible": true,
+        "target": "192.168.50.20:1400",
+        "udn": "uuid:speaker-bound",
+        "volume_limit": 20,
+        "playback_volume": 8,
+        "media": [],
+        "managed_media": true
+      },
+      {
+        "kind": "dlna",
+        "device_id": "speaker-composed",
+        "route": {
+          "adapter_id": "adapter-speaker-composed",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "compatible": true,
+        "target": "192.168.50.20:1400",
+        "udn": "uuid:speaker-composed",
+        "volume_limit": 20,
+        "playback_volume": 8,
+        "media": [],
+        "managed_media": true
+      },
+      {
+        "kind": "dlna",
+        "device_id": "speaker-unbound",
+        "route": {
+          "adapter_id": "adapter-speaker-unbound",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "compatible": true,
+        "target": "192.168.50.20:1400",
+        "udn": "uuid:speaker-unbound",
+        "volume_limit": 20,
+        "playback_volume": 8,
+        "media": [],
+        "managed_media": true
+      },
+      {
+        "kind": "dlna",
+        "device_id": "speaker-mismatch",
+        "route": {
+          "adapter_id": "adapter-speaker-mismatch",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "compatible": true,
+        "target": "192.168.50.20:1400",
+        "udn": "uuid:speaker-mismatch",
+        "volume_limit": 20,
+        "playback_volume": 8,
+        "media": [],
+        "managed_media": true
+      },
+      {
+        "kind": "dlna",
+        "device_id": "speaker-static",
+        "route": {
+          "adapter_id": "adapter-speaker-static",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "compatible": true,
+        "target": "192.168.50.20:1400",
+        "udn": "uuid:speaker-static",
+        "volume_limit": 20,
+        "playback_volume": 8,
+        "media": []
+      },
+      {
+        "kind": "dlna",
+        "device_id": "speaker-incompatible",
+        "route": {
+          "adapter_id": "adapter-speaker-incompatible",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "compatible": false,
+        "target": "192.168.50.20:1400",
+        "udn": "uuid:speaker-incompatible",
+        "volume_limit": 20,
+        "playback_volume": 8,
+        "media": [],
+        "managed_media": true
+      },
+      {
+        "device_id": "television",
+        "route": {
+          "adapter_id": "adapter-television",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        "compatible": true,
+        "target": "192.168.50.21:5555",
+        "fingerprint": "fixture",
+        "device_serial": "TV-FIXTURE",
+        "applications": [
+          {
+            "application_id": "example.player",
+            "category": "leanback"
+          }
+        ]
+      }
+    ],
+    "next_cursor": null
+  },
+  "bindings": {
+    "speaker-bound": {
+      "device_id": "speaker-bound",
+      "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "state": "bound",
+      "routes": {
+        "playback.play": {
+          "adapter_id": "adapter-speaker-bound",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        }
+      }
+    },
+    "speaker-composed": {
+      "device_id": "speaker-composed",
+      "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "state": "composed",
+      "routes": {
+        "playback.play": {
+          "adapter_id": "adapter-speaker-composed",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        }
+      },
+      "native_paths": [
+        "power.on"
+      ]
+    },
+    "speaker-unbound": {
+      "device_id": "speaker-unbound",
+      "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "state": "native",
+      "routes": {}
+    },
+    "speaker-mismatch": {
+      "device_id": "speaker-mismatch",
+      "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "state": "bound",
+      "routes": {
+        "playback.play": {
+          "adapter_id": "other-adapter",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        }
+      }
+    }
+  },
+  "expected": [
+    "speaker-bound",
+    "speaker-composed"
+  ],
+  "invalid_pages": [
+    {
+      "name": "duplicate_device",
+      "page": {
+        "items": [
+          {
+            "kind": "dlna",
+            "device_id": "speaker-bound",
+            "route": {
+              "adapter_id": "adapter-speaker-bound",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.20:1400",
+            "udn": "uuid:speaker-bound",
+            "volume_limit": 20,
+            "playback_volume": 8,
+            "media": [],
+            "managed_media": true
+          },
+          {
+            "kind": "dlna",
+            "device_id": "speaker-bound",
+            "route": {
+              "adapter_id": "adapter-speaker-bound",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.20:1400",
+            "udn": "uuid:speaker-bound",
+            "volume_limit": 20,
+            "playback_volume": 8,
+            "media": [],
+            "managed_media": true
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "duplicate_adapter",
+      "page": {
+        "items": [
+          {
+            "kind": "dlna",
+            "device_id": "speaker-bound",
+            "route": {
+              "adapter_id": "adapter-speaker-bound",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.20:1400",
+            "udn": "uuid:speaker-bound",
+            "volume_limit": 20,
+            "playback_volume": 8,
+            "media": [],
+            "managed_media": true
+          },
+          {
+            "kind": "dlna",
+            "device_id": "speaker-composed",
+            "route": {
+              "adapter_id": "adapter-speaker-bound",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.20:1400",
+            "udn": "uuid:speaker-composed",
+            "volume_limit": 20,
+            "playback_volume": 8,
+            "media": [],
+            "managed_media": true
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "extra_download_url",
+      "page": {
+        "items": [
+          {
+            "kind": "dlna",
+            "device_id": "speaker-bound",
+            "route": {
+              "adapter_id": "adapter-speaker-bound",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.20:1400",
+            "udn": "uuid:speaker-bound",
+            "volume_limit": 20,
+            "playback_volume": 8,
+            "media": [],
+            "managed_media": true,
+            "download_url": "http://invalid.local/token"
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "explicit_false_managed",
+      "page": {
+        "items": [
+          {
+            "kind": "dlna",
+            "device_id": "speaker-bound",
+            "route": {
+              "adapter_id": "adapter-speaker-bound",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.20:1400",
+            "udn": "uuid:speaker-bound",
+            "volume_limit": 20,
+            "playback_volume": 8,
+            "media": [],
+            "managed_media": false
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "bad_route_revision",
+      "page": {
+        "items": [
+          {
+            "kind": "dlna",
+            "device_id": "speaker-bound",
+            "route": {
+              "adapter_id": "adapter-speaker-bound",
+              "revision": "sha256:bad"
+            },
+            "compatible": true,
+            "target": "192.168.50.20:1400",
+            "udn": "uuid:speaker-bound",
+            "volume_limit": 20,
+            "playback_volume": 8,
+            "media": [],
+            "managed_media": true
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "volume_outside_limit",
+      "page": {
+        "items": [
+          {
+            "kind": "dlna",
+            "device_id": "speaker-bound",
+            "route": {
+              "adapter_id": "adapter-speaker-bound",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.20:1400",
+            "udn": "uuid:speaker-bound",
+            "volume_limit": 20,
+            "playback_volume": 21,
+            "media": [],
+            "managed_media": true
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "unknown_protocol",
+      "page": {
+        "items": [
+          {
+            "kind": "unknown",
+            "device_id": "speaker-bound",
+            "route": {
+              "adapter_id": "adapter-speaker-bound",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.20:1400",
+            "udn": "uuid:speaker-bound",
+            "volume_limit": 20,
+            "playback_volume": 8,
+            "media": [],
+            "managed_media": true
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "unexpected_cursor",
+      "page": {
+        "items": [
+          {
+            "kind": "dlna",
+            "device_id": "speaker-bound",
+            "route": {
+              "adapter_id": "adapter-speaker-bound",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.20:1400",
+            "udn": "uuid:speaker-bound",
+            "volume_limit": 20,
+            "playback_volume": 8,
+            "media": [],
+            "managed_media": true
+          }
+        ],
+        "next_cursor": "next"
+      }
+    }
+  ],
+  "invalid_bindings": [
+    {
+      "name": "cross_device",
+      "binding": {
+        "device_id": "other-device",
+        "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "state": "bound",
+        "routes": {
+          "playback.play": {
+            "adapter_id": "adapter-speaker-bound",
+            "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        }
+      }
+    },
+    {
+      "name": "bad_binding_revision",
+      "binding": {
+        "device_id": "speaker-bound",
+        "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "revision": "sha256:bad",
+        "state": "bound",
+        "routes": {
+          "playback.play": {
+            "adapter_id": "adapter-speaker-bound",
+            "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        }
+      }
+    },
+    {
+      "name": "extra_token",
+      "binding": {
+        "device_id": "speaker-bound",
+        "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "state": "bound",
+        "routes": {
+          "playback.play": {
+            "adapter_id": "adapter-speaker-bound",
+            "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        },
+        "token": "unexpected"
+      }
+    },
+    {
+      "name": "bound_without_routes",
+      "binding": {
+        "device_id": "speaker-bound",
+        "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "state": "bound",
+        "routes": {}
+      }
+    },
+    {
+      "name": "revoked_with_routes",
+      "binding": {
+        "device_id": "speaker-bound",
+        "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "state": "revoked",
+        "routes": {
+          "playback.play": {
+            "adapter_id": "adapter-speaker-bound",
+            "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        }
+      }
+    },
+    {
+      "name": "composed_native_overlap",
+      "binding": {
+        "device_id": "speaker-bound",
+        "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "state": "composed",
+        "routes": {
+          "playback.play": {
+            "adapter_id": "adapter-speaker-bound",
+            "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        },
+        "native_paths": [
+          "playback.play"
+        ]
+      }
+    },
+    {
+      "name": "composed_unsorted_paths",
+      "binding": {
+        "device_id": "speaker-bound",
+        "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "state": "composed",
+        "routes": {
+          "playback.play": {
+            "adapter_id": "adapter-speaker-bound",
+            "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        },
+        "native_paths": [
+          "volume.level",
+          "power.on"
+        ]
+      }
+    },
+    {
+      "name": "invalid_route_path",
+      "binding": {
+        "device_id": "speaker-bound",
+        "model_revision": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "revision": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "state": "bound",
+        "routes": {
+          "playback.play": {
+            "adapter_id": "adapter-speaker-bound",
+            "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+          },
+          "playback/play": {
+            "adapter_id": "adapter-speaker-bound",
+            "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        }
+      }
+    }
+  ]
+}

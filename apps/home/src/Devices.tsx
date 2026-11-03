@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ApiError, commandStatus, deviceName, remoteKeyLabels, request, when, type Action, type Command, type Device, type Model, type Property, type Session } from './api';
-import { Television } from './Television';
+import { ExecutionBindingControls } from './Television';
 
 type Pending = Record<string, { key: string; space: string }>;
 function remembered(): Pending { try { return JSON.parse(sessionStorage.getItem('limeiot.pending') ?? '{}') as Pending; } catch { return {}; } }
@@ -59,7 +59,8 @@ export function Devices({ devices, models, commands, prefix, session, online, re
       {properties.length === 0 && actions.length === 0 && <p className="muted">等待设备事件</p>}
       {properties.map(property => <PropertyControl key={property.path} property={property} device={device} disabled={disabled} onSet={value => void control(device, property.path, value)} />)}
       {actions.map(action => <ActionControl key={action.path} action={action} disabled={disabled || device.action_availability?.[action.path] === false} onInvoke={value => void control(device, action.path, value, 'action.invoke')} />)}
-      {actions.some(action=>action.semantic_id==='urn:limeiot:action:remote-press:1')&&<Television device={device} prefix={prefix} session={session} online={online} refresh={refresh} disabled={disabled} onLaunch={id=>void control(device,'apps.launch',{application_id:id},'action.invoke')}/>}
+      {actions.some(action=>action.semantic_id==='urn:limeiot:action:remote-press:1')&&<ExecutionBindingControls device={device} prefix={prefix} session={session} online={online} refresh={refresh} disabled={disabled} onLaunch={id=>void control(device,'apps.launch',{application_id:id},'action.invoke')}/>}
+      {actions.some(action=>action.semantic_id.startsWith('urn:limeiot:action:audio-'))&&<ExecutionBindingControls kind="dlna" audioPaths={actions.map(action=>action.path)} device={device} prefix={prefix} session={session} online={online} refresh={refresh} disabled={disabled} onAudio={(path,value)=>void control(device,path,value,'action.invoke')}/>}
       {recovering && <button disabled={!online || busy !== null} onClick={() => void recover(device.device_id)}>查询原操作</button>}
       {latest && <p className={`command-status ${latest.status}`} role="status">最近操作：{commandStatus(latest)}</p>}
       <details><summary>设备详情</summary><dl><dt>设备编号</dt><dd>{device.device_id}</dd><dt>最后连接</dt><dd>{when(device.last_seen)}</dd>{Object.entries(device.reported).map(([path, item]) => <div key={path}><dt>{path}</dt><dd>{String(item.value)} / {item.quality === 'stale' ? '已过期' : '有效'}<br />{when(item.observed_at)}<br />来源：{item.source}</dd></div>)}</dl></details>
@@ -73,6 +74,7 @@ function ActionControl({ action, disabled, onInvoke }: { action: Action & { path
     if (action.risk !== 'low' && !window.confirm(`确认执行 ${action.path}？此操作可能影响设备运行。`)) return;
     onInvoke(value);
   }
+  if (['urn:limeiot:action:audio-play:1','urn:limeiot:action:audio-stop:1','urn:limeiot:action:audio-set-volume:1'].includes(action.semantic_id)) return null;
   if (action.semantic_id === 'urn:limeiot:action:remote-press:1') {
     const keys = action.input.properties?.key?.enum?.filter((key): key is string => typeof key === 'string' && Object.hasOwn(remoteKeyLabels, key)) ?? [];
     return <fieldset className="remote-control" disabled={disabled}><legend>遥控器</legend>{keys.map(key => <button className={`remote-key remote-${key}`} type="button" key={key} onClick={() => invoke({ key })}>{remoteKeyLabels[key]}</button>)}</fieldset>;
@@ -86,6 +88,12 @@ function PropertyControl({ property, device, disabled, onSet }: { property: Prop
   useEffect(() => { setDraft(String(observation?.value ?? property.schema.minimum ?? 0)); }, [observation?.value, property.schema.minimum]);
   const writable = property.access.includes('write');
   const name = property.id === 'power' ? '电源' : property.id === 'brightness' ? '亮度' : property.id === 'volume' ? '音量' : property.id === 'muted' ? '静音' : property.id;
+  if (!writable) {
+    const label = property.semantic_id === 'urn:limeiot:property:temperature:1' ? '温度' : property.semantic_id === 'urn:limeiot:property:relative-humidity:1' ? '相对湿度' : name;
+    const value = observation?.value;
+    const display = value === undefined ? '暂无状态' : typeof value === 'number' && property.unit === 'celsius_x100' ? `${(value / 100).toFixed(2)} ℃` : typeof value === 'number' && property.unit === 'percent_x100' ? `${(value / 100).toFixed(2)} %RH` : String(value);
+    return <div className="property-row"><span>{label}</span><div><output aria-label={label}>{display}</output>{observation?.quality === 'stale' && <span className="muted"> 已过期</span>}</div></div>;
+  }
   if (property.schema.type === 'boolean') return <div className="property-row"><span>{name}</span><button role="switch" aria-label={name} aria-checked={observation?.value === true} disabled={disabled || !writable || !observation} onClick={() => onSet(observation?.value !== true)}>{observation ? (observation.value ? '已开启' : '已关闭') : '暂无状态'}</button></div>;
   if (['integer', 'number'].includes(property.schema.type)) return <form className="property-form" onSubmit={event => { event.preventDefault(); onSet(Number(draft)); }}><label htmlFor={`${device.device_id}-${property.path}`}>{name}</label><div className="input-group"><input id={`${device.device_id}-${property.path}`} type="number" min={property.schema.minimum} max={property.schema.maximum} step={property.schema.type === 'integer' ? 1 : 'any'} required value={draft} disabled={disabled || !writable} onChange={event => setDraft(event.target.value)} /><button disabled={disabled || !writable}>设置</button></div></form>;
   return <p>{name}：{String(observation?.value ?? '暂无状态')}</p>;

@@ -103,14 +103,21 @@ private struct CloudPropertyView: View {
     let device: Device; let property: Property; let path: String
     @State private var number = ""
     private var disabled: Bool { !cloud.foreground || !cloud.online || cloud.busy || !device.ready || !property.access.contains("write") || cloud.gateway?.scopes.contains("commands.write") != true || cloud.blocked(device) }
-    private var name: String { property.id == "power" ? "电源" : property.id == "brightness" ? "亮度" : property.id }
+    private var name: String { property.displayName }
     private var value: JSONValue? {
         guard let parsed = Double(number), parsed.isFinite, parsed >= (property.schema.minimum ?? -.infinity), parsed <= (property.schema.maximum ?? .infinity) else { return nil }
         if property.schema.type == "integer" { return Int(number).map(JSONValue.integer) }
         return .number(parsed)
     }
     var body: some View {
-        if property.schema.type == "boolean" {
+        if !property.access.contains("write") {
+            LabeledContent(name) {
+                VStack(alignment: .trailing) {
+                    Text(property.displayValue(device.reported[path]?.value))
+                    if device.reported[path]?.quality == "stale" { Text("已过期").font(.caption).foregroundStyle(Palette.sand11) }
+                }
+            }
+        } else if property.schema.type == "boolean" {
             Toggle(name, isOn: Binding(get: { device.reported[path]?.value.bool ?? false }, set: { input in Task { await cloud.control(device, path: path, value: .bool(input)) } })).disabled(disabled || device.reported[path] == nil)
         } else if ["integer", "number"].contains(property.schema.type) {
             HStack {

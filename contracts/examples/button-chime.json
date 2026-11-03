@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "id": "button-chime",
+  "trigger": {"device":"device-button","event":"button.pressed"},
+  "conditions": [],
+  "actions": [{"device":"device-lamp","invoke":{"path":"playback.play","input":{"media_id":"chime"}}}],
+  "cooldown_ms": 10000
+}

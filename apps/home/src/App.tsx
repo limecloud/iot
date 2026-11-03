@@ -5,10 +5,13 @@ import { Devices } from './Devices';
 import { ControlLinks } from './ControlLinks';
 import { ModelRegistry } from './ModelRegistry';
 import { Firmware } from './Firmware';
+import { Media } from './Media';
+import { ConditionEvidence } from './Conditions';
+import { conditionSources } from '../../../packages/protocol/condition-form.mjs';
 
 interface Snapshot { space: string; devices: Device[]; models: Record<string, Model>; inference: Inference | null; commands: Command[]; deployments: Deployment[]; runs: Run[]; next: string | null }
 const empty: Snapshot = { space: '', devices: [], models: {}, inference: null, commands: [], deployments: [], runs: [], next: null };
-const navigation = [['devices', '设备'], ['automation', '自动化'], ['activity', '执行记录'], ['connections', '网关配对'], ['models', '设备接入'], ['firmware', '固件升级']] as const;
+const navigation = [['devices', '设备'], ['automation', '自动化'], ['media', '音频'], ['activity', '执行记录'], ['connections', '网关配对'], ['models', '设备接入'], ['firmware', '固件升级']] as const;
 function currentView() { const view = new URLSearchParams(location.search).get('view'); return navigation.some(([id]) => id === view) ? view! : 'devices'; }
 function Icon({ name }: { name: string }) {
   const paths: Record<string, string> = {
@@ -18,6 +21,7 @@ function Icon({ name }: { name: string }) {
     connections: 'M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2 M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2',
     models: 'M12 3 3 8v9l9 5 9-5V8z M3 8l9 5 9-5 M12 13v9',
     firmware: 'M12 16V3 M7 8l5-5 5 5 M4 14v6h16v-6',
+    media: 'M9 18V5l11-2v13 M9 5l11-2 M9 14c-7-2-7 7 0 4 M20 12c-7-2-7 7 0 4',
     menu: 'M4 6h16 M4 12h16 M4 18h16',
   };
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name] ?? paths.devices} /></svg>;
@@ -141,11 +145,12 @@ function Home({ session, onExpired, embeddedView }: { session: Session; onExpire
     } catch (error) { handleError(error); }
   }
   const Heading = embeddedView === 'connections' ? 'h2' : 'h1';
-  const content = <><div className="page-heading"><Heading>{tab === 'devices' ? '我的设备' : tab === 'automation' ? '自动化' : tab === 'connections' ? '本地配对批准' : tab === 'models' ? '设备接入' : tab === 'firmware' ? '固件升级' : '执行记录'}</Heading><button onClick={() => void refresh()}>刷新</button></div>
+  const content = <><div className="page-heading"><Heading>{tab === 'devices' ? '我的设备' : tab === 'automation' ? '自动化' : tab === 'media' ? '音频' : tab === 'connections' ? '本地配对批准' : tab === 'models' ? '设备接入' : tab === 'firmware' ? '固件升级' : '执行记录'}</Heading><button onClick={() => void refresh()}>刷新</button></div>
     {(!online || error) && <div className="notice" role="alert">{error || '网关连接已中断，当前显示上次观测'}{updated && <span>上次更新 {when(updated)}</span>}</div>}
     {tab === 'devices' && <Devices {...snapshot} prefix={prefix} session={session} online={online} refresh={refresh} onError={handleError} />}
     {tab === 'automation' && <Automation {...snapshot} prefix={prefix} session={session} online={online} refresh={refresh} onError={handleError} />}
     {tab === 'activity' && <Activity {...snapshot} more={more} />}
+    {tab === 'media' && prefix && <Media key={prefix} prefix={prefix} session={session} online={online} devices={snapshot.devices} models={snapshot.models} onError={handleError} />}
     {tab === 'connections' && prefix && <ControlLinks prefix={prefix} session={session} online={online} onError={handleError} />}
     {tab === 'models' && prefix && <ModelRegistry key={prefix} prefix={prefix} session={session} online={online} onError={handleError} refresh={refresh} />}
     {tab === 'firmware' && prefix && <Firmware key={prefix} prefix={prefix} session={session} online={online} devices={snapshot.devices} models={snapshot.models} onError={handleError} />}
@@ -157,10 +162,11 @@ function Home({ session, onExpired, embeddedView }: { session: Session; onExpire
       <main id="home-main" className="content" tabIndex={-1}>{content}</main></div></>;
 }
 function Activity({ commands, devices, models, runs, next, more }: Snapshot & { more: () => Promise<void> }) {
+  const sources = conditionSources(devices, models);
   return <><section aria-label="设备操作"><h2>设备操作</h2>{commands.length === 0 && <p className="muted">暂无操作</p>}
     <div className="activity-list">{commands.map(command => <article key={command.command_id} className="activity-row" data-command-id={command.command_id}>
       <div><strong>{devices.find(d => d.device_id === command.request.device_id) ? deviceName(devices.find(d => d.device_id === command.request.device_id)!, models) : command.request.device_id}</strong><p>{commandSummary(command)}</p></div>
       <div><span className={`command-status ${command.status}`}>{commandStatus(command)}</span><details><summary>操作详情</summary><dl><dt>操作编号</dt><dd>{command.command_id}</dd><dt>设备回执</dt><dd>{['device_result', 'action_result'].includes(command.evidence?.type ?? '') ? '已收到' : '未收到'}</dd>{command.run_id && <><dt>关联运行</dt><dd>{command.run_id}</dd></>}{command.error && <><dt>原因</dt><dd>{command.error}</dd></>}</dl></details></div>
     </article>)}</div>{next && <button onClick={() => void more()}>加载更多</button>}</section>
-    <section><h2>自动化运行</h2>{runs.length === 0 && <p className="muted">暂无运行</p>}{runs.map(run => <details className="run" key={run.run_id}><summary>{run.error ? '运行未完成' : `${run.command_ids.length} 个关联操作`}</summary><dl><dt>运行编号</dt><dd>{run.run_id}</dd><dt>事件编号</dt><dd>{run.event_id}</dd><dt>规则版本</dt><dd>{run.rule_revision}</dd>{run.command_ids.map(id => <div key={id}><dt>操作编号</dt><dd>{id}</dd></div>)}</dl></details>)}</section></>;
+    <section><h2>自动化运行</h2>{runs.length === 0 && <p className="muted">暂无运行</p>}{runs.map(run => <details className="run" key={run.run_id}><summary>{run.error === 'automation_budget_exceeded' ? '自动化操作过于频繁，本次未执行' : run.error === 'rule_conditions_not_met' ? '条件未满足，本次未执行' : run.error ? '运行未完成' : `${run.command_ids.length} 个关联操作`}</summary><dl><dt>运行编号</dt><dd>{run.run_id}</dd><dt>事件编号</dt><dd>{run.event_id}</dd><dt>规则版本</dt><dd>{run.rule_revision}</dd>{run.error && <><dt>原因</dt><dd>{run.error}</dd></>}{run.command_ids.map(id => <div key={id}><dt>操作编号</dt><dd>{id}</dd></div>)}</dl>{run.condition_evaluation && <ConditionEvidence evaluation={run.condition_evaluation} sources={sources} />}</details>)}</section></>;
 }

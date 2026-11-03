@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -136,8 +137,14 @@ import run.limeai.iot.core.*
 @Composable private fun CloudProperty(state: CloudState, vm: CloudViewModel, device: Device, property: Property, path: String) {
     val disabled = !state.foreground || !state.online || state.busy || !device.ready || "write" !in property.access || state.gateway?.scopes?.contains("commands.write") != true || state.blocked(device)
     val observed = device.reported[path]
-    val name = when (property.id) { "power" -> "电源"; "brightness" -> "亮度"; else -> property.id }
-    when (property.schema.type) {
+    val name = property.displayName
+    if ("write" !in property.access) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(name, fontSize = 14.sp)
+        Column(horizontalAlignment = Alignment.End) {
+            Text(property.displayValue(observed?.value), fontSize = 14.sp)
+            if (observed?.quality == "stale") Text("已过期", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    } else when (property.schema.type) {
         "boolean" -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(name, fontSize = 14.sp)
             Switch(checked = observed?.value?.toString() == "true", onCheckedChange = { vm.control(device, path, JsonPrimitive(it)) }, enabled = !disabled && observed != null)

@@ -1,0 +1,33 @@
+config LIMEIOT_CREDENTIAL_DATE_CHECK
+    bool
+    default y
+    select MBEDTLS_HAVE_TIME
+    select MBEDTLS_HAVE_TIME_DATE
+    help
+        Require certificate date support for MQTT startup and runtime checks.
+        The product must supply an independently trusted wall clock.
+
+menu "LimeIoT storage"
+    config LIMEIOT_NVS_HMAC_PROTECTED
+        bool "Require pre-provisioned HMAC-protected NVS"
+        depends on SOC_HMAC_SUPPORTED
+        default n
+        help
+            Require the configured HMAC_UP key block to be read/write protected.
+            Read an authenticated device/space binding before opening NVS.
+            This adapter never generates keys or burns eFuses.
+endmenu
+
+menu "LimeIoT device identity"
+    config LIMEIOT_DEVICE_LOCAL_IDENTITY
+        bool "Allow device-local key and CSR initialization"
+        depends on LIMEIOT_NVS_HMAC_PROTECTED
+        default y
+        select MBEDTLS_X509_CREATE_C
+        select MBEDTLS_X509_CSR_WRITE_C
+        select MBEDTLS_HAVE_TIME_DATE
+        help
+            Keep the device TLS private key in authenticated encrypted NVS.
+            Export only a public CSR and verify pinned CA, device and key on import.
+            Product code must explicitly authorize initialization operations.
+endmenu

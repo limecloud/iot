@@ -58,7 +58,12 @@ fn drafts_are_idempotent_validated_and_never_deploy_or_execute() {
     input.idempotency_key = "invalid-output".into();
     let second = data.create_draft(input, "local-model", now).unwrap();
     let mut invalid = rule(&second.draft_id);
-    invalid.actions[0].device = "other-space-device".into();
+    match &mut invalid.actions[0] {
+        limeiot_core::protocol::Action::Set { device, .. }
+        | limeiot_core::protocol::Action::Invoke { device, .. } => {
+            *device = "other-space-device".into()
+        }
+    }
     let rejected = data
         .finish_draft(&second.draft_id, Ok(invalid), None, now)
         .unwrap();

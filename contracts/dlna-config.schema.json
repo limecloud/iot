@@ -1,0 +1,35 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://limeiot.run/contracts/dlna-config.schema.json",
+  "title":"Fixed local DLNA renderer configuration",
+  "$comment":"运行时另核对规范私网/回环IPv4、路径、URL、全局唯一性；Schema通过不授予绑定。",
+  "$defs":{
+    "identifier":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,128}$"},
+    "path":{"type":"string","minLength":1,"maxLength":512,"pattern":"^/[A-Za-z0-9/._-]*$"},
+    "media":{"type":"object","properties":{"media_id":{"$ref":"#/$defs/identifier"},"url":{"type":"string","minLength":1,"maxLength":1024,"format":"uri"},"expires_at":{"type":"string","format":"date-time"}},"required":["media_id","url","expires_at"],"additionalProperties":false},
+    "config":{
+      "type":"object",
+      "properties":{
+        "schema_version":{"const":1},
+        "target":{"type":"string","pattern":"^[0-9.]+:[0-9]+$"},
+        "description_path":{"$ref":"#/$defs/path"},
+        "av_transport_path":{"$ref":"#/$defs/path"},
+        "rendering_control_path":{"$ref":"#/$defs/path"},
+        "udn":{"type":"string","minLength":6,"maxLength":128,"pattern":"^uuid:[A-Za-z0-9:_-]+$"},
+        "playback_volume":{"type":"integer","minimum":0,"maximum":30},
+        "volume_limit":{"type":"integer","minimum":1,"maximum":30},
+        "media":{"type":"array","maxItems":32,"items":{"$ref":"#/$defs/media"}},
+        "managed_media":{"type":"boolean","default":false},
+        "timeout_ms":{"type":"integer","minimum":50,"maximum":5000}
+      },
+      "required":["schema_version","target","description_path","av_transport_path","rendering_control_path","udn","playback_volume","volume_limit","media","timeout_ms"],
+      "allOf":[{"if":{"properties":{"managed_media":{"const":true}},"required":["managed_media"]},"then":{"properties":{"media":{"type":"array","maxItems":0}}}}],
+      "additionalProperties":false
+    },
+    "binding":{"type":"object","properties":{"device_id":{"$ref":"#/$defs/identifier"},"adapter_id":{"$ref":"#/$defs/identifier"},"config":{"$ref":"#/$defs/config"}},"required":["device_id","adapter_id","config"],"additionalProperties":false}
+  },
+  "type":"object",
+  "properties":{"schema_version":{"const":1},"bindings":{"type":"array","maxItems":16,"items":{"$ref":"#/$defs/binding"}}},
+  "required":["schema_version","bindings"],
+  "additionalProperties":false
+}

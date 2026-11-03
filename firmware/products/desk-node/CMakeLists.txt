@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 set(EXTRA_COMPONENT_DIRS "../../components")
 set(COMPONENTS main)
-set(LIMEIOT_FIRMWARE_VERSION "0.2.0" CACHE STRING "LimeIoT firmware version")
+set(LIMEIOT_FIRMWARE_VERSION "0.3.0" CACHE STRING "LimeIoT firmware version")
 if(NOT LIMEIOT_FIRMWARE_VERSION MATCHES "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$")
     message(FATAL_ERROR "LIMEIOT_FIRMWARE_VERSION must be major.minor.patch")
 endif()

@@ -38,9 +38,24 @@ fn check(data: &limeiot_core::engine::Data, space: &str) -> Result<()> {
     ensure(data.space_id == space, "forbidden")
 }
 async fn adapters(State(app): State<App>, Path(space): Path<String>) -> Output<Json<Value>> {
-    let store = app.store.lock().await;
-    check(&store.data, &space)?;
-    Ok(Json(app.tv.list(&store.data)))
+    let (mut value, audio, revisions) = {
+        let store = app.store.lock().await;
+        check(&store.data, &space)?;
+        (
+            app.tv.list(&store.data),
+            app.audio.list(&store.data),
+            app.audio.media_revisions(&store.data),
+        )
+    };
+    // 媒体worker可能等待文件I/O；候选与绑定修订已在上方取快照，不持有核心锁。
+    value["items"].as_array_mut().expect("adapter list").extend(
+        app.audio.list_managed(&app, audio, revisions).await?["items"]
+            .as_array()
+            .expect("audio list")
+            .iter()
+            .cloned(),
+    );
+    Ok(Json(value))
 }
 async fn binding(
     State(app): State<App>,
@@ -93,7 +108,10 @@ async fn apply(
                 }
                 | Change::Compose {
                     device_id, route, ..
-                } => app.tv.offer(data, device_id, route),
+                } => app
+                    .tv
+                    .offer(data, device_id, route)
+                    .or_else(|| app.audio.offer(data, device_id, route)),
                 _ => None,
             };
             data.apply_execution_change(

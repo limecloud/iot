@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT accepted live device event projection",
+  "type": "object",
+  "required": ["device_id", "model_revision", "boot_id", "session_id", "message_id", "seq", "event_id", "path", "occurred_at", "received_at", "body_digest", "data"],
+  "properties": {
+    "device_id": { "$ref": "#/$defs/id" },
+    "model_revision": { "$ref": "#/$defs/digest" },
+    "boot_id": { "$ref": "#/$defs/id" },
+    "session_id": { "$ref": "#/$defs/id" },
+    "message_id": { "$ref": "#/$defs/id" },
+    "seq": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "event_id": { "$ref": "#/$defs/id" },
+    "path": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}\\.[a-z][a-z0-9_-]{0,63}$" },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "received_at": { "type": "string", "format": "date-time" },
+    "body_digest": { "$ref": "#/$defs/digest" },
+    "data": {}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$" },
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

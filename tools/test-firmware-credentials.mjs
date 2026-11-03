@@ -1,0 +1,24 @@
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdir, stat, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { root } from './dev-stack.mjs';
+
+const exec = promisify(execFile);
+const sdk = process.env.LIMEIOT_IDF_PATH ?? process.env.IDF_PATH;
+if (!sdk) throw new Error('设置LIMEIOT_IDF_PATH或IDF_PATH，指向完整固定ESP-IDF SDK');
+const revision = (await exec('git', ['-C', sdk, 'rev-parse', 'HEAD'])).stdout.trim();
+if (revision !== 'fff9895c82d744c7237be8847347bdd1b07c6643') throw new Error('固定ESP-IDF修订不匹配');
+const source = path.join(sdk, 'components/mbedtls/mbedtls');
+const crypto = path.join(root, '.dev/identity-crypto-host');
+const libraries = [path.join(crypto, 'library/libmbedx509.a'), path.join(crypto, 'tf-psa-crypto/core/libtfpsacrypto.a')];
+for (const file of libraries) await stat(file).catch(() => { throw new Error('先运行npm run test:firmware:identity构建固定SDK宿主密码库'); });
+const directory = path.join(root, '.dev/credential-window-host'); await mkdir(directory, { recursive: true });
+const includes = ['firmware/tests/identity_stubs', path.join(source, 'include'), path.join(source, 'tf-psa-crypto/include'), path.join(source, 'tf-psa-crypto/drivers/builtin/include'), path.join(crypto, 'tf-psa-crypto/include'), 'firmware/tests/storage_stubs', 'firmware/components/limeiot_core/include', 'firmware/components/limeiot_espidf/include', 'firmware/components/limeiot_espidf/src'];
+const openssl = (await exec('pkg-config', ['--cflags', '--libs', 'openssl'])).stdout.trim().split(/\s+/);
+const binary = path.join(directory, 'credential-window-host');
+const flags = ['-std=c11', '-D_POSIX_C_SOURCE=200809L', '-Wall', '-Wextra', '-Werror', '-fsanitize=address,undefined', '-fno-omit-frame-pointer', '-g'];
+await exec(process.env.CC ?? 'clang', [...flags, ...includes.map(value => '-I' + value), 'firmware/components/limeiot_espidf/src/credential_window.c', 'firmware/components/limeiot_espidf/src/identity_crypto.c', 'firmware/tests/credential_window_host.c', ...libraries, ...openssl, '-o', binary], { cwd: root, timeout: 60000 });
+const result = await exec(process.execPath, ['--test', '--test-concurrency=1', 'tests/firmware-credential-window.test.mjs'], { cwd: root, timeout: 60000, env: { ...process.env, LIMEIOT_CREDENTIAL_WINDOW_BINARY: binary } });
+process.stdout.write(result.stdout); process.stderr.write(result.stderr);
+await writeFile(path.join(directory, 'build-info.json'), JSON.stringify({ sdk_revision: revision, sanitizers: ['address', 'undefined'], window_only: true, esp_mqtt_runtime: false, hardware: false }, null, 2) + '\n');

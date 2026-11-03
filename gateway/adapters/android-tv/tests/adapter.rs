@@ -128,6 +128,19 @@ async fn fixed_target_all_nine_keys_and_environment_are_bounded() {
         );
     }
     assert_eq!(fixture.lines("effects.jsonl").len(), 9);
+    let calls = fixture.lines("calls.jsonl");
+    assert_eq!(calls.len(), 18, "每次按键只进行一次完整身份预检");
+    for pair in calls.chunks_exact(2) {
+        assert_eq!(
+            pair[0]["args"].as_array().unwrap()[6..],
+            json!([
+                "shell",
+                "getprop ro.build.fingerprint && getprop ro.serialno"
+            ])
+            .as_array()
+            .unwrap()[..]
+        );
+    }
     for call in fixture.lines("calls.jsonl") {
         assert_eq!(
             call["env"]["ANDROID_USER_HOME"],
@@ -140,6 +153,85 @@ async fn fixed_target_all_nine_keys_and_environment_are_bounded() {
         assert!(call["env"]["ADB_SERVER_SOCKET"].is_null());
         assert!(call["env"]["LIMEIOT_TOKEN"].is_null());
     }
+}
+
+#[tokio::test]
+async fn complete_crlf_identity_is_accepted_without_fallback_queries() {
+    let fixture = Fixture::new(json!({
+        "raw_identity":format!("{FINGERPRINT}\r\nsample-tv-001\r\n")
+    }));
+    let found = fixture.adapter().discover(deadline()).await.unwrap();
+    assert_eq!(found.fingerprint, FINGERPRINT);
+    assert!(found.applications.contains("com.example.player"));
+    assert_eq!(fixture.lines("calls.jsonl").len(), 2);
+    assert!(fixture.lines("effects.jsonl").is_empty());
+}
+
+#[tokio::test]
+async fn incomplete_extra_or_mismatched_identity_never_authorizes_an_action() {
+    for raw in [
+        String::new(),
+        format!("{FINGERPRINT}\n"),
+        format!("{FINGERPRINT}\nsample-tv-001"),
+        format!("{FINGERPRINT}\nsample-tv-001\n\n"),
+        format!("{FINGERPRINT}\nsample-tv-001\nextra\n"),
+        format!("sample-tv-001\n{FINGERPRINT}\n"),
+        format!("{FINGERPRINT}\n\n"),
+        "\nsample-tv-001\n".into(),
+        format!(" {FINGERPRINT}\nsample-tv-001\n"),
+        format!("{FINGERPRINT}\nsample-tv-001\r\r\n"),
+    ] {
+        let fixture = Fixture::new(json!({"raw_identity":raw}));
+        let authorized = std::sync::atomic::AtomicBool::new(false);
+        let outcome = fixture
+            .adapter()
+            .execute_authorized(
+                &operation("remote.press", json!({"key":"home"})),
+                deadline(),
+                || async {
+                    authorized.store(true, std::sync::atomic::Ordering::SeqCst);
+                    Ok(())
+                },
+            )
+            .await;
+        assert_eq!(outcome.stage, Stage::Rejected, "{raw:?}");
+        assert!(!authorized.load(std::sync::atomic::Ordering::SeqCst));
+        assert_eq!(fixture.lines("calls.jsonl").len(), 1);
+        assert!(fixture.lines("effects.jsonl").is_empty());
+    }
+    for fault in ["stderr", "invalid_utf8"] {
+        let fixture = Fixture::new(json!({"probe_fault":fault}));
+        let outcome = fixture
+            .adapter()
+            .execute(
+                &operation("remote.press", json!({"key":"home"})),
+                deadline(),
+            )
+            .await;
+        assert_eq!(outcome.stage, Stage::Rejected);
+        assert_eq!(outcome.error, Some("tv_probe_failed"));
+        assert_eq!(fixture.lines("calls.jsonl").len(), 1);
+        assert!(fixture.lines("effects.jsonl").is_empty());
+    }
+}
+
+#[tokio::test]
+async fn identity_and_inventory_share_the_original_operation_deadline() {
+    let fixture = Fixture::new(json!({"probe_delay_ms":1700,"packages_delay_ms":1700}));
+    let outcome = fixture
+        .adapter()
+        .execute(
+            &operation(
+                "apps.launch",
+                json!({"application_id":"com.example.player"}),
+            ),
+            deadline(),
+        )
+        .await;
+    assert_eq!(outcome.stage, Stage::Rejected);
+    assert_eq!(outcome.error, Some("tv_probe_failed"));
+    assert_eq!(fixture.lines("calls.jsonl").len(), 2);
+    assert!(fixture.lines("effects.jsonl").is_empty());
 }
 
 #[tokio::test]

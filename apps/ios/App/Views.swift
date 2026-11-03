@@ -28,7 +28,8 @@ struct RootView: View {
                     NavigationStack { Form {
                         Section("家庭网关") { Text(home.endpoint).textSelection(.enabled); Text(home.online ? "本地已连接" : "连接中断") }
                         if let firmware = home.firmware { NavigationLink("固件升级") { FirmwareView(firmware: firmware, devices: home.snapshot?.devices ?? []) } }
-                        Button("退出登录", role: .destructive) { Task { await home.logout() } }.disabled(home.busy || home.firmware?.busy == true)
+                        if let media = home.media { MediaSettingsLinks(media: media) }
+                        else { Button("退出登录", role: .destructive) { Task { await home.logout() } }.disabled(home.busy || home.firmware?.busy == true) }
                         MessageView()
                     }.navigationTitle("设置") }.tabItem { Label("设置", systemImage: "gearshape") }
                 }
@@ -87,10 +88,17 @@ struct PropertyView: View {
     @EnvironmentObject private var home: HomeStore
     let device: Device; let property: Property; let path: String
     @State private var number = ""
-    private var name: String { property.id == "power" ? "电源" : property.id == "brightness" ? "亮度" : property.id }
+    private var name: String { property.displayName }
     private var disabled: Bool { !home.online || !device.ready || home.busy || home.pending[device.id] != nil || !property.access.contains("write") || home.snapshot?.commands.items.first(where: { $0.request.deviceId == device.id }).map { ["accepted", "dispatched"].contains($0.status) } == true }
     var body: some View {
-        if property.schema.type == "boolean" {
+        if !property.access.contains("write") {
+            LabeledContent(name) {
+                VStack(alignment: .trailing) {
+                    Text(property.displayValue(device.reported[path]?.value))
+                    if device.reported[path]?.quality == "stale" { Text("已过期").font(.caption).foregroundStyle(Palette.sand11) }
+                }
+            }
+        } else if property.schema.type == "boolean" {
             Toggle(name, isOn: Binding(get: { device.reported[path]?.value.bool ?? false }, set: { value in Task { await home.control(device, path: path, value: .bool(value)) } })).disabled(disabled || device.reported[path] == nil)
         } else if property.schema.type == "integer" {
             HStack {
@@ -130,48 +138,187 @@ struct DeviceActionView: View {
         }.disabled(disabled).onAppear { if input.isEmpty && path != "apps.launch" { input = action.input.sample.jsonText } }
     }
 }
-private struct Source: Identifiable { let id: String; let device: String; let event: String; let name: String; let sample: JSONValue }
-private struct Target: Identifiable { let id: String; let device: String; let path: String; let name: String }
+private struct Source: Identifiable {
+    let id: String; let device: String; let event: String; let name: String; let sample: JSONValue; var property: Property? = nil
+    func matches(_ trigger: Rule.Trigger) -> Bool {
+        device == trigger.device && (property == nil ? event == trigger.event : event == trigger.property?.path && property?.unit == trigger.property?.unit)
+    }
+}
+private struct Target: Identifiable { let id: String; let device: String; let path: String; let name: String; let type: String; let sample: JSONValue; let schema: ValueSchema }
 struct AutomationView: View {
     @EnvironmentObject private var home: HomeStore
     @State private var sourceId = ""
+    @State private var scheduled = false
+    @State private var scheduleTime = "22:00"
+    @State private var timeZone = TimeZone.current.identifier
+    @State private var weekdays = [1, 2, 3, 4, 5, 6, 7]
     @State private var targetId = ""
     @State private var value = true
-    @State private var cooldown = 10
+    @State private var actionInput: String?
+    @State private var cooldown = "10"
+    @State private var conditions: [ConditionForm] = []
+    @State private var preview: Simulation?
+    @State private var editing = false
+    @State private var threshold = "28"
+    @State private var hysteresis = "1"
+    @State private var edge: Rule.PropertyTrigger.Edge = .rising
     @State private var ruleId = "rule-" + UUID().uuidString.lowercased()
     @State private var reviewed: Rule?
     @State private var simulating = false
-    private var sources: [Source] { home.snapshot?.devices.flatMap { device in home.snapshot?.models[device.modelRevision]?.services.flatMap { service in service.events.map { Source(id: device.id + "/" + service.id + "." + $0.id, device: device.id, event: service.id + "." + $0.id, name: (home.snapshot?.name(device) ?? device.id) + " " + ($0.id == "pressed" ? "按下时" : $0.id), sample: $0.schema.sample) } } ?? [] } ?? [] }
-    private var targets: [Target] { home.snapshot?.devices.flatMap { device in home.snapshot?.models[device.modelRevision]?.services.flatMap { service in service.properties.filter { $0.schema.type == "boolean" && $0.access.contains("write") }.map { Target(id: device.id + "/" + service.id + "." + $0.id, device: device.id, path: service.id + "." + $0.id, name: (home.snapshot?.name(device) ?? device.id) + " " + ($0.id == "power" ? "电源" : $0.id)) } } ?? [] } ?? [] }
-    private var source: Source? { sources.first { $0.id == sourceId } ?? sources.first }
-    private var target: Target? { targets.first { $0.id == targetId } ?? targets.first }
-    private var rule: Rule? { guard let source, let target else { return nil }; return Rule(id: ruleId, source: source.device, event: source.event, target: target.device, path: target.path, value: .bool(value), cooldownMs: cooldown * 1000) }
+    private var sources: [Source] {
+        let items: [Source] = home.snapshot?.devices.flatMap { device in
+            home.snapshot?.models[device.modelRevision]?.services.flatMap { service in
+                let name = home.snapshot?.name(device) ?? device.id
+                let events = service.events.map { Source(id: device.id + "/" + service.id + "." + $0.id, device: device.id, event: service.id + "." + $0.id, name: name + " " + ($0.id == "pressed" ? "按下时" : $0.id), sample: $0.schema.sample) }
+                let properties = service.properties.filter { ["integer", "number"].contains($0.schema.type) && $0.access.contains("read") && $0.access.contains("notify") && $0.unit != nil }.map { property in
+                    let path = service.id + "." + property.id
+                    return Source(id: device.id + "/property/" + path, device: device.id, event: path, name: name + " " + property.displayName, sample: .null, property: property)
+                }
+                return events + properties
+            } ?? []
+        } ?? []
+        return items.sorted { $0.property == nil && $1.property != nil }
+    }
+    private var targets: [Target] {
+        home.snapshot?.devices.flatMap { device in
+            home.snapshot?.models[device.modelRevision]?.services.flatMap { service in
+                let name = home.snapshot?.name(device) ?? device.id
+                let properties = service.properties.filter { ["boolean", "integer", "number"].contains($0.schema.type) && $0.access.contains("write") }.map { property in
+                    let path = service.id + "." + property.id
+                    return Target(id: device.id + "/set/" + path, device: device.id, path: path, name: name + " " + property.displayName, type: "property.set", sample: property.schema.sample, schema: property.schema)
+                }
+                let actions = (service.actions ?? []).map { action in
+                    let path = service.id + "." + action.id
+                    return Target(id: device.id + "/invoke/" + path, device: device.id, path: path, name: name + " " + path, type: "action.invoke", sample: action.input.sample, schema: action.input)
+                }
+                return properties + actions
+            } ?? []
+        } ?? []
+    }
+    private var source: Source? { sourceId.isEmpty ? sources.first : sources.first { $0.id == sourceId } }
+    private var target: Target? { targetId.isEmpty ? targets.first : targets.first { $0.id == targetId } }
+    private var conditionSources: [ConditionSource] { ConditionEditor.sources(home.snapshot) }
+    private var rule: Rule? {
+        guard let target, let compiled = ConditionEditor.compile(conditions, sources: conditionSources), let cooldownMs = ConditionEditor.cooldown(cooldown) else { return nil }
+        let input: JSONValue
+        if target.type == "action.invoke" {
+            guard let parsed = try? JSONDecoder().decode(JSONValue.self, from: Data((actionInput ?? target.sample.jsonText).utf8)) else { return nil }
+            input = parsed
+        } else if target.schema.type == "boolean" { input = .bool(value) }
+        else { guard let parsed = ThresholdEditor.number(actionInput ?? target.sample.jsonText, schema: target.schema) else { return nil }; input = parsed }
+        let trigger: Rule.Trigger
+        if scheduled {
+            guard let schedule = Rule.Trigger.Schedule.fromForm(time: scheduleTime, timeZone: timeZone, weekdays: weekdays) else { return nil }
+            trigger = Rule.Trigger(schedule: schedule)
+        } else if let source, let property = source.property {
+            guard let result = ThresholdEditor.property(path: source.event, unit: property.unit!, schema: property.schema, edge: edge, threshold: threshold, hysteresis: hysteresis), ThresholdEditor.samples(result, schema: property.schema) != nil else { return nil }
+            trigger = Rule.Trigger(device: source.device, property: result)
+        } else if let source { trigger = Rule.Trigger(device: source.device, event: source.event) }
+        else { return nil }
+        return Rule(id: ruleId, trigger: trigger, target: target.device, path: target.path, value: input, cooldownMs: cooldownMs, type: target.type, conditions: compiled)
+    }
+    private var eventSample: JSONValue? {
+        if scheduled { return .null }
+        guard let source else { return nil }
+        if let property = source.property { guard let trigger = rule?.trigger.property else { return nil }; return ThresholdEditor.samples(trigger, schema: property.schema) }
+        return source.sample
+    }
+    private func reset() { ruleId = "rule-" + UUID().uuidString.lowercased(); sourceId = ""; scheduled = false; scheduleTime = "22:00"; timeZone = TimeZone.current.identifier; weekdays = [1,2,3,4,5,6,7]; targetId = ""; value = true; actionInput = nil; cooldown = "10"; conditions = []; threshold = "28"; hysteresis = "1"; edge = .rising; reviewed = nil; preview = nil; editing = false }
     var body: some View {
         Form {
             MessageView()
             DraftSection()
-            if let rule, let source {
+            if let target {
                 Section("设置联动") {
-                    Picker("当", selection: Binding(get: { source.id }, set: { sourceId = $0 })) { ForEach(sources) { Text($0.name).tag($0.id) } }
-                    Picker("执行", selection: Binding(get: { target?.id ?? "" }, set: { targetId = $0 })) { ForEach(targets) { Text($0.name).tag($0.id) } }
-                    Toggle("开启设备", isOn: $value)
-                    Stepper("冷却 \(cooldown) 秒", value: $cooldown, in: 0...86400)
-                    Button(simulating ? "正在预演" : "校验并预演") { simulating = true; reviewed = nil; Task { do { let result = try await home.simulate(rule, event: source.sample); if result.matched && !result.executed { reviewed = rule } } catch { home.report(error) }; simulating = false } }.disabled(!home.online || home.busy || simulating)
-                    if reviewed == rule { Text("预演通过，设备尚未执行").font(.footnote).foregroundStyle(Palette.grass9) }
-                    Button("启用自动化") { Task { await home.deploy(rule); reviewed = nil } }.disabled(!home.online || reviewed != rule || home.busy || simulating)
+                    Picker("触发方式", selection: $scheduled) { Text("设备事件或属性").tag(false); Text("定时").tag(true) }
+                    if scheduled {
+                        TextField("时间（HH:MM）", text: $scheduleTime).keyboardType(.numbersAndPunctuation)
+                        TextField("IANA 时区", text: $timeZone).autocorrectionDisabled().textInputAutocapitalization(.never)
+                        DisclosureGroup("重复") { ForEach(1...7, id: \.self) { day in Toggle(["周一","周二","周三","周四","周五","周六","周日"][day - 1], isOn: Binding(get: { weekdays.contains(day) }, set: { selected in if selected { weekdays.append(day) } else { weekdays.removeAll { $0 == day } } })) } }
+                    } else if let source {
+                        Picker("当", selection: Binding(get: { source.id }, set: { sourceId = $0 })) { ForEach(sources) { Text($0.name).tag($0.id) } }
+                    }
+                    if !scheduled, let property = source?.property {
+                        Picker("变化方向", selection: $edge) { Text("上升越过").tag(Rule.PropertyTrigger.Edge.rising); Text("下降越过").tag(Rule.PropertyTrigger.Edge.falling) }
+                        TextField("阈值（\(ThresholdEditor.label(property.unit!))）", text: $threshold).keyboardType(.numbersAndPunctuation)
+                        TextField("滞回（\(ThresholdEditor.label(property.unit!))）", text: $hysteresis).keyboardType(.decimalPad)
+                    }
+                    Picker("执行", selection: Binding(get: { target.id }, set: { targetId = $0; actionInput = nil })) { ForEach(targets) { Text($0.name).tag($0.id) } }
+                    if target.type == "action.invoke" { TextField("动作参数（JSON）", text: Binding(get: { actionInput ?? target.sample.jsonText }, set: { actionInput = $0 }), axis: .vertical).lineLimit(2...5).autocorrectionDisabled() }
+                    else if target.schema.type == "boolean" { Toggle("开启设备", isOn: $value) }
+                    else { TextField("设为", text: Binding(get: { actionInput ?? target.sample.jsonText }, set: { actionInput = $0 })).keyboardType(.numbersAndPunctuation) }
+                    TextField("冷却时间（秒）", text: $cooldown).keyboardType(.decimalPad)
+                    DisclosureGroup("仅当") { ConditionFormsView(forms: $conditions, sources: conditionSources, total: ConditionEditor.count(conditions)).disabled(home.busy || simulating) }
+                    if ConditionEditor.compile(conditions, sources: conditionSources) == nil { Text("请检查条件值、组合层级和数量。每组最多16项，共32项，最多4层。").font(.footnote).foregroundStyle(Palette.amber11) }
+                    Button(simulating ? "正在预演" : "校验并预演") { guard let rule, let eventSample else { return }; simulating = true; reviewed = nil; preview = nil; Task { do { let result = try await home.simulate(rule, event: eventSample); if result.canDeploy { reviewed = rule; preview = result } } catch { home.report(error) }; simulating = false } }.disabled(!home.online || home.busy || simulating || rule == nil)
+                    if !scheduled && source?.property != nil { Text("预演使用示例采样，不控制设备。").font(.footnote).foregroundStyle(Palette.sand11) }
+                    if let rule, reviewed == rule, let preview { Text(preview.matched ? "预演通过，设备尚未执行" : "触发样例有效，当前条件未满足。启用后等待新的触发，不会补执行。").font(.footnote).foregroundStyle(Palette.grass9); if let evidence = preview.conditionEvaluation { ConditionEvidenceView(evaluation: evidence) } }
+                    Button("启用自动化") { guard let rule else { return }; Task { await home.deploy(rule); reviewed = nil } }.disabled(!home.online || rule == nil || reviewed != rule || home.busy || simulating)
+                    if editing { Button("取消编辑", action: reset).disabled(home.busy || simulating) }
                 }
-            } else { Text("连接支持事件和控制的设备后，可以创建联动。") }
+            } else { Text("连接支持控制的设备后，可以创建联动。") }
             Section("已启用") {
                 ForEach(home.snapshot?.deployments ?? []) { deployment in
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(sources.first { $0.device == deployment.rule.trigger.device && $0.event == deployment.rule.trigger.event }?.name ?? deployment.id)
+                        Text(deployment.rule.trigger.schedule?.summary ?? deployment.rule.trigger.property?.summary ?? sources.first { $0.matches(deployment.rule.trigger) }?.name ?? deployment.id)
+                        ForEach(deployment.rule.actions.indices, id: \.self) { index in Text(deployment.rule.actions[index].device + " " + deployment.rule.actions[index].operation.summary).font(.footnote) }
+                        if !deployment.rule.conditions.isEmpty { DisclosureGroup("条件：全部满足") { ForEach(Array(ConditionEditor.rows(deployment.rule.conditions).enumerated()), id: \.offset) { Text($0.element).font(.footnote) } } }
                         Text("最近触发 \(deployment.lastRun ?? "尚无记录")").font(.footnote).foregroundStyle(Palette.sand11)
+                        if deployment.rule.version == 1, deployment.rule.actions.count == 1, let forms = ConditionEditor.restore(deployment.rule.conditions, sources: conditionSources),
+                           let first = deployment.rule.actions.first,
+                           let editable = targets.first(where: { $0.device == first.device && $0.path == first.operation.path && $0.type == first.operation.type }),
+                           deployment.rule.trigger.schedule != nil || sources.contains(where: { $0.matches(deployment.rule.trigger) }) {
+                            Button("编辑") { ruleId = deployment.rule.id; sourceId = sources.first(where: { $0.matches(deployment.rule.trigger) })?.id ?? ""; scheduled = deployment.rule.trigger.schedule != nil; if let schedule = deployment.rule.trigger.schedule { scheduleTime = schedule.time; timeZone = schedule.timeZone; weekdays = schedule.weekdays }; targetId = editable.id; value = first.operation.value == .bool(true); actionInput = first.operation.value.jsonText; cooldown = ConditionEditor.cooldownText(deployment.rule.cooldownMs); conditions = forms; editing = true; if let property = deployment.rule.trigger.property { edge = property.edge; threshold = ThresholdEditor.display(property.threshold, unit: property.unit); hysteresis = ThresholdEditor.display(property.hysteresis, unit: property.unit) }; reviewed = nil; preview = nil }.disabled(home.busy || simulating)
+                        }
                         Button("停用") { Task { await home.stop(deployment) } }.disabled(!home.online || home.busy)
                     }
                 }
-                Button("新建自动化") { ruleId = "rule-" + UUID().uuidString.lowercased(); reviewed = nil }
+                Button("新建自动化", action: reset).disabled(home.busy || simulating)
             }
-        }.navigationTitle("自动化").refreshable { await home.refresh() }
+        }.navigationTitle("自动化").refreshable { await home.refresh() }.onChange(of: conditions) { _, _ in reviewed = nil; preview = nil }
+    }
+}
+private struct ConditionFormsView: View {
+    @Binding var forms: [ConditionForm]
+    let sources: [ConditionSource]
+    let total: Int
+    var depth = 1
+    var prefix = ""
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach($forms) { $node in
+                let number = prefix + String((forms.firstIndex { $0.id == node.id } ?? 0) + 1)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("条件 " + number).font(.footnote)
+                    if node.kind == "compare" {
+                        Picker("属性", selection: Binding(get: { node.source }, set: { selected in if let source = sources.first(where: { $0.id == selected }) { let id = node.id; node = ConditionForm(source: source); node.id = id } })) { ForEach(sources) { Text($0.name).tag($0.id) } }
+                        if let source = sources.first(where: { $0.id == node.source }) {
+                            Picker("比较", selection: $node.comparison) { ForEach(ConditionEditor.operators(source.schema), id: \.self) { Text(ConditionEditor.label($0)).tag($0) } }
+                            if source.schema.type == "boolean" { Picker("比较值", selection: $node.value) { Text("是").tag("true"); Text("否").tag("false") } }
+                            else { TextField("比较值" + (source.unit.map { "（" + ThresholdEditor.label($0) + "）" } ?? ""), text: $node.value).autocorrectionDisabled().textInputAutocapitalization(.never) }
+                        }
+                    } else {
+                        Picker("组合方式", selection: $node.kind) { Text("全部满足").tag("all"); Text("任一满足").tag("any") }
+                        AnyView(ConditionFormsView(forms: $node.children, sources: sources, total: total, depth: depth + 1, prefix: number + "-")).padding(.leading, 12)
+                    }
+                    Button("移除条件 " + number) { let id = node.id; forms.removeAll { $0.id == id } }.font(.footnote)
+                }
+                Divider()
+            }
+            Menu("添加条件") {
+                ForEach(["compare", "all", "any"], id: \.self) { kind in Button(kind == "compare" ? "属性比较" : kind == "all" ? "全部满足组" : "任一满足组") { if let source = sources.first { var form = ConditionForm(source: source); form.kind = kind; if kind != "compare" { form.children = [ConditionForm(source: source)] }; forms.append(form) } }.disabled(sources.isEmpty || forms.count >= 16 || total + (kind == "compare" ? 1 : 2) > 32 || kind != "compare" && depth >= 4) }
+            }
+        }
+    }
+}
+private struct ConditionEvidenceView: View {
+    let evaluation: JSONValue
+    private var matched: Bool { if case .object(let fields) = evaluation { fields["matched"] == .bool(true) } else { false } }
+    var body: some View {
+        DisclosureGroup("条件判断：" + (matched ? "已满足" : "未满足")) {
+            ForEach(Array(ConditionEditor.evidenceRows(evaluation).enumerated()), id: \.offset) { Text($0.element).font(.footnote).textSelection(.enabled) }
+            DisclosureGroup("原始条件证据") { Text(evaluation.jsonText).font(.footnote).textSelection(.enabled) }
+        }
     }
 }
 struct DraftSection: View {
@@ -191,10 +338,10 @@ struct DraftSection: View {
                 Text(draft.statusText).font(.footnote)
                 if let error = draft.error { Text(GatewayError.server(error, 422).message).font(.footnote).foregroundStyle(Palette.amber11) }
                 if draft.status == "completed", let rule = draft.rule, home.draftPrompt == draft.request.prompt {
-                    Text("当\(name(rule.trigger.device))\(rule.trigger.event == "button.pressed" ? "按下时" : "发生 " + rule.trigger.event)：")
+                    Text("当\(name(rule.trigger.device))\(rule.trigger.summary)：")
                     ForEach(rule.actions.indices, id: \.self) { index in
                         let action = rule.actions[index]
-                        Text("\(name(action.device))\(action.set.path == "light.power" ? "电源" : action.set.path == "light.brightness" ? "亮度" : action.set.path)设为\(action.set.value.text)")
+                        Text(name(action.device) + " " + action.operation.summary)
                     }
                     Text("冷却时间 \(rule.cooldownMs / 1000) 秒").font(.footnote).foregroundStyle(Palette.sand11)
                     Button("预演草案") { Task { await home.simulateDraft() } }.disabled(!home.online || home.busy || home.draftBusy)
@@ -221,7 +368,7 @@ struct ActivityView: View {
                     } label: { VStack(alignment: .leading) { Text(command.request.operation.summary); Text(command.statusText).font(.footnote).foregroundStyle(command.status == "unknown" ? Palette.amber11 : Palette.sand11) } }
                 }
             }
-            Section("自动化运行") { ForEach(home.snapshot?.runs ?? []) { run in DisclosureGroup("\(run.commandIds.count) 个关联操作") { Text(run.id).textSelection(.enabled); ForEach(run.commandIds, id: \.self) { Text($0).textSelection(.enabled) } }.font(.footnote) } }
+            Section("自动化运行") { ForEach(home.snapshot?.runs ?? []) { run in DisclosureGroup(run.error == "automation_budget_exceeded" ? "自动化操作过于频繁，本次未执行" : run.error == "rule_conditions_not_met" ? "条件未满足，本次未执行" : run.error == nil ? "\(run.commandIds.count) 个关联操作" : "运行未完成") { Text(run.id).textSelection(.enabled); if let error = run.error { Text(error) }; ForEach(run.commandIds, id: \.self) { Text($0).textSelection(.enabled) }; if let evaluation = run.conditionEvaluation { ConditionEvidenceView(evaluation: evaluation) } }.font(.footnote) } }
         }.navigationTitle("执行记录").refreshable { await home.refresh() }
     }
 }

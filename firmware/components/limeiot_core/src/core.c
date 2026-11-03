@@ -38,11 +38,13 @@ static li_error_t publish(li_core_t *core, const char *kind, char *payload) {
 }
 li_error_t li_publish(li_core_t *core, const char *kind, char *payload) { return publish(core,kind,payload); }
 static bool store(li_core_t *core, unsigned slot, li_receipt_t *record) {
+    if (core->storage_faulted) return false;
     char *json = li_codec_receipt_encode(record);
     if (!json) return false;
     bool result = core->ports.storage_write(core->ports.context, slot, json, strlen(json));
     li_codec_free(json);
     if (result) { core->receipts[slot] = *record; core->occupied[slot] = true; }
+    else core->storage_faulted = true;
     return result;
 }
 li_core_t *li_core_create(const li_config_t *config, const li_ports_t *ports, li_error_t *error) {
@@ -111,9 +113,27 @@ static li_error_t report_device_info(li_core_t *core) {
 li_error_t li_report_snapshot(li_core_t *core) {
     int64_t now = li_now(core); if (now < 0) return LI_CLOCK;
     li_value_t values[LI_MAX_PROPERTIES];
-    for (size_t i = 0; i < core->config.property_count; i++) if (!core->ports.read_property(core->ports.context, core->config.properties[i].path, &values[i]) || !li_value_valid(&core->config.properties[i], values[i])) return LI_DRIVER;
-    core->last_snapshot = core->ports.monotonic_ms(core->ports.context);
-    li_error_t result = publish(core, "state", li_codec_snapshot(core, now, values));
+    int64_t observed[LI_MAX_PROPERTIES], sampled[LI_MAX_PROPERTIES];
+    for (size_t i = 0; i < core->config.property_count; i++) {
+        if (core->ports.read_observation) {
+            li_observation_t item = {0};
+            if (!core->ports.read_observation(core->ports.context, core->config.properties[i].path, &item)) return LI_DRIVER;
+            values[i] = item.value; sampled[i] = item.sampled_mono_ms;
+        } else {
+            if (!core->ports.read_property(core->ports.context, core->config.properties[i].path, &values[i])) return LI_DRIVER;
+            sampled[i] = core->ports.monotonic_ms(core->ports.context);
+        }
+        if (!li_value_valid(&core->config.properties[i], values[i])) return LI_DRIVER;
+    }
+    int64_t mono = core->ports.monotonic_ms(core->ports.context);
+    if (mono < core->anchor_mono || mono - core->anchor_mono > INT64_C(86400000)) return LI_CLOCK;
+    for (size_t i = 0; i < core->config.property_count; i++) {
+        if (sampled[i] < 0 || sampled[i] > mono || mono - sampled[i] > INT64_C(86400000)) return LI_DRIVER;
+        observed[i] = core->anchor_unix + (sampled[i] - core->anchor_mono);
+        if (observed[i] < 0) return LI_CLOCK;
+    }
+    core->last_snapshot = mono;
+    li_error_t result = publish(core, "state", li_codec_snapshot(core, observed, values));
     return result == LI_OK ? report_device_info(core) : result;
 }
 static li_error_t result(li_core_t *core, unsigned slot) {
@@ -137,6 +157,8 @@ static li_error_t command(li_core_t *core, const li_down_t *down) {
         }
         if (slot < 0 && (!core->occupied[i] || (core->receipts[i].expires_ms <= now && !core->unreported[i]))) slot = (int)i;
     }
+    /* 提交失败可能已经落盘。只读核对已知原结果，重开实际日志前不再提交新意图。 */
+    if (core->storage_faulted) return LI_STORAGE;
     if (li_ota_device_blocked(core)) return LI_CONFLICT;
     if (down->expires_ms <= now || down->issued_ms > now + 2000 || down->expires_ms <= down->issued_ms || down->expires_ms - down->issued_ms > 30000) return LI_EXPIRED;
     if (slot < 0) return LI_CAPACITY;

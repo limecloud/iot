@@ -15,10 +15,12 @@ typedef struct {
     int sent, writes, store_calls, fail_store, drop_results;
     int64_t mono, storage_delay;
     li_apply_result_t outcome;
-    bool power;
+    bool power, fail_store_after;
     int64_t brightness;
     li_device_info_t device_info;
     bool fail_info;
+    bool observations, fail_observation;
+    int64_t sampled_mono;
 } fixture_t;
 static bool random_bytes(void *context, uint8_t *bytes, size_t length) { (void)context; return RAND_bytes(bytes, (int)length) == 1; }
 static int64_t monotonic(void *context) { return ((fixture_t *)context)->mono; }
@@ -30,8 +32,9 @@ static bool load(void *context, unsigned slot, char *data, size_t capacity, size
 }
 static bool save(void *context, unsigned slot, const char *data, size_t length) {
     fixture_t *fixture = context; fixture->store_calls++; fixture->mono += fixture->storage_delay;
-    if (fixture->store_calls == fixture->fail_store || length >= sizeof(fixture->storage[slot])) return false;
-    memcpy(fixture->storage[slot], data, length); fixture->storage[slot][length] = '\0'; return true;
+    bool failed = fixture->store_calls == fixture->fail_store;
+    if ((failed && !fixture->fail_store_after) || length >= sizeof(fixture->storage[slot])) return false;
+    memcpy(fixture->storage[slot], data, length); fixture->storage[slot][length] = '\0'; return !failed;
 }
 static bool publish(void *context, const char *topic, const char *data, size_t length) {
     fixture_t *fixture = context;
@@ -56,9 +59,14 @@ static const li_config_t lamp_config = {"space-demo", "device-lamp", LI_LAMP_REV
 static bool read_device_info(void *context, li_device_info_t *info) {
     fixture_t *f = context; *info = f->device_info; return !f->fail_info;
 }
+static bool read_observation(void *context, const char *path, li_observation_t *value) {
+    fixture_t *f = context;
+    value->sampled_mono_ms = f->sampled_mono;
+    return !f->fail_observation && read_property(context, path, &value->value);
+}
 static fixture_t *fixture(void) { fixture_t *result = calloc(1, sizeof(*result)); CHECK(result); result->mono = 1000; return result; }
 static li_core_t *create(fixture_t *fixture, const li_config_t *config) {
-    li_ports_t ports = {fixture, random_bytes, monotonic, sha256, load, save, publish, read_property, write_property, fixture->device_info.product_id ? read_device_info : NULL};
+    li_ports_t ports = {fixture, random_bytes, monotonic, sha256, load, save, publish, read_property, write_property, fixture->device_info.product_id ? read_device_info : NULL, fixture->observations ? read_observation : NULL};
     li_error_t error; li_core_t *core = li_core_create(config, &ports, &error); CHECK(core && error == LI_OK); return core;
 }
 static cJSON *last(fixture_t *fixture, const char *kind) {
@@ -115,8 +123,33 @@ static void storage_failure_before_side_effect(void) {
     char packet[2048]; make_command(packet, sizeof(packet), "command-no-write", "session-test", "true", false);
     f->fail_store = 1; CHECK(receive(core, packet) == LI_STORAGE); CHECK(f->writes == 0 && !f->power);
     li_core_destroy(core); strcpy(f->storage[0], "{broken");
-    li_ports_t ports = {f, random_bytes, monotonic, sha256, load, save, publish, read_property, write_property, NULL}; li_error_t error;
+    li_ports_t ports = {f, random_bytes, monotonic, sha256, load, save, publish, read_property, write_property, NULL, NULL}; li_error_t error;
     CHECK(li_core_create(&lamp_config, &ports, &error) == NULL && error == LI_STORAGE); free(f);
+}
+static void ambiguous_storage_failure_blocks_new_writes_until_reopen(void) {
+    for (int nth = 1; nth <= 2; nth++) for (unsigned after = 0; after < 2; after++) {
+        fixture_t *f = fixture(); li_core_t *core = create(f, &lamp_config);
+        handshake(core, f, &lamp_config, "session-test", "2026-11-01T00:00:00Z");
+        char packet[2048]; make_command(packet, sizeof(packet), "command-storage-fault", "session-test", "true", false);
+        f->fail_store = nth; f->fail_store_after = after != 0;
+        CHECK(receive(core, packet) == LI_STORAGE && f->writes == nth - 1);
+        char original[sizeof(f->storage)]; memcpy(original, f->storage, sizeof(original));
+        int calls = f->store_calls;
+        CHECK(receive(core, packet) == (nth == 1 ? LI_STORAGE : LI_OK));
+        if (nth == 2) status(f, "unknown");
+        make_command(packet, sizeof(packet), "command-after-fault", "session-test", "false", false);
+        CHECK(receive(core, packet) == LI_STORAGE && f->writes == nth - 1 && f->store_calls == calls);
+        li_disconnected(core); handshake(core, f, &lamp_config, "session-next", "2026-11-01T00:00:00Z");
+        make_command(packet, sizeof(packet), "command-after-reconnect", "session-next", "false", false);
+        CHECK(receive(core, packet) == LI_STORAGE && f->writes == nth - 1 && f->store_calls == calls);
+        CHECK(memcmp(original, f->storage, sizeof(original)) == 0);
+        li_core_destroy(core); core = create(f, &lamp_config);
+        handshake(core, f, &lamp_config, "session-reopened", "2026-11-01T00:00:00Z");
+        CHECK(receive(core, packet) == LI_SESSION && f->writes == nth - 1);
+        make_command(packet, sizeof(packet), "command-new-after-reopen", "session-reopened", "false", false);
+        CHECK(receive(core, packet) == LI_OK && f->writes == nth);
+        li_core_destroy(core); free(f);
+    }
 }
 static void session_expiry_and_clock(void) {
     fixture_t *f = fixture(); li_core_t *core = create(f, &lamp_config); handshake(core, f, &lamp_config, "session-test", "2026-11-01T00:00:00.000000123Z");
@@ -234,9 +267,25 @@ static void device_information_uses_current_session_and_rejects_invalid_ports(vo
     CHECK(cJSON_GetObjectItemCaseSensitive(message, "seq")->valuedouble > previous);
     cJSON_Delete(message); li_core_destroy(core); free(f);
 }
+static void cached_observations_keep_sample_time_and_reject_invalid_clocks(void) {
+    fixture_t *f = fixture(); f->observations = true; f->sampled_mono = 900;
+    li_core_t *core = create(f, &lamp_config); handshake(core, f, &lamp_config, "sample-session", "2026-11-01T00:00:00Z");
+    f->mono += 3000; CHECK(li_report_snapshot(core) == LI_OK);
+    cJSON *state = last(f, "state"); cJSON *items = cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(state, "body"), "properties");
+    CHECK(cJSON_GetArraySize(items) == 2);
+    for (int i = 0; i < 2; i++) CHECK(!strcmp(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cJSON_GetArrayItem(items, i), "observed_at")), "2026-10-31T23:59:59.900Z"));
+    cJSON_Delete(state); int count = f->sent;
+    f->sampled_mono = f->mono + 1; CHECK(li_report_snapshot(core) == LI_DRIVER);
+    f->sampled_mono = -1; CHECK(li_report_snapshot(core) == LI_DRIVER);
+    f->mono = 86402000; f->sampled_mono = 1000; CHECK(li_report_snapshot(core) == LI_CLOCK);
+    f->mono = 4000; f->fail_observation = true; CHECK(li_report_snapshot(core) == LI_DRIVER);
+    CHECK(f->sent == count); li_core_destroy(core); free(f);
+}
 int main(void) {
     duplicate_and_conflict(); durable_intent_and_power_loss(); storage_failure_before_side_effect(); session_expiry_and_clock(); bounded_journal_does_not_replay_evicted_commands(); malformed_packets_never_execute(); unknown_driver_and_transport_result_retry(); button_event_binding_and_snapshot(); expiry_during_storage_never_reaches_driver();
     utc_observations_preserve_milliseconds_and_calendar_boundaries();
     device_information_uses_current_session_and_rejects_invalid_ports();
-    puts("{\"firmware_core_checks\":11,\"physical_hardware\":false}"); return 0;
+    cached_observations_keep_sample_time_and_reject_invalid_clocks();
+    ambiguous_storage_failure_blocks_new_writes_until_reopen();
+    puts("{\"firmware_core_checks\":13,\"physical_hardware\":false}"); return 0;
 }

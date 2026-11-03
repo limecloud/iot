@@ -1,0 +1,151 @@
+{
+  "verified_at": "2026-11-03T03:39:06.448749+00:00",
+  "scope": "local gateway software support for Gootuan",
+  "tests": {
+    "core_device_events": {
+      "passed": 5,
+      "failed": 0
+    },
+    "core_execution_plans": {
+      "passed": 14,
+      "failed": 0
+    },
+    "runtime_bin": {
+      "passed": 55,
+      "failed": 0,
+      "includes_execution_plan_store_tests": 5
+    },
+    "http_mqtt_sqlite_integration": {
+      "passed": 3,
+      "failed": 0
+    },
+    "cli_original_key_recovery": {
+      "passed": 1,
+      "failed": 0
+    },
+    "targeted_clippy": {
+      "core_execution_plans": true,
+      "gateway_bin": true
+    },
+    "build": {
+      "gateway": true,
+      "simulator": true,
+      "model_validator": true
+    }
+  },
+  "commands": [
+    "cargo test --locked -p limeiot-core --test execution_plans --test device_events",
+    "cargo test --locked -p limeiot-gateway --bin limeiot-gateway",
+    "cargo build --locked -p limeiot-gateway -p limeiot-simulator -p limeiot-model-validator",
+    "node --test --test-concurrency=1 tests/execution-plans.test.mjs tests/device-events.test.mjs",
+    "node --test tests/execution-plans-cli.test.mjs",
+    "cargo clippy --locked -p limeiot-gateway --bin limeiot-gateway -- -D warnings"
+  ],
+  "environment": {
+    "node": "24.21.0",
+    "network": "isolated loopback HTTP/MQTT",
+    "production_api": false,
+    "hardware": false,
+    "motion": false,
+    "beat_synchronization": false,
+    "cloud_plan_relay": false
+  },
+  "initial_failures": [
+    {
+      "check": "future snapshot fixture",
+      "cause": "12 became supported; future-version fixture still used 12",
+      "resolution": "fixture now uses unsupported version 13; full runtime 55 tests passed"
+    },
+    {
+      "check": "CLI private-record test",
+      "cause": "macOS temporary path alias failed private-directory canonical-path check",
+      "resolution": "test resolves its own temporary path; production directory protection unchanged"
+    },
+    {
+      "check": "CLI test duration",
+      "cause": "15 second budget insufficient for six subprocess calls and HTTP teardown",
+      "resolution": "45 second total budget and explicit fixture socket cleanup; semantic assertions preserved, final 1 passed"
+    }
+  ],
+  "source_sha256": {
+    "gateway/crates/core/src/device_events.rs": "81e9c4ab9c74efe80623467adbb8b897cba15b8908460e6f0a61f312baaeb486",
+    "gateway/crates/core/src/execution_plans.rs": "9d1ac6f6b5bc0bbb3e1259d7402973913f2eb9cae262a5fb59fe3a1cfeb5b8ed",
+    "gateway/crates/core/src/engine.rs": "053345259f6d1795a2cb4d88944f3bd8d38ee86184c1db8334ed3f46ecbf3486",
+    "gateway/crates/runtime/src/execution_plan_api.rs": "5ce371989cff5c5755a2d3249e5b0c571cedf7f39715aa2abe4adbb677809339",
+    "gateway/crates/runtime/src/execution_plan_store_tests.rs": "49385a34ddbf6630d120def9566fdf1caf50c884aed68d4cd1118370120600ed",
+    "gateway/crates/runtime/src/store.rs": "327be9326d2d61bfdf829ee3a9c671aa4929a4aa4f22c924dd000cd683044cc5",
+    "gateway/crates/runtime/src/mqtt.rs": "0a98b3a25df6ed5f4e6d2c21703d7cade923f43083bd9bd6ab36ba612586c845",
+    "contracts/execution-plans.schema.json": "aec8c51e5950de2b9311c5dd4cdada8e69cc23329aa98babaa8cac245dfc23d7",
+    "contracts/device-event.schema.json": "9c457438f46476104a209b05c2826bf98d22cfd709d6424fdbd4eb0918cc6651",
+    "contracts/tools/catalog.json": "4b13908a54295e6da785bcb17d6d59a02bd64f0bd5e785d570732c9120fc6012",
+    "packages/cli/src/execution-plans.mjs": "6b840de559f345aa6b066c8dccd342ee24f01541f61366477430a4126b64e774",
+    "tests/execution-plans.test.mjs": "5a72ec0a029e46472720aa5f40ec86a5d68f645e780bb7851dc77edb2158a5ee",
+    "tests/execution-plans-cli.test.mjs": "fe8bf84b8ee661c4e8d5d1921e044e32d4dbe38e0e6e52c4f4afa6a8e027f922",
+    "tests/device-events.test.mjs": "81cb600508a0a2dcf27e7b40f288b413750b6f66b313aee708e9471b22da5de5"
+  },
+  "artifacts": [
+    {
+      "path": ".dev/execution-plans-PsPUGQ/execution-plans-result.json",
+      "sha256": "1084d4afa942a01cdbc50d1b8c584e438b97d885c531218621235627fd6d3fa9",
+      "result": {
+        "passed": true,
+        "real_http": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "two_devices": true,
+        "stage_barrier": true,
+        "original_operation_recovery": true,
+        "explicit_release": true,
+        "hardware": false,
+        "motion": false,
+        "beat_synchronization": false
+      }
+    },
+    {
+      "path": ".dev/execution-plans-2bRvay/execution-plan-recovery-result.json",
+      "sha256": "8af6a44aaf94cd7a9067a6b755105136da352ef1f7c2f37dc243fdfdd64d1c30",
+      "result": {
+        "passed": true,
+        "real_http": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "submitted_not_completion": true,
+        "wrong_generation_ignored": true,
+        "cancel_blocks_future_stage": true,
+        "late_event_no_resurrection": true,
+        "duplicate_completion_no_replay": true,
+        "restart_unknown_no_replay": true,
+        "physical_stop_claimed": false,
+        "hardware": false
+      }
+    },
+    {
+      "path": ".dev/run-1793677031284-be24b433/device-events-result.json",
+      "sha256": "cf39fb1814ab036352fdfb2892a9fae27d72d52905c1bcc9ecf71fe2e6c34368",
+      "result": {
+        "passed": true,
+        "real_http": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "strict_projection_schema": true,
+        "failed_commit_no_projection": true,
+        "sse_equals_committed_poll": true,
+        "invalid_stale_historical_no_projection": true,
+        "duplicate_no_replay": true,
+        "restart_readable": true,
+        "projected_business_events": 3,
+        "hardware": false
+      }
+    }
+  ],
+  "limitations": [
+    "No physical toy acceptance",
+    "Plan cancellation does not prove physical stop",
+    "Stage barriers do not synchronize beats",
+    "S3 generic actions and structured MCU events remain product work",
+    "No consumer physical ownership claim or transfer",
+    "No full conversation, ASR/TTS or visual pipeline",
+    "Plan/event surfaces remain local owner APIs and CLI; cloud relay not expanded"
+  ],
+  "published": false
+}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ApiError, deviceName, errorText, request, sampleEvent, type Device, type Inference, type Model, type RuleDraft, type Session } from './api';
+import { ApiError, deviceName, errorText, request, ruleActionText, sampleEvent, type Device, type Inference, type Model, type RuleDraft, type Session } from './api';
 export function RuleDrafts({ devices, models, inference, prefix, session, online, refresh, onError }: {
   devices: Device[]; models: Record<string, Model>; inference: Inference | null; prefix: string; session: Session; online: boolean; refresh: () => Promise<void>; onError: (error: unknown) => void;
 }) {
@@ -69,15 +69,16 @@ export function RuleDrafts({ devices, models, inference, prefix, session, online
     catch { setBlocked(true); setMessage('无法更新本地生成记录，请检查浏览器存储设置'); }
   }
   const rule = draft?.rule, serialized = rule ? JSON.stringify(rule) : '';
+  const trigger = rule?.trigger.event ? rule.trigger : null;
   function name(id: string) { const device = devices.find(item => item.device_id === id); return device ? deviceName(device, models) : id; }
   async function simulate() {
-    if (!rule) return;
+    if (!rule || !trigger) return;
     await action(async () => {
       setProof(null);
-      const source = devices.find(item => item.device_id === rule.trigger.device);
-      const schema = source && models[source.model_revision]?.services.flatMap(service => service.events.map(event => ({ path: `${service.id}.${event.id}`, schema: event.schema }))).find(event => event.path === rule.trigger.event)?.schema;
+      const source = devices.find(item => item.device_id === trigger.device);
+      const schema = source && models[source.model_revision]?.services.flatMap(service => service.events.map(event => ({ path: `${service.id}.${event.id}`, schema: event.schema }))).find(event => event.path === trigger.event)?.schema;
       if (!schema) throw new ApiError('model_mismatch', 409);
-      const result = await request<{ matched: boolean; revision: string }>(`${prefix}/rules:simulate`, session, { rule, event: { device_id: rule.trigger.device, path: rule.trigger.event, historical: false, data: sampleEvent(schema) } }, options);
+      const result = await request<{ matched: boolean; revision: string }>(`${prefix}/rules:simulate`, session, { rule, event: { device_id: trigger.device, path: trigger.event, historical: false, data: sampleEvent(schema) } }, options);
       if (result.matched && result.revision === draft.rule_revision) setProof(serialized);
       else throw new ApiError('model_mismatch', 409);
     });
@@ -87,7 +88,7 @@ export function RuleDrafts({ devices, models, inference, prefix, session, online
     <label>希望如何联动<textarea value={prompt} rows={2} maxLength={512} placeholder="按下按钮时，将环境灯亮度设为 40%" onChange={event => { setPrompt(event.target.value); setProof(null); }} disabled={busy || draft?.status === 'running'} /></label>
     <div className="actions"><button disabled={!online || blocked || busy || !prompt.trim() || (!!key && (!draft || draft.status === 'running'))}>生成草案</button>{key && <button type="button" disabled={!online || busy} onClick={() => void action(() => load(key))}>查询生成结果</button>}{key && !draft && <button type="button" disabled={busy || blocked} onClick={newDraft}>新建草案</button>}</div>
   </form>}{status && <p role="status">{status}</p>}{(message || draft?.error) && <p className="error" role="alert">{message || errorText(new ApiError(draft!.error!, 422))}</p>}
-    {rule && draft?.status === 'completed' && prompt.trim() === draft.request.prompt && <div className="draft-review"><p>当{name(rule.trigger.device)}{rule.trigger.event === 'button.pressed' ? '按下时' : `发生 ${rule.trigger.event}`}：</p><ul>{rule.actions.map((action, index) => <li key={index}>{name(action.device)}{action.set.path === 'light.power' ? (action.set.value ? '开启' : '关闭') : `${action.set.path === 'light.brightness' ? '亮度' : action.set.path}设为 ${String(action.set.value)}`}</li>)}</ul><p className="muted">冷却时间 {rule.cooldown_ms / 1000} 秒</p>
+    {rule && trigger && draft?.status === 'completed' && prompt.trim() === draft.request.prompt && <div className="draft-review"><p>当{name(trigger.device!)}{trigger.event === 'button.pressed' ? '按下时' : `发生 ${trigger.event}`}：</p><ul>{rule.actions.map((action, index) => <li key={index}>{name(action.device)}{ruleActionText(action)}</li>)}</ul><p className="muted">冷却时间 {rule.cooldown_ms / 1000} 秒</p>
       <div className="actions"><button disabled={!online || busy} onClick={() => void simulate()}>预演草案</button><button className="primary" disabled={!online || busy || proof !== serialized} onClick={() => void action(async () => { await request(`${prefix}/rule-deployments`, session, rule, options); setProof(null); setNotice('自动化已启用'); await refresh(); })}>启用草案</button></div>
       {proof === serialized && <p className="simulation" role="status">预演通过，预计执行 {rule.actions.length} 个设备操作。设备尚未执行。</p>}
       <details><summary>草案内容</summary><pre>{JSON.stringify(rule, null, 2)}</pre></details>

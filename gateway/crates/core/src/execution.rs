@@ -76,6 +76,7 @@ impl Device {
 
 impl Data {
     pub fn mqtt_disconnected(&mut self) {
+        self.schedule_resuming = true;
         self.reset_ota_approvals(None, "broker_disconnected");
         for device in self.devices.values_mut() {
             device.ready = false;

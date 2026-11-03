@@ -59,7 +59,7 @@ test('NAS模型接入界面：存储失败零发送，丢响应恢复、明确�
   const first = (await stack.request(base + '/model-installations')).value.items[0];
   assert.notEqual((await stack.request(base + '/devices/device-lamp')).value.model_revision, first.artifact.statement.model_revision);
   await bindings.getByLabel('设备编号', { exact: true }).fill('device-lamp');
-  await bindings.getByLabel('已安装模型', { exact: true }).selectOption(first.installation_id);
+  await bindings.getByLabel('目标模型', { exact: true }).selectOption(first.installation_id);
   await bindings.getByRole('button', { name: '读取设备当前绑定', exact: true }).click();
   await bindings.getByRole('button', { name: '确认绑定', exact: true }).click();
   await expect.poll(async () => (await stack.request(base + '/devices/device-lamp/model-binding')).value.binding?.installation_id).toBe(first.installation_id);

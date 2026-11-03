@@ -108,12 +108,12 @@ test('网页到受限假ADB：先耐久提交、MQTT不双发、丢响应及重�
   assert.equal((await stack.request(base + '/commands/' + interrupted.value.command_id)).value.status, 'unknown');
   const durable = await lines(path.join(state, 'durable.jsonl'));
   assert.equal(durable.length, 5);
-  for (const proof of durable) { assert.equal(proof.version, 7); assert.equal(proof.command.status, 'dispatched'); assert.deepEqual(proof.command.execution_route, route); }
+  for (const proof of durable) { assert.equal(proof.version, 10); assert.equal(proof.command.status, 'dispatched'); assert.deepEqual(proof.command.execution_route, route); }
   await page.screenshot({ path: path.join(directory, 'tv-remote-mobile.png'), fullPage: true });
   await writeFile(path.join(directory, 'tv-adapter-result.json'), JSON.stringify({
     passed: true, real_http: true, real_sqlite: true, real_mqtt: true, fake_adb: true, browser: true,
     empty_properties_model: true, durable_before_side_effect: true, mqtt_action_messages: 0, adapter_effects: 5,
     forbidden_app_zero_effects: true, original_request_recovery: true, restart_unknown_no_replay: true,
-    broker_independent: true, snapshot_version: 7, hardware: false, native_app_runtime: false, physical_exactly_once: false,
+    broker_independent: true, snapshot_version: 8, hardware: false, native_app_runtime: false, physical_exactly_once: false,
   }));
 });

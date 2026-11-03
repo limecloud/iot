@@ -1,5 +1,4 @@
 import Foundation
-import CryptoKit
 
 public struct OtaError: Error, Sendable {
     public let code: String
@@ -20,70 +19,11 @@ public struct OtaError: Error, Sendable {
 public enum OtaJSON {
     static func fail() -> OtaError { OtaError(code: "invalid_ota_document") }
     public static func parse(_ text: String, response: Bool = false) throws -> JSONValue {
-        var parser = Parser(bytes: Array(text.utf8), response: response)
-        return try parser.parse()
+        do { return try IntegerJSON.parse(text, maxBytes: response ? 2_000_000 : 16384, maxDepth: response ? 24 : 16, maxNodes: response ? 65536 : 2048) }
+        catch { throw fail() }
     }
-    private struct Parser {
-        let bytes: [UInt8]; let response: Bool
-        var p = 0; var nodes = 0
-        mutating func ws() { while p < bytes.count && [9, 10, 13, 32].contains(bytes[p]) { p += 1 } }
-        mutating func take(_ b: UInt8) -> Bool { ws(); if p < bytes.count && bytes[p] == b { p += 1; return true }; return false }
-        mutating func string() throws -> String {
-            ws(); let start = p
-            guard p < bytes.count, bytes[p] == 34 else { throw fail() }; p += 1
-            while p < bytes.count {
-                let b = bytes[p]; p += 1
-                if b == 92 { guard p < bytes.count else { throw fail() }; p += 1 }
-                else if b == 34 { return try JSONDecoder().decode(String.self, from: Data(bytes[start..<p])) }
-                else if b < 32 { throw fail() }
-            }
-            throw fail()
-        }
-        mutating func value(_ depth: Int) throws -> JSONValue {
-            ws(); nodes += 1
-            guard nodes <= (response ? 65536 : 2048), depth <= (response ? 24 : 16), p < bytes.count else { throw fail() }
-            if take(123) {
-                var values: [String: JSONValue] = [:]
-                if !take(125) {
-                    repeat { let key = try string(); guard values[key] == nil, take(58) else { throw fail() }; values[key] = try value(depth + 1) } while take(44)
-                    guard take(125) else { throw fail() }
-                }
-                return .object(values)
-            }
-            if take(91) {
-                var values: [JSONValue] = []
-                if !take(93) { repeat { values.append(try value(depth + 1)) } while take(44); guard take(93) else { throw fail() } }
-                return .array(values)
-            }
-            if bytes[p] == 34 { return .string(try string()) }
-            let start = p
-            while p < bytes.count && ![44, 93, 125, 9, 10, 13, 32].contains(bytes[p]) { p += 1 }
-            let token = String(decoding: bytes[start..<p], as: UTF8.self)
-            switch token {
-            case "true": return .bool(true)
-            case "false": return .bool(false)
-            case "null": return .null
-            default:
-                guard token.count <= 32, token.range(of: #"^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$"#, options: .regularExpression) != nil,
-                      let decimal = Decimal(string: token, locale: Locale(identifier: "en_US_POSIX")) else { throw fail() }
-                let integer = NSDecimalNumber(decimal: decimal).int64Value
-                guard abs(decimal) <= Decimal(9007199254740991 as Int64), decimal == Decimal(integer) else { throw fail() }
-                return .integer(Int(integer))
-            }
-        }
-        mutating func parse() throws -> JSONValue {
-            guard bytes.count <= (response ? 2_000_000 : 16384) else { throw fail() }
-            let result = try value(0); ws(); guard p == bytes.count, case .object = result else { throw fail() }; return result
-        }
-    }
-    public static func canonical(_ value: JSONValue) -> String {
-        switch value {
-        case .object(let items): "{" + items.keys.sorted { $0.utf16.lexicographicallyPrecedes($1.utf16) }.map { JSONValue.string($0).jsonText + ":" + canonical(items[$0]!) }.joined(separator: ",") + "}"
-        case .array(let items): "[" + items.map(canonical).joined(separator: ",") + "]"
-        default: value.jsonText
-        }
-    }
-    public static func digest(_ value: JSONValue) -> String { "sha256:" + SHA256.hash(data: Data(canonical(value).utf8)).map { String(format: "%02x", $0) }.joined() }
+    public static func canonical(_ value: JSONValue) -> String { IntegerJSON.canonical(value) }
+    public static func digest(_ value: JSONValue) -> String { IntegerJSON.digest(value) }
     static func require(_ valid: @autoclosure () throws -> Bool) throws { guard try valid() else { throw fail() } }
     static func object(_ v: JSONValue?) throws -> [String: JSONValue] { guard case .object(let o) = v else { throw fail() }; return o }
     static func fields(_ v: JSONValue?, _ names: String) throws -> [String: JSONValue] { let o = try object(v); try require(Set(o.keys) == Set(names.split(separator: ",").map(String.init))); return o }

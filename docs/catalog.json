@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "project": "LimeIoT",
-  "updated_at": "2026-11-02",
+  "updated_at": "2026-11-03",
   "path_base": "repository_root",
   "scope": "documentation_navigation",
   "runtime_capability_discovery": false,
@@ -11,6 +11,8 @@
     "agent": "llms.txt",
     "requirements": "docs/requirements.json",
     "examples": "docs/examples/README.md",
+    "gootuan_integration": "docs/integrations/gootuan/README.md",
+    "gootuan_integration_zh_CN": "docs/integrations/gootuan/README.zh-CN.md",
     "implementation_status": "docs/24-实施计划与进度.md",
     "device_evidence": "docs/30-设备支持矩阵与证据台账.md"
   },
@@ -389,6 +391,16 @@
     }
   ],
   "examples": [
+    {
+      "path": "docs/examples/gootuan/README.md",
+      "localized_path": "docs/examples/gootuan/README.zh-CN.md",
+      "type": "formal_contract_software_example",
+      "status": "verified_software_only",
+      "evidence": "docs/integrations/gootuan/verification.json",
+      "hardware": false,
+      "motion": false,
+      "beat_synchronization": false
+    },
     {
       "path": "docs/examples/automation.json",
       "type": "design_fixture",

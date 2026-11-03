@@ -2,7 +2,9 @@
 
 使用 Swift 6、SwiftUI 和 URLSession，最低 iOS 17。`LimeIoT.xcodeproj` 是可打开的 iPhone/iPad 应用工程，`Package.swift` 提供独立、可编译的 `LimeIoTKit` 客户端库。没有 WebView、跨平台 UI 框架或官网源码依赖。
 
-应用提供家庭网关与云服务两类入口。NAS入口支持设备开关/亮度、状态和回执、事件规则预演/启用/停用、关联运行及退出；云入口支持独立授权、空间/设备与原操作。当前本地规则表单支持布尔属性联动；完整 DSL 可通过 API/CLI 使用已实现子集。
+应用提供家庭网关与云服务两类入口。NAS入口支持设备开关/亮度、状态和回执、事件/阈值规则预演/启用/停用、关联运行及退出；云入口支持独立授权、空间/设备与原操作。本地规则表单支持数值/布尔属性和模型动作，动作参数使用JSON，先预演再明确启用；单操作编辑保留完整比较/all/any条件树及毫秒冷却，多操作规则完整展示并可停用，编辑使用TUI或CLI/API。规则执行语义见[合同](../../contracts/rules.md)，宿主软件入口为`npm run test:rules:conditions:native`和`npm run test:rules:actions:native`，不代表SwiftUI或实机验收。
+
+“仅当”通过原生控件选择全部可read标量属性、比较方式和值，并添加/移除嵌套组合。ConditionEditor按模型单位精确解析、检查类型/值域和4层/32项限额，无损回填失败时禁止编辑原规则；取消不提交。GatewayClient先校验再预演，RuleProof核对两次修订、触发和完整条件/动作证据；当前条件未满足仍可明确启用等待新触发。执行记录显示原条件、观测及原因，不从当前状态重建历史。iOS整包与SwiftUI运行仍受既有Xcode/SDK条件限制。
 
 NAS与云界面均按绑定模型解析动作，提供遥控方向键、应用启动及通用参数控件；Schema 1空动作模型保留属性界面。记录显示原按键/应用ID及完成范围，submitted只显示“输入已提交”；动作沿用耐久原键，丢响应后只查询原操作。应用ID仍须执行端发现和授权白名单，控件存在不表示真实电视适配器或TV Agent已实现。
 
@@ -11,6 +13,8 @@ NAS与云界面均按绑定模型解析动作，提供遥控方向键、应用�
 自动化页支持“用一句话设置”：网关配置本地模型后生成草案，展示触发、全部动作、冷却和原文，预演通过后明确启用。生成前在 Keychain 只保存原空间与幂等键，写入失败不发送；丢失响应或应用重启后查询原记录，不自动重发。修改需求清空预演证明；模型未配置仍可手工设置。推理模型配置见[NAS说明](../../deploy/nas/README.md)。
 
 ## 构建和连接
+
+定时规则在“触发方式”选择“定时”，输入HH:MM、IANA时区与重复星期；支持单操作创建、完整回填、修改、取消和停用，毫秒冷却与条件树保持完整。GatewayClient从网关校验结果获取下一次发生时刻做预演，客户端不重复实现DST。软件入口为`npm run test:rules:schedules:native`；Swift宿主库与SwiftUI源码语法通过不代表完整iOS App构建或运行，缺少Xcode/iOS SDK的阻塞保留。语义见[定时合同](../../contracts/rules.md#每周定时)。
 
 使用 Xcode 16 或更新版本打开 `LimeIoT.xcodeproj`，选择 iOS 模拟器或自己的签名团队后运行。命令行构建：
 
@@ -60,6 +64,24 @@ Keychain适配器供NAS与云库复用，云记录使用独立的`limeiot.contro
 在仓库根目录执行`npm run test:clients:state -- ios`，以macOS宿主编译实际`CloudStore`与Keychain适配源码，使用内存存储/HTTP夹具检查3组状态：后台不轮询及取消后恢复原授权、丢响应/重建客户端后未知操作不重复创建、绑定修订及空间切换隔离。它不调用真实Keychain或系统浏览器，不编译SwiftUI界面。报告为`.dev/native-state-checks/ios.json`；Xcode工程已包含两个云源码文件。
 
 在仓库根目录执行 `npm run test:ios`，会启动独立 Broker、网关、模拟设备与假 Ollama 提供方，验证会话、亮度回执、原操作查询、草案幂等/无自动部署/预演/明确启用、规则生命周期和退出。提供方仅验证 HTTP 合同，不代表模型质量。本机已通过库编译、4项合同检查及真实网关联调、状态管理与Keychain适配的macOS类型检查，以及全部Swift语法检查；没有完整Xcode/iOS SDK，尚未编译iOS整包。模拟器/实机布局、Keychain行为、局域网授权与前后台切换仍须通过 Xcode 和设备验证。
+
+## 环境读数
+
+规则库支持与事件互斥的属性阈值触发、模型单位、上升/下降及滞回；旧事件规则编码不变。`simulate`在属性规则下接收包含previous/current两份观测的JSON对象，预演不修改运行基线或创建设备命令。SwiftUI可创建/编辑单操作阈值规则、完整展示及停用；`ThresholdEditor`按十进制解析常用单位，不截断超精度输入，并生成标记为simulation.ui的预演采样。4组触发/表单合同与实际HTTP读取/预演入口见根目录`npm run test:rules:thresholds`。库和SwiftUI语法检查不代表iOS整包运行；缺少完整Xcode/iOS SDK的既有阻塞保留。
+
+`LimeIoTKit.Property`兼容可选的`semantic_id`/`unit`，按正式环境模型显示温度和相对湿度，两位小数；旧属性继续按原值显示。NAS及云设备页面将只读属性显示为文本，过期样本保留原值并标明“已过期”。
+
+`swift run ClientChecks`包含3组环境元数据/显示检查。根目录`node --test tests/environment-node.test.mjs`在真实Broker/Rust/SQLite三节点链路中执行Swift实际HTTP读取；该旅程还需要Android工具链。库检查和SwiftUI语法检查不代表iOS整包或端上页面通过，完整Xcode/iOS SDK缺失的限制仍保留，实机按用户要求跳过。
+
+## 本地音频客户端库
+
+`MediaClient(gateway:store:)`使用现有NAS所有者会话与必填`SessionStore`，提供`list(space:)`、`submit(space:change:key:)`、`records(space:)`和`resolve(space:key:)`。`MediaChanges.upload(bytes:retainSeconds:)`接受最多4MiB、60秒的16位PCM WAV；`grant`需要当前执行绑定修订，`revoke`与`delete`分别撤销授权和删除正文。接口消费媒体ID，不取得下载URL或令牌，上传/授权不自动播放。
+
+首次POST前在`origin#media-operations`保存并回读摘要原记录，最多128项；不保存音频正文。同键同参只查询原键，404仍保持未知，同类未决操作阻止换键重发。重建客户端继续读取原记录；退出不会删除媒体记录，存储损坏、移除或保存失败阻止新写。历史授权回执的`issued_in_process`可随网关重启变化，库仍核对其余原决定；当前授权资格以列表和网关执行时检查为准。媒体与OTA共用有界安全整数JSON解析/规范化工具，各自独立校验领域合同。
+
+家庭网关“设置 → 音频”提供系统WAV文件选择、保留时间、当前已绑定音箱、逐次明确授权、撤销、删除确认与原操作查询。文件只在内存中保留，有界读取最多4MiB+1字节，离线、离开页面或进入后台时清除文件、确认与删除意图。候选通过`targets(space:)`逐项核对当前执行绑定，兼容候选不表示已授权；上传/授权后在设备页另行播放。云入口不增加媒体权限。
+
+`npm run test:media:native`检查库；`npm run test:media:native:state`编译运行实际`MediaStore`与文件读取器，通过真实Rust/SQLite/MQTT及软件音箱检查丢回执、明确授权/播放、客户端进程和网关重启、撤销/删除与原键不复活正文。另查本地无副作用、确认失效、取消保存后零POST、离线禁写和401。恢复文件为宿主夹具，不代替Keychain、系统文件选择器或SwiftUI运行。完整Xcode/iOS SDK缺失的限制保留，实机按用户要求跳过。
 
 ## 本地固件升级
 

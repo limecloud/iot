@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { createPrivate, readPrivate, readPrivateToken } from './control-files.mjs';
-import { parseModelChange, sameModelRequest, verifyModelBinding, verifyModelInstallation, verifyModelOperation, verifyPublisherTrust } from '../../protocol/model-registry.mjs';
+import { parseModelChange, sameModelRequest, verifyModelBinding, verifyModelInstallation, verifyModelOperation, verifyPublisherTrust, verifyModelBundle, verifyModelBundles } from '../../protocol/model-registry.mjs';
 import { parseOtaChange, parseOtaResponse, verifyFirmwareTrust, verifyOtaOperation, verifyOtaTask } from '../../protocol/ota-tasks.mjs';
 import { parseExecutionChange, verifyExecutionOperation, verifyExecutionBinding, verifyExecutionAdapters, verifyApplications } from '../../protocol/execution-bindings.mjs';
 import { parseBoundedJSON } from '../../protocol/products.mjs';
@@ -86,10 +86,12 @@ export async function runRegistry(args) {
       } catch { throw problem('invalid_response', 5); }
     } else {
       try {
+        if (operationID === 'model-bundles.get') { await verifyModelBundle(result); if (result.bundle_id !== resource) throw new Error(); }
+        if (operationID === 'model-bundles.list') await verifyModelBundles(result);
         if (operationID === 'model-trusts.get') { await verifyPublisherTrust(result); if (result.trust_id !== resource) throw new Error(); }
         if (operationID === 'model-installations.get') { await verifyModelInstallation(result); if (result.installation_id !== resource) throw new Error(); }
         if (operationID === 'device-models.get') verifyModelBinding(result, resource);
-        if (operationID.endsWith('.list')) {
+        if (operationID.endsWith('.list') && operationID !== 'model-bundles.list') {
           if (!Array.isArray(result.items) || result.items.length > (operationID === 'model-trusts.list' ? 32 : 16)) throw new Error();
           await Promise.all(result.items.map(operationID === 'model-trusts.list' ? verifyPublisherTrust : verifyModelInstallation));
           if (operationID === 'model-trusts.list' && result.next_cursor !== null || operationID === 'model-installations.list' &&

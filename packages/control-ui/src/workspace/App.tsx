@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Music2,
   Network,
   SunMoon,
   UserRound,
@@ -383,7 +384,7 @@ function Workspace({
 }) {
   const local = deployment?.local;
   const tasks = local ? ([
-    ["overview", LayoutDashboard], ["devices", Cpu], ["automation", Workflow],
+    ["overview", LayoutDashboard], ["devices", Cpu], ["automation", Workflow], ["media", Music2],
     ["operations", Cable], ["products", Boxes], ["models", Boxes], ["firmware", Cpu],
     ["spaces", House], ["gateways", Network], ["connections", Code2], ["account", UserRound],
   ] as const) : navigation;
@@ -640,7 +641,7 @@ function Workspace({
               <Admin />
             ) : params.has("native") ? (
               <Developer native={params.get("native") ?? ""} />
-            ) : local && (["automation", "models", "firmware"].includes(view) || !selected && ["devices", "operations"].includes(view)) ? (
+            ) : local && (["automation", "media", "models", "firmware"].includes(view) || !selected && ["devices", "operations"].includes(view)) ? (
               local.render(view === "operations" ? "activity" : view, onLocalExpired)
             ) : view === "products" ? (
               <Products />

@@ -1,6 +1,8 @@
 # 执行路由、明确绑定与适配器结果
 
-当前实现第一方动作路由、现有空间明确绑定/组合/撤销，复用[命令合同](commands.md)与原操作账本。命令执行类型为 [execution.rs](../gateway/crates/core/src/execution.rs)，绑定决定为 [execution_binding.rs](../gateway/crates/core/src/execution_binding.rs)，机器合同为 [execution-bindings.schema.json](execution-bindings.schema.json)；ADB 实现与宿主配置见[电视适配器](../gateway/adapters/android-tv/README.md)。通用插件IPC、宿主配置热加载及外部更新提供方仍未实现；离线/unknown始终不自动切换路径。协议夹具/假ADB组合已有 [24第4.14节](../docs/24-实施计划与进度.md#414-显式能力组合与文档同步) 的通过证据；Agent受控模型及本机日志迁移已有实现，真实JVM组合旅程未通过，见 [第4.15节](../docs/24-实施计划与进度.md#415-tv-agent模型配置与日志迁移文档同步)。
+[有限DLNA播放](dlna.md)也复用本执行合同：宿主候选由LIMEIOT_AUDIO_CONFIG准备，route固定完整config的JCS修订，所有者明确bind/revoke，动作仍由核心耐久意图/FIFO及原结果恢复；kind=dlna候选与媒体ID格式见其独立合同。SOAP/XML只在适配器内处理，不创建第二种CommandRequest、MQTT身份或通用插件IPC。电视与音箱候选合计16个，不能重复逻辑设备或adapter ID。
+
+当前实现第一方动作路由、现有空间明确绑定/组合/撤销，复用[命令合同](commands.md)与原操作账本。命令执行类型为 [execution.rs](../gateway/crates/core/src/execution.rs)，绑定决定为 [execution_binding.rs](../gateway/crates/core/src/execution_binding.rs)，机器合同为 [execution-bindings.schema.json](execution-bindings.schema.json)；ADB 实现与宿主配置见[电视适配器](../gateway/adapters/android-tv/README.md)。通用插件IPC、宿主配置热加载及外部更新提供方仍未实现；离线/unknown始终不自动切换路径。协议夹具/假ADB组合已有 [24第4.14节](../docs/24-实施计划与进度.md#414-显式能力组合与文档同步) 的历史通过证据；Agent受控模型及本机日志迁移已有实现，真实JVM组合未通过，最近假ADB专项亦保留失败，见 [第4.16节](../docs/24-实施计划与进度.md#416-tv-agent测试启动与当前验证状态)。
 
 ## 绑定与命令
 
@@ -66,7 +68,7 @@ CLI 与网页先保存完整原请求，失败零 POST。丢响应、404 或无�
 
 组合设备投影增加 `action_availability: {"apps.launch": true, "remote.press": false}`，按每条路径的当前会话、模型信任与OTA占用计算；它不是权限授予，也不承诺下一次发送一定成功。网页据此逐动作禁用，不能只凭设备总ready开放两端。当前通用CLI可创建compose，网页只显示组合状态、控制及撤销，没有创建组合的专用表单。
 
-TV Agent可通过材料v2显式选择android-tv-remote逻辑模型，hello只声明apps.launch，按键仍由已批准的外部路由执行。旧应用模型日志向遥控配置的单向迁移保留全部原记录/unknown/拒绝边界，详见 [设备合同](tv-agent.md)。本机迁移不变更网关模型绑定或自动compose；已有网关设备跨内置模型的完整路线尚未验证。最新真实JVM组合已握手并批准compose，但在等待两动作可用时失败，不能将模型适配或协议夹具证据写为软件共存通过。
+TV Agent可通过材料v2显式选择android-tv-remote逻辑模型，hello只声明apps.launch，按键仍由已批准的外部路由执行。旧应用模型日志向遥控配置的单向迁移保留全部原记录/unknown/拒绝边界，详见 [设备合同](tv-agent.md)。本机迁移不变更网关模型绑定或自动compose；已有网关设备跨内置模型已通过独立JVM软件旅程，见 [24第4.19节](../docs/24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)，实际电视另验。最新真实JVM组合已握手并批准compose，但在等待两动作可用时失败，不能将模型适配或协议夹具证据写为软件共存通过。
 
 ## 宿主配置迁移与应用发现
 
@@ -98,6 +100,6 @@ ADB 先做只读身份与应用预检，再调用核心 `recheck_adapter_dispatc
 
 ## 快照与验证
 
-当前快照版本7，校验读取版本1–6，后续提交写入7。版本4及以前拒绝夹带 routes/execution_route，版本5及以前拒绝夹带 execution_registry，版本6起须显式包含它。v6保存绑定generation、撤销记录与原决定；v7新增可选native_paths与compose原决定。v6夹带这些新字段/决定拒绝，旧绑定不自动改为组合；会话、能力声明和应用缓存不持久化。恢复分别校验bind完整动作集或compose完整分区、模型证据范围、路由占用，以及历史决定与原请求/结果的对应关系；残缺路由不能隐式变为原生路径。OTA 的版本4 execution字段要求继续生效。格式不符或未来版本拒绝且不改写快照；不支持v7的旧二进制不能读取新库。迁移仅使用隔离测试库，未操作用户数据库。
+当前快照版本9，校验读取版本1–9，后续提交写入9。版本4及以前拒绝夹带 routes/execution_route，版本5及以前拒绝夹带 execution_registry，版本6起须显式包含它。v6保存绑定generation、撤销记录与原决定；v7新增可选native_paths与compose原决定。v6夹带这些新字段/决定拒绝，旧绑定不自动改为组合；会话、能力声明和应用缓存不持久化。恢复分别校验bind完整动作集或compose完整分区、模型证据范围、路由占用，以及历史决定与原请求/结果的对应关系；残缺路由不能隐式变为原生路径。OTA 的版本4 execution字段要求继续生效。格式不符或未来版本拒绝且不改写快照；v8增加内置模型绑定来源与原决定，v1–7夹带新动作/绑定/结果拒绝，详见 [模型合同](model-release.md#本地信任安装和设备绑定)；v9保存属性阈值规则及采样证据，边界见[自动化合同](rules.md)；不支持当前快照版本的旧二进制不能读取新库。迁移仅使用隔离测试库，未操作用户数据库。
 
 `npm run test:tv` 构建当前网页/Rust，执行核心路由、明确绑定/组合、适配器故障及CLI边界检查，再以Chromium、真实HTTP/mTLS/MQTT/SQLite和假ADB验证耐久提交、单路径发送、丢响应/重启与Broker独立性。新增组合旅程对同一目标逻辑电视统计两端效果，验证单路径离线、原键不复活与网页撤销；原生端为协议夹具。现有空间旅程继续覆盖网页接入、应用发现、配置迁移和禁用轮询后的事件刷新；夹具定位离线校验器，详见[CLI说明](../packages/cli/README.md#电视适配绑定与应用发现)。实际结果见 [24第4.14节](../docs/24-实施计划与进度.md#414-显式能力组合与文档同步)。`cargo test --locked -p limeiot-gateway` 另覆盖提交失败、绑定写盘原子性及旧/损坏快照恢复，其运行结果单独登记。真实Agent、手机端上、NAS镜像与电视实机分别验收。

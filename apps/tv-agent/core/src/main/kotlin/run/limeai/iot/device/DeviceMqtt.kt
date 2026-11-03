@@ -29,14 +29,14 @@ class DeviceMqtt(
     private val overflow = AtomicBoolean(false)
     private val wake = Object()
     private var lastStatus: String? = null
-    private val agent = DeviceAgent(identity, storage, applications, clock) { online.get() && !closed.get() && !overflow.get() }
+    private val agent = DeviceAgent(identity, storage, applications, clock) { online.get() && !closed.get() && !overflow.get() && tls.current }
     private fun report(value: String) { if (lastStatus != value) { lastStatus = value; status(value) } }
 
     fun run() {
         checkDevice(running.compareAndSet(false, true), "already_running")
         var retry = 1000L
         try {
-            while (!closed.get() && !agent.blocked) {
+            while (!closed.get() && !agent.blocked && tls.current) {
                 val connection = MqttClient(uri.toASCIIString(), identity.device, MemoryPersistence())
                 connection.setTimeToWait(5000)
                 connection.setCallback(object : MqttCallback {
@@ -62,20 +62,25 @@ class DeviceMqtt(
                     }
                     connection.connect(options)
                     if (closed.get()) break
+                    tls.requireCurrent()
                     messages.clear(); overflow.set(false); online.set(true)
                     connection.subscribe("limeiot/v1/${identity.space}/${identity.device}/down/+", 1)
-                    fun publish(message: DevicePublication) = connection.publish(message.topic, message.payload, 1, false)
+                    fun publish(message: DevicePublication) {
+                        tls.requireCurrent()
+                        connection.publish(message.topic, message.payload, 1, false)
+                    }
                     publish(agent.connected())
                     var lastHeartbeat = clock.elapsedMillis()
                     val welcomeDeadline = lastHeartbeat + 5000
                     report("handshaking")
-                    while (!closed.get() && online.get() && connection.isConnected) {
+                    while (!closed.get() && online.get() && connection.isConnected && tls.current) {
                         val incoming = messages.poll(100, TimeUnit.MILLISECONDS)
+                        tls.requireCurrent()
                         if (incoming != null) {
                             try { agent.receive(incoming.topic, incoming.bytes, incoming.retained).forEach(::publish) }
                             catch (failure: DeviceFault) {
                                 report(failure.code)
-                                if (agent.blocked || failure.code == "invalid_time") break
+                                if (agent.blocked || failure.code in setOf("invalid_time", "invalid_credentials")) break
                             }
                         }
                         val elapsed = clock.elapsedMillis()
@@ -85,19 +90,19 @@ class DeviceMqtt(
                         }
                         if (agent.ready) { retry = 1000; report("ready") }
                     }
-                } catch (_: Exception) { report(if (agent.blocked) "storage_unavailable" else "connection_unavailable") }
+                } catch (_: Exception) { report(if (agent.blocked) "storage_unavailable" else if (!tls.current) "invalid_credentials" else "connection_unavailable") }
                 finally {
                     online.set(false); agent.disconnected()
                     try { connection.disconnectForcibly(0, 1000, false) } catch (_: Exception) {}
                     try { connection.close(true) } catch (_: Exception) {}
                     messages.clear()
                 }
-                if (!closed.get() && !agent.blocked) {
+                if (!closed.get() && !agent.blocked && tls.current) {
                     synchronized(wake) { if (!closed.get()) wake.wait(retry) }
                     retry = (retry * 2).coerceAtMost(30000)
                 }
             }
-        } finally { online.set(false); running.set(false); report(if (agent.blocked) "storage_unavailable" else "stopped") }
+        } finally { online.set(false); running.set(false); report(if (agent.blocked) "storage_unavailable" else if (!tls.current) "invalid_credentials" else "stopped") }
     }
 
     override fun close() {

@@ -8,12 +8,13 @@ import path from 'node:path';
 import Ajv from 'ajv/dist/2020.js';
 import { root,freePort,startStack,stop,until } from '../tools/dev-stack.mjs';
 import { createAdbFixture } from './helpers/android-tv.mjs';
+import { tvAgentRuntime } from './helpers/tv-agent.mjs';
 const exec=promisify(execFile),base='/api/v1/spaces/space-demo',devicePath=base+'/devices/device-lamp';
 const post=(body,key)=>({method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify(body)});
 async function lines(file){try{return (await readFile(file,'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse);}catch(error){if(error.code==='ENOENT')return [];throw error;}}
 
 test('真实JVM TV Agent与假ADB：同设备显式组合、原生日志、单路径离线及未知恢复', {timeout:240000},async t=>{
-  await exec('sh',[path.join(root,'apps/android/gradlew'),'--no-daemon','-p',path.join(root,'apps/tv-agent'),':core:testClasses'],{cwd:root,timeout:120000});
+  const runtime=await tvAgentRuntime();
   const directory=await mkdtemp(path.join(root,'.dev/tv-agent-composition-')),adbState=path.join(directory,'adb-state');await mkdir(adbState,{mode:0o700});
   t.diagnostic('evidence: '+directory);
   const adb=await createAdbFixture(adbState);
@@ -37,10 +38,10 @@ test('真实JVM TV Agent与假ADB：同设备显式组合、原生日志、单�
   const workerEnv={...process.env,LIMEIOT_TV_AGENT_JOURNEY:'1',LIMEIOT_TV_AGENT_PROFILE:'android-tv-remote',LIMEIOT_TV_AGENT_DIRECTORY:directory,LIMEIOT_TV_AGENT_BROKER:broker,LIMEIOT_TV_AGENT_GATEWAY_DATABASE:stack.env.LIMEIOT_DB};
   async function launch(unknown=false){
     const previous=(await stack.request(devicePath)).value.boot_id;workerEnv.LIMEIOT_TV_AGENT_EFFECT_UNKNOWN=unknown?'1':'0';launches++;
-    worker=spawn('sh',[path.join(root,'apps/android/gradlew'),'--no-daemon','-p',path.join(root,'apps/tv-agent'),':core:mqttJourney','--rerun'],{cwd:root,env:workerEnv,stdio:['ignore','pipe','pipe']});
+    worker=spawn(runtime.executable,runtime.args,{cwd:root,env:workerEnv,stdio:['ignore','pipe','pipe']});
     const stream=createWriteStream(path.join(directory,'jvm-'+launches+'.log'));worker.stdout.pipe(stream);worker.stderr.pipe(stream);worker.once('exit',()=>stream.end());
     done=new Promise((resolve,reject)=>{worker.once('error',reject);worker.once('exit',code=>resolve(code));});done.catch(()=>{});
-    await until(async()=>{const view=(await stack.request(devicePath)).value;return view.ready&&view.boot_id!==previous&&view.session_id;},90000);
+    await until(async()=>{const view=(await stack.request(devicePath)).value;return view.ready&&view.boot_id!==previous&&view.session_id&&view.action_availability?.['apps.launch']===true;},90000);
   }
   async function finish(){await writeFile(path.join(directory,'stop'),'stop');assert.equal(await done,0);await rename(path.join(directory,'stop'),path.join(directory,'stop-'+launches));}
   t.after(async()=>{if(worker)await stop(worker);});
@@ -71,7 +72,7 @@ test('真实JVM TV Agent与假ADB：同设备显式组合、原生日志、单�
   const binding=(await stack.request(devicePath+'/execution-binding')).value;
   assert.equal((await stack.request(base+'/execution-operations',post({type:'bindings.revoke',device_id:'device-lamp',expected_binding_revision:binding.revision},'revoke'))).value.status,'applied');
   const old=await stack.request(base+'/execution-operations',post(change,'compose'));assert.equal(old.value.operation_id,approved.operation_id);assert.equal((await stack.request(devicePath+'/execution-binding')).value.state,'revoked');
-  for(const action of ['apps.launch','remote.press'])assert.equal((await stack.request(base+'/commands',post({device_id:'device-lamp',model_revision:validated.model_revision,expires_at:new Date(Date.now()+10000).toISOString(),operation:{type:'action.invoke',path:action,value:action==='apps.launch'?{application_id:'com.example.player'}:{key:'home'}}},'revoked-'+action))).value.error.code,'execution_binding_revoked');
+  for(const action of ['apps.launch','remote.press'])assert.equal((await stack.request(base+'/commands',post({device_id:'device-lamp',model_revision:validated.model_revision,expires_at:new Date(Date.now()+10000).toISOString(),operation:{type:'action.invoke',path:action,value:action==='apps.launch'?{application_id:'com.example.player'}:{key:'home'}}},'revoked-'+action.replaceAll('.','-')))).value.error.code,'execution_binding_revoked');
   await finish();assert.equal((await lines(path.join(directory,'effects.jsonl'))).length,2);assert.equal((await lines(path.join(adbState,'effects.jsonl'))).length,2);
   assert.deepEqual(JSON.parse(await readFile(path.join(directory,'journal.json'),'utf8')).entries[uncertain.command_id],preserved.entries[uncertain.command_id]);
   for(const proof of await lines(path.join(adbState,'durable.jsonl'))){assert.equal(proof.command.status,'dispatched');assert.deepEqual(proof.binding.native_paths,['apps.launch']);}

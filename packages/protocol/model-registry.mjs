@@ -14,6 +14,8 @@ export function validModelChange(value) {
     case 'models.install': return fields(value, 'type,trust_id,artifact,expected_release_id') && hex(value.trust_id, 'trust-') && object(value.artifact) && (value.expected_release_id === null || hex(value.expected_release_id, 'release-'));
     case 'devices.bind': return fields(value, 'type,device_id,installation_id,expected_model_revision,expected_binding_revision') && identifier(value.device_id) && hex(value.installation_id, 'install-') &&
       (value.expected_model_revision === null || hex(value.expected_model_revision, 'sha256:')) && (value.expected_binding_revision === null || identifier(value.expected_binding_revision));
+    case 'devices.bind-bundle': return fields(value, 'type,device_id,bundle_id,expected_model_revision,expected_binding_revision') && identifier(value.device_id) && hex(value.bundle_id, 'bundle-') &&
+      (value.expected_model_revision === null || hex(value.expected_model_revision, 'sha256:')) && (value.expected_binding_revision === null || identifier(value.expected_binding_revision));
     default: return false;
   }
 }
@@ -40,9 +42,21 @@ export async function verifyModelInstallation(resource) {
     !hex(resource.artifact.statement.release_id, 'release-') || typeof resource.artifact.statement.model.model_id !== 'string') fail();
   return resource;
 }
+export async function verifyModelBundle(resource) {
+  if (!fields(resource, 'bundle_id,model_revision,model') || !hex(resource.bundle_id, 'bundle-') || !hex(resource.model_revision, 'sha256:') ||
+    !object(resource.model) || resource.model_revision !== await documentDigest(resource.model) || resource.bundle_id !== 'bundle-' + resource.model_revision.slice(7)) fail();
+  return resource;
+}
+export async function verifyModelBundles(value) {
+  if (!fields(value, 'items,next_cursor') || !Array.isArray(value.items) || value.items.length > 16 || value.next_cursor !== null) fail();
+  await Promise.all(value.items.map(verifyModelBundle));
+  if (new Set(value.items.map(item => item.bundle_id)).size !== value.items.length) fail();
+  return value;
+}
 function verifyBinding(resource) {
-  if (!fields(resource, 'device_id,model_revision,installation_id,revision,bound_at') || !identifier(resource.device_id) ||
-    !hex(resource.installation_id, 'install-') || !hex(resource.model_revision, 'sha256:') || !identifier(resource.revision) ||
+  const installed = fields(resource, 'device_id,model_revision,installation_id,revision,bound_at') && hex(resource.installation_id, 'install-');
+  const bundled = fields(resource, 'device_id,model_revision,bundle_id,revision,bound_at') && hex(resource.bundle_id, 'bundle-') && resource.bundle_id === 'bundle-' + resource.model_revision?.slice(7);
+  if ((!installed && !bundled) || !identifier(resource.device_id) || !hex(resource.model_revision, 'sha256:') || !identifier(resource.revision) ||
     !Number.isFinite(Date.parse(resource.bound_at))) fail();
   return resource;
 }
@@ -81,6 +95,9 @@ export async function verifyModelOperation(value, expected) {
     await verifyModelInstallation(resource);
   } else if (change.type === 'devices.bind') {
     if (value.result.type !== 'binding' || resource.device_id !== change.device_id || resource.installation_id !== change.installation_id) fail();
+    verifyBinding(resource);
+  } else if (change.type === 'devices.bind-bundle') {
+    if (value.result.type !== 'binding' || resource.device_id !== change.device_id || resource.bundle_id !== change.bundle_id) fail();
     verifyBinding(resource);
   } else fail();
   return value;

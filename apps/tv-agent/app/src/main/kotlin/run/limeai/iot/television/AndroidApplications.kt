@@ -17,6 +17,7 @@ class AndroidApplications(
     private val authorized: (String) -> Boolean,
     private val lock: Any,
     private val permit: RunPermit,
+    private val credentialsValid: () -> Boolean = { true },
     private val visible: () -> Boolean,
 ) : ApplicationPort {
     data class Entry(val packageName: String, val label: String)
@@ -37,13 +38,14 @@ class AndroidApplications(
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
     }
 
-    private fun available(packageName: String): Boolean = permit.active &&
+    private fun available(packageName: String): Boolean = permit.active && credentialsValid() &&
         (Build.VERSION.SDK_INT < 29 || visible()) && authorized(packageName)
 
     override fun permitted(application: String): Boolean = synchronized(lock) { available(application) && launchIntent(application) != null }
     override fun submit(application: String) = synchronized(lock) {
         if (!available(application)) throw AgentStoreFault("application_not_authorized")
         val intent = launchIntent(application) ?: throw AgentStoreFault("application_unavailable")
+        if (!credentialsValid()) throw AgentStoreFault("invalid_credentials")
         context.startActivity(intent)
     }
 

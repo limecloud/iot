@@ -11,9 +11,9 @@ function packet(header, body) {
 }
 export async function mqttProbe({ port, username, password, ...options }) {
   const socket = options.ca ? tls.connect({ host: '127.0.0.1', port, ...options }) : net.connect({ host: '127.0.0.1', port });
-  let buffer = Buffer.alloc(0), failure, counter = 0;
+  let buffer = Buffer.alloc(0), failure, counter = 0, heartbeat;
   const messages = [], pending = [];
-  const fail = error => { failure = error; for (const request of pending.splice(0)) { clearTimeout(request.timer); request.reject(error); } };
+  const fail = error => { clearInterval(heartbeat); failure = error; for (const request of pending.splice(0)) { clearTimeout(request.timer); request.reject(error); } };
   socket.on('error', fail);
   socket.on('close', () => fail(failure ?? new Error('mqtt_connection_closed')));
   socket.on('data', data => {
@@ -48,8 +48,15 @@ export async function mqttProbe({ port, username, password, ...options }) {
     const connack = await next(2);
     if (connack[1] !== 0) throw new Error(`mqtt_connack_${connack[1]}`);
   } catch (error) { socket.destroy(); throw error; }
+  // CONNECT声明10秒保活；长浏览器旅程也必须持续核对Broker响应。
+  heartbeat = setInterval(() => {
+    const response = next(13);
+    socket.write(Buffer.from([0xc0, 0]));
+    void response.then(body => { if (body.length !== 0) throw new Error('mqtt_invalid_ping_response'); }).catch(error => { fail(error); socket.destroy(); });
+  }, 5000);
+  heartbeat.unref();
   return {
-    close() { socket.destroy(); },
+    close() { clearInterval(heartbeat); socket.destroy(); },
     async publish(topic, value = '{}') {
       const id = ++counter, bytes = Buffer.from([id >> 8, id & 255, 0]);
       socket.write(packet(0x32, Buffer.concat([string(topic), bytes, Buffer.from(value)])));

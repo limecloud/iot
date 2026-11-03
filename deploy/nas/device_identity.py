@@ -90,14 +90,45 @@ def refresh_crl(directory):
     temporary.replace(directory / "broker-tls/revoked.crl")
 
 
-def issue(directory, device, output):
+def bound_device(directory, device):
     config = json.loads((directory / "config/gateway.json").read_text())
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", device) or device not in {item["device_id"] for item in config["devices"]}:
         raise ValueError("device_not_bound_to_gateway")
+    return config
+
+
+def available_device(directory, device):
+    config = bound_device(directory, device)
     authority = directory / "device-authority"
     entries = [line.split("\t") for line in (authority / "index.txt").read_text().splitlines()]
+    if any(len(row) != 6 for row in entries):
+        raise ValueError("identity_database_invalid")
     if any(row[0] == "V" and row[-1] == f"/CN={device}" for row in entries):
         raise ValueError("active_certificate_exists_revoke_before_reissue")
+    journal = authority / "csr-operations"
+    if journal.is_symlink():
+        raise ValueError("csr_journal_invalid")
+    if journal.exists():
+        for operation in journal.iterdir():
+            try:
+                if operation.is_symlink() or not operation.is_dir():
+                    raise ValueError("csr_journal_invalid")
+                filename = operation / "request.json"
+                if filename.is_symlink():
+                    raise ValueError("csr_journal_invalid")
+                request = json.loads(filename.read_text())
+                if not isinstance(request, dict) or not isinstance(request.get("device_id"), str) or not re.fullmatch(r"[0-9A-F]{1,40}", request.get("serial", "")):
+                    raise ValueError("csr_journal_invalid")
+            except (OSError, ValueError, TypeError) as error:
+                raise ValueError("csr_journal_invalid") from error
+            if request["device_id"] == device and not any(row[0] == "R" and row[3] == request["serial"] and row[-1] == f"/CN={device}" for row in entries):
+                raise ValueError("pending_csr_enrollment_query_original")
+    return config
+
+
+def issue(directory, device, output):
+    config = available_device(directory, device)
+    authority = directory / "device-authority"
     # 仅创建新目录；失败时保留供操作者检查，不覆盖或删除已有私钥。
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     save(authority / "openssl.cnf", ca_config(authority))
@@ -153,14 +184,33 @@ acl_file {config}/mqtt-acl
 if __name__ == "__main__":
     os.umask(0o077)
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("issue", "revoke", "refresh-crl"))
-    parser.add_argument("--directory", type=Path, required=True)
+    parser.add_argument("action", choices=("issue", "revoke", "refresh-crl", "inspect-csr", "sign-csr", "resolve-csr", "rotate-csr", "recover-csr", "complete-rotation", "csr-schema"))
+    parser.add_argument("--directory", type=Path)
     parser.add_argument("--device-id")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--serial")
+    parser.add_argument("--csr", type=Path)
+    parser.add_argument("--public-key-fingerprint")
+    parser.add_argument("--request-id")
+    parser.add_argument("--previous-serial")
+    parser.add_argument("--previous-certificate-fingerprint")
+    parser.add_argument("--activation-proof")
     args = parser.parse_args()
+    if args.action == "csr-schema":
+        print((Path(__file__).resolve().parents[2] / "contracts/device-enrollment.schema.json").read_text(), end="")
+        raise SystemExit(0)
+    if args.directory is None:
+        parser.error("--directory required")
     directory = args.directory.expanduser().resolve()
     try:
+        if args.action in ("inspect-csr", "sign-csr", "resolve-csr", "rotate-csr", "recover-csr", "complete-rotation"):
+            try:
+                from csr_enrollment import execute
+            except ModuleNotFoundError as error:
+                raise ValueError("identity_crypto_dependency_required") from error
+            result = execute(args)
+            print(json.dumps({"status": "ok", "action": args.action, **result}))
+            raise SystemExit(0)
         with (directory / "device-authority/.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             if args.action == "issue":

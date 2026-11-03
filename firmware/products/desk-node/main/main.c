@@ -2,6 +2,10 @@
 #include "limeiot_espidf.h"
 #if CONFIG_LIMEIOT_ROLE_LAMP
 #include "lamp.h"
+#elif CONFIG_LIMEIOT_ROLE_ENVIRONMENT
+#include "environment.h"
+#include "limeiot_sht3x.h"
+#include "driver/i2c_master.h"
 #else
 #include "button.h"
 #endif
@@ -67,9 +71,15 @@ typedef struct {
     char ssid[33], password[65], space[LI_ID_SIZE], device[LI_ID_SIZE], host[254], hardware[65];
     char ca[4096], certificate[4096], private_key[4096], ota_https_ca[4000], bootloader_version[32];
     uint16_t port;
-    bool power, clock_bootstrapped;
+    bool power, clock_bootstrapped, device_local_identity;
     int64_t brightness, clock_unix, clock_mono;
     led_strip_handle_t strip;
+#if CONFIG_LIMEIOT_ROLE_ENVIRONMENT
+    i2c_master_bus_handle_t sensor_bus;
+    i2c_master_dev_handle_t sensor_device;
+    li_sht3x_t sensor;
+    atomic_bool sensor_healthy;
+#endif
     li_espidf_t *iot;
     li_ota_key_t firmware_key;
     li_ota_trust_t *firmware_trust;
@@ -90,6 +100,8 @@ static bool read_device_info(void *context, li_device_info_t *info) {
     *info = (li_device_info_t){
 #if CONFIG_LIMEIOT_ROLE_LAMP
         .product_id = "desk-node-lamp",
+#elif CONFIG_LIMEIOT_ROLE_ENVIRONMENT
+        .product_id = "desk-node-environment",
 #else
         .product_id = "desk-node-button",
 #endif
@@ -110,9 +122,36 @@ static bool trusted_clock(void *context) {
 static bool load_string(nvs_handle_t storage, const char *key, char *value, size_t capacity) { size_t size = capacity; return nvs_get_str(storage, key, value, &size) == ESP_OK && size > 1 && size <= capacity; }
 static void load_configuration(product_t *product) {
     /* 身份区损坏时停止，不自动擦除设备凭据或所有权。 */
-    ESP_ERROR_CHECK(nvs_flash_init());
+    if (li_espidf_storage_init_partition("nvs") != LI_OK) { ESP_LOGE(TAG, "identity storage is unavailable"); abort(); }
     nvs_handle_t storage; ESP_ERROR_CHECK(nvs_open("li-config", NVS_READONLY, &storage));
-    bool valid = load_string(storage, "ssid", product->ssid, sizeof(product->ssid)) && load_string(storage, "wifi_password", product->password, sizeof(product->password)) && load_string(storage, "space_id", product->space, sizeof(product->space)) && load_string(storage, "device_id", product->device, sizeof(product->device)) && load_string(storage, "broker_host", product->host, sizeof(product->host)) && load_string(storage, "hardware_rev", product->hardware, sizeof(product->hardware)) && load_string(storage, "ca", product->ca, sizeof(product->ca)) && load_string(storage, "certificate", product->certificate, sizeof(product->certificate)) && load_string(storage, "private_key", product->private_key, sizeof(product->private_key)) && nvs_get_u16(storage, "broker_port", &product->port) == ESP_OK && product->port > 0 && strlen(product->password) >= 8;
+    bool valid = load_string(storage, "ssid", product->ssid, sizeof(product->ssid)) && load_string(storage, "wifi_password", product->password, sizeof(product->password)) && load_string(storage, "space_id", product->space, sizeof(product->space)) && load_string(storage, "device_id", product->device, sizeof(product->device)) && load_string(storage, "broker_host", product->host, sizeof(product->host)) && load_string(storage, "hardware_rev", product->hardware, sizeof(product->hardware)) && load_string(storage, "ca", product->ca, sizeof(product->ca)) && nvs_get_u16(storage, "broker_port", &product->port) == ESP_OK && product->port > 0 && strlen(product->password) >= 8;
+    uint8_t identity_mode = 0, identity_version = 0;
+    esp_err_t mode_error = nvs_get_u8(storage, "identity_mode", &identity_mode);
+    esp_err_t identity_version_error = nvs_get_u8(storage, "identity_ver", &identity_version);
+    if (mode_error == ESP_ERR_NVS_NOT_FOUND && identity_version_error == ESP_ERR_NVS_NOT_FOUND) {
+        valid = valid && load_string(storage, "certificate", product->certificate, sizeof(product->certificate))
+            && load_string(storage, "private_key", product->private_key, sizeof(product->private_key));
+    } else {
+        size_t ignored = 0;
+        product->device_local_identity = mode_error == ESP_OK && identity_mode == 2
+            && identity_version_error == ESP_OK && identity_version == 1
+            && nvs_get_str(storage, "certificate", NULL, &ignored) == ESP_ERR_NVS_NOT_FOUND
+            && nvs_get_str(storage, "private_key", NULL, &ignored) == ESP_ERR_NVS_NOT_FOUND;
+#if !CONFIG_LIMEIOT_DEVICE_LOCAL_IDENTITY
+        product->device_local_identity = false;
+#endif
+        valid = valid && product->device_local_identity;
+    }
+    uint8_t storage_version = 0, storage_key_id = 0;
+    esp_err_t storage_marker = nvs_get_u8(storage, "storage_ver", &storage_version);
+    esp_err_t storage_key_marker = nvs_get_u8(storage, "storage_key_id", &storage_key_id);
+#if CONFIG_LIMEIOT_NVS_HMAC_PROTECTED
+    valid = valid && storage_marker == ESP_OK && storage_version == 1 && storage_key_marker == ESP_OK
+        && storage_key_id == CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID
+        && li_espidf_storage_verify_identity(product->space, product->device) == LI_OK;
+#else
+    valid = valid && storage_marker == ESP_ERR_NVS_NOT_FOUND && storage_key_marker == ESP_ERR_NVS_NOT_FOUND;
+#endif
     size_t key_size = 0, id_size = 0;
     esp_err_t key_error = nvs_get_str(storage, "ota_public_key", NULL, &key_size);
     esp_err_t id_error = nvs_get_str(storage, "ota_key_id", NULL, &id_size);
@@ -181,6 +220,31 @@ static bool read_property(void *context, const char *path, li_value_t *value) {
     if (strcmp(path, "light.brightness") == 0) { value->type = LI_INTEGER; value->integer = product->brightness; return true; }
     return false;
 }
+#if CONFIG_LIMEIOT_ROLE_ENVIRONMENT
+static bool sensor_write(void *context, const uint8_t *data, size_t size) {
+    product_t *product = context;
+    return i2c_master_transmit(product->sensor_device, data, size, 100) == ESP_OK;
+}
+static bool sensor_read(void *context, uint8_t *data, size_t size) {
+    product_t *product = context;
+    return i2c_master_receive(product->sensor_device, data, size, 100) == ESP_OK;
+}
+static bool sensor_wait(void *context, uint32_t milliseconds) {
+    (void)context;
+    /* 向上取整并多等一个tick，保证不早于芯片最大转换时间。 */
+    vTaskDelay(pdMS_TO_TICKS(milliseconds + portTICK_PERIOD_MS - 1) + 1); return true;
+}
+static int64_t sensor_clock(void *context) { (void)context; return esp_timer_get_time()/1000; }
+static bool read_observation(void *context, const char *path, li_observation_t *value) {
+    product_t *product = context; li_sht3x_sample_t sample;
+    if (strcmp(path, "environment.temperature") && strcmp(path, "environment.humidity")) return false;
+    bool valid = li_sht3x_read(&product->sensor, &sample);
+    atomic_store(&product->sensor_healthy, valid);
+    if (!valid) return false;
+    *value = (li_observation_t){.value = {.type = LI_INTEGER, .integer = !strcmp(path, "environment.temperature") ? sample.temperature : sample.humidity}, .sampled_mono_ms = sample.sampled_mono_ms};
+    return true;
+}
+#endif
 static li_apply_result_t write_property(void *context, const char *path, li_value_t value) {
     product_t *product = context;
 #if CONFIG_LIMEIOT_ROLE_LAMP
@@ -207,11 +271,21 @@ static void initialize_driver(product_t *product) {
     led_strip_rmt_config_t rmt = {.clk_src = RMT_CLK_SRC_DEFAULT, .resolution_hz = 10000000, .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL, .flags.with_dma = false};
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip, &rmt, &product->strip));
     ESP_ERROR_CHECK(led_strip_clear(product->strip)); product->brightness = 20;
-#else
+#elif CONFIG_LIMEIOT_ROLE_BUTTON
     (void)product;
     if (!permitted_gpio(CONFIG_LIMEIOT_BUTTON_GPIO)) abort();
     gpio_config_t button = {.pin_bit_mask = UINT64_C(1) << CONFIG_LIMEIOT_BUTTON_GPIO, .mode = GPIO_MODE_INPUT, .pull_up_en = GPIO_PULLUP_ENABLE, .pull_down_en = GPIO_PULLDOWN_DISABLE, .intr_type = GPIO_INTR_DISABLE};
     ESP_ERROR_CHECK(gpio_config(&button));
+#else
+    if (!permitted_gpio(CONFIG_LIMEIOT_SHT30_SDA_GPIO) || !permitted_gpio(CONFIG_LIMEIOT_SHT30_SCL_GPIO)
+        || CONFIG_LIMEIOT_SHT30_SDA_GPIO == CONFIG_LIMEIOT_SHT30_SCL_GPIO) abort();
+    i2c_master_bus_config_t bus = {.i2c_port = -1, .sda_io_num = CONFIG_LIMEIOT_SHT30_SDA_GPIO,
+        .scl_io_num = CONFIG_LIMEIOT_SHT30_SCL_GPIO, .clk_source = I2C_CLK_SRC_DEFAULT, .glitch_ignore_cnt = 7};
+    ESP_ERROR_CHECK(i2c_new_master_bus(&bus, &product->sensor_bus));
+    i2c_device_config_t device = {.dev_addr_length = I2C_ADDR_BIT_LEN_7, .device_address = CONFIG_LIMEIOT_SHT30_ADDRESS, .scl_speed_hz = 100000};
+    ESP_ERROR_CHECK(i2c_master_bus_add_device(product->sensor_bus, &device, &product->sensor_device));
+    li_sht3x_ports_t ports = {product, sensor_write, sensor_read, sensor_wait, sensor_clock};
+    if (!li_sht3x_init(&product->sensor, &ports)) abort();
 #endif
 }
 static void wifi_event(void *context, esp_event_base_t base, int32_t event, void *data) {
@@ -240,23 +314,123 @@ static void connect_wifi(product_t *product) {
     if (xTaskCreate(wifi_retry, "wifi-retry", 3072, NULL, 3, NULL) != pdPASS) abort();
     (void)xEventGroupWaitBits(network, IP_READY, pdFALSE, pdTRUE, portMAX_DELAY);
 }
+static bool usb_line(char *line, size_t capacity) {
+    if (!fgets(line, capacity, stdin)) { clearerr(stdin); return false; }
+    size_t length = strlen(line);
+    if (!length || line[length - 1] != '\n') {
+        int c; while ((c = getchar()) != '\n' && c != EOF) { }
+        line[0] = 0; return false;
+    }
+    while (length && (line[length - 1] == '\r' || line[length - 1] == '\n')) line[--length] = 0;
+    return true;
+}
+static bool usb_pem(char *certificate, size_t capacity, const char *footer) {
+    memset(certificate, 0, capacity);
+    char line[256]; size_t used = 0;
+    while (usb_line(line, sizeof(line))) {
+        size_t length = strlen(line);
+        if (used + length + 2 > capacity) return false;
+        memcpy(certificate + used, line, length); used += length; certificate[used++] = '\n';
+        if (!strcmp(line, footer)) return true;
+    }
+    return false;
+}
+static void initialize_device_identity(product_t *product) {
+    if (!product->device_local_identity) return;
+    li_espidf_identity_options_t options = {product->space, product->device, product->ca, product, trusted_clock};
+    li_espidf_identity_t *identity = NULL;
+    if (li_espidf_identity_open(&options, &identity) != LI_OK) abort();
+    li_error_t status = li_espidf_identity_credentials(identity, product->certificate, sizeof(product->certificate), product->private_key, sizeof(product->private_key));
+#if CONFIG_LIMEIOT_DEVELOPMENT_IDENTITY_MAINTENANCE
+    bool maintenance = true;
+#else
+    bool maintenance = false;
+#endif
+    if (status != LI_OK && status != LI_CONFLICT && !maintenance) abort();
+    if (status == LI_CONFLICT) ESP_LOGW(TAG, "Local identity setup: identity csr; identity import followed by the public certificate");
+    if (maintenance) ESP_LOGW(TAG, "Identity maintenance: status; rotate ID; recover ID; recover-pending ID + original CSR; rotate-import ID; proof ID CHALLENGE; continue (prefix each with identity)");
+    char *certificate = calloc(1, LI_IDENTITY_CERT_PEM_SIZE);
+    char *csr = calloc(1, LI_IDENTITY_CSR_PEM_SIZE);
+    if (!certificate || !csr) abort();
+    while (status != LI_OK || maintenance) {
+        char line[256], fingerprint[LI_IDENTITY_FINGERPRINT_SIZE];
+        if (!usb_line(line, sizeof(line))) { vTaskDelay(pdMS_TO_TICKS(100)); continue; }
+        if (maintenance && !strcmp(line, "identity continue")) {
+            status = li_espidf_identity_credentials(identity, product->certificate, sizeof(product->certificate), product->private_key, sizeof(product->private_key));
+            if (status == LI_OK) break;
+            ESP_LOGW(TAG, "Valid credentials required to continue");
+        } else if (!strcmp(line, "identity status")) {
+            li_espidf_identity_status_t current;
+            if (li_espidf_identity_status(identity, &current) != LI_OK) abort();
+            printf("{\"state\":%u,\"generation\":%" PRIu32 ",\"rotation_id\":\"%s\",\"certificate_fingerprint\":\"%s\",\"public_key_fingerprint\":\"%s\",\"pending_public_key_fingerprint\":\"%s\",\"certificate_expired\":%s,\"recovery_origin\":%u}\n",
+                current.state, current.generation, current.rotation_id, current.certificate_fingerprint, current.public_key_fingerprint, current.pending_public_key_fingerprint, current.certificate_expired ? "true" : "false", current.recovery_origin); fflush(stdout);
+        } else if (maintenance && !strncmp(line, "identity proof ", 15)) {
+            char *challenge = strchr(line + 15, ' '), proof[LI_IDENTITY_PROOF_SIZE];
+            if (!challenge) { ESP_LOGW(TAG, "Rotation ID and challenge required"); continue; }
+            *challenge++ = 0;
+            li_error_t result = li_espidf_identity_rotation_proof(identity, line + 15, challenge, proof);
+            if (result == LI_STORAGE || result == LI_CLOCK) abort();
+            if (result == LI_OK) { printf("%s\n", proof); fflush(stdout); }
+            else ESP_LOGW(TAG, "Activation proof rejected");
+        } else if (maintenance && (!strncmp(line, "identity recover ", 17) || !strncmp(line, "identity recover-pending ", 25))) {
+            bool pending = !strncmp(line, "identity recover-pending ", 25);
+            bool complete = !pending || usb_pem(certificate, LI_IDENTITY_CSR_PEM_SIZE, "-----END CERTIFICATE REQUEST-----");
+            li_error_t result = !complete ? LI_INVALID : li_espidf_identity_recover_request(identity,
+                line + (pending ? 25 : 17), pending ? certificate : NULL, csr, LI_IDENTITY_CSR_PEM_SIZE, fingerprint);
+            memset(certificate, 0, LI_IDENTITY_CERT_PEM_SIZE);
+            if (result == LI_STORAGE || result == LI_CLOCK) abort();
+            if (result != LI_OK) { ESP_LOGW(TAG, "Expired identity recovery rejected: %s", li_error_code(result)); continue; }
+            printf("%s\n%s", fingerprint, csr); fflush(stdout);
+        } else if (!strcmp(line, "identity csr") || (maintenance && !strncmp(line, "identity rotate ", 16))) {
+            bool rotate = strncmp(line, "identity csr", 12) != 0;
+            li_error_t result = rotate ? li_espidf_identity_rotate_request(identity, line + 16, csr, LI_IDENTITY_CSR_PEM_SIZE, fingerprint)
+                : li_espidf_identity_request(identity, csr, LI_IDENTITY_CSR_PEM_SIZE, fingerprint);
+            if (result == LI_STORAGE || result == LI_CLOCK) abort();
+            if (result != LI_OK) { ESP_LOGW(TAG, "Identity request rejected: %s", li_error_code(result)); continue; }
+            printf("%s\n%s", fingerprint, csr); fflush(stdout);
+        } else if (!strcmp(line, "identity import") || (maintenance && !strncmp(line, "identity rotate-import ", 23))) {
+            bool rotate = strncmp(line, "identity import", 15) != 0;
+            bool complete = usb_pem(certificate, LI_IDENTITY_CERT_PEM_SIZE, "-----END CERTIFICATE-----");
+            li_error_t result = !complete ? LI_INVALID : rotate ? li_espidf_identity_rotate_import(identity, line + 23, certificate)
+                : li_espidf_identity_import(identity, certificate);
+            memset(certificate, 0, LI_IDENTITY_CERT_PEM_SIZE);
+            if (result == LI_STORAGE || result == LI_CLOCK) { ESP_LOGE(TAG, "Identity setup requires reopening: %s", li_error_code(result)); abort(); }
+            if (result != LI_OK) { ESP_LOGW(TAG, "Identity certificate rejected"); continue; }
+            status = li_espidf_identity_credentials(identity, product->certificate, sizeof(product->certificate), product->private_key, sizeof(product->private_key));
+            if (status != LI_OK) abort();
+        }
+    }
+    free(certificate); free(csr); li_espidf_identity_close(identity);
+}
 void app_main(void) {
     begin_image_verification();
     product_t *product = calloc(1, sizeof(*product)); if (!product) abort();
-    initialize_driver(product); load_configuration(product); bootstrap_clock(product); connect_wifi(product);
+    initialize_driver(product); load_configuration(product); bootstrap_clock(product); connect_wifi(product); initialize_device_identity(product);
 #if CONFIG_LIMEIOT_ROLE_LAMP
     li_config_t model = {product->space, product->device, LI_LAMP_REVISION, esp_app_get_description()->version, product->hardware, LI_LAMP_PROPERTIES, LI_LAMP_PROPERTY_COUNT, NULL, 0, "driver.applied"};
+#elif CONFIG_LIMEIOT_ROLE_ENVIRONMENT
+    li_config_t model = {product->space, product->device, LI_ENVIRONMENT_REVISION, esp_app_get_description()->version, product->hardware, LI_ENVIRONMENT_PROPERTIES, LI_ENVIRONMENT_PROPERTY_COUNT, NULL, 0, "sensor.readback"};
 #else
     li_config_t model = {product->space, product->device, LI_BUTTON_REVISION, esp_app_get_description()->version, product->hardware, NULL, 0, LI_BUTTON_EVENTS, LI_BUTTON_EVENT_COUNT, "driver.applied"};
 #endif
-    li_espidf_options_t options = {model, product->host, product->ca, product->certificate, product->private_key, product->port, product, trusted_clock, read_property, write_property, read_device_info, product->has_firmware_key ? &product->firmware_key : NULL, li_ota_trust_policy(product->firmware_trust), product->has_ota_transport ? product->ota_https_ca : NULL};
+    li_espidf_options_t options = {model, product->host, product->ca, product->certificate, product->private_key, product->port, product, trusted_clock, read_property, write_property, read_device_info, product->has_firmware_key ? &product->firmware_key : NULL, li_ota_trust_policy(product->firmware_trust), product->has_ota_transport ? product->ota_https_ca : NULL,
+#if CONFIG_LIMEIOT_ROLE_ENVIRONMENT
+        read_observation
+#else
+        NULL
+#endif
+    };
     li_error_t error = li_espidf_start(&options, &product->iot);
     if (error != LI_OK) { ESP_LOGE(TAG, "IoT Core start failed: %s", li_error_code(error)); abort(); }
 #if CONFIG_LIMEIOT_ROLE_BUTTON
     int raw = 1, stable = 1; int64_t changed = esp_timer_get_time();
 #endif
     for (;;) {
-        atomic_store(&application_healthy, li_espidf_ready(product->iot) && trusted_clock(product));
+        bool healthy = li_espidf_ready(product->iot) && trusted_clock(product);
+#if CONFIG_LIMEIOT_ROLE_ENVIRONMENT
+        healthy = healthy && atomic_load(&product->sensor_healthy);
+#endif
+        atomic_store(&application_healthy, healthy);
 #if CONFIG_LIMEIOT_ROLE_BUTTON
         int current = gpio_get_level(CONFIG_LIMEIOT_BUTTON_GPIO); int64_t now = esp_timer_get_time();
         if (current != raw) { raw = current; changed = now; }

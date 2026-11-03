@@ -39,10 +39,16 @@ impl IntoResponse for ApiError {
             | "model_operation_not_found"
             | "model_trust_not_found"
             | "model_installation_not_found"
+            | "model_bundle_not_found"
             | "ota_task_not_found"
             | "ota_trust_not_found"
             | "ota_operation_not_found"
             | "execution_operation_not_found"
+            | "media_not_found"
+            | "media_operation_not_found"
+            | "speech_not_found"
+            | "execution_plan_not_found"
+            | "execution_plan_operation_not_found"
             | "not_found" => StatusCode::NOT_FOUND,
             "idempotency_conflict"
             | "device_offline"
@@ -50,15 +56,26 @@ impl IntoResponse for ApiError {
             | "event_gap"
             | "revision_conflict"
             | "control_already_bound" => StatusCode::CONFLICT,
-            "ota_task_conflict" => StatusCode::CONFLICT,
-            "storage_unavailable" | "inference_not_configured" | "control_not_configured" => {
-                StatusCode::SERVICE_UNAVAILABLE
+            "ota_task_conflict" | "execution_plan_conflict" | "speech_already_completed" => {
+                StatusCode::CONFLICT
             }
+            "storage_unavailable"
+            | "inference_not_configured"
+            | "control_not_configured"
+            | "media_storage_unavailable"
+            | "speech_not_configured"
+            | "media_not_configured" => StatusCode::SERVICE_UNAVAILABLE,
             "inference_busy"
             | "control_busy"
             | "model_operation_capacity"
             | "ota_operation_capacity" => StatusCode::TOO_MANY_REQUESTS,
             "execution_operation_capacity" => StatusCode::TOO_MANY_REQUESTS,
+            "media_operation_capacity" | "media_capacity" | "speech_busy" | "speech_capacity" => {
+                StatusCode::TOO_MANY_REQUESTS
+            }
+            "execution_plan_capacity" | "execution_plan_operation_capacity" => {
+                StatusCode::TOO_MANY_REQUESTS
+            }
             _ => StatusCode::UNPROCESSABLE_ENTITY,
         };
         (
@@ -132,6 +149,9 @@ pub fn router(app: App) -> Router {
         .merge(crate::model_api::routes())
         .merge(crate::ota_api::routes())
         .merge(crate::execution_api::routes())
+        .merge(crate::execution_plan_api::routes())
+        .merge(crate::media::routes())
+        .merge(crate::speech::routes())
         .route_layer(middleware::from_fn_with_state(app.clone(), auth::authorize));
     Router::new()
         .route("/healthz", axum::routing::get(health))
@@ -186,10 +206,15 @@ async fn device(
     ))
 }
 async fn capabilities(State(app): State<App>, Path(space): Path<String>) -> ApiResult<Json<Value>> {
+    let speech = app
+        .speech
+        .as_ref()
+        .map(|service| service.capabilities())
+        .unwrap_or_else(|| json!({"configured":false,"capability":"audio.synthesize"}));
     let store = app.store.lock().await;
     check(&store.data, &space)?;
     Ok(Json(
-        json!({"space_id":space,"mode":"loopback_simulation","operations":serde_json::from_str::<Value>(include_str!("../../../../contracts/tools/catalog.json")).unwrap()["operations"],"models":store.data.models,"inference":{"configured":app.inference.is_some(),"provider":"ollama","model":app.inference.as_ref().map(|p|p.model()),"data_location":"local","concurrency":1,"max_output_tokens":1024},"limits":{"devices":64,"commands":4096,"rules":64,"runs":1024,"dedup_events":4096,"rule_drafts":128,"model_trusts":limeiot_core::model_registry::MAX_TRUSTS,"model_installations":limeiot_core::model_registry::MAX_INSTALLATIONS,"model_operations":limeiot_core::model_registry::MAX_OPERATIONS}}),
+        json!({"space_id":space,"mode":"loopback_simulation","operations":serde_json::from_str::<Value>(include_str!("../../../../contracts/tools/catalog.json")).unwrap()["operations"],"models":store.data.models,"inference":{"configured":app.inference.is_some(),"provider":"ollama","model":app.inference.as_ref().map(|p|p.model()),"data_location":"local","concurrency":1,"max_output_tokens":1024},"speech":speech,"limits":{"devices":64,"commands":4096,"rules":64,"runs":1024,"dedup_events":4096,"rule_drafts":128,"model_trusts":limeiot_core::model_registry::MAX_TRUSTS,"model_installations":limeiot_core::model_registry::MAX_INSTALLATIONS,"model_operations":limeiot_core::model_registry::MAX_OPERATIONS}}),
     ))
 }
 async fn model(State(app): State<App>, Path(revision): Path<String>) -> ApiResult<Json<Value>> {
@@ -487,9 +512,12 @@ async fn rule_validate(
 ) -> ApiResult<Json<Value>> {
     let store = app.store.lock().await;
     check(&store.data, &space)?;
-    Ok(Json(
-        json!({"valid":true,"revision":store.data.validate_rule(&rule)?}),
-    ))
+    let mut result = json!({"valid":true,"revision":store.data.validate_rule(&rule)?});
+    if let limeiot_core::protocol::Trigger::Schedule { schedule } = &rule.trigger {
+        result["schedule_preview"] = serde_json::to_value(schedule.next_after(chrono::Utc::now())?)
+            .map_err(|_| err("invalid_json"))?;
+    }
+    Ok(Json(result))
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -504,32 +532,66 @@ async fn rule_simulate(
 ) -> ApiResult<Json<Value>> {
     let store = app.store.lock().await;
     check(&store.data, &space)?;
-    let revision = store.data.validate_rule(&input.rule)?;
-    let source = &store.data.devices[&input.rule.trigger.device];
-    store.data.models[&source.model_revision]
-        .event(&input.rule.trigger.event)?
-        .schema
-        .validate(&input.event["data"])?;
-    let matches = input.event["device_id"] == input.rule.trigger.device
-        && input.event["path"] == input.rule.trigger.event
-        && input.event["historical"] == false;
-    Ok(Json(
-        json!({"executed":false,"simulation":true,"revision":revision,"matched":matches,"proposed_actions":if matches {input.rule.actions}else {vec![]}}),
-    ))
+    Ok(Json(store.data.simulate_rule(
+        &input.rule,
+        &input.event,
+        chrono::Utc::now(),
+    )?))
 }
 async fn rule_deploy(
     State(app): State<App>,
     Path(space): Path<String>,
+    headers: HeaderMap,
     Json(rule): Json<Rule>,
 ) -> ApiResult<Json<Value>> {
     {
         let store = app.store.lock().await;
         check(&store.data, &space)?;
     }
+    let expected = headers.get("if-match");
+    let absent = headers.get("if-none-match");
+    ensure(
+        headers.get_all("if-match").iter().count() <= 1
+            && headers.get_all("if-none-match").iter().count() <= 1,
+        "invalid_request",
+    )?;
+    ensure(expected.is_none() || absent.is_none(), "invalid_request")?;
+    let expected = expected
+        .map(|value| {
+            let text = value.to_str().map_err(|_| err("invalid_request"))?;
+            let revision = text
+                .strip_prefix('"')
+                .and_then(|value| value.strip_suffix('"'))
+                .ok_or_else(|| err("invalid_request"))?;
+            ensure(
+                revision.len() == 71
+                    && revision.starts_with("sha256:")
+                    && revision[7..]
+                        .bytes()
+                        .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)),
+                "invalid_request",
+            )?;
+            Ok::<_, Error>(revision.to_owned())
+        })
+        .transpose()?;
+    if let Some(value) = absent {
+        ensure(value == "*", "invalid_request")?;
+    }
     Ok(Json(
         serde_json::to_value(
-            app.update("rule.deployed", |data| data.deploy(rule))
-                .await?,
+            app.update("rule.deployed", |data| {
+                let current = data.deployments.get(&rule.id);
+                if let Some(expected) = &expected {
+                    ensure(
+                        current.is_some_and(|value| &value.revision == expected),
+                        "revision_conflict",
+                    )?;
+                } else if absent.is_some() {
+                    ensure(current.is_none(), "revision_conflict")?;
+                }
+                data.deploy(rule)
+            })
+            .await?,
         )
         .unwrap(),
     ))

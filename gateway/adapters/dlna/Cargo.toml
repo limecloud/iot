@@ -1,0 +1,15 @@
+[package]
+name = "limeiot-dlna"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+limeiot-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+url.workspace = true
+reqwest = { version = "0.12.28", default-features = false }
+roxmltree = "=0.21.1"

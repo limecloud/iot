@@ -18,6 +18,9 @@ pub struct App {
     pub control: Option<Arc<crate::control_client::ControlAccess>>,
     pub connection: Arc<RwLock<crate::relay::ConnectionStatus>>,
     pub tv: Arc<crate::tv::Adapters>,
+    pub audio: Arc<crate::audio::Adapters>,
+    pub media: Option<Arc<crate::media::Media>>,
+    pub speech: Option<Arc<crate::speech::Speech>>,
 }
 pub fn setting(key: &str, default: &str) -> String {
     std::env::var(key).unwrap_or_else(|_| default.into())
@@ -55,7 +58,16 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         "LIMEIOT_CONFIG",
         "deploy/dev/config.json",
     ))?)?;
+    let media = crate::media::configured(&config.space_id)?;
+    let speech = crate::speech::configured(media.is_some())?;
+    let media_listener = if let Some(media) = &media {
+        Some(tokio::net::TcpListener::bind(media.listen).await?)
+    } else {
+        None
+    };
     let tv_adapters = crate::tv::configured()?;
+    let audio_adapters = crate::audio::configured()?;
+    audio_adapters.validate_with_tv(&tv_adapters)?;
     let store = Store::open(&setting("LIMEIOT_DB", ".dev/gateway.sqlite"), config)?;
     let (bus, _) = broadcast::channel(64);
     let app = App {
@@ -70,11 +82,22 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         control: crate::control_client::configured()?,
         connection: Arc::new(RwLock::new(crate::relay::ConnectionStatus::default())),
         tv: Arc::new(tv_adapters.clone()),
+        audio: Arc::new(audio_adapters.clone()),
+        media,
+        speech,
     };
     let relay_tls = crate::relay::configured(app.control.as_deref())?;
     let relay = relay_tls.map(|tls| tokio::spawn(crate::relay::run(app.clone(), tls)));
     let mqtt = tokio::spawn(crate::mqtt::run(app.clone()));
+    let execution_plans = tokio::spawn(crate::execution_plan_api::run(app.clone()));
     let tv = tokio::spawn(crate::tv::run(app.clone(), tv_adapters));
+    let audio = tokio::spawn(crate::audio::run(app.clone(), audio_adapters));
+    let media_server =
+        media_listener.map(|listener| tokio::spawn(crate::media::serve(app.clone(), listener)));
+    let media_maintenance = app
+        .media
+        .clone()
+        .map(|media| tokio::spawn(crate::media::maintenance(media)));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     println!(
         "{}",
@@ -86,7 +109,15 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         })
         .await?;
     mqtt.abort();
+    execution_plans.abort();
     tv.abort();
+    audio.abort();
+    if let Some(task) = media_server {
+        task.abort();
+    }
+    if let Some(task) = media_maintenance {
+        task.abort();
+    }
     if let Some(task) = relay {
         task.abort();
     }

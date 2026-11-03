@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "id": "button-tv",
+  "trigger": { "device": "device-button", "event": "button.pressed" },
+  "conditions": [],
+  "actions": [
+    { "device": "device-lamp", "invoke": { "path": "remote.press", "input": { "key": "home" } } }
+  ],
+  "cooldown_ms": 10000
+}

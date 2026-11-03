@@ -7,7 +7,6 @@ import {
   gatewaysSchema,
   modelSchema,
   remoteSchema,
-  sameJSON,
   terminal,
   type Device,
   type Model,
@@ -27,17 +26,10 @@ import {
   when,
 } from "./ui";
 import type { MessageKey } from "./i18n";
+import { documentDigest } from "../../../protocol/model-validation.mjs";
+import { verifyRemote } from "./remote-contracts";
+import { ActionControl } from "./ActionControl";
 
-function verifyRemote(raw: unknown, entry: Entry): Remote {
-  const result = remoteSchema.parse(raw);
-  const normalize = (value: Record<string, unknown>) => ({
-    ...value,
-    expires_at: Date.parse(String(value.expires_at)),
-  });
-  if (!sameJSON(normalize(result.request), normalize(entry.input)))
-    throw new APIError("invalid_response");
-  return result;
-}
 const unresolvedRemote = (entry: Entry) =>
   entry.kind === "remote" &&
   !entry.rejection &&
@@ -64,10 +56,13 @@ function DevicePanel() {
   const records = useJournal(
     "device-originals:" + space!.space_id,
     principal,
-    (entries) =>
-      entries.filter(
+    async (entries) => {
+      const values = entries.filter(
         (entry) => entry.kind === "remote" && entry.scope === space!.space_id,
-      ),
+      );
+      await Promise.all(values.map(async entry => { if (entry.result) await verifyRemote(entry.result, entry, principal); }));
+      return values;
+    },
   );
   const state = useResource(
     "device-page:" + space!.space_id + ":" + after,
@@ -136,7 +131,7 @@ function DevicePanel() {
               undefined,
               signal,
             );
-            if (value.revision !== revision)
+            if (value.revision !== revision || await documentDigest(value.model) !== revision)
               throw new APIError("invalid_response");
             return [revision, value.model];
           }),
@@ -151,7 +146,7 @@ function DevicePanel() {
       };
     },
   );
-  async function control(device: Device, path: string, value: unknown) {
+  async function control(device: Device, path: string, value: unknown, type: "property.set" | "action.invoke" = "property.set") {
     await task.run(async () => {
       const current = state.data,
         log = journal(principal);
@@ -179,13 +174,14 @@ function DevicePanel() {
         device_id: device.device_id,
         model_revision: device.model_revision,
         expires_at: new Date(Date.now() + 25000).toISOString(),
-        operation: { type: "property.set", path, value },
+        operation: { type, path, value },
       });
       log.save(entry);
       try {
-        const result = verifyRemote(
+        const result = await verifyRemote(
           await call(prefix + "/remote-commands", remoteSchema, entry.input),
           entry,
+          principal,
         );
         log.save({ ...entry, result });
         setMessage(t(result.status));
@@ -258,6 +254,7 @@ function DevicePanel() {
                       )
                     }
                     onSet={(path, value) => void control(device, path, value)}
+                    onInvoke={(path, value) => void control(device, path, value, "action.invoke")}
                   />
                 ))}
               </div>
@@ -293,11 +290,13 @@ function DeviceCard({
   model,
   disabled,
   onSet,
+  onInvoke,
 }: {
   device: Device;
   model: Model;
   disabled: boolean;
   onSet: (path: string, value: unknown) => void;
+  onInvoke: (path: string, value: unknown) => void;
 }) {
   const { t, locale } = useWorkspace();
   return (
@@ -330,6 +329,10 @@ function DeviceCard({
           )),
         )}
       </div>
+      {model.schema_version === 2 && model.services.flatMap(service => (service.actions ?? []).map(action => {
+        const path = `${service.id}.${action.id}`;
+        return <ActionControl key={`${device.model_revision}:${path}`} path={path} action={action} disabled={disabled || !device.ready || device.action_availability?.[path] === false} invoke={value => onInvoke(path, value)}/>;
+      }))}
       <details>
         <summary>{t("deviceModel")}</summary>
         <dl>
@@ -431,14 +434,12 @@ export function Operations() {
   const records = useJournal(
     "operations:" + space?.space_id,
     session.principal.principal_id,
-    (entries) => {
+    async (entries) => {
       const values = entries.filter(
         (entry) =>
           entry.kind === "remote" && (!space || entry.scope === space.space_id),
       );
-      values.forEach((entry) => {
-        if (entry.result) verifyRemote(entry.result, entry);
-      });
+      await Promise.all(values.map(async entry => { if (entry.result) await verifyRemote(entry.result, entry, session.principal.principal_id); }));
       return values;
     },
   );
@@ -447,12 +448,13 @@ export function Operations() {
       const prefix = `/api/console/v1/spaces/${encodeURIComponent(entry.scope)}/remote-commands`;
       let value: Remote;
       try {
-        value = verifyRemote(
+        value = await verifyRemote(
           await call(
             prefix + "/by-key/" + encodeURIComponent(entry.key),
             remoteSchema,
           ),
           entry,
+          session.principal.principal_id,
         );
       } catch (error) {
         if (error instanceof APIError && error.status === 404) {
@@ -462,13 +464,14 @@ export function Operations() {
         throw error;
       }
       if (reconcile && !terminal(value.status))
-        value = verifyRemote(
+        value = await verifyRemote(
           await call(
             prefix + "/" + encodeURIComponent(value.remote_id) + "/reconcile",
             remoteSchema,
             {},
           ),
           entry,
+          session.principal.principal_id,
         );
       journal(session.principal.principal_id).save({ ...entry, result: value });
       records.reload();
@@ -521,6 +524,7 @@ export function Operations() {
                       >
                         {t(status as MessageKey)}
                       </Badge>
+                      {result?.status === "confirmed" && result.request.operation.type === "action.invoke" && <small>{t(result.local_result?.evidence?.completion === "submitted" ? "actionInputSubmitted" : "actionEffectObserved")}</small>}
                     </td>
                     <td>
                       {!entry.rejection && (

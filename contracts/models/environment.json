@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "model_id": "urn:limeiot:model:demo-environment:1",
+  "model_version": "1.0.0",
+  "services": [
+    {
+      "id": "environment",
+      "semantic_id": "urn:limeiot:service:environment:1",
+      "properties": [
+        {
+          "id": "temperature",
+          "semantic_id": "urn:limeiot:property:temperature:1",
+          "schema": { "type": "integer", "minimum": -4500, "maximum": 13000 },
+          "access": ["read", "notify"],
+          "unit": "celsius_x100",
+          "max_age_ms": 15000
+        },
+        {
+          "id": "humidity",
+          "semantic_id": "urn:limeiot:property:relative-humidity:1",
+          "schema": { "type": "integer", "minimum": 0, "maximum": 10000 },
+          "access": ["read", "notify"],
+          "unit": "percent_x100",
+          "max_age_ms": 15000
+        }
+      ],
+      "actions": [],
+      "events": []
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import Ajv from 'ajv/dist/2020.js';
+import { root, startStack } from '../tools/dev-stack.mjs';
+import { GatewayTaskSession } from '../packages/cli/src/task-session.mjs';
+
+const exec = promisify(execFile), base = '/api/v1/spaces/space-demo';
+test('真实PTY创建和编辑多步阈值规则、精确单位、取消、重启和停用保持同一合同', { timeout: 90000 }, async t => {
+  const directory = await mkdtemp(path.join(root, '.dev/tui-thresholds-')), nas = path.join(directory, 'nas');
+  await exec('python3', ['deploy/nas/manage.py', 'init', '--directory', nas, '--origin', 'https://127.0.0.1:18443', '--with-environment'], { cwd: root });
+  const credentials = { owner: (await readFile(path.join(nas, 'secrets/owner-token'), 'utf8')).trim() };
+  for (const role of ['gateway', 'lamp', 'button', 'environment']) credentials[role] = (await readFile(path.join(nas, 'secrets/'+(role === 'gateway' ? role : 'device-'+role)+'-password'), 'utf8')).trim();
+  const stack = await startStack({ directory: path.join(directory, 'runtime'), firmware: true, environment: true, credentials, gatewayEnv: { LIMEIOT_CONFIG: path.join(nas, 'config/gateway.json') } });
+  t.after(() => stack.close());
+  const taskDirectory = path.join(directory, 'tasks');
+  const cliArgs = ['packages/cli/src/main.mjs', 'tui', '--snapshot', '--space-id', 'space-demo', '--state-dir', taskDirectory];
+  const snapshot = JSON.parse((await exec(process.execPath, cliArgs, { cwd: root, env: stack.env })).stdout);
+  const schema = JSON.parse(await readFile(path.join(root, 'contracts/tools/task-session.json')));
+  const ajv = new Ajv({ strict: true }); ajv.addSchema(JSON.parse(await readFile(path.join(root, 'contracts/rule.schema.json'))), '../rule.schema.json');
+  const validate = ajv.compile({ ...schema, oneOf: undefined, $ref: '#/$defs/state' });
+  assert(validate(snapshot), JSON.stringify(validate.errors));
+  const source = snapshot.sources.find(item => item.kind === 'property' && item.path === 'environment.temperature');
+  assert.equal(source.unit, 'celsius_x100'); assert.equal(source.schema.minimum, -4500);
+  assert.equal(snapshot.sources.some(item => item.kind === 'property' && item.path === 'light.power'), false);
+  const sourceIndex = snapshot.sources.indexOf(source) + 1;
+  const deviceIndex = snapshot.snapshot.devices.findIndex(item => item.device_id === 'device-lamp') + 1;
+  const operations = snapshot.operations['device-lamp'];
+  const brightness = operations.findIndex(item => item.path === 'light.brightness') + 1;
+  const power = operations.findIndex(item => item.path === 'light.power') + 1;
+  const menu = '0 退出> ', choice = '选择，0 返回> ', ruleMenu = '6 更换触发  7 编辑条件  0 取消> ';
+  const retained = index => `选择，回车保留 ${index}，0 返回> `;
+  const steps = [], step = (expect, send) => steps.push({ expect, ...(send === undefined ? {} : { send: String(send) }) });
+  step(menu, 2); step('3 停用规则  0 返回> ', 1); step('规则 ID，回车保留 ', undefined); step('> ', 'tui-threshold');
+  step('选择触发事件或属性', undefined); step(choice, sourceIndex); step('变化方向', undefined); step(retained(1), '');
+  step('阈值（℃），回车保留 0> ', '28.001'); step('滞回（℃），回车保留 0> ', 1);
+  step('阈值或滞回不符合设备模型', undefined); step('阈值（℃），回车保留 28.001> ', '28.03'); step('滞回（℃），回车保留 1> ', '');
+  step('冷却时间（毫秒），回车保留 10000> ', 1250);
+  step(ruleMenu, 1); step('选择设备', undefined); step(choice, deviceIndex); step('选择能力', undefined); step(choice, brightness); step('输入参数（integer），回车保留 0> ', 30);
+  step(ruleMenu, 1); step('选择设备', undefined); step(choice, deviceIndex); step('选择能力', undefined); step(choice, power); step('输入参数', undefined); step(retained(1), 1);
+  step(ruleMenu, 5); step('预演使用示例采样，不控制设备。', undefined); step('输入“启用”确认，回车取消> ', '启用'); step('自动化已启用', undefined);
+  function edit(current, next, confirm) {
+    step(menu, 2); step('3 停用规则  0 返回> ', 2); step('选择规则', undefined); step(choice, 1);
+    step('规则 ID，回车保留 tui-threshold> ', ''); step('选择触发事件或属性', undefined); step(retained(sourceIndex), '');
+    step('变化方向', undefined); step(retained(current === '28.03' ? 1 : 2), 2);
+    step(`阈值（℃），回车保留 ${current}> `, next); step('滞回（℃），回车保留 1> ', '');
+    step('冷却时间（毫秒），回车保留 1250> ', ''); step(ruleMenu, 5); step('输入“启用”确认，回车取消> ', confirm);
+    step(confirm ? '自动化已启用' : '已取消，未发送', undefined);
+  }
+  edit('28.03', '29.03', '启用'); edit('29.03', '29.04', ''); step(menu, 0);
+  async function pty(name, entries) {
+    const stepsPath = path.join(directory, name+'-steps.json'), transcript = path.join(directory, name+'-transcript.txt');
+    await writeFile(stepsPath, JSON.stringify(entries));
+    const result = await exec('python3', ['tests/support/tui-pty.py', process.execPath, 'packages/cli/src/main.mjs', stepsPath, transcript], { cwd: root, env: { ...stack.env, LIMEIOT_TEST_TASK_DIR: taskDirectory }, timeout: 45000 });
+    assert.equal(JSON.parse(result.stdout).pty, true);
+    assert.equal((await readFile(transcript, 'utf8')).includes(stack.env.LIMEIOT_TOKEN), false);
+  }
+  await pty('edit', steps);
+  const deployment = (await stack.request(base+'/rule-deployments')).value.items[0];
+  const expected = { version: 1, id: 'tui-threshold', trigger: { device: 'device-environment', property: { path: 'environment.temperature', unit: 'celsius_x100', edge: 'falling', threshold: 2903, hysteresis: 100 } }, conditions: [], actions: [{ device: 'device-lamp', set: { path: 'light.brightness', value: 30 } }, { device: 'device-lamp', set: { path: 'light.power', value: true } }], cooldown_ms: 1250 };
+  assert.deepEqual(deployment.rule, expected);
+  const catalog = JSON.parse(await readFile(path.join(root, 'contracts/tools/catalog.json')));
+  const session = new GatewayTaskSession({ endpoint: stack.env.LIMEIOT_ENDPOINT, token: stack.env.LIMEIOT_TOKEN, space: 'space-demo', directory: taskDirectory, catalog });
+  const records = await session.records(); assert.equal(records.length, 2);
+  assert.deepEqual(records.map(record => record.result.outcome), ['deployed', 'deployed']);
+  assert.equal((await stack.request(base+'/commands')).value.items.length, 0);
+  await stack.restartGateway();
+  assert.deepEqual((await stack.request(base+'/rule-deployments')).value.items[0].rule, expected);
+  await pty('stop', [{ expect: menu, send: '2' }, { expect: '3 停用规则  0 返回> ', send: '3' }, { expect: '选择规则' }, { expect: choice, send: '1' }, { expect: '输入“停用”确认，回车取消> ', send: '停用' }, { expect: '自动化已停用' }, { expect: menu, send: '0' }]);
+  assert.equal((await session.records()).length, 3);
+  assert.equal((await stack.request(base+'/rule-deployments')).value.items.length, 0);
+  assert.equal((await stack.request(base+'/commands')).value.items.length, 0);
+  await writeFile(path.join(directory, 'report.json'), JSON.stringify({ passed: true, real_pty: true, real_c_devices_mqtt_rust_sqlite: true, synthetic_i2c: true, machine_source_discovery: true, create_edit_stop: true, invalid_precision_retry: true, multi_step_and_millisecond_roundtrip: true, cancelled_edit_not_applied: true, gateway_restart: true, device_commands: 0, hardware: false, hardware_status: '用户要求跳过', full_goal_completed: false }, null, 2));
+});

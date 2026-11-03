@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "warm-light",
+  "trigger": {
+    "device": "device-environment",
+    "property": {
+      "path": "environment.temperature",
+      "unit": "celsius_x100",
+      "edge": "rising",
+      "threshold": 2800,
+      "hysteresis": 100
+    }
+  },
+  "conditions": [],
+  "actions": [
+    { "device": "device-lamp", "set": { "path": "light.brightness", "value": 30 } }
+  ],
+  "cooldown_ms": 10000
+}

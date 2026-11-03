@@ -20,6 +20,7 @@ pub struct Config {
     pub devices: Vec<Binding>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Observation {
     pub value: Value,
     pub observed_at: DateTime<Utc>,
@@ -96,6 +97,8 @@ pub struct Deployment {
     pub revision: String,
     pub rule: Rule,
     pub last_run: Option<DateTime<Utc>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule_cursor: Option<DateTime<Utc>>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Run {
@@ -104,6 +107,12 @@ pub struct Run {
     pub event_id: String,
     pub command_ids: Vec<String>,
     pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub property_trigger: Option<crate::rule_thresholds::ThresholdEvidence>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub condition_evaluation: Option<crate::rule_conditions::Evaluation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule_trigger: Option<crate::rule_schedule::ScheduleEvidence>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Data {
@@ -115,6 +124,11 @@ pub struct Data {
     pub deployments: BTreeMap<String, Deployment>,
     pub runs: BTreeMap<String, Run>,
     pub event_ids: BTreeMap<String, String>,
+    // 边沿基线绑定当前运行和设备会话；恢复只保留已提交运行，不补发旧边沿。
+    #[serde(skip)]
+    pub(crate) threshold_cursors: BTreeMap<String, crate::rule_thresholds::ThresholdCursor>,
+    #[serde(skip)]
+    pub(crate) schedule_resuming: bool,
     #[serde(default)]
     pub rule_drafts: BTreeMap<String, crate::draft::RuleDraft>,
     #[serde(default)]
@@ -125,6 +139,11 @@ pub struct Data {
     pub ota_registry: crate::ota_tasks::Registry,
     #[serde(default)]
     pub execution_registry: crate::execution_binding::Registry,
+    #[serde(
+        default,
+        skip_serializing_if = "crate::execution_plans::Registry::is_empty"
+    )]
+    pub execution_plans: crate::execution_plans::Registry,
 }
 impl Data {
     pub fn new(config: Config) -> Result<Self> {
@@ -160,16 +179,22 @@ impl Data {
             deployments: BTreeMap::new(),
             runs: BTreeMap::new(),
             event_ids: BTreeMap::new(),
+            threshold_cursors: BTreeMap::new(),
+            schedule_resuming: false,
             rule_drafts: BTreeMap::new(),
             control_links: BTreeMap::new(),
             model_registry: crate::model_registry::Registry::default(),
             ota_registry: crate::ota_tasks::Registry::default(),
             execution_registry: crate::execution_binding::Registry::default(),
+            execution_plans: crate::execution_plans::Registry::default(),
         };
         data.validate_execution_routes()?;
         Ok(data)
     }
     pub fn recover(&mut self) {
+        self.recover_execution_plans();
+        self.threshold_cursors.clear();
+        self.schedule_resuming = true;
         self.reset_ota_approvals(None, "gateway_restarted");
         for link in self.control_links.values_mut() {
             if matches!(
@@ -235,11 +260,12 @@ impl Data {
                     view.as_object_mut().unwrap().remove(field);
                 }
                 let model = &self.models[&device.model_revision];
-                if self
-                    .execution_registry
-                    .bindings
-                    .get(&device.device_id)
-                    .is_some_and(|binding| binding.native_paths.is_some())
+                if device.native_actions.is_some()
+                    || self
+                        .execution_registry
+                        .bindings
+                        .get(&device.device_id)
+                        .is_some_and(|binding| binding.native_paths.is_some())
                 {
                     let availability: BTreeMap<_, _> = model
                         .services
@@ -290,6 +316,7 @@ impl Data {
             ensure(command.request_digest == hash, "idempotency_conflict")?;
             return Ok(command.clone());
         }
+        self.check_plan_command(&request.device_id, run_id.as_deref())?;
         ensure(self.commands.len() < 4096, "capacity_exceeded")?;
         ensure(
             self.commands
@@ -360,29 +387,41 @@ impl Data {
         ensure(
             rule.version == 1
                 && identifier(&rule.id)
-                && rule.conditions.is_empty()
                 && !rule.actions.is_empty()
                 && rule.actions.len() <= 16
                 && rule.cooldown_ms <= 86_400_000,
             "unsupported_rule",
         )?;
-        let source = self
-            .devices
-            .get(&rule.trigger.device)
-            .ok_or_else(|| err("device_not_found"))?;
-        self.check_model_authority(&source.device_id)?;
-        self.models[&source.model_revision].event(&rule.trigger.event)?;
+        self.validate_conditions(&rule.conditions)?;
+        if let Some(device) = rule.trigger.device() {
+            let source = self
+                .devices
+                .get(device)
+                .ok_or_else(|| err("device_not_found"))?;
+            self.check_model_authority(&source.device_id)?;
+            rule.trigger
+                .validate_model(&self.models[&source.model_revision])?;
+        } else if let Trigger::Schedule { schedule } = &rule.trigger {
+            schedule.validate()?;
+        }
         for action in &rule.actions {
-            self.check_model_authority(&action.device)?;
+            self.check_model_authority(action.device())?;
             let target = self
                 .devices
-                .get(&action.device)
+                .get(action.device())
                 .ok_or_else(|| err("device_not_found"))?;
-            self.models[&target.model_revision].write(&action.set.path, &action.set.value)?;
+            self.models[&target.model_revision].operation(&action.operation())?;
         }
+        self.validate_rule_replacement(rule)?;
         digest(rule)
     }
     pub fn deploy(&mut self, rule: Rule) -> Result<Deployment> {
+        self.deploy_at(rule, Utc::now())
+    }
+    pub fn deploy_at(&mut self, rule: Rule, now: DateTime<Utc>) -> Result<Deployment> {
+        if let Trigger::Schedule { schedule } = &rule.trigger {
+            schedule.sample(now)?;
+        }
         let revision = self.validate_rule(&rule)?;
         if let Some(existing) = self.deployments.get(&rule.id) {
             if existing.revision == revision {
@@ -394,10 +433,12 @@ impl Data {
             "capacity_exceeded",
         )?;
         let deployment = Deployment {
+            schedule_cursor: matches!(rule.trigger, Trigger::Schedule { .. }).then_some(now),
             revision,
             rule,
             last_run: None,
         };
+        self.threshold_cursors.remove(&deployment.rule.id);
         self.deployments
             .insert(deployment.rule.id.clone(), deployment.clone());
         Ok(deployment)
@@ -406,6 +447,7 @@ impl Data {
         let current = self.deployments.get(id).ok_or_else(|| err("not_found"))?;
         ensure(current.revision == revision, "revision_conflict")?;
         self.deployments.remove(id);
+        self.threshold_cursors.remove(id);
         Ok(json!({"stopped":true,"rule_id":id,"revision":revision}))
     }
     pub fn ingest(&mut self, message: Envelope, now: DateTime<Utc>) -> Result<Option<Envelope>> {
@@ -449,6 +491,7 @@ impl Data {
             if current.boot_id.as_ref() == Some(boot) {
                 ensure(seq > current.last_seq, "out_of_order")?;
             }
+            self.reset_threshold_source(&message.device_id);
             let session = id();
             let device = self.devices.get_mut(&message.device_id).unwrap();
             if device.boot_id.as_ref() != Some(boot) {
@@ -504,6 +547,7 @@ impl Data {
                     message.body["online"].as_bool() == Some(false),
                     "invalid_message",
                 )?;
+                self.reset_threshold_source(&message.device_id);
                 let device = self.devices.get_mut(&message.device_id).unwrap();
                 device.ready = false;
                 device.device_info = None;
@@ -556,10 +600,12 @@ impl Data {
         }
         let count: usize = model.services.iter().map(|s| s.properties.len()).sum();
         ensure(reported.len() == count, "snapshot_incomplete")?;
+        let was_ready = device.native_ready(now);
         let device = self.devices.get_mut(&message.device_id).unwrap();
         device.reported = reported;
         device.state_revision = revision;
         device.ready = true;
+        self.apply_property_thresholds(message, now, was_ready)?;
         Ok(())
     }
     fn apply_result(&mut self, message: &Envelope, now: DateTime<Utc>) -> Result<()> {
@@ -697,8 +743,7 @@ impl Data {
             .deployments
             .values()
             .filter(|d| {
-                d.rule.trigger.device == message.device_id
-                    && d.rule.trigger.event == path
+                matches!(&d.rule.trigger, Trigger::Event { device, event } if device == &message.device_id && event == path)
                     && d.last_run
                         .map(|t| now - t >= Duration::milliseconds(d.rule.cooldown_ms as i64))
                         .unwrap_or(true)
@@ -706,41 +751,71 @@ impl Data {
             .cloned()
             .collect();
         for deployment in rules {
-            ensure(self.runs.len() < 1024, "capacity_exceeded")?;
-            let run_id = id();
-            let mut commands = Vec::new();
-            let mut error = None;
-            for (index, action) in deployment.rule.actions.iter().enumerate() {
-                let request = CommandRequest {
-                    space_id: self.space_id.clone(),
-                    device_id: action.device.clone(),
-                    model_revision: self.devices[&action.device].model_revision.clone(),
-                    idempotency_key: format!("{run_id}-{index}"),
-                    expires_at: now + Duration::seconds(5),
-                    operation: Operation {
-                        kind: "property.set".into(),
-                        path: action.set.path.clone(),
-                        value: action.set.value.clone(),
-                    },
-                };
-                match self.create_command(request, now, Some(run_id.clone())) {
-                    Ok(command) => commands.push(command.command_id),
-                    Err(e) => {
-                        error = Some(e.code);
-                        break;
-                    }
+            self.run_deployment(deployment, event_id, None, None, now)?;
+        }
+        Ok(())
+    }
+    pub(crate) fn run_deployment(
+        &mut self,
+        deployment: Deployment,
+        event_id: &str,
+        property_trigger: Option<crate::rule_thresholds::ThresholdEvidence>,
+        schedule_trigger: Option<crate::rule_schedule::ScheduleEvidence>,
+        now: DateTime<Utc>,
+    ) -> Result<()> {
+        ensure(self.runs.len() < 1024, "capacity_exceeded")?;
+        // 有效触发已通过当前设备会话校验；求值和受理使用本次到达时间。
+        if let Some(device) = deployment.rule.trigger.device() {
+            self.devices.get_mut(device).unwrap().last_seen = Some(now);
+        }
+        let run_id = id();
+        let mut commands = Vec::new();
+        let condition_evaluation = (!deployment.rule.conditions.is_empty())
+            .then(|| self.evaluate_conditions(&deployment.rule.conditions, now))
+            .transpose()?;
+        let conditions_matched = condition_evaluation.as_ref().is_none_or(|e| e.matched);
+        // 先检查整条规则所需名额，预算不足时不执行其中的任何一步。
+        let mut error = if conditions_matched {
+            self.check_rule_budget(deployment.rule.actions.len(), now)
+                .err()
+                .map(|error| error.code)
+        } else {
+            Some("rule_conditions_not_met".into())
+        };
+        for (index, action) in deployment.rule.actions.iter().enumerate() {
+            if error.is_some() {
+                break;
+            }
+            let request = CommandRequest {
+                space_id: self.space_id.clone(),
+                device_id: action.device().into(),
+                model_revision: self.devices[action.device()].model_revision.clone(),
+                idempotency_key: format!("{run_id}-{index}"),
+                expires_at: now + Duration::seconds(5),
+                operation: action.operation(),
+            };
+            match self.create_command(request, now, Some(run_id.clone())) {
+                Ok(command) => commands.push(command.command_id),
+                Err(e) => {
+                    error = Some(e.code);
+                    break;
                 }
             }
-            self.runs.insert(
-                run_id.clone(),
-                Run {
-                    run_id,
-                    rule_revision: deployment.revision,
-                    event_id: event_id.into(),
-                    command_ids: commands,
-                    error,
-                },
-            );
+        }
+        self.runs.insert(
+            run_id.clone(),
+            Run {
+                run_id,
+                rule_revision: deployment.revision,
+                event_id: event_id.into(),
+                command_ids: commands,
+                error,
+                property_trigger,
+                condition_evaluation,
+                schedule_trigger,
+            },
+        );
+        if conditions_matched {
             self.deployments
                 .get_mut(&deployment.rule.id)
                 .unwrap()

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { parseBoundedJSON } from '../../../packages/protocol/products.mjs';
-import { validModelChange, sameModelRequest, verifyModelBinding, verifyModelInstallation, verifyModelOperation, verifyPublisherTrust, type Artifact, type BindingView, type Installation, type ModelChange, type ModelOperation, type ModelRequest, type PublisherTrust } from '../../../packages/protocol/model-registry.mjs';
+import { validModelChange, sameModelRequest, verifyModelBinding, verifyModelInstallation, verifyModelOperation, verifyPublisherTrust, verifyModelBundles, type Artifact, type BindingView, type Installation, type ModelBundle, type ModelChange, type ModelOperation, type ModelRequest, type PublisherTrust } from '../../../packages/protocol/model-registry.mjs';
 import { ApiError, errorText, request, when, type List, type Session } from './api';
 
 interface Original { version: 1; origin: string; request: ModelRequest }
 interface InstalledPage extends List<Installation> { heads: Record<string, string> }
 interface InstallReview { text: string; trustID: string; artifact: Artifact; baseline: Installation | null }
-const names = { 'trust.add': '信任发布者', 'trust.revoke': '撤销信任', 'models.install': '安装模型', 'devices.bind': '绑定设备' };
+const names = { 'trust.add': '信任发布者', 'trust.revoke': '撤销信任', 'models.install': '安装模型', 'devices.bind': '绑定设备', 'devices.bind-bundle': '绑定内置模型' };
 const statuses = { applied: '已完成', conflict: '版本冲突', rejected: '已拒绝' };
 
 export function ModelRegistry({ prefix, session, online, onError, refresh }: {
@@ -14,6 +14,7 @@ export function ModelRegistry({ prefix, session, online, onError, refresh }: {
 }) {
   const storage = `limeiot.model-operation:${prefix}:`;
   const [trusts, setTrusts] = useState<PublisherTrust[]>([]), [installations, setInstallations] = useState<Installation[]>([]);
+  const [bundles, setBundles] = useState<ModelBundle[]>([]);
   const [records, setRecords] = useState<Original[]>([]), [results, setResults] = useState<Record<string, ModelOperation>>({});
   const [blocked, setBlocked] = useState(false), [busy, setBusy] = useState(false), [message, setMessage] = useState('');
   const [trustText, setTrustText] = useState(''), [fingerprint, setFingerprint] = useState('');
@@ -59,9 +60,10 @@ export function ModelRegistry({ prefix, session, online, onError, refresh }: {
   }
   async function loadResources() {
     const epoch = ++generation.current;
-    const [trustPage, first] = await Promise.all([
+    const [trustPage, first, bundlePage] = await Promise.all([
       request<List<PublisherTrust>>(`${prefix}/model-trusts`, session, undefined, options),
       request<InstalledPage>(`${prefix}/model-installations`, session, undefined, options),
+      request<unknown>(`${prefix}/model-bundles`, session, undefined, options).then(verifyModelBundles),
     ]);
     if (!Array.isArray(trustPage.items) || trustPage.items.length > 32 || trustPage.next_cursor !== null || !first.heads || typeof first.heads !== 'object') throw new Error('invalid_model_operation');
     const verifiedTrusts = await Promise.all(trustPage.items.map(verifyPublisherTrust));
@@ -81,7 +83,7 @@ export function ModelRegistry({ prefix, session, online, onError, refresh }: {
       if (!installed || installed.artifact.statement.model.model_id !== model) throw new Error('invalid_model_operation');
       return installed;
     });
-    if (active.current && epoch === generation.current) { setTrusts(verifiedTrusts); setInstallations(heads); }
+    if (active.current && epoch === generation.current) { setTrusts(verifiedTrusts); setInstallations(heads); setBundles(bundlePage.items); }
   }
   async function resolve(original: Original) {
     const value = await request<unknown>(`${prefix}/model-operations/by-key/${encodeURIComponent(original.request.idempotency_key)}`, session, undefined, options);
@@ -102,7 +104,14 @@ export function ModelRegistry({ prefix, session, online, onError, refresh }: {
   }, []);
   async function submit(change: ModelChange) {
     const existing = readOriginals();
-    if (change.type !== 'trust.revoke' && existing.some(item => !resultRef.current[item.request.idempotency_key] && item.request.change.type === change.type)) throw new Error('pending_model_operation');
+    if (change.type !== 'trust.revoke' && existing.some(item => {
+      if (resultRef.current[item.request.idempotency_key]) return false;
+      const previous = item.request.change;
+      if (change.type === 'devices.bind' || change.type === 'devices.bind-bundle') {
+        return (previous.type === 'devices.bind' || previous.type === 'devices.bind-bundle') && previous.device_id === change.device_id;
+      }
+      return previous.type === change.type;
+    })) throw new Error('pending_model_operation');
     if (blocked || existing.length >= 128 || !validModelChange(change)) throw new Error('local_record_unavailable');
     const original: Original = { version: 1, origin: location.origin, request: { space_id: space, idempotency_key: crypto.randomUUID(), change } };
     const key = storage + original.request.idempotency_key, text = JSON.stringify(original);
@@ -163,8 +172,8 @@ export function ModelRegistry({ prefix, session, online, onError, refresh }: {
       if (active.current) setBinding({ id: deviceID, installation: installationID, value });
     }); }}>
       <label htmlFor="registry-device">设备编号</label><input id="registry-device" value={deviceID} disabled={busy} onChange={event => { setDeviceID(event.target.value); setBinding(null); }} maxLength={128} autoComplete="off" />
-      <label htmlFor="registry-installation">已安装模型</label><select id="registry-installation" value={installationID} disabled={busy} onChange={event => { setInstallationID(event.target.value); setBinding(null); }}><option value="">请选择</option>{installations.filter(item => trusts.some(trust => trust.trust_id === item.trust_id && trust.active)).map(item => <option key={item.installation_id} value={item.installation_id}>{String(item.artifact.statement.model.model_id)} / {String(item.artifact.statement.model.model_version)}</option>)}</select>
-      <div className="actions"><button disabled={busy || !online || !deviceID || !installationID}>读取设备当前绑定</button>{currentBinding && <button type="button" className="primary" disabled={busy || blocked || !online} onClick={() => void action(() => submit({ type: 'devices.bind', device_id: deviceID, installation_id: installationID, expected_model_revision: currentBinding.model_revision, expected_binding_revision: currentBinding.binding?.revision ?? null }))}>确认绑定</button>}</div>
+      <label htmlFor="registry-installation">目标模型</label><select id="registry-installation" value={installationID} disabled={busy} onChange={event => { setInstallationID(event.target.value); setBinding(null); }}><option value="">请选择</option><optgroup label="内置模型">{bundles.map(item => <option key={item.bundle_id} value={item.bundle_id}>{String(item.model.model_id)} / {String(item.model.model_version)}</option>)}</optgroup><optgroup label="已安装模型">{installations.filter(item => trusts.some(trust => trust.trust_id === item.trust_id && trust.active)).map(item => <option key={item.installation_id} value={item.installation_id}>{String(item.artifact.statement.model.model_id)} / {String(item.artifact.statement.model.model_version)}</option>)}</optgroup></select>
+      <div className="actions"><button disabled={busy || !online || !deviceID || !installationID}>读取设备当前绑定</button>{currentBinding && <button type="button" className="primary" disabled={busy || blocked || !online} onClick={() => void action(() => submit({ ...(installationID.startsWith('bundle-') ? { type: 'devices.bind-bundle' as const, bundle_id: installationID } : { type: 'devices.bind' as const, installation_id: installationID }), device_id: deviceID, expected_model_revision: currentBinding.model_revision, expected_binding_revision: currentBinding.binding?.revision ?? null }))}>确认绑定</button>}</div>
     </form>{currentBinding && <dl><dt>当前模型修订</dt><dd>{currentBinding.model_revision ?? '未注册设备'}</dd><dt>当前绑定修订</dt><dd>{currentBinding.binding?.revision ?? '无动态绑定'}</dd></dl>}</section>
     <section aria-label="模型原操作"><h2>模型原操作</h2>{records.length === 0 && <p className="muted">暂无操作</p>}{records.map(original => {
       const key = original.request.idempotency_key, result = results[key];

@@ -7,6 +7,7 @@ license.workspace = true
 [dependencies]
 limeiot-core.workspace = true
 limeiot-android-tv = { path = "../../adapters/android-tv" }
+limeiot-dlna = { path = "../../adapters/dlna" }
 serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true
@@ -25,3 +26,6 @@ tokio-tungstenite = { version = "0.28.0", default-features = false, features = [
 rustls = { version = "0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
 rustls-pemfile = "2.2.0"
 webpki-roots = "1.0.11"
+
+[target.'cfg(unix)'.dependencies]
+libc = "=0.2.191"

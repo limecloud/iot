@@ -1,0 +1,70 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { chromium, expect } from '@playwright/test';
+import { root, startStack } from '../tools/dev-stack.mjs';
+import { scheduleTrigger } from '../packages/protocol/schedule-form.mjs';
+
+const base = '/api/v1/spaces/space-demo';
+test('定时表单保留星期顺序，拒绝错误时间、未知时区和空星期', () => {
+  assert.deepEqual(scheduleTrigger('22:00', 'Asia/Shanghai', [7, 1]), { time: '22:00', time_zone: 'Asia/Shanghai', weekdays: [7, 1] });
+  assert.equal(scheduleTrigger('22:00\n', 'UTC', [1]), null);
+  for (const [time, zone, days] of [['24:00', 'UTC', [1]], ['1:00', 'UTC', [1]], ['22:00', 'Unknown/Zone', [1]], ['22:00', 'UTC', []], ['22:00', 'UTC', [1, 1]], ['22:00', 'UTC', [0]], ['22:00', 'UTC', [1.5]]]) assert.equal(scheduleTrigger(time, zone, days), null);
+});
+
+test('网页定时创建、回填、修改、取消、停用与窄屏通过真实网关，预演零命令', { timeout: 60000 }, async t => {
+  const stack = await startStack(); t.after(() => stack.close());
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.LIMEIOT_BROWSER_EXECUTABLE }); t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } }); page.setDefaultTimeout(10000);
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto(stack.env.LIMEIOT_ENDPOINT);
+  await page.getByLabel('所有者凭据', { exact: true }).fill(stack.env.LIMEIOT_TOKEN); await page.getByRole('button', { name: '连接家庭网关', exact: true }).click();
+  await page.getByRole('button', { name: '自动化', exact: true }).click();
+  await page.getByLabel('触发方式', { exact: true }).selectOption('schedule');
+  await page.getByLabel('时间', { exact: true }).fill('22:00');
+  await page.getByLabel('时区', { exact: true }).fill('Unknown/Zone');
+  const simulate = page.getByRole('button', { name: '校验并预演', exact: true }), enable = page.getByRole('button', { name: '启用自动化', exact: true });
+  await expect(simulate).toBeDisabled(); await page.getByLabel('时区', { exact: true }).fill('Asia/Shanghai');
+  await page.getByLabel('冷却时间（秒）', { exact: true }).fill('1.001');
+  for (const day of ['周一','周二','周三','周四','周五','周六','周日']) await page.getByLabel(day, { exact: true }).uncheck();
+  await expect(simulate).toBeDisabled();
+  for (const day of ['周一','周三','周日']) await page.getByLabel(day, { exact: true }).check();
+  await simulate.click(); await expect(enable).toBeEnabled();
+  assert.equal((await stack.request(base + '/commands')).value.items.length, 0);
+  await expect(page.getByText(/^下次执行 /)).toBeVisible();
+  await enable.click(); const row = page.locator('.deployment'); await expect(row).toHaveCount(1);
+  const original = (await stack.request(base + '/rule-deployments')).value.items[0];
+  assert.deepEqual(original.rule.trigger, { schedule: { time: '22:00', time_zone: 'Asia/Shanghai', weekdays: [1, 3, 7] } }); assert.equal(original.rule.cooldown_ms, 1001);
+  await row.getByRole('button', { name: '编辑', exact: true }).click();
+  await expect(page.getByLabel('时间', { exact: true })).toHaveValue('22:00');
+  await expect(page.getByLabel('时区', { exact: true })).toHaveValue('Asia/Shanghai');
+  await expect(page.getByLabel('周二', { exact: true })).not.toBeChecked(); await expect(page.getByLabel('周三', { exact: true })).toBeChecked();
+  await page.getByLabel('时间', { exact: true }).fill('23:00'); await simulate.click(); await expect(enable).toBeEnabled();
+  await page.getByLabel('时间', { exact: true }).fill('23:01'); await expect(enable).toBeDisabled();
+  await page.getByRole('button', { name: '取消编辑', exact: true }).click();
+  const cancelled = (await stack.request(base + '/rule-deployments')).value.items[0];
+  assert.deepEqual(cancelled.rule, original.rule); assert.equal(cancelled.revision, original.revision); assert.equal(cancelled.last_run, original.last_run);
+  // 取消只保护部署内容；正常运行的耐久调度游标仍会前进。
+  assert(Date.parse(cancelled.schedule_cursor) >= Date.parse(original.schedule_cursor));
+  await row.getByRole('button', { name: '编辑', exact: true }).click();
+  await page.getByLabel('时间', { exact: true }).fill('23:00'); await simulate.click(); await expect(enable).toBeEnabled(); await enable.click();
+  const edited = (await stack.request(base + '/rule-deployments')).value.items[0]; assert.equal(edited.rule.trigger.schedule.time, '23:00'); assert.equal(edited.rule.id, original.rule.id); assert.equal(edited.rule.cooldown_ms, 1001);
+  await stack.restartGateway();
+  assert.deepEqual((await stack.request(base + '/rule-deployments')).value.items[0].rule, edited.rule);
+  // 网关重启会撤销内存中的浏览器会话，必须重新登录后再验证界面。
+  await page.getByLabel('所有者凭据', { exact: true }).fill(stack.env.LIMEIOT_TOKEN);
+  await page.getByRole('button', { name: '连接家庭网关', exact: true }).click();
+  await page.getByRole('button', { name: '自动化', exact: true }).click();
+  await expect(row).toHaveCount(1);
+  await row.getByRole('button', { name: '编辑', exact: true }).click();
+  await expect(page.getByLabel('时间', { exact: true })).toHaveValue('23:00');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(async () => { const rect = await page.locator('aside').boundingBox(); return !rect || rect.x + rect.width <= 0; }).toBe(true);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: path.join(stack.directory, 'schedule-mobile.png'), fullPage: true });
+  await row.getByRole('button', { name: '停用', exact: true }).click(); await expect(row).toHaveCount(0);
+  assert.equal((await stack.request(base + '/commands')).value.items.length, 0); assert.deepEqual(errors, []);
+  await writeFile(path.join(stack.directory, 'schedule-web-result.json'), JSON.stringify({ passed: true, browser: true, real_http_mqtt_sqlite: true, create_edit_stop: true, cancel_preserves_rule: true, changed_rule_invalidates_preview: true, milliseconds: 1001, restart: true, restart_requires_login: true, mobile_width: 390, commands: 0, hardware: false, hardware_status: '用户要求跳过', full_goal_completed: false }, null, 2));
+  console.log('定时网页报告：' + path.join(stack.directory, 'schedule-web-result.json'));
+});

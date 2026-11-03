@@ -45,7 +45,7 @@ HTTP、机器合同、在途/OTA互斥和恢复规则见[执行路由与绑定](
 
 ## 身份、发现与执行
 
-每次发现或执行都读取 ro.build.fingerprint 与 ro.serialno，对照固定配置；指纹不是唯一身份，缺少可核对序列号时拒绝执行。序列号与 ADB 授权也不构成硬件密码学证明，逻辑设备的归并仍需所有者在设备侧确认。
+每次发现或执行都通过一次固定远端只读命令 `getprop ro.build.fingerprint && getprop ro.serialno` 读取两项身份，对照固定配置；不拼入配置值或业务输入，不在失败后退回两次查询。仅接受恰好两个完整的LF/CRLF行，缺失、截断、额外输出、无效UTF-8、标准错误或任一身份不匹配均拒绝。合并查询减少ADB客户端与远端Shell的启动开销，不放宽整次操作期限。指纹不是唯一身份，缺少可核对序列号时拒绝执行。序列号与 ADB 授权也不构成硬件密码学证明，逻辑设备的归并仍需所有者在设备侧确认。
 
 应用通过 Android 6/API23 已有的 `pm list packages -e` 发现。发现表示包已安装且启用，不证明存在启动 Activity、APK 发布者身份或应用已到前台；启动前重新发现，并核对当前配置白名单。应用 ID 必须是有界的 ASCII 多段包名，拒绝命令、Intent、组件和目标地址注入。公开 Adapter 方法不能替代网关的耐久与当前授权检查。
 
@@ -59,6 +59,6 @@ HTTP、机器合同、在途/OTA互斥和恢复规则见[执行路由与绑定](
 
 ## 验证
 
-运行 `npm run test:tv`；套件构建workspace，新增已有空间旅程固定定位离线模型校验器并尊重显式LIMEIOT_MODEL_VALIDATOR，详见CLI。单适配器故障与模型准入入口为 `cargo test --locked -p limeiot-android-tv`。Rust与浏览器旅程共用[假ADB](../../../tests/fixtures/android-tv/adb.py)，只记录本地模拟副作用，不访问电视。API23命令选择依据AOSP android-6.0.1_r81的 [Pm.java](https://android.googlesource.com/platform/frameworks/base/+/android-6.0.1_r81/cmds/pm/src/com/android/commands/pm/Pm.java)，实机命令、权限和厂商差异仍需验证。
+运行 `npm run test:tv`；套件构建workspace，新增已有空间旅程固定定位离线模型校验器并尊重显式LIMEIOT_MODEL_VALIDATOR，详见CLI。单适配器故障与模型准入入口为 `cargo test --locked -p limeiot-android-tv`。Rust与浏览器旅程共用[假ADB](../../../tests/fixtures/android-tv/adb.py)，只记录本地模拟副作用，不访问电视。API23命令选择依据AOSP android-6.0.1_r81的 [Pm.java](https://android.googlesource.com/platform/frameworks/base/+/android-6.0.1_r81/cmds/pm/src/com/android/commands/pm/Pm.java)；固定身份查询的命令传递与远端 `sh -c` 依据同版本的 [commandline.cpp](https://android.googlesource.com/platform/system/core/+/android-6.0.1_r81/adb/commandline.cpp) 和 [services.cpp](https://android.googlesource.com/platform/system/core/+/android-6.0.1_r81/adb/services.cpp)。源码依据不替代指定电视的实际命令、权限和厂商差异验收。
 
 TV Agent、音量/静音回读、宿主配置热加载、跨执行端切换及通用进程插件合同仍有独立实现工作。现有 NAS 内部网络不能直接推导可达电视；本适配器尚未随 NAS 镜像构建/验证。

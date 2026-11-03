@@ -1,6 +1,6 @@
 # 设备固件
 
-本目录提供自研 C 设备核心、ESP-IDF 适配器和桌面灯/按钮产品工程。核心通过真实 MQTT Broker 与 Rust 网关联调；ESP32-C3 的灯和按钮目标均已编译生成开发镜像，尚未烧录或完成实机验收。当前没有发布正式可安装镜像。
+本目录提供自研C设备核心、ESP-IDF适配器，以及桌面灯、按钮和SHT30环境节点工程。核心通过真实MQTT Broker与Rust网关联调；目标构建及软件验证范围见[实施进度](../docs/24-实施计划与进度.md)。实机按用户要求跳过，当前没有发布正式可安装镜像。
 
 ## 目录与边界
 
@@ -8,7 +8,8 @@
 | --- | --- |
 | `components/limeiot_core` | 模型校验、应用会话、状态、事件、命令期限、耐久回执与固件安装前校验 |
 | `components/limeiot_espidf` | MQTT 5 mTLS、NVS、随机数、SHA-256/Ed25519、时钟与有界工作队列 |
-| `products/desk-node` | ESP32-C3 开发样机，Kconfig 选择灯或按钮 |
+| `components/limeiot_sht3x` | 纯C的SHT3x命令、双CRC、定点转换与采样时刻，I2C/延时/时钟经端口隔离 |
+| `products/desk-node` | ESP32-C3开发样机，Kconfig选择灯、按钮或SHT30环境节点 |
 | `generated` | 正式物模型生成的 C 绑定，不手工编辑 |
 | `tools` | 模型生成与离线 NVS 配置 |
 | `tests` | 同一核心的宿主端口、故障注入和合同验证 |
@@ -31,7 +32,9 @@ npm run test:provisioning
 npm run test:firmware:ota
 ```
 
-`test:firmware` 校验生成文件并以 ASan/UBSan 运行 11 组核心检查，以及 11 项真实 Broker/Rust 网关联调，含设备 OTA 耐久拒绝、受控安装与原结果恢复。`test:firmware:ota` 包含 37 项签名、策略、配置、日志、启动凭据、传输与镜像健康专项。宿主驱动的观测来源为 `host-fixture`，不代表物理硬件。宿主检查在 macOS/Linux 使用 OpenSSL；固件适配器使用 ESP-IDF 的密码库。
+`node tools/test-firmware.mjs --build-only`仅编译宿主夹具并运行C核心/驱动检查，供定向联调使用；不运行MQTT旅程。
+
+`test:firmware`校验生成文件并以ASan/UBSan运行13组核心检查、4组SHT3x驱动检查，以及真实Broker/Rust网关联调，含设备OTA耐久拒绝、受控安装与原结果恢复。三节点旅程还检查NAS配置/身份、CLI、浏览器及Swift/Kotlin实际HTTP读取，需要项目已有JDK21/Android SDK与Swift；两端完整App运行另验。`test:firmware:ota`包含37项签名、策略、配置、日志、启动凭据、传输与镜像健康专项。宿主观测来源为`host-fixture`或`host-fixture.sht3x`，不代表物理硬件。宿主检查使用OpenSSL，固件适配器使用ESP-IDF密码库。
 
 `test:provisioning` 使用 `.dev/firmware-tools/venv/bin/python`；可用 `LIMEIOT_FIRMWARE_PYTHON` 指定已安装固定依赖的解释器。`test:firmware:ota` 使用相同环境运行4组C真实性、7组安装前策略、3组完整信任解码、12组设备执行日志、6组传输、4组镜像健康和1组NVS配置检查，交叉核对Node/Rust正式向量，仍以ASan/UBSan运行。
 
@@ -40,6 +43,62 @@ npm run test:firmware:ota
 ```sh
 npm run test:firmware:ota -- --idf-path "/absolute/path/to/verified/esp-idf-v6.1"
 ```
+
+设备本机身份检查使用同一固定SDK的原始PSA/Mbed TLS库，需先准备该SDK及已有固件Python环境：
+
+```sh
+LIMEIOT_IDF_PATH="/absolute/path/to/verified/esp-idf-v6.1" npm run test:firmware:identity
+```
+
+12组检查覆盖本机密钥/CSR、NAS离线签发、证书校验/导入、耐久恢复、真实Broker mTLS/撤销及CA-only加密NVS，并覆盖两代换钥、过渡期间旧凭据可用、新键激活证明、提交/回读和CA/CRL中断、NAS轮换资料备份恢复。实际C代码使用Werror与ASan/UBSan；NVS/eFuse、宿主随机数运行环境和TLS传输端口为显式夹具，实际NVS加密另经官方工具回读，不把两者合称实机验证。
+
+## 本机设备身份
+
+可选HMAC档位支持`identity.mode=device-local`：离线配置只保存固定CA，首次明确USB`identity csr`才在本机生成并耐久保存P-256私钥，输出公开CSR和公钥指纹。管理者独立核对指纹并通过NAS`sign-csr`签发后，使用`identity import`粘贴公开证书；设备核对CA、单设备CN、本机公钥、精确用途和日期，再同一Blob提交密钥/证书并回读。完成后启动MQTT，正常重启直接恢复身份。
+
+公开接口为`limeiot_device_identity.h`，密码库隔离在ESP适配器。pending复用原键，ready拒绝隐式换钥；同一原证书重复导入不写存储。任何不确定提交冻结当前对象，重新打开读取实际记录；错误、损坏、错绑不自动擦除。HMAC档位强制开启密码库日期校验，取得内部TLS凭据前重新校验证书与可信时钟，私钥不进入USB或工具输出。
+
+配置、USB步骤、记录格式与恢复规则见[设备公钥签发及本机身份合同](../contracts/device-enrollment.md#c3本机密钥与证书导入)。该路径要求独立预置受保护HMAC_UP及USB可信时间，不接收设备私钥输入；原完整凭据开发配置继续支持。USB初始化不具备有限物理窗口/随机挑战，不完成动态认领、自动换证或旧备份防回退；实际USB、Wi-Fi熵、Flash掉电和运行资源按用户要求跳过。
+
+### 受控离线换钥
+
+显式构建维护固件：
+
+```sh
+npm run build:firmware -- --storage hmac --hmac-key-id 0 --identity-maintenance
+```
+
+维护镜像完成可信时间和网络准备后停留USB入口；普通镜像仍直接恢复已有身份。使用`identity status`核对原证书指纹，`identity rotate ID`耐久暂存新键并输出公开CSR。NAS以`rotate-csr`核对原序列号/证书指纹后签发，新旧证书暂时共存。`identity rotate-import ID`导入候选证书并单Blob切换，随后以`identity proof ID CHALLENGE`生成新键激活证明；NAS`complete-rotation`保存证明、撤销原证书并刷新CRL。最后明确重启Broker，使用`identity continue`启动设备MQTT。完整参数和故障恢复见[轮换合同](../contracts/device-enrollment.md#保留旧身份的密钥轮换)。
+
+原证书到期后，维护镜像的`identity status`显示`certificate_expired=true`，`identity continue`继续拒绝旧凭据。无候选时明确`identity recover ID`；已有旧版本2候选时，使用`identity recover-pending 原ID`并粘贴原CSR，核对后才转入维护，不能另建键或替换请求。新内部身份记录v3耐久保存原CSR字节与恢复来源，重复`identity recover 原ID`只读返回原请求；旧v1/v2仍可读，普通新轮换仍写v2。CA到期、丢钥、未来日期或资料损坏均不能通过本流程修复。
+
+没有原管理意图时以原ID/CSR明确`recover-csr`；已签发或未知普通轮换只查询原操作。新证书沿原`rotate-import`切换，再生成激活证明、管理撤旧与CRL，最后核对Broker；C3不解析管理回执JSON，操作者须独立核对原用途和CSR摘要。精确格式与操作见[过期维护合同](../contracts/device-enrollment.md#c3过期身份维护与原csr恢复)，软件/目标构建及端上范围见 [24第4.34节](../docs/24-实施计划与进度.md#434-c3过期身份维护与原csr恢复)。私钥不经USB导出，不改系统时钟或放宽TLS日期校验，未进行实机刷写。
+
+相同待处理ID复用原新键；提交结果不明时重开读取实际状态。初始4722字节v1记录仍兼容，首次轮换写入5331字节v2；切换清除当前记录的旧私钥，不承诺擦除Flash旧页。代次不防旧备份回退。该流程没有自动续期调度或在线签发，USB入口只有目标编译证据；维护/普通HMAC/默认开发两角色共6份镜像已构建，实机按用户要求跳过。
+
+### 运行期凭据保护
+
+MQTT握手后的长期连接也受叶证书和CA有效期约束。启动前完整核对身份后缓存公开日期；接收、消费队列、属性驱动提交、发布及OTA会话检查共用窗口。可信时钟失效或到期后，当前实例持续拒绝，工作线程停止MQTT；旧日志保留，不自动恢复或补发。库自动重连关闭，工作线程核对资格后以原5秒间隔重试。先完成独立身份维护并取得有效凭据，再重新启动适配器。
+
+专项入口为`npm run test:firmware:credentials`，需要固定`LIMEIOT_IDF_PATH`及`test:firmware:identity`生成的宿主密码库；可用`LIMEIOT_IDENTITY_PYTHON`指定已有密码工具环境。检查使用ASan/UBSan、真实SDK和墙钟，覆盖身份/用途拒绝、时钟失效锁定、叶证书及CA到期。该专项只验证凭据窗口，目标编译、完整ESP MQTT任务及实机分别验收，见[安全边界](../docs/12-身份认证与安全体系.md#32-c3运行期凭据窗口)。
+
+`npm run test:firmware:runtime`进一步构建并运行生产`espidf.c`、C核心和固定SDK身份密码库，连接隔离的真实Broker/Rust网关/SQLite。旅程覆盖分片收包、有效期内受控重连、叶证书/CA到期与可信时钟失效，以及已耐久意图和已排队请求的零新增驱动效果。失效后分别核对迟到事件、发布、驱动和OTA当前资格门禁。需要同一固定SDK、宿主密码库、项目本地Mosquitto/OpenSSL及Rust工具链；`--build-only`只编译，不计旅程通过。
+
+宿主任务串行运行生产worker，FreeRTOS队列/调度、文件NVS、灯驱动及OTA密码/安装端口均为显式夹具；MQTT传输使用libmosquitto/OpenSSL，不是实际ESP MQTT/ESP TLS。该入口只核对OTA资格门禁；换证后重开与原日志使用下述独立入口，不由这3条旅程继承。源码摘要与宿主二进制摘要由构建入口记录，当前结果见[实施进度](../docs/24-实施计划与进度.md)。实机按用户要求跳过，不计通过。
+
+控制回执的`storage_write`成功表示原子耐久提交；返回失败可能已经写入。核心因此锁住当前实例的新意图写入，重连不解除；已知原结果仍可只读核对，终态提交失败时只报告已有耐久意图对应的unknown，不从失败返回推断成功。关闭核心并读取实际日志后才接受明确新命令，旧会话请求仍拒绝。该状态与OTA日志的故障状态分别管理，不清盘或改写原记录。
+
+`npm run test:firmware:recovery`使用实际`storage.c`、`identity.c`、固定SDK密码库及同一生产worker，分别验证原命令恢复和未决OTA占用。旧叶证书真实到期后，经明确NAS维护、原CSR恢复、激活/CRL及网关SQLite重开，新进程在同一持久目录建立新boot/session；原confirmed/failed/intent回执不改写，旧会话下行拒绝，只有明确新命令产生新增效果。未决OTA由生产日志API准备/推进后跨进程加载，原安装Envelope和日志字节保持，恢复记录禁止继续安装，查询不写盘，属性驱动受占用约束。
+
+该入口从C身份存储向同进程TLS传递凭据，在内存中配置客户端证书/私钥及固定CA，核对服务端IP、最低TLS版本和日期，不生成私钥桥接文件。macOS构建自动选择libmosquitto所链接主版本的OpenSSL；其他环境可用`LIMEIOT_OPENSSL_PKG_CONFIG_PATH`指定兼容pkg-config目录。源码、外部密码库/传输依赖及二进制摘要在构建和运行前后核对；`node tools/test-firmware-runtime.mjs --recovery --build-only`仅编译。2条常规恢复软件旅程的历史见 [24第4.38节](../docs/24-实施计划与进度.md#438-c3同进程身份与跨进程执行记录恢复)。NVS/eFuse/HMAC根、驱动、调度与OTA安装仍是夹具；本次没有下载/安装镜像，不替代OTA日志跨恢复提交故障、芯片掉电或实机验收。
+
+后续 [4.39](../docs/24-实施计划与进度.md#439-c3恢复读取与控制回执提交故障) 将该入口扩为3条旅程：换证后独立副本上的12项启动拒绝，覆盖控制回执/OTA日志损坏、未来版本及两次NVS读取的失败；原持久字节保持，未初始化MQTT或创建worker。独立提交旅程从本轮已完成NAS维护的身份取样，覆盖意图/终态各自提交前与耐久写入后报错；第一条命令经正式HTTP受理，MQTT重投及不同新Envelope由测试网关探针发送，独立验证端侧不再写入或增加驱动效果。网关FIFO仍保留原发送占用；明确重开SQLite和设备进程后，原记录保持unknown，旧会话拒绝，只有明确新命令新增1次效果。恢复宿主用结构化结果报告预期启动拒绝，不把assert异常退出计为通过。
+
+`npm run test:firmware:ota-recovery`先复验上述3条恢复旅程，再用同轮维护身份执行4组16项OTA日志故障：prepare、installing、awaiting_boot、bind_boot及四种终态分别覆盖提交前/耐久后报错。同对象查询/变更保持LI_STORAGE与占用，真实重连不解除；设备重开核对实际持久状态，未决不推进，原MQTT查询零安装。下行全部由worker消费、队列排空后才核对零写入/效果。常规恢复分为2条与1条两个进程，OTA矩阵另一个进程，单条60秒/每进程120秒均不变；`node tools/test-firmware-runtime.mjs --ota-recovery --build-only`仅编译。最终结果与失败修复见 [24第4.42节](../docs/24-实施计划与进度.md#442-ota日志跨身份维护与进程恢复的提交故障)，矩阵见 [23第5.3节](../docs/23-测试策略与验收矩阵.md#53-ota日志跨恢复提交故障矩阵)。矩阵不重开网关SQLite，基线及成功/回滚观察仍为夹具，暂存/激活/重启/结果发布均为0；不替代实际安装或芯片掉电验收。
+
+生产worker的确定性边界另用`npm run test:firmware:dispatch`，依赖同一固定SDK、宿主密码库及OpenSSL，无需启动Broker或Rust进程。5项检查覆盖旧连接代次与三个提交门禁、真实单调时间下两次失败后的5秒重连间隔、停止失败重试及成功后不再停止，以及排队握手跨过真实叶证书/CA到期后拒绝消费。源码、密码库和二进制摘要由入口固定，`--build-only`只构建。
+
+该入口直接运行生产`espidf.c`及C核心，MQTT事件/传输、队列、NVS和产品驱动为确定性夹具；到期排队项是握手，不宣称另一条真实控制或安装旅程。它补充`test:firmware:runtime`的实际Broker旅程，不替代mTLS、NVS耐久恢复、FreeRTOS调度、OTA下载/安装或实机。当前证据见[24第4.36节](../docs/24-实施计划与进度.md#436-c3生产worker代次与停止重连边界)。
 
 ## ESP32-C3 目标构建
 
@@ -87,6 +146,30 @@ idf.py -C "firmware/products/desk-node" \
 
 加入完整本地OTA策略加载后的灯镜像为 1,169,584 字节，按钮为 1,148,976 字节；每个 OTA 槽为 1,966,080 字节，分别剩余 796,496 和 817,104 字节。esptool 校验两份镜像的芯片类型、校验和及验证摘要通过。当前镜像声明 4 MB Flash、DIO/80 MHz、C3 v0.3 及以上支持修订，仍须按实物核对。链接报告中的静态内存余量不能替代 TLS、Wi-Fi 和运行时堆内存测量。
 
+## SHT30环境节点
+
+正式模型为[environment.json](../contracts/models/environment.json)，只读属性使用安全整数，避免MCU与跨语言浮点差异：
+
+| 属性 | 报文单位 | 展示 | 有效期 |
+| --- | --- | --- | --- |
+| `environment.temperature` | 摄氏度×100，-4500至13000 | 2500显示25.00 ℃ | 15秒 |
+| `environment.humidity` | %RH×100，0至10000 | 5000显示50.00 %RH | 15秒 |
+
+范围是原始转换公式的全范围，不是测量精度或额定工作条件承诺。指令、CRC与转换依据[Sensirion SHT3x-DIS数据手册](https://sensirion.com/media/documents/213E6A3B/63A5A569/Datasheet_SHT3x_DIS.pdf)：0x2400单次高重复性/不拉伸时钟，等待至少16ms，读取温度与湿度各自的CRC。使用固定ESP-IDF主机I2C端口，默认SDA GPIO4、SCL GPIO5、7位地址0x44，可显式配置0x45；100kHz、每次收发100ms超时，转换总预算1秒。SDA/SCL须不同，禁止使用产品保护的启动/USB引脚；3.3V供电及外部上拉须按模块原理图核对。
+
+```sh
+npm run build:firmware -- --role environment
+npm run build:firmware -- --role environment --storage hmac --hmac-key-id 0
+python3 "deploy/nas/manage.py" init --directory ".dev/nas-environment" \
+  --origin "https://nas.local:8443" --with-environment
+```
+
+`--role all`包含三种节点。NAS参数仅用于新安装，增加`device-environment`、独立MQTT开发凭据、精确ACL和模型绑定；已有安装不自动修改。固件离线配置步骤与灯/按钮相同，将设备ID改为`device-environment`；可用原完整开发证书，或选择HMAC本机身份并按[签发合同](../contracts/device-enrollment.md)处理公开CSR。新建配置不证明完成物理认领。
+
+驱动由同一设备任务串行采样，每10秒最多一次，温湿度共享一份通过双CRC的样本。可选`li_ports_t.read_observation`提供同一单调时钟的原采样时刻；核心通过当前握手时间锚转换UTC，缓存快照保留原`observed_at`。未来、负值、超过一天或时钟失效的样本拒绝。I/O/CRC失败不发布新快照、不用零填补，也不把旧样本重新标时；网关按原时间和15秒有效期显示已过期，恢复后才有新观测。旧灯/按钮端口保留原行为。
+
+NAS网页、SwiftUI和Compose源码按模型单位展示只读值及过期状态；CLI保留报文整数与单位。驱动不自动加热、复位或生成阈值事件；[温度边沿规则](../contracts/rules.md#属性阈值边沿)在Rust网关判断。宿主测试使用真实驱动和合成I2C数据，不能证明传感器接线、精度、总线电气或物理环境读数；全部实机按用户要求跳过。
+
 ## 当前设备信息
 
 可选 `read_device_info` 端口在完整快照成功后读取版本、硬件和升级条件，C 核心校验后发布 `device_info`。读取失败或字段无效不发布；网关按当前模型、启动/会话及独立5秒期限判断有效性，报告只存会话内存。字段与限制见 [正式合同](../contracts/device-info.md)。
@@ -94,6 +177,8 @@ idf.py -C "firmware/products/desk-node" \
 C3 产品从实际应用/引导程序描述和备用分区读取值；整数引导程序版本 N 映射为 `0.0.N`，不使用 SDK 版本替代。板卡标识默认 `CONFIG_LIMEIOT_BOARD_ID="c3-development"`，USB 样机声明外接电源、电量未知。开发产品仅在独立HTTPS CA、完整固件策略与本次镜像健康确认均满足时报告 `safe_to_update=true`；状态读取失败、待确认或启动目标不一致仍拒绝升级。宿主报告明确使用 `host/host-fixture` 和虚拟容量，不代表实机。
 
 ## 身份与离线配置
+
+设备只提供公开CSR时，可先使用[外部公钥请求签发](../contracts/device-enrollment.md)在NAS离线签发并恢复原结果，设备私钥保留在设备侧。C3的HMAC档位可使用上文CA-only本机身份；下述完整证书/私钥配置仍用于开发导入，不能用仅公钥交付包替代其中的私钥文件。两条路径都不自动认领设备或修改归属。
 
 先按 [NAS 说明](../deploy/nas/README.md) 初始化，并为绑定设备签发独立证书。为单个设备创建仅所有者可读的 JSON；路径相对该 JSON 文件解析：
 
@@ -121,7 +206,18 @@ C3 产品从实际应用/引导程序描述和备用分区读取值；整数引�
 
 工具仅创建新目录，不联网或烧录。生成 `nvs.bin` 为 24 KiB，对应本产品分区表 `nvs`、偏移 `0x9000`；与其他板卡或分区表不能混用。输出中的 CSV、PEM 和 NVS 均含敏感配置，权限为 0600。
 
-这是开发样机的**未加密 NVS**。尚未完成物理认领流程、安全启动、Flash/NVS 加密、硬件密钥保护或自动证书轮换，不作为量产身份方案。
+以上默认生成开发样机的**未加密 NVS**。需要静态存储保护时，使用明确的HMAC档位：
+
+```sh
+npm run build:firmware -- --storage hmac --hmac-key-id 0
+".dev/firmware-tools/venv/bin/python" "firmware/tools/provision.py" \
+  --config ".dev/device-config.json" --output ".dev/device-encrypted-001" \
+  --hmac-key-file "/private/device-hmac.bin" --hmac-key-id 0
+```
+
+该档位要求实际芯片预置相同HMAC_UP根密钥并完成读/写及用途保护；缺少材料时停止，不自动生成或写eFuse。配置和控制/OTA日志均通过加密NVS打开；先认证独立设备/空间绑定，再加载身份。新分区表保持应用槽和journal的位置/容量，末页为只读绑定区。输出仅保留密文、绑定元数据与耐久回执，暂存明文正常结束后清理；强制中断可能遗留私有暂存目录。完整字段、布局、限制与恢复见[设备存储合同](../contracts/device-storage.md)，正式回执见[Schema](../contracts/device-storage.schema.json)。
+
+`npm run test:firmware:storage`要求完整固定SDK路径，使用官方派生/解密/解析器、C适配器故障夹具及既有初始化回归；当前两档灯/按钮均已目标编译，实机按用户要求跳过。此能力不替代物理认领、安全启动、完整Flash保护或自动换证，不作为完整量产身份方案。
 
 可选顶层字段 `ota_signing_key` 包含独立确认的 `public_key` 和 `signing_key_id`。前者是规范Base64的32字节Ed25519公钥；后者是 `sha256:` 加该公钥原始字节SHA-256。两者均须提供，额外字段、错误指纹、非规范Base64拒绝。不要从待安装清单自动提取并信任密钥；仓库公开测试种子不能用于真实产品。
 
@@ -204,6 +300,12 @@ ESP 的 `li_espidf_ota_stage` 使用独立 HTTPS CA、证书及主机名验证�
 
 6组新增检查通过真实回环 HTTPS、临时文件和独立 Node 摘要，覆盖 CA/主机名、HTTP响应、长度/摘要、存储/回读/摘要故障、授权丢失、预算和时钟。宿主 source 使用独立 OpenSSL 实现，finish 是文件夹具；此结果不等于 ESP TLS、Flash 写入或启动验收。
 
+### 传输期间凭据保护
+
+`npm run test:firmware:ota-credentials`将生产传输与凭据窗口直接组合，使用同一固定SDK宿主密码库，验证9项：有效凭据正例、叶证书与CA分别在HTTPS读取/备用文件回读期间真实到期，以及可信时钟在首次I/O前/读/写/回读期间失效。提供方端口仅观测失效后调用，生产guard须阻止后续I/O；恢复时钟标记后原窗口仍锁定，重试零新下载。不生成镜像验证证明，部分或完整备用文件保持实际字节，不把abort当作擦除证明。
+
+依赖与`test:firmware:credentials`相同，另使用本地回环HTTPS与OpenSSL。构建入口冻结源码/库/二进制摘要，`node tools/test-firmware-ota-credentials.mjs --build-only`仅编译。当前结果见 [24第4.43节](../docs/24-实施计划与进度.md#443-ota传输期间凭据失效的软件验证)，范围见 [23第5.4节](../docs/23-测试策略与验收矩阵.md#54-ota传输期间的凭据保护)。本专项不连接MQTT、运行worker/安装消费者或写NVS，finish仍是文件夹具，不能替代真实镜像、激活或实机验收。
+
 ## 受控设备安装
 
 在连接前通过 li_ota_device_set_installer 配置 current/stage/activate/restart 四个窄端口。完整预检和原请求耐久保存后，先提交 installing，再下载和写备用区。传输期间持续检查当前连接代次、原会话、可信时间、单调钟、原任务期限、本地公钥/来源/撤销、安全代次、电源和设备条件；整秒时钟下将任务期限向下取整，最多提前不足一秒拒绝。整体30秒预算在IO边界检查，不能保证硬实时终止。
@@ -213,6 +315,28 @@ ESP 的 `li_espidf_ota_stage` 使用独立 HTTPS CA、证书及主机名验证�
 ESP选项 ota_https_ca_pem 非空时配置提供方，要求已有独立完整固件策略；CA须覆盖适配器生命周期。底层传输接口仍不授予安装权限。开发产品从离线初始化的独立传输CA接入提供方；未配置时传入NULL并保持safe_to_update=false，完整配置仍须经过本次镜像健康门禁。启动结果观察器已接SDK，离线签名包准备已通过独立工具实现，HTTPS托管/发布待接入，见 [签名制品合同](../contracts/ota-release.md)。
 
 新增3组真实MQTT/HTTPS旅程验证Rust计划/批准/执行、C消费者、文件暂存与激活前耐久顺序；覆盖传输中断线/掉电源/失去可信时钟/撤销、错误响应/镜像、存储门禁、提交后报错、激活前后报错及重启不补装。宿主激活和重启仅记录审计，文件finish不解析ESP镜像；目标编译与宿主证据不等于Flash、真实启动、回滚和运行资源验收。安装工作区使用有界堆分配，分配失败不开始安装。
+
+### 安装消费者期间凭据保护
+
+`npm run test:firmware:ota-install-credentials`复用运行期宿主，组合生产`espidf.c`/worker、C安装消费者、传输与固定SDK凭据窗口，12项分传输3项/暂存4项/激活5项通过。有效mTLS、真实Broker/Rust/SQLite与独立CA的HTTPS连接原日志和当前身份门禁；叶证书/CA真实到期，可信时钟在读写/回读、暂存完成、awaiting_boot、选择及绑定提交期间分别失效。已核实选择后的本机绑定/重启收尾和失效身份禁止发布分别检查；存储提交前与耐久后报错均不重启。
+
+每项恢复同一设备的有效原凭据、明确重开进程后查询原任务，旧会话安装重投拒绝；原日志、绑定与备用文件保持，零新增下载/写入/选择/重启。这里不执行NAS换证、CSR维护或网关SQLite重开。单项45秒、每组120秒，`node tools/test-firmware-runtime.mjs --ota-install --build-only`仅编译；源/库/二进制摘要由入口冻结，macOS复用与libmosquitto相同ABI的OpenSSL。
+
+基线镜像、文件NVS、备用文件/finish、选择/绑定及重启请求为显式夹具；观察器不能提供成功/回滚结果，正例只达到awaiting_boot。生产ESP分区/传输端口、ESP MQTT/TLS、Flash、实际启动健康与芯片掉电仍独立验收。实际范围与冻结结果见 [24第4.45节](../docs/24-实施计划与进度.md#445-安装消费者跨凭据失效与原任务恢复的软件验证)，矩阵见 [23第5.5节](../docs/23-测试策略与验收矩阵.md#55-完整安装提供方的待验收矩阵)。
+
+### ESP原生提供方宿主
+
+`npm run test:firmware:native-ota`独立编译并直接运行生产ESP `ota_transfer.c`的暂存、激活和观察入口，4.47冻结版本的7组99场景通过。需要固定`LIMEIOT_IDF_PATH`与已有身份宿主密码库；`node tools/test-firmware-native-ota.mjs --build-only`只编译。源码、SDK实现/结构、外部库及二进制摘要在构建和运行前后核对，开启严格诊断与ASan/UBSan；每行为组45秒、每宿主10秒、测试进程120秒。共享宿主和构建入口已有组合草稿修改，当前工作区尚未复验，历史报告不能作为当前源码的通过证明。
+
+真实回环HTTPS经OpenSSL底层API桥向生产代码提供原始响应头与内容；摘要及元数据CRC使用固定SDK实现，应用描述/otadata采用SDK原始结构。覆盖完整65,537字节/无长度正例、响应和分区故障、叶证书/CA到期与时钟失信，以及选择前拒绝、已选择但报错、返回实际绑定和成功/回滚/未决观察。分区是独立文件，镜像结构验证与选择结果是显式夹具；不运行ESP HTTP/TLS或真实Bootloader，也不请求硬件重启。
+
+此入口不运行生产worker、安装消费者或NVS日志，不与上一节的12项组合结果拼接为完整原生安装证明。结果与归档见 [24第4.47节](../docs/24-实施计划与进度.md#447-esp原生ota提供方宿主软件验证)，后续组合及目标系统矩阵见 [23第5.6节](../docs/23-测试策略与验收矩阵.md#56-esp原生提供方的分层待验收矩阵)；芯片Flash、掉电、实际镜像与启动健康仍单列，实机按用户要求跳过。
+
+### ESP原生安装组合草稿
+
+工作区已有[组合宿主](tests/esp_native_install_host.c)及[12项场景草稿](../tests/firmware-native-install.test.mjs)，入口为`npm run test:firmware:native-install`；`node tools/test-firmware-native-ota.mjs --integration --build-only`只用于编译。它们尚未编译或运行，不是可复用的通过记录。计划在正式网关OTA API、真实隔离mTLS/HTTPS与Rust/SQLite之间连接生产worker、消费者、原生提供方和耐久日志，另起设备进程观察原绑定并恢复原任务；normal/transfer/activation分别为3/4/5项待执行场景。
+
+执行与回归要求见 [23第5.6.1节](../docs/23-测试策略与验收矩阵.md#561-原生组合草稿与待执行场景)，当前证据状态见 [24第4.48节](../docs/24-实施计划与进度.md#448-原生组合草稿与冻结证据文档同步)。正式日志字段、reconcile状态、队列排空和重开语义须先核对；所有实际输入含递归头文件须冻结。文件分区/NVS、合成镜像验证、启动元数据与重启请求仍为夹具，模拟新进程不等于真实系统启动；恢复原有效凭据不等于换证或续期。独立99场景及受影响运行期入口复验后再分别登记结果。
 
 ## 启动结果恢复
 

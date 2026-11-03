@@ -18,6 +18,8 @@ use serde_json::{json, Value};
 type Output<T> = std::result::Result<T, ApiError>;
 pub fn routes() -> Router<App> {
     Router::new()
+        .route("/api/v1/spaces/:space/model-bundles", get(bundles))
+        .route("/api/v1/spaces/:space/model-bundles/:id", get(bundle))
         .route("/api/v1/spaces/:space/model-trusts", get(trusts))
         .route("/api/v1/spaces/:space/model-trusts/:id", get(trust))
         .route(
@@ -43,6 +45,21 @@ pub fn routes() -> Router<App> {
 }
 fn check(data: &limeiot_core::engine::Data, space: &str) -> Result<()> {
     ensure(data.space_id == space, "forbidden")
+}
+async fn bundles(State(app): State<App>, Path(space): Path<String>) -> Output<Json<Value>> {
+    let store = app.store.lock().await;
+    check(&store.data, &space)?;
+    Ok(Json(
+        json!({"items":limeiot_core::model_bundles::catalog()?,"next_cursor":null}),
+    ))
+}
+async fn bundle(
+    State(app): State<App>,
+    Path((space, id)): Path<(String, String)>,
+) -> Output<Json<Value>> {
+    let store = app.store.lock().await;
+    check(&store.data, &space)?;
+    Ok(Json(json!(limeiot_core::model_bundles::get(&id)?)))
 }
 async fn trusts(State(app): State<App>, Path(space): Path<String>) -> Output<Json<Value>> {
     let store = app.store.lock().await;

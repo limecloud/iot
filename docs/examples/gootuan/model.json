@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "model_id": "urn:limeiot:model:gootuan-light-touch-demo:1",
+  "model_version": "0.1.0",
+  "services": [
+    {
+      "id": "light",
+      "semantic_id": "urn:limeiot:service:light:1",
+      "properties": [
+        {
+          "id": "power",
+          "semantic_id": "urn:limeiot:property:power:1",
+          "schema": { "type": "boolean" },
+          "access": ["read", "write", "notify"],
+          "max_age_ms": 60000
+        },
+        {
+          "id": "brightness",
+          "semantic_id": "urn:limeiot:property:brightness:1",
+          "schema": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "access": ["read", "write", "notify"],
+          "unit": "percent",
+          "max_age_ms": 60000
+        }
+      ],
+      "actions": [],
+      "events": []
+    },
+    {
+      "id": "touch",
+      "semantic_id": "urn:gootuan:service:touch-demo:1",
+      "properties": [],
+      "actions": [],
+      "events": [
+        {
+          "id": "pressed",
+          "semantic_id": "urn:gootuan:event:touch-pressed-demo:1",
+          "schema": {
+            "type": "object",
+            "properties": { "count": { "type": "integer", "minimum": 1, "maximum": 3 } },
+            "required": ["count"],
+            "additionalProperties": false
+          }
+        }
+      ]
+    }
+  ]
+}

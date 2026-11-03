@@ -1,0 +1,6 @@
+{
+  "device_id": "device-button",
+  "path": "touch.pressed",
+  "historical": false,
+  "data": { "count": 1 }
+}

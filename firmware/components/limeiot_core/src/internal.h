@@ -30,7 +30,7 @@ struct li_core {
     li_ports_t ports;
     char boot[LI_ID_SIZE], challenge[LI_ID_SIZE], session[LI_ID_SIZE];
     uint64_t seq, snapshot_revision;
-    bool connected, ready;
+    bool connected, ready, storage_faulted;
     int64_t anchor_unix, anchor_mono, last_snapshot, last_hello;
     li_receipt_t receipts[LI_RECEIPT_SLOTS];
     bool occupied[LI_RECEIPT_SLOTS];
@@ -44,7 +44,7 @@ int64_t li_now(li_core_t *);
 li_error_t li_codec_decode(const char *, size_t, li_down_t *);
 void li_codec_down_free(li_down_t *);
 char *li_codec_hello(li_core_t *);
-char *li_codec_snapshot(li_core_t *, int64_t, const li_value_t *);
+char *li_codec_snapshot(li_core_t *, const int64_t *, const li_value_t *);
 char *li_codec_device_info(li_core_t *, const li_device_info_t *);
 char *li_codec_event(li_core_t *, int64_t, const li_event_t *, int64_t);
 char *li_codec_result(li_core_t *, const li_receipt_t *);

@@ -66,7 +66,7 @@ Rust 模型/命令核心、家庭网页和模拟器已接入动作；Go 远程�
 
 Go 与 CLI 只验证回执外壳和原操作绑定，不能替代 Rust 的精确模型输出/完成范围校验，也不能独立证明物理效果。远程可见的回执不包含 issued_at，时间下界按 expires_at 前32秒作保守检查；Rust 仍执行 issued_at 前2秒的精确下界。远程 operation.path 与本地合同一致，总长度最多129，两段分别最多64个字符。
 
-Swift/Kotlin 原生云客户端已分别接受属性 device_result 与动作 action_result；NAS/云界面共用按模型生成的动作控件和原操作恢复。原生界面构建、宿主库联调和手机端上运行分别验收，结果见实施进度。自动化 DSL 的 invoke、通用进程插件与 TV Agent 仍需单独实现。
+Swift/Kotlin 原生云客户端已分别接受属性 device_result 与动作 action_result；NAS/云界面共用按模型生成的动作控件和原操作恢复。原生界面构建、宿主库联调和手机端上运行分别验收，结果见实施进度。自动化DSL通过[规则合同](rules.md)的invoke映射到同一action.invoke入口；通用进程插件及TV Agent当前组合/端上仍按各自合同和进度验收。
 
 [android-tv.json](models/android-tv.json) 是 Schema 2 能力组合定义，包含遥控按键、应用启动、音量和静音；它不证明任何型号已实现。应用 ID 的长度校验不替代执行端的已发现应用清单和授权白名单。当前完整属性快照要求仍适用，不能用虚构的音量/静音值使不完整适配进入 ready。
 

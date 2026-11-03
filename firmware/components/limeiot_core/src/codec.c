@@ -176,7 +176,7 @@ char *li_codec_device_info(li_core_t *core, const li_device_info_t *info) {
     cJSON_AddBoolToObject(body, "pending_update", info->pending_update);
     return print(envelope(core, "device_info", body));
 }
-char *li_codec_snapshot(li_core_t *core, int64_t now, const li_value_t *values) {
+char *li_codec_snapshot(li_core_t *core, const int64_t *observed, const li_value_t *values) {
     cJSON *body = cJSON_CreateObject(); if (!body) return NULL;
     cJSON_AddStringToObject(body, "type", "snapshot"); cJSON_AddNumberToObject(body, "revision", (double)++core->snapshot_revision);
     cJSON *properties = cJSON_AddArrayToObject(body, "properties");
@@ -184,7 +184,7 @@ char *li_codec_snapshot(li_core_t *core, int64_t now, const li_value_t *values) 
     for (size_t i = 0; i < core->config.property_count; i++) {
         cJSON *entry = cJSON_CreateObject(); if (!entry) { cJSON_Delete(body); return NULL; }
         cJSON_AddStringToObject(entry, "path", core->config.properties[i].path); cJSON_AddItemToObject(entry, "value", value_encode(values[i]));
-        add_timestamp(entry, "observed_at", now); cJSON_AddStringToObject(entry, "quality", "confirmed"); cJSON_AddStringToObject(entry, "source", core->config.observation_source ? core->config.observation_source : "driver.applied"); cJSON_AddItemToArray(properties, entry);
+        add_timestamp(entry, "observed_at", observed[i]); cJSON_AddStringToObject(entry, "quality", "confirmed"); cJSON_AddStringToObject(entry, "source", core->config.observation_source ? core->config.observation_source : "driver.applied"); cJSON_AddItemToArray(properties, entry);
     }
     return print(envelope(core, "state", body));
 }

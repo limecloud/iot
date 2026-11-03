@@ -181,7 +181,8 @@ fn grounded_input(context: &Value) -> Result<(Value, Value)> {
                         .ok_or_else(|| err("invalid_inference_context"))?
                 );
                 writable.push(json!({"path":path,"schema":property["schema"]}));
-                let mut action = rule["properties"]["actions"]["items"].clone();
+                // 草案仍只生成属性设置；设备动作由显式规则审核部署。
+                let mut action = rule["properties"]["actions"]["items"]["oneOf"][0].clone();
                 action["properties"]["device"] = json!({"const":device["device_id"]});
                 action["properties"]["set"]["properties"]["path"] = json!({"const":path});
                 action["properties"]["set"]["properties"]["value"] = property["schema"].clone();
@@ -189,7 +190,7 @@ fn grounded_input(context: &Value) -> Result<(Value, Value)> {
             }
         }
         if !events.is_empty() {
-            let mut trigger = rule["properties"]["trigger"].clone();
+            let mut trigger = rule["properties"]["trigger"]["oneOf"][0].clone();
             trigger["properties"]["device"] = json!({"const":device["device_id"]});
             trigger["properties"]["event"] = json!({"type":"string","enum":events});
             triggers.push(trigger);

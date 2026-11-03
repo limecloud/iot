@@ -145,7 +145,13 @@ impl Data {
         } else {
             match result.and_then(|rule| {
                 ensure(
-                    rule.id == format!("ai-{}", draft.draft_id),
+                    rule.id == format!("ai-{}", draft.draft_id)
+                        && rule.conditions.is_empty()
+                        && matches!(rule.trigger, crate::protocol::Trigger::Event { .. })
+                        && rule
+                            .actions
+                            .iter()
+                            .all(|action| matches!(action, crate::protocol::Action::Set { .. })),
                     "invalid_model_output",
                 )?;
                 let revision = self.validate_rule(&rule)?;

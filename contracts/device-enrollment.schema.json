@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.run/contracts/device-enrollment.schema.json",
+  "title": "LimeIoT offline public CSR enrollment",
+  "oneOf": [
+    { "$ref": "#/$defs/inspectionResponse" },
+    { "$ref": "#/$defs/enrollmentResponse" },
+    { "$ref": "#/$defs/enrollmentReceipt" },
+    { "$ref": "#/$defs/request" },
+    { "$ref": "#/$defs/error" }
+  ],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" },
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "serial": { "type": "string", "pattern": "^[0-9A-F]{1,40}$" },
+    "request": {
+      "type": "object",
+      "required": ["schema_version", "request_id", "space_id", "device_id", "serial", "csr_sha256", "public_key_fingerprint", "ca_fingerprint", "request_sha256"],
+      "properties": {
+        "schema_version": { "enum": [1, 2, 3] },
+        "request_id": { "$ref": "#/$defs/id" },
+        "space_id": { "$ref": "#/$defs/id" },
+        "device_id": { "$ref": "#/$defs/id" },
+        "serial": { "$ref": "#/$defs/serial" },
+        "csr_sha256": { "$ref": "#/$defs/digest" },
+        "public_key_fingerprint": { "$ref": "#/$defs/digest" },
+        "ca_fingerprint": { "$ref": "#/$defs/digest" },
+        "request_sha256": { "$ref": "#/$defs/digest" },
+        "replaces_serial": { "$ref": "#/$defs/serial" },
+        "replaces_certificate_sha256": { "$ref": "#/$defs/digest" },
+        "activation_challenge": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "recovery_reason": { "const": "certificate_expired" }
+      },
+      "allOf": [{ "$ref": "#/$defs/rotationFields" }, { "$ref": "#/$defs/recoveryFields" }],
+      "additionalProperties": false
+    },
+    "rotationFields": {
+      "type": "object",
+      "if": { "properties": { "schema_version": { "enum": [2, 3] } }, "required": ["schema_version"] },
+      "then": { "properties": { "replaces_serial": {}, "replaces_certificate_sha256": {}, "activation_challenge": {} }, "required": ["replaces_serial", "replaces_certificate_sha256", "activation_challenge"] },
+      "else": { "properties": { "replaces_serial": false, "replaces_certificate_sha256": false, "activation_challenge": false } }
+    },
+    "recoveryFields": {
+      "type": "object",
+      "if": { "properties": { "schema_version": { "const": 3 } }, "required": ["schema_version"] },
+      "then": { "properties": { "recovery_reason": { "const": "certificate_expired" } }, "required": ["recovery_reason"] },
+      "else": { "properties": { "recovery_reason": false } }
+    },
+    "inspectionResponse": {
+      "type": "object",
+      "required": ["status", "action", "device_id", "csr_sha256", "public_key_fingerprint", "algorithm"],
+      "properties": {
+        "status": { "const": "ok" }, "action": { "const": "inspect-csr" },
+        "device_id": { "$ref": "#/$defs/id" }, "csr_sha256": { "$ref": "#/$defs/digest" },
+        "public_key_fingerprint": { "$ref": "#/$defs/digest" }, "algorithm": { "const": "P-256/SHA-256" }
+      },
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "required": ["schema_version", "request_id", "space_id", "device_id", "serial", "csr_sha256", "public_key_fingerprint", "ca_fingerprint", "request_sha256", "decision", "hardware", "physical_claim"],
+      "properties": {
+        "schema_version": { "enum": [1, 2, 3] },
+        "request_id": { "$ref": "#/$defs/id" }, "space_id": { "$ref": "#/$defs/id" }, "device_id": { "$ref": "#/$defs/id" },
+        "serial": { "$ref": "#/$defs/serial" }, "csr_sha256": { "$ref": "#/$defs/digest" },
+        "public_key_fingerprint": { "$ref": "#/$defs/digest" }, "ca_fingerprint": { "$ref": "#/$defs/digest" },
+        "request_sha256": { "$ref": "#/$defs/digest" },
+        "replaces_serial": { "$ref": "#/$defs/serial" },
+        "replaces_certificate_sha256": { "$ref": "#/$defs/digest" },
+        "activation_challenge": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "recovery_reason": { "const": "certificate_expired" },
+        "previous_decision": { "enum": ["issued", "revoked", "expired"] },
+        "activation_confirmed": { "type": "boolean" },
+        "crl_updated": { "type": "boolean" },
+        "rotation_completed": { "type": "boolean" },
+        "broker_restart_required": { "const": true },
+        "decision": { "enum": ["issued", "revoked", "expired", "unknown"] },
+        "hardware": { "const": false }, "physical_claim": { "const": false },
+        "certificate_sha256": { "$ref": "#/$defs/digest" },
+        "not_before": { "type": "string", "format": "date-time" }, "not_after": { "type": "string", "format": "date-time" },
+        "status": { "const": "ok" }, "action": { "enum": ["sign-csr", "resolve-csr", "rotate-csr", "recover-csr", "complete-rotation"] },
+        "output": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        { "$ref": "#/$defs/rotationFields" },
+        { "$ref": "#/$defs/recoveryFields" },
+        {
+          "if": { "properties": { "schema_version": { "enum": [2, 3] } } },
+          "then": { "properties": { "previous_decision": {}, "activation_confirmed": {}, "crl_updated": {}, "rotation_completed": {} }, "required": ["previous_decision", "activation_confirmed", "crl_updated", "rotation_completed"] },
+          "else": { "properties": { "previous_decision": false, "activation_confirmed": false, "crl_updated": false, "rotation_completed": false, "broker_restart_required": false } }
+        },
+        {
+          "if": { "properties": { "schema_version": { "const": 3 } } },
+          "then": { "properties": { "action": { "enum": ["recover-csr", "resolve-csr", "complete-rotation"] } } },
+          "else": { "properties": { "action": { "not": { "const": "recover-csr" } } } }
+        },
+        {
+          "if": { "properties": { "rotation_completed": { "const": true } }, "required": ["rotation_completed"] },
+          "then": { "properties": { "previous_decision": { "const": "revoked" }, "activation_confirmed": { "const": true }, "crl_updated": { "const": true } } }
+        },
+        {
+          "if": { "properties": { "decision": { "const": "unknown" } } },
+          "then": { "properties": { "certificate_sha256": false, "not_before": false, "not_after": false, "output": false } },
+          "else": { "properties": { "certificate_sha256": {}, "not_before": {}, "not_after": {} }, "required": ["certificate_sha256", "not_before", "not_after"] }
+        },
+        { "if": { "required": ["output"] }, "then": { "properties": { "decision": { "const": "issued" } } } }
+      ],
+      "additionalProperties": false
+    },
+    "enrollmentResponse": {
+      "allOf": [{ "$ref": "#/$defs/result" }, { "type": "object", "properties": { "status": {}, "action": {} }, "required": ["status", "action"] }]
+    },
+    "enrollmentReceipt": {
+      "allOf": [{ "$ref": "#/$defs/result" }, { "type": "object", "properties": { "status": false, "action": false, "output": false } }]
+    },
+    "error": {
+      "type": "object", "required": ["error"],
+      "properties": { "error": { "type": "string", "minLength": 1 } }, "additionalProperties": false
+    }
+  }
+}

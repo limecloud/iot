@@ -1,0 +1,14 @@
+# 可选局域网音频出口。管理接口仍经HTTPS，媒体只接受目标绑定的短时路径凭证。
+services:
+  gateway:
+    environment:
+      LIMEIOT_MEDIA_LISTEN: "0.0.0.0:${LIMEIOT_MEDIA_PORT:?}"
+      LIMEIOT_MEDIA_ORIGIN: ${LIMEIOT_MEDIA_ORIGIN:?}
+      LIMEIOT_MEDIA_DB: /data/gateway.sqlite.media.json
+      LIMEIOT_AUDIO_CONFIG: /config/audio.json
+    ports:
+      - "${LIMEIOT_MEDIA_BIND_HOST:-0.0.0.0}:${LIMEIOT_MEDIA_PORT:?}:${LIMEIOT_MEDIA_PORT:?}"
+    networks: [local, media]
+networks:
+  media:
+    internal: false

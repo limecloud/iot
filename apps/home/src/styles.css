@@ -81,6 +81,7 @@ body { margin: 0; }
 .home-app .device details { margin-top: 12px; border-top: .5px solid var(--slate-6); padding-top: 4px; }
 .home-app .television-binding p, .home-app .television-binding span { overflow-wrap: anywhere; }
 .home-app .television-binding label { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; }
+.home-app .television-binding .property-form label { display: grid; min-width: 0; margin: 0; }
 .home-app .television-binding input[type="checkbox"] { width: 18px; flex: 0 0 18px; margin-top: 2px; }
 .home-app .television-binding button { margin: 4px 0; }
 .home-app .television-binding .property-row { flex-wrap: wrap; align-items: flex-start; }
@@ -89,6 +90,14 @@ body { margin: 0; }
 .home-app .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .home-app .simulation { color: var(--teal-11); margin-top: 20px; }
 .home-app .rule-editor details { margin-top: 16px; }
+.home-app .conditions-editor { margin: 0 0 24px; padding: 0; border: 0; min-width: 0; }
+.home-app .conditions-editor > legend { font-weight: 600; margin-bottom: 12px; }
+.home-app .condition-list { display: grid; gap: 16px; min-width: 0; }
+.home-app .condition-node { border: .5px solid var(--slate-7); padding: 12px; margin: 0; min-width: 0; display: grid; gap: 12px; }
+.home-app .condition-fields { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.home-app .condition-fields label, .home-app .condition-fields select { min-width: 0; }
+.home-app .condition-summary { padding-left: 20px; overflow-wrap: anywhere; }
+.home-app .condition-evidence { overflow-wrap: anywhere; }
 .home-app .control-links { display: grid; gap: 24px; }
 .home-app .control-links .rule-editor { display: grid; gap: 16px; min-width: 0; padding-top: 20px; }
 .home-app .control-links form { max-width: 960px; }
@@ -101,6 +110,17 @@ body { margin: 0; }
 .home-app .registry-row { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding-block: 20px; border-bottom: .5px solid var(--slate-6); }
 .home-app .registry-row > div { min-width: 0; overflow-wrap: anywhere; }
 .home-app .registry-row > button { flex-shrink: 0; }
+.home-app .media-library { display: grid; gap: 24px; min-width: 0; }
+.home-app .media-library form { display: grid; gap: 12px; max-width: 640px; }
+.home-app .media-library form > button { justify-self: start; }
+.home-app .media-library select, .home-app .media-library input[type='file'] { width: 100%; min-width: 0; }
+.home-app .media-approval { display: flex; align-items: center; gap: 8px; }
+.home-app .media-approval input[type='checkbox'] { flex: 0 0 auto; width: 18px; height: 18px; margin: 0; }
+.home-app .media-library code { overflow-wrap: anywhere; }
+.home-app .media-file-control { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.home-app .media-file-control button { flex-shrink: 0; }
+.home-app .media-file-control span { overflow-wrap: anywhere; }
+.home-app .media-library .rule-editor > .registry-row:last-of-type { border-bottom: 0; padding-bottom: 0; }
 .home-app .firmware .rule-editor .registry-row:last-of-type { border-bottom: 0; padding-bottom: 0; }
 .home-app .ai-rule form { display: grid; gap: 16px; }
 .home-app .ai-rule > p, .home-app .draft-review { margin-top: 16px; }
@@ -144,6 +164,7 @@ body { margin: 0; }
   .home-app .device-grid { grid-template-columns: 1fr; }
   .home-app .device { padding: 20px; }
   .home-app .rule-fields { grid-template-columns: 1fr; gap: 16px; }
+  .home-app .condition-fields { grid-template-columns: minmax(0, 1fr); }
   .home-app .deployment { align-items: start; flex-direction: column; gap: 12px; }
   .home-app button { min-height: 44px; }
   .home-app .entry { padding: 24px; margin-top: 10vh; }
@@ -151,6 +172,9 @@ body { margin: 0; }
 @media (prefers-reduced-motion: reduce) { .home-app * { transition: none !important; } }
 
 .home-app input[type="checkbox"] { width: 17px; height: 17px; min-height: 17px; accent-color: var(--teal-9); }
+.home-app .schedule-weekdays { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 12px 20px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.home-app .schedule-weekdays legend { margin-bottom: 8px; }
+.home-app .schedule-weekdays label { display: flex; align-items: center; gap: 8px; }
 .home-app code { font: 12px/1.65 ui-monospace, monospace; overflow-wrap: anywhere; }
 
 .home-app .content { min-height: calc(100dvh - 108px); }

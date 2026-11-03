@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "button-conditional-light",
+  "trigger": { "device": "device-button", "event": "button.pressed" },
+  "conditions": [
+    {
+      "all": [
+        { "device": "device-lamp", "property": "light.brightness", "operator": "gte", "value": 40, "unit": "percent" },
+        { "any": [{ "device": "device-lamp", "property": "light.power", "operator": "eq", "value": true }] }
+      ]
+    }
+  ],
+  "actions": [{ "device": "device-lamp", "set": { "path": "light.brightness", "value": 30 } }],
+  "cooldown_ms": 0
+}

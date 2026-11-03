@@ -124,7 +124,7 @@ Console 发布区和控制面 CLI/Agent 目录已接入发布者、发布头、�
 
 ## 本地信任、安装和设备绑定
 
-网关从本地所有者接收明确变更，不接受控制面远程安装。四类动作共用 `POST /api/v1/spaces/{space}/model-operations`，正文见 [model-change.schema.json](model-change.schema.json)，唯一原键位于 `Idempotency-Key`。CLI 使用本地 Bearer，浏览器使用所有者会话、精确 Origin 和 CSRF；路径空间参与原请求摘要。所有资源和原决定在同一次 SQLite 更新中提交，写盘失败不更新内存或事件。
+网关从本地所有者接收明确变更，不接受控制面远程安装。五类动作共用 `POST /api/v1/spaces/{space}/model-operations`，正文见 [model-change.schema.json](model-change.schema.json)，唯一原键位于 `Idempotency-Key`。CLI 使用本地 Bearer，浏览器使用所有者会话、精确 Origin 和 CSRF；路径空间参与原请求摘要。所有资源和原决定在同一次 SQLite 更新中提交，写盘失败不更新内存或事件。
 
 | 动作 | 必需输入 | 生效条件 |
 | --- | --- | --- |
@@ -132,6 +132,7 @@ Console 发布区和控制面 CLI/Agent 目录已接入发布者、发布头、�
 | `trust.revoke` | `trust_id`、`expected_revision` | 当前信任修订一致；撤销后不重新激活 |
 | `models.install` | `trust_id`、`artifact`、`expected_release_id` | 已存信任有效、签名和模型有效，本地当前发布头与预期一致 |
 | `devices.bind` | `device_id`、`installation_id`、`expected_model_revision`、`expected_binding_revision` | 两种当前修订一致，安装为模型当前头，已有规则仍受支持 |
+| `devices.bind-bundle` | `device_id`、`bundle_id`、`expected_model_revision`、`expected_binding_revision` | 两种当前修订一致，来源为网关固定目录，规则/路由兼容且无OTA占用 |
 
 首次安装的 `expected_release_id` 必须显式为 null；新设备的两种绑定预期也必须显式为 null。未知字段、重复字段、缺少显式 null 均拒绝。正文上限16KiB、深度20、2400节点。结构Schema只提供机器输入形状，不能代替Rust验签、兼容性和授权。
 
@@ -145,6 +146,8 @@ Trust ID 为 `trust-` 加信任材料 JCS 的 SHA-256；Installation ID 为 `ins
 
 ```http
 GET /api/v1/spaces/{space}/model-trusts
+GET /api/v1/spaces/{space}/model-bundles
+GET /api/v1/spaces/{space}/model-bundles/{bundle_id}
 GET /api/v1/spaces/{space}/model-trusts/{trust_id}
 GET /api/v1/spaces/{space}/model-installations?after={installation_id}
 GET /api/v1/spaces/{space}/model-installations/{installation_id}
@@ -154,4 +157,8 @@ GET /api/v1/spaces/{space}/model-operations/by-key/{original_key}
 
 安装列表每页16项，`next_cursor` 表示下一页起点，`heads` 返回 model_id 到当前 installation_id 的映射；不能用分页顺序猜测版本。读取当前头不在本页时，应通过安装详情读取。设备绑定返回当前模型修订、动态绑定及信任状态；有效但尚未注册的设备返回两个 null 和 `trust_active=false`，不自动注册。
 
-当前上限为32份模型信任、128份安装、1024个模型原决定、64台设备；旧键不回收。模型注册在快照v2引入，OTA与执行路由后续演进；当前网关校验读取v1–6，提交写入v7。执行绑定/组合/撤销及原决定的恢复边界见 [执行合同](execution-routes.md)，OTA恢复见 [本地升级任务](ota-tasks.md)。未来版本拒绝且不改写快照；旧程序拒绝不认识的新版本，防止忽略撤销、绑定或升级状态。恢复须保留原启动配置和数据库；模型安装不包含固件传输/OTA，也不自动替换执行绑定。
+内置目录编译嵌入两份正式TV模型，返回 `{items,next_cursor:null}`；单项为 `{bundle_id,model_revision,model}`。`model_revision`为规范模型正文JCS的SHA-256，`bundle_id`为 `bundle-` 加同一摘要的64位十六进制值；客户端核对正文/摘要/标识，不接受上传正文。来源信任来自网关交付与所有者选择，不伪装发布者签名。绑定结果严格包含installation_id或bundle_id其中一种，其他字段为device_id/model_revision/revision/bound_at。旧安装来源形状不变；恢复核对当前绑定及历史成功来源与正文，旧成功不重应用。信任撤销只影响该发布者安装来源，不撤销内置目录。目录更新不得静默换绑，移除历史引用项须先验证恢复兼容。
+
+两种换绑共用基线、规则/路由、容量及OTA检查，清除旧会话、观测和原生能力证明，保留旧模型、完整命令和账本序号。重新握手/快照只证明实际声明的能力；模型包含remote.press不自动授予Agent按键或ADB执行权。网关换绑、本机材料/日志迁移、执行compose及APK更新分别管理。
+
+当前上限为32份模型信任、128份安装、1024个模型原决定、64台设备；旧键不回收。模型注册在快照v2引入，OTA与执行路由后续演进；当前网关校验读取v1–9，提交写入v9。v8引入内置绑定来源与原决定，v1–7夹带新动作/绑定/结果均拒绝；旧安装来源无需字段迁移。v9增加属性阈值规则及采样证据，旧版本拒绝夹带，见[自动化合同](rules.md)。执行绑定/组合/撤销及原决定的恢复边界见 [执行合同](execution-routes.md)，OTA恢复见 [本地升级任务](ota-tasks.md)。未来版本拒绝且不改写快照；旧程序拒绝不认识的新版本，防止忽略撤销、绑定或升级状态。恢复须保留原启动配置和数据库；模型安装不包含固件传输/OTA，也不自动替换执行绑定。

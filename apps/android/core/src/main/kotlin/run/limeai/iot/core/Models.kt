@@ -11,7 +11,7 @@ import java.util.UUID
 @Serializable data class Space(@SerialName("space_id") val spaceId: String)
 @Serializable data class Observation(val value: JsonElement, @SerialName("observed_at") val observedAt: String, val quality: String, val source: String)
 @Serializable data class Device(@SerialName("device_id") val deviceId: String, @SerialName("model_revision") val modelRevision: String, val ready: Boolean, @SerialName("last_seen") val lastSeen: String? = null, val reported: Map<String, Observation> = emptyMap())
-@Serializable data class ValueSchema(val type: String, val minimum: Double? = null, val maximum: Double? = null, val properties: Map<String, ValueSchema> = emptyMap(), val required: List<String> = emptyList(), @SerialName("enum") val enumValues: List<JsonElement> = emptyList()) {
+@Serializable data class ValueSchema(val type: String, val minimum: Double? = null, val maximum: Double? = null, val properties: Map<String, ValueSchema> = emptyMap(), val required: List<String> = emptyList(), @SerialName("enum") val enumValues: List<JsonElement> = emptyList(), val minLength: Int? = null, val maxLength: Int? = null) {
     fun sample(): JsonElement = enumValues.firstOrNull() ?: when (type) {
         "boolean" -> JsonPrimitive(true)
         "integer" -> JsonPrimitive((minimum ?: 0.0).toLong())
@@ -20,7 +20,20 @@ import java.util.UUID
         else -> JsonPrimitive("")
     }
 }
-@Serializable data class Property(val id: String, val schema: ValueSchema, val access: List<String>)
+@Serializable data class Property(val id: String, val schema: ValueSchema, val access: List<String>, @SerialName("semantic_id") val semanticId: String? = null, val unit: String? = null) {
+    val displayName: String get() = when (semanticId) {
+        "urn:limeiot:property:temperature:1" -> "温度"
+        "urn:limeiot:property:relative-humidity:1" -> "相对湿度"
+        else -> when (id) { "power" -> "电源"; "brightness" -> "亮度"; else -> id }
+    }
+    fun displayValue(value: JsonElement?): String {
+        if (value == null) return "暂无状态"
+        val number = (value as? JsonPrimitive)?.takeUnless { it.isString }?.longOrNull
+        return if (number != null && unit in listOf("celsius_x100", "percent_x100")) {
+            String.format(java.util.Locale.ROOT, "%.2f", number.toDouble()/100) + if (unit == "celsius_x100") " ℃" else " %RH"
+        } else (value as? JsonPrimitive)?.content ?: value.toString()
+    }
+}
 @Serializable data class ModelEvent(val id: String, val schema: ValueSchema)
 @Serializable data class ModelAction(val id: String, val input: ValueSchema, val output: ValueSchema, val idempotent: Boolean, val risk: String, val completion: String)
 @Serializable data class Service(val id: String, val properties: List<Property>, val events: List<ModelEvent>, val actions: List<ModelAction> = emptyList())
@@ -57,13 +70,13 @@ import java.util.UUID
         }
     }
 }
-@Serializable data class Trigger(val device: String, val event: String)
 @Serializable data class SetValue(val path: String, val value: JsonElement)
-@Serializable data class Action(val device: String, val set: SetValue)
 @Serializable data class Rule(val version: Int = 1, val id: String, val trigger: Trigger, val conditions: List<JsonElement> = emptyList(), val actions: List<Action>, @SerialName("cooldown_ms") val cooldownMs: Int)
 @Serializable data class Deployment(val revision: String, val rule: Rule, @SerialName("last_run") val lastRun: String? = null)
-@Serializable data class Run(@SerialName("run_id") val runId: String, @SerialName("command_ids") val commandIds: List<String>, @SerialName("event_id") val eventId: String, val error: String? = null)
-@Serializable data class Simulation(val revision: String, val matched: Boolean, val executed: Boolean, val simulation: Boolean)
+@Serializable data class Run(@SerialName("run_id") val runId: String, @SerialName("command_ids") val commandIds: List<String>, @SerialName("event_id") val eventId: String, val error: String? = null, @SerialName("condition_evaluation") val conditionEvaluation: JsonElement? = null)
+@Serializable data class Simulation(val revision: String, val matched: Boolean, val executed: Boolean, val simulation: Boolean, @SerialName("trigger_matched") val triggerMatched: Boolean? = null, @SerialName("condition_evaluation") val conditionEvaluation: JsonElement? = null, @SerialName("proposed_actions") val proposedActions: List<Action>? = null) {
+    val canDeploy get() = !executed && simulation && if (conditionEvaluation == null) matched else triggerMatched == true
+}
 data class Snapshot(val space: String, val devices: List<Device>, val models: Map<String, Model>, val commands: Page<Command>, val deployments: List<Deployment>, val runs: List<Run>, val inference: Inference? = null) {
     fun eventSample(rule: Rule): JsonElement? {
         val device = devices.firstOrNull { it.deviceId == rule.trigger.device } ?: return null

@@ -1,12 +1,36 @@
 # Android 原生客户端
 
+## 本地音频客户端库
+
+`MediaClient(gateway, store)`使用现有NAS所有者会话与必填`SessionStore`，提供`list`、`submit`、`records`和`resolve`。`MediaChanges.upload(bytes, retainSeconds)`接受最多4MiB、60秒的16位PCM WAV；`grant`需要当前执行绑定修订，`revoke`与`delete`分别撤销授权和删除正文。接口只消费媒体ID与状态，不取得下载URL或令牌，上传/授权不自动播放。
+
+首次POST前在`origin#media-operations`保存并回读摘要原记录，最多128项；不保存音频正文。同键同参只查询原键，404仍未知，同类未决操作阻止换键重发。跨实例共用Mutex，损坏/移除/无法保存的记录阻止新写。历史授权回执的`issued_in_process`可随网关重启变化，库核对其余原决定；当前资格以列表和网关执行时检查为准。媒体与OTA复用有界安全整数JSON解析/规范化工具，分别校验领域合同。
+
+家庭网关“设置 → 音频”提供OpenDocument文件选择、保留时间、当前已绑定音箱、明确授权、撤销、删除确认和原操作查询。IO调度器有界读取最多4MiB+1字节，不申请广泛文件权限、不保留URI权限或正文；离开页面、后台和断线清除临时文件与确认。`targets`读取并核对当前执行绑定，兼容候选不自动授权；播放仍由设备页另行操作。云入口不增加媒体权限。
+
+仓库根目录`npm run test:media:native`检查库；`npm run test:media:native:state`运行实际`MediaController`、有界读取器与真实Rust/SQLite/MQTT及软件音箱，覆盖本地无副作用、确认失效、取消保存后零POST、离线禁写、401、丢回执和进程/网关重启恢复。需要JDK21、Android SDK和Swift。恢复文件为宿主夹具，不代表Android Keystore、系统文件选择器或Compose运行；既有模拟器ANR状态保留，实机按用户要求跳过。
+
+## 环境读数
+
+规则库支持与事件互斥的属性阈值触发、模型单位、上升/下降及滞回；严格触发解码不受宽松模型读取配置影响。`simulate`在属性规则下接收包含previous/current两份观测的JSON对象，预演不修改运行基线或创建设备命令。Compose可创建/编辑单操作阈值规则、完整展示及停用；`ThresholdEditor`按十进制解析常用单位，不截断超精度输入，并生成标记为simulation.ui的预演采样。`RuleTriggerTest`包含合同、表单和可选真实HTTP检查，根目录入口为`npm run test:rules:thresholds`。Debug APK与lint不代表Android端上运行，既有启动ANR阻塞保留。
+
+`:core`兼容可选的`semantic_id`/`unit`，按正式环境模型显示温度和相对湿度，两位小数；旧属性继续按原值显示。NAS及云设备页面将只读属性显示为文本，过期样本保留原值并标明“已过期”。
+
+`EnvironmentPropertyTest`检查元数据、单位、负值、零值和旧属性。根目录`node --test tests/environment-node.test.mjs`通过独立Broker/Rust/SQLite链路执行Kotlin实际HTTP读取；需Swift、JDK21及Android SDK。Debug构建、单测和lint与Android端上运行分别验收；既有模拟器启动阻塞仍保留，实机按用户要求跳过。
+
+## 应用结构
+
 使用 Kotlin、Jetpack Compose 和 Android Keystore，最低 Android 8/API 26，编译和目标 API 36。`:core` 是不依赖 Android SDK 的类型化客户端，`:app` 是原生 Android 应用。没有 WebView 或跨平台 UI 框架。
 
-应用提供家庭网关与云服务两类入口。NAS入口支持设备开关/亮度、状态和回执、事件规则预演/启用/停用、关联运行及退出；云入口支持独立授权、空间/设备与原操作。当前本地规则表单支持布尔属性联动，界面与 CLI 共用网关执行语义。
+应用提供家庭网关与云服务两类入口。NAS入口支持设备开关/亮度、状态和回执、事件/阈值规则预演/启用/停用、关联运行及退出；云入口支持独立授权、空间/设备与原操作。本地规则表单支持数值/布尔属性和模型动作，动作参数使用JSON，先预演再明确启用；单操作编辑保留完整比较/all/any条件树及毫秒冷却，多操作规则完整展示并可停用，编辑使用TUI或CLI/API。规则执行语义见[合同](../../contracts/rules.md)，宿主软件入口为`npm run test:rules:conditions:native`和`npm run test:rules:actions:native`，Compose运行与实机另验。
+
+“仅当”通过Compose控件选择全部可read标量属性、比较方式和值，并添加/移除嵌套组合。ConditionEditor按模型单位精确解析、检查类型/值域和4层/32项限额，无损回填失败时禁止编辑原规则；取消不提交。GatewayClient先校验再预演，RuleProof核对两次修订、触发和完整条件/动作证据；当前条件未满足仍可明确启用等待新触发。执行记录显示原条件、观测及原因，不从当前状态重建历史。APK构建/lint与Compose端上运行分开记录，既有启动ANR阻塞保留。
 
 自动化页支持“用一句话设置”：网关配置本地模型后生成草案，展示触发、全部动作、冷却和原文，预演通过后明确启用。生成前通过 Keystore 适配器保存原空间与幂等键，写入失败不发送；丢失响应或应用重启后查询原记录，不自动重发。修改需求清空预演证明；模型未配置仍可手工设置。推理模型配置见[NAS说明](../../deploy/nas/README.md)。
 
 ## 构建和连接
+
+定时规则在“触发方式”选择“定时”，输入HH:MM、IANA时区与重复星期；支持单操作创建、完整回填、修改、取消和停用，毫秒冷却与条件树保持完整。GatewayClient从网关校验结果获取下一次发生时刻做预演，客户端不重复实现DST。软件入口为`npm run test:rules:schedules:native`；JVM宿主、Debug APK与lint和完整Compose端上运行分别验收，原端上环境阻塞保留。语义见[定时合同](../../contracts/rules.md#每周定时)。
 
 NAS与云界面均按绑定模型解析动作，提供方向键、应用启动及通用参数控件；Schema 1空动作模型保留属性界面。按键限模型枚举，submitted只显示“输入已提交”；应用ID仍须执行端发现和授权白名单。动作与属性共用耐久原键、失联禁用和原操作查询，控件存在不表示真实电视适配已实现。
 

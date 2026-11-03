@@ -87,7 +87,13 @@
       "method": "POST",
       "path": "/api/v1/spaces/{space_id}/rule-deployments",
       "space_required": true,
-      "input_schema": "rule"
+      "input_schema": "rule",
+      "conditional_headers": {
+        "If-Match": "quoted_current_revision",
+        "If-None-Match": "*",
+        "mutually_exclusive": true,
+        "conflict_error": "revision_conflict"
+      }
     },
     {
       "operation_id": "rules.list",
@@ -198,6 +204,19 @@
       "space_required": true
     },
     {
+      "operation_id": "model-bundles.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/model-bundles",
+      "space_required": true,
+      "description": "读取随网关交付的固定模型目录；可用不代表设备已绑定或获准执行。"
+    },
+    {
+      "operation_id": "model-bundles.get",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/model-bundles/{id}",
+      "space_required": true
+    },
+    {
       "operation_id": "model-trusts.list",
       "method": "GET",
       "path": "/api/v1/spaces/{space_id}/model-trusts",
@@ -237,7 +256,7 @@
       "idempotency_header": true,
       "original_request": true,
       "recovery_operation": "model-changes.resolve",
-      "description": "本地明确核对密钥指纹、安装签名模型、绑定设备或撤销信任。请求先落盘，未知只查原键，404不补发；applied/conflict/rejected必须分别处理。"
+      "description": "本地明确核对密钥指纹、安装签名模型、绑定安装或内置模型、撤销信任。请求先落盘，未知只查原键，404不补发；applied/conflict/rejected必须分别处理。"
     },
     {
       "operation_id": "model-changes.resolve",
@@ -327,6 +346,90 @@
       "path": "/api/v1/spaces/{space_id}/execution-operations/by-key/{id}",
       "space_required": true,
       "output_schema": "execution-change#/$defs/operation"
+    },
+    {
+      "operation_id": "media.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/media",
+      "space_required": true,
+      "output_schema": "media#/$defs/page"
+    },
+    {
+      "operation_id": "media-changes.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/media-operations",
+      "space_required": true,
+      "input_schema": "media",
+      "output_schema": "media#/$defs/operation",
+      "idempotency_required": true,
+      "original_request": true,
+      "recovery_operation": "media-changes.resolve"
+    },
+    {
+      "operation_id": "media-changes.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/media-operations/by-key/{id}",
+      "space_required": true,
+      "output_schema": "media#/$defs/operation"
+    },
+    {
+      "operation_id": "execution-plans.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/execution-plans",
+      "space_required": true,
+      "pagination": "after",
+      "local_only": true
+    },
+    {
+      "operation_id": "execution-plans.get",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/execution-plans/{id}",
+      "space_required": true,
+      "local_only": true
+    },
+    {
+      "operation_id": "execution-plan-changes.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/execution-plan-operations",
+      "space_required": true,
+      "input_schema": "execution-plan-change",
+      "recovery_operation": "execution-plan-changes.resolve",
+      "local_only": true,
+      "side_effects": "explicit_plan_start_only",
+      "requires_explicit_local_owner_approval": true
+    },
+    {
+      "operation_id": "execution-plan-changes.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/execution-plan-operations/by-key/{id}",
+      "space_required": true,
+      "local_only": true
+    },
+    {
+      "operation_id": "speech-syntheses.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/speech-syntheses",
+      "space_required": true,
+      "input_schema": "speech",
+      "output_schema": "speech#/$defs/task",
+      "idempotency_required": true,
+      "original_request": true,
+      "recovery_operation": "speech-syntheses.resolve"
+    },
+    {
+      "operation_id": "speech-syntheses.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/speech-syntheses/by-key/{id}",
+      "space_required": true,
+      "output_schema": "speech#/$defs/task"
+    },
+    {
+      "operation_id": "speech-syntheses.discard",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/speech-syntheses/by-key/{id}/discard",
+      "space_required": true,
+      "output_schema": "speech#/$defs/task",
+      "description": "耐久放弃尚未完成的本地输出；不证明提供方已经取消。响应丢失后查询原任务。"
     }
   ],
   "schemas": {
@@ -426,27 +529,1440 @@
           "maxLength": 128
         },
         "trigger": {
-          "type": "object",
-          "required": [
-            "device",
-            "event"
-          ],
-          "properties": {
-            "device": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 128
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "device",
+                "event"
+              ],
+              "properties": {
+                "device": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "event": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
             },
-            "event": {
-              "type": "string"
+            {
+              "type": "object",
+              "required": [
+                "device",
+                "property"
+              ],
+              "properties": {
+                "device": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "property": {
+                  "type": "object",
+                  "required": [
+                    "path",
+                    "unit",
+                    "edge",
+                    "threshold",
+                    "hysteresis"
+                  ],
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "unit": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "edge": {
+                      "enum": [
+                        "rising",
+                        "falling"
+                      ]
+                    },
+                    "threshold": {
+                      "type": "number"
+                    },
+                    "hysteresis": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "schedule"
+              ],
+              "properties": {
+                "schedule": {
+                  "type": "object",
+                  "required": [
+                    "time",
+                    "time_zone",
+                    "weekdays"
+                  ],
+                  "properties": {
+                    "time": {
+                      "type": "string",
+                      "minLength": 5,
+                      "maxLength": 5,
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
+                    },
+                    "time_zone": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "weekdays": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 7,
+                      "uniqueItems": true,
+                      "items": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 7
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
             }
-          },
-          "additionalProperties": false
+          ]
         },
         "conditions": {
           "type": "array",
+          "maxItems": 16,
           "items": {
-            "type": "object"
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "device",
+                  "property",
+                  "operator",
+                  "value"
+                ],
+                "properties": {
+                  "device": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "property": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 129
+                  },
+                  "operator": {
+                    "enum": [
+                      "eq",
+                      "ne",
+                      "lt",
+                      "lte",
+                      "gt",
+                      "gte"
+                    ]
+                  },
+                  "value": {
+                    "oneOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "unit": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "operator": {
+                          "enum": [
+                            "lt",
+                            "lte",
+                            "gt",
+                            "gte"
+                          ]
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "value": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "all"
+                ],
+                "properties": {
+                  "all": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 16,
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "device",
+                            "property",
+                            "operator",
+                            "value"
+                          ],
+                          "properties": {
+                            "device": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 128
+                            },
+                            "property": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 129
+                            },
+                            "operator": {
+                              "enum": [
+                                "eq",
+                                "ne",
+                                "lt",
+                                "lte",
+                                "gt",
+                                "gte"
+                              ]
+                            },
+                            "value": {
+                              "oneOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "unit": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            }
+                          },
+                          "allOf": [
+                            {
+                              "if": {
+                                "properties": {
+                                  "operator": {
+                                    "enum": [
+                                      "lt",
+                                      "lte",
+                                      "gt",
+                                      "gte"
+                                    ]
+                                  }
+                                }
+                              },
+                              "then": {
+                                "properties": {
+                                  "value": {
+                                    "type": "number"
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "all"
+                          ],
+                          "properties": {
+                            "all": {
+                              "type": "array",
+                              "minItems": 1,
+                              "maxItems": 16,
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "device",
+                                      "property",
+                                      "operator",
+                                      "value"
+                                    ],
+                                    "properties": {
+                                      "device": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 128
+                                      },
+                                      "property": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 129
+                                      },
+                                      "operator": {
+                                        "enum": [
+                                          "eq",
+                                          "ne",
+                                          "lt",
+                                          "lte",
+                                          "gt",
+                                          "gte"
+                                        ]
+                                      },
+                                      "value": {
+                                        "oneOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "boolean"
+                                          },
+                                          {
+                                            "type": "string"
+                                          }
+                                        ]
+                                      },
+                                      "unit": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 64
+                                      }
+                                    },
+                                    "allOf": [
+                                      {
+                                        "if": {
+                                          "properties": {
+                                            "operator": {
+                                              "enum": [
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "then": {
+                                          "properties": {
+                                            "value": {
+                                              "type": "number"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "all"
+                                    ],
+                                    "properties": {
+                                      "all": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 16,
+                                        "items": {
+                                          "type": "object",
+                                          "required": [
+                                            "device",
+                                            "property",
+                                            "operator",
+                                            "value"
+                                          ],
+                                          "properties": {
+                                            "device": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 128
+                                            },
+                                            "property": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 129
+                                            },
+                                            "operator": {
+                                              "enum": [
+                                                "eq",
+                                                "ne",
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            },
+                                            "value": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "boolean"
+                                                },
+                                                {
+                                                  "type": "string"
+                                                }
+                                              ]
+                                            },
+                                            "unit": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 64
+                                            }
+                                          },
+                                          "allOf": [
+                                            {
+                                              "if": {
+                                                "properties": {
+                                                  "operator": {
+                                                    "enum": [
+                                                      "lt",
+                                                      "lte",
+                                                      "gt",
+                                                      "gte"
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "then": {
+                                                "properties": {
+                                                  "value": {
+                                                    "type": "number"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "any"
+                                    ],
+                                    "properties": {
+                                      "any": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 16,
+                                        "items": {
+                                          "type": "object",
+                                          "required": [
+                                            "device",
+                                            "property",
+                                            "operator",
+                                            "value"
+                                          ],
+                                          "properties": {
+                                            "device": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 128
+                                            },
+                                            "property": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 129
+                                            },
+                                            "operator": {
+                                              "enum": [
+                                                "eq",
+                                                "ne",
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            },
+                                            "value": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "boolean"
+                                                },
+                                                {
+                                                  "type": "string"
+                                                }
+                                              ]
+                                            },
+                                            "unit": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 64
+                                            }
+                                          },
+                                          "allOf": [
+                                            {
+                                              "if": {
+                                                "properties": {
+                                                  "operator": {
+                                                    "enum": [
+                                                      "lt",
+                                                      "lte",
+                                                      "gt",
+                                                      "gte"
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "then": {
+                                                "properties": {
+                                                  "value": {
+                                                    "type": "number"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "any"
+                          ],
+                          "properties": {
+                            "any": {
+                              "type": "array",
+                              "minItems": 1,
+                              "maxItems": 16,
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "device",
+                                      "property",
+                                      "operator",
+                                      "value"
+                                    ],
+                                    "properties": {
+                                      "device": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 128
+                                      },
+                                      "property": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 129
+                                      },
+                                      "operator": {
+                                        "enum": [
+                                          "eq",
+                                          "ne",
+                                          "lt",
+                                          "lte",
+                                          "gt",
+                                          "gte"
+                                        ]
+                                      },
+                                      "value": {
+                                        "oneOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "boolean"
+                                          },
+                                          {
+                                            "type": "string"
+                                          }
+                                        ]
+                                      },
+                                      "unit": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 64
+                                      }
+                                    },
+                                    "allOf": [
+                                      {
+                                        "if": {
+                                          "properties": {
+                                            "operator": {
+                                              "enum": [
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "then": {
+                                          "properties": {
+                                            "value": {
+                                              "type": "number"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "all"
+                                    ],
+                                    "properties": {
+                                      "all": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 16,
+                                        "items": {
+                                          "type": "object",
+                                          "required": [
+                                            "device",
+                                            "property",
+                                            "operator",
+                                            "value"
+                                          ],
+                                          "properties": {
+                                            "device": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 128
+                                            },
+                                            "property": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 129
+                                            },
+                                            "operator": {
+                                              "enum": [
+                                                "eq",
+                                                "ne",
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            },
+                                            "value": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "boolean"
+                                                },
+                                                {
+                                                  "type": "string"
+                                                }
+                                              ]
+                                            },
+                                            "unit": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 64
+                                            }
+                                          },
+                                          "allOf": [
+                                            {
+                                              "if": {
+                                                "properties": {
+                                                  "operator": {
+                                                    "enum": [
+                                                      "lt",
+                                                      "lte",
+                                                      "gt",
+                                                      "gte"
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "then": {
+                                                "properties": {
+                                                  "value": {
+                                                    "type": "number"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "any"
+                                    ],
+                                    "properties": {
+                                      "any": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 16,
+                                        "items": {
+                                          "type": "object",
+                                          "required": [
+                                            "device",
+                                            "property",
+                                            "operator",
+                                            "value"
+                                          ],
+                                          "properties": {
+                                            "device": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 128
+                                            },
+                                            "property": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 129
+                                            },
+                                            "operator": {
+                                              "enum": [
+                                                "eq",
+                                                "ne",
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            },
+                                            "value": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "boolean"
+                                                },
+                                                {
+                                                  "type": "string"
+                                                }
+                                              ]
+                                            },
+                                            "unit": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 64
+                                            }
+                                          },
+                                          "allOf": [
+                                            {
+                                              "if": {
+                                                "properties": {
+                                                  "operator": {
+                                                    "enum": [
+                                                      "lt",
+                                                      "lte",
+                                                      "gt",
+                                                      "gte"
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "then": {
+                                                "properties": {
+                                                  "value": {
+                                                    "type": "number"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "any"
+                ],
+                "properties": {
+                  "any": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 16,
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "device",
+                            "property",
+                            "operator",
+                            "value"
+                          ],
+                          "properties": {
+                            "device": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 128
+                            },
+                            "property": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 129
+                            },
+                            "operator": {
+                              "enum": [
+                                "eq",
+                                "ne",
+                                "lt",
+                                "lte",
+                                "gt",
+                                "gte"
+                              ]
+                            },
+                            "value": {
+                              "oneOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "unit": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            }
+                          },
+                          "allOf": [
+                            {
+                              "if": {
+                                "properties": {
+                                  "operator": {
+                                    "enum": [
+                                      "lt",
+                                      "lte",
+                                      "gt",
+                                      "gte"
+                                    ]
+                                  }
+                                }
+                              },
+                              "then": {
+                                "properties": {
+                                  "value": {
+                                    "type": "number"
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "all"
+                          ],
+                          "properties": {
+                            "all": {
+                              "type": "array",
+                              "minItems": 1,
+                              "maxItems": 16,
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "device",
+                                      "property",
+                                      "operator",
+                                      "value"
+                                    ],
+                                    "properties": {
+                                      "device": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 128
+                                      },
+                                      "property": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 129
+                                      },
+                                      "operator": {
+                                        "enum": [
+                                          "eq",
+                                          "ne",
+                                          "lt",
+                                          "lte",
+                                          "gt",
+                                          "gte"
+                                        ]
+                                      },
+                                      "value": {
+                                        "oneOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "boolean"
+                                          },
+                                          {
+                                            "type": "string"
+                                          }
+                                        ]
+                                      },
+                                      "unit": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 64
+                                      }
+                                    },
+                                    "allOf": [
+                                      {
+                                        "if": {
+                                          "properties": {
+                                            "operator": {
+                                              "enum": [
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "then": {
+                                          "properties": {
+                                            "value": {
+                                              "type": "number"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "all"
+                                    ],
+                                    "properties": {
+                                      "all": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 16,
+                                        "items": {
+                                          "type": "object",
+                                          "required": [
+                                            "device",
+                                            "property",
+                                            "operator",
+                                            "value"
+                                          ],
+                                          "properties": {
+                                            "device": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 128
+                                            },
+                                            "property": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 129
+                                            },
+                                            "operator": {
+                                              "enum": [
+                                                "eq",
+                                                "ne",
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            },
+                                            "value": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "boolean"
+                                                },
+                                                {
+                                                  "type": "string"
+                                                }
+                                              ]
+                                            },
+                                            "unit": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 64
+                                            }
+                                          },
+                                          "allOf": [
+                                            {
+                                              "if": {
+                                                "properties": {
+                                                  "operator": {
+                                                    "enum": [
+                                                      "lt",
+                                                      "lte",
+                                                      "gt",
+                                                      "gte"
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "then": {
+                                                "properties": {
+                                                  "value": {
+                                                    "type": "number"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "any"
+                                    ],
+                                    "properties": {
+                                      "any": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 16,
+                                        "items": {
+                                          "type": "object",
+                                          "required": [
+                                            "device",
+                                            "property",
+                                            "operator",
+                                            "value"
+                                          ],
+                                          "properties": {
+                                            "device": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 128
+                                            },
+                                            "property": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 129
+                                            },
+                                            "operator": {
+                                              "enum": [
+                                                "eq",
+                                                "ne",
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            },
+                                            "value": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "boolean"
+                                                },
+                                                {
+                                                  "type": "string"
+                                                }
+                                              ]
+                                            },
+                                            "unit": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 64
+                                            }
+                                          },
+                                          "allOf": [
+                                            {
+                                              "if": {
+                                                "properties": {
+                                                  "operator": {
+                                                    "enum": [
+                                                      "lt",
+                                                      "lte",
+                                                      "gt",
+                                                      "gte"
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "then": {
+                                                "properties": {
+                                                  "value": {
+                                                    "type": "number"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "any"
+                          ],
+                          "properties": {
+                            "any": {
+                              "type": "array",
+                              "minItems": 1,
+                              "maxItems": 16,
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "device",
+                                      "property",
+                                      "operator",
+                                      "value"
+                                    ],
+                                    "properties": {
+                                      "device": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 128
+                                      },
+                                      "property": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 129
+                                      },
+                                      "operator": {
+                                        "enum": [
+                                          "eq",
+                                          "ne",
+                                          "lt",
+                                          "lte",
+                                          "gt",
+                                          "gte"
+                                        ]
+                                      },
+                                      "value": {
+                                        "oneOf": [
+                                          {
+                                            "type": "number"
+                                          },
+                                          {
+                                            "type": "boolean"
+                                          },
+                                          {
+                                            "type": "string"
+                                          }
+                                        ]
+                                      },
+                                      "unit": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 64
+                                      }
+                                    },
+                                    "allOf": [
+                                      {
+                                        "if": {
+                                          "properties": {
+                                            "operator": {
+                                              "enum": [
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        "then": {
+                                          "properties": {
+                                            "value": {
+                                              "type": "number"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "all"
+                                    ],
+                                    "properties": {
+                                      "all": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 16,
+                                        "items": {
+                                          "type": "object",
+                                          "required": [
+                                            "device",
+                                            "property",
+                                            "operator",
+                                            "value"
+                                          ],
+                                          "properties": {
+                                            "device": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 128
+                                            },
+                                            "property": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 129
+                                            },
+                                            "operator": {
+                                              "enum": [
+                                                "eq",
+                                                "ne",
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            },
+                                            "value": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "boolean"
+                                                },
+                                                {
+                                                  "type": "string"
+                                                }
+                                              ]
+                                            },
+                                            "unit": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 64
+                                            }
+                                          },
+                                          "allOf": [
+                                            {
+                                              "if": {
+                                                "properties": {
+                                                  "operator": {
+                                                    "enum": [
+                                                      "lt",
+                                                      "lte",
+                                                      "gt",
+                                                      "gte"
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "then": {
+                                                "properties": {
+                                                  "value": {
+                                                    "type": "number"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "required": [
+                                      "any"
+                                    ],
+                                    "properties": {
+                                      "any": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 16,
+                                        "items": {
+                                          "type": "object",
+                                          "required": [
+                                            "device",
+                                            "property",
+                                            "operator",
+                                            "value"
+                                          ],
+                                          "properties": {
+                                            "device": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 128
+                                            },
+                                            "property": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 129
+                                            },
+                                            "operator": {
+                                              "enum": [
+                                                "eq",
+                                                "ne",
+                                                "lt",
+                                                "lte",
+                                                "gt",
+                                                "gte"
+                                              ]
+                                            },
+                                            "value": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "number"
+                                                },
+                                                {
+                                                  "type": "boolean"
+                                                },
+                                                {
+                                                  "type": "string"
+                                                }
+                                              ]
+                                            },
+                                            "unit": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 64
+                                            }
+                                          },
+                                          "allOf": [
+                                            {
+                                              "if": {
+                                                "properties": {
+                                                  "operator": {
+                                                    "enum": [
+                                                      "lt",
+                                                      "lte",
+                                                      "gt",
+                                                      "gte"
+                                                    ]
+                                                  }
+                                                }
+                                              },
+                                              "then": {
+                                                "properties": {
+                                                  "value": {
+                                                    "type": "number"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
           }
         },
         "actions": {
@@ -454,33 +1970,66 @@
           "minItems": 1,
           "maxItems": 16,
           "items": {
-            "type": "object",
-            "required": [
-              "device",
-              "set"
-            ],
-            "properties": {
-              "device": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 128
-              },
-              "set": {
+            "oneOf": [
+              {
                 "type": "object",
                 "required": [
-                  "path",
-                  "value"
+                  "device",
+                  "set"
                 ],
                 "properties": {
-                  "path": {
-                    "type": "string"
+                  "device": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
                   },
-                  "value": {}
+                  "set": {
+                    "type": "object",
+                    "required": [
+                      "path",
+                      "value"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string"
+                      },
+                      "value": {}
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "device",
+                  "invoke"
+                ],
+                "properties": {
+                  "device": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "invoke": {
+                    "type": "object",
+                    "required": [
+                      "path",
+                      "input"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string"
+                      },
+                      "input": {}
+                    },
+                    "additionalProperties": false
+                  }
                 },
                 "additionalProperties": false
               }
-            },
-            "additionalProperties": false
+            ]
           }
         },
         "cooldown_ms": {
@@ -1012,27 +2561,1440 @@
               "maxLength": 128
             },
             "trigger": {
-              "type": "object",
-              "required": [
-                "device",
-                "event"
-              ],
-              "properties": {
-                "device": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 128
+              "oneOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "device",
+                    "event"
+                  ],
+                  "properties": {
+                    "device": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "event": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
                 },
-                "event": {
-                  "type": "string"
+                {
+                  "type": "object",
+                  "required": [
+                    "device",
+                    "property"
+                  ],
+                  "properties": {
+                    "device": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "property": {
+                      "type": "object",
+                      "required": [
+                        "path",
+                        "unit",
+                        "edge",
+                        "threshold",
+                        "hysteresis"
+                      ],
+                      "properties": {
+                        "path": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "unit": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "edge": {
+                          "enum": [
+                            "rising",
+                            "falling"
+                          ]
+                        },
+                        "threshold": {
+                          "type": "number"
+                        },
+                        "hysteresis": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "schedule"
+                  ],
+                  "properties": {
+                    "schedule": {
+                      "type": "object",
+                      "required": [
+                        "time",
+                        "time_zone",
+                        "weekdays"
+                      ],
+                      "properties": {
+                        "time": {
+                          "type": "string",
+                          "minLength": 5,
+                          "maxLength": 5,
+                          "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
+                        },
+                        "time_zone": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 128
+                        },
+                        "weekdays": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 7,
+                          "uniqueItems": true,
+                          "items": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 7
+                          }
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "additionalProperties": false
                 }
-              },
-              "additionalProperties": false
+              ]
             },
             "conditions": {
               "type": "array",
+              "maxItems": 16,
               "items": {
-                "type": "object"
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "device",
+                      "property",
+                      "operator",
+                      "value"
+                    ],
+                    "properties": {
+                      "device": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "property": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 129
+                      },
+                      "operator": {
+                        "enum": [
+                          "eq",
+                          "ne",
+                          "lt",
+                          "lte",
+                          "gt",
+                          "gte"
+                        ]
+                      },
+                      "value": {
+                        "oneOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "unit": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "if": {
+                          "properties": {
+                            "operator": {
+                              "enum": [
+                                "lt",
+                                "lte",
+                                "gt",
+                                "gte"
+                              ]
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "value": {
+                              "type": "number"
+                            }
+                          }
+                        }
+                      }
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "all"
+                    ],
+                    "properties": {
+                      "all": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 16,
+                        "items": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "device",
+                                "property",
+                                "operator",
+                                "value"
+                              ],
+                              "properties": {
+                                "device": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128
+                                },
+                                "property": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 129
+                                },
+                                "operator": {
+                                  "enum": [
+                                    "eq",
+                                    "ne",
+                                    "lt",
+                                    "lte",
+                                    "gt",
+                                    "gte"
+                                  ]
+                                },
+                                "value": {
+                                  "oneOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "string"
+                                    }
+                                  ]
+                                },
+                                "unit": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                }
+                              },
+                              "allOf": [
+                                {
+                                  "if": {
+                                    "properties": {
+                                      "operator": {
+                                        "enum": [
+                                          "lt",
+                                          "lte",
+                                          "gt",
+                                          "gte"
+                                        ]
+                                      }
+                                    }
+                                  },
+                                  "then": {
+                                    "properties": {
+                                      "value": {
+                                        "type": "number"
+                                      }
+                                    }
+                                  }
+                                }
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "all"
+                              ],
+                              "properties": {
+                                "all": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 16,
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "device",
+                                          "property",
+                                          "operator",
+                                          "value"
+                                        ],
+                                        "properties": {
+                                          "device": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 128
+                                          },
+                                          "property": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 129
+                                          },
+                                          "operator": {
+                                            "enum": [
+                                              "eq",
+                                              "ne",
+                                              "lt",
+                                              "lte",
+                                              "gt",
+                                              "gte"
+                                            ]
+                                          },
+                                          "value": {
+                                            "oneOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "boolean"
+                                              },
+                                              {
+                                                "type": "string"
+                                              }
+                                            ]
+                                          },
+                                          "unit": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 64
+                                          }
+                                        },
+                                        "allOf": [
+                                          {
+                                            "if": {
+                                              "properties": {
+                                                "operator": {
+                                                  "enum": [
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            "then": {
+                                              "properties": {
+                                                "value": {
+                                                  "type": "number"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "all"
+                                        ],
+                                        "properties": {
+                                          "all": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "maxItems": 16,
+                                            "items": {
+                                              "type": "object",
+                                              "required": [
+                                                "device",
+                                                "property",
+                                                "operator",
+                                                "value"
+                                              ],
+                                              "properties": {
+                                                "device": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 128
+                                                },
+                                                "property": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 129
+                                                },
+                                                "operator": {
+                                                  "enum": [
+                                                    "eq",
+                                                    "ne",
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                },
+                                                "value": {
+                                                  "oneOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "boolean"
+                                                    },
+                                                    {
+                                                      "type": "string"
+                                                    }
+                                                  ]
+                                                },
+                                                "unit": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 64
+                                                }
+                                              },
+                                              "allOf": [
+                                                {
+                                                  "if": {
+                                                    "properties": {
+                                                      "operator": {
+                                                        "enum": [
+                                                          "lt",
+                                                          "lte",
+                                                          "gt",
+                                                          "gte"
+                                                        ]
+                                                      }
+                                                    }
+                                                  },
+                                                  "then": {
+                                                    "properties": {
+                                                      "value": {
+                                                        "type": "number"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "any"
+                                        ],
+                                        "properties": {
+                                          "any": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "maxItems": 16,
+                                            "items": {
+                                              "type": "object",
+                                              "required": [
+                                                "device",
+                                                "property",
+                                                "operator",
+                                                "value"
+                                              ],
+                                              "properties": {
+                                                "device": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 128
+                                                },
+                                                "property": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 129
+                                                },
+                                                "operator": {
+                                                  "enum": [
+                                                    "eq",
+                                                    "ne",
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                },
+                                                "value": {
+                                                  "oneOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "boolean"
+                                                    },
+                                                    {
+                                                      "type": "string"
+                                                    }
+                                                  ]
+                                                },
+                                                "unit": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 64
+                                                }
+                                              },
+                                              "allOf": [
+                                                {
+                                                  "if": {
+                                                    "properties": {
+                                                      "operator": {
+                                                        "enum": [
+                                                          "lt",
+                                                          "lte",
+                                                          "gt",
+                                                          "gte"
+                                                        ]
+                                                      }
+                                                    }
+                                                  },
+                                                  "then": {
+                                                    "properties": {
+                                                      "value": {
+                                                        "type": "number"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "any"
+                              ],
+                              "properties": {
+                                "any": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 16,
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "device",
+                                          "property",
+                                          "operator",
+                                          "value"
+                                        ],
+                                        "properties": {
+                                          "device": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 128
+                                          },
+                                          "property": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 129
+                                          },
+                                          "operator": {
+                                            "enum": [
+                                              "eq",
+                                              "ne",
+                                              "lt",
+                                              "lte",
+                                              "gt",
+                                              "gte"
+                                            ]
+                                          },
+                                          "value": {
+                                            "oneOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "boolean"
+                                              },
+                                              {
+                                                "type": "string"
+                                              }
+                                            ]
+                                          },
+                                          "unit": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 64
+                                          }
+                                        },
+                                        "allOf": [
+                                          {
+                                            "if": {
+                                              "properties": {
+                                                "operator": {
+                                                  "enum": [
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            "then": {
+                                              "properties": {
+                                                "value": {
+                                                  "type": "number"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "all"
+                                        ],
+                                        "properties": {
+                                          "all": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "maxItems": 16,
+                                            "items": {
+                                              "type": "object",
+                                              "required": [
+                                                "device",
+                                                "property",
+                                                "operator",
+                                                "value"
+                                              ],
+                                              "properties": {
+                                                "device": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 128
+                                                },
+                                                "property": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 129
+                                                },
+                                                "operator": {
+                                                  "enum": [
+                                                    "eq",
+                                                    "ne",
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                },
+                                                "value": {
+                                                  "oneOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "boolean"
+                                                    },
+                                                    {
+                                                      "type": "string"
+                                                    }
+                                                  ]
+                                                },
+                                                "unit": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 64
+                                                }
+                                              },
+                                              "allOf": [
+                                                {
+                                                  "if": {
+                                                    "properties": {
+                                                      "operator": {
+                                                        "enum": [
+                                                          "lt",
+                                                          "lte",
+                                                          "gt",
+                                                          "gte"
+                                                        ]
+                                                      }
+                                                    }
+                                                  },
+                                                  "then": {
+                                                    "properties": {
+                                                      "value": {
+                                                        "type": "number"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "any"
+                                        ],
+                                        "properties": {
+                                          "any": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "maxItems": 16,
+                                            "items": {
+                                              "type": "object",
+                                              "required": [
+                                                "device",
+                                                "property",
+                                                "operator",
+                                                "value"
+                                              ],
+                                              "properties": {
+                                                "device": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 128
+                                                },
+                                                "property": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 129
+                                                },
+                                                "operator": {
+                                                  "enum": [
+                                                    "eq",
+                                                    "ne",
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                },
+                                                "value": {
+                                                  "oneOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "boolean"
+                                                    },
+                                                    {
+                                                      "type": "string"
+                                                    }
+                                                  ]
+                                                },
+                                                "unit": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 64
+                                                }
+                                              },
+                                              "allOf": [
+                                                {
+                                                  "if": {
+                                                    "properties": {
+                                                      "operator": {
+                                                        "enum": [
+                                                          "lt",
+                                                          "lte",
+                                                          "gt",
+                                                          "gte"
+                                                        ]
+                                                      }
+                                                    }
+                                                  },
+                                                  "then": {
+                                                    "properties": {
+                                                      "value": {
+                                                        "type": "number"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "any"
+                    ],
+                    "properties": {
+                      "any": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 16,
+                        "items": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "required": [
+                                "device",
+                                "property",
+                                "operator",
+                                "value"
+                              ],
+                              "properties": {
+                                "device": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 128
+                                },
+                                "property": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 129
+                                },
+                                "operator": {
+                                  "enum": [
+                                    "eq",
+                                    "ne",
+                                    "lt",
+                                    "lte",
+                                    "gt",
+                                    "gte"
+                                  ]
+                                },
+                                "value": {
+                                  "oneOf": [
+                                    {
+                                      "type": "number"
+                                    },
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "string"
+                                    }
+                                  ]
+                                },
+                                "unit": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                }
+                              },
+                              "allOf": [
+                                {
+                                  "if": {
+                                    "properties": {
+                                      "operator": {
+                                        "enum": [
+                                          "lt",
+                                          "lte",
+                                          "gt",
+                                          "gte"
+                                        ]
+                                      }
+                                    }
+                                  },
+                                  "then": {
+                                    "properties": {
+                                      "value": {
+                                        "type": "number"
+                                      }
+                                    }
+                                  }
+                                }
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "all"
+                              ],
+                              "properties": {
+                                "all": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 16,
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "device",
+                                          "property",
+                                          "operator",
+                                          "value"
+                                        ],
+                                        "properties": {
+                                          "device": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 128
+                                          },
+                                          "property": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 129
+                                          },
+                                          "operator": {
+                                            "enum": [
+                                              "eq",
+                                              "ne",
+                                              "lt",
+                                              "lte",
+                                              "gt",
+                                              "gte"
+                                            ]
+                                          },
+                                          "value": {
+                                            "oneOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "boolean"
+                                              },
+                                              {
+                                                "type": "string"
+                                              }
+                                            ]
+                                          },
+                                          "unit": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 64
+                                          }
+                                        },
+                                        "allOf": [
+                                          {
+                                            "if": {
+                                              "properties": {
+                                                "operator": {
+                                                  "enum": [
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            "then": {
+                                              "properties": {
+                                                "value": {
+                                                  "type": "number"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "all"
+                                        ],
+                                        "properties": {
+                                          "all": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "maxItems": 16,
+                                            "items": {
+                                              "type": "object",
+                                              "required": [
+                                                "device",
+                                                "property",
+                                                "operator",
+                                                "value"
+                                              ],
+                                              "properties": {
+                                                "device": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 128
+                                                },
+                                                "property": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 129
+                                                },
+                                                "operator": {
+                                                  "enum": [
+                                                    "eq",
+                                                    "ne",
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                },
+                                                "value": {
+                                                  "oneOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "boolean"
+                                                    },
+                                                    {
+                                                      "type": "string"
+                                                    }
+                                                  ]
+                                                },
+                                                "unit": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 64
+                                                }
+                                              },
+                                              "allOf": [
+                                                {
+                                                  "if": {
+                                                    "properties": {
+                                                      "operator": {
+                                                        "enum": [
+                                                          "lt",
+                                                          "lte",
+                                                          "gt",
+                                                          "gte"
+                                                        ]
+                                                      }
+                                                    }
+                                                  },
+                                                  "then": {
+                                                    "properties": {
+                                                      "value": {
+                                                        "type": "number"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "any"
+                                        ],
+                                        "properties": {
+                                          "any": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "maxItems": 16,
+                                            "items": {
+                                              "type": "object",
+                                              "required": [
+                                                "device",
+                                                "property",
+                                                "operator",
+                                                "value"
+                                              ],
+                                              "properties": {
+                                                "device": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 128
+                                                },
+                                                "property": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 129
+                                                },
+                                                "operator": {
+                                                  "enum": [
+                                                    "eq",
+                                                    "ne",
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                },
+                                                "value": {
+                                                  "oneOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "boolean"
+                                                    },
+                                                    {
+                                                      "type": "string"
+                                                    }
+                                                  ]
+                                                },
+                                                "unit": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 64
+                                                }
+                                              },
+                                              "allOf": [
+                                                {
+                                                  "if": {
+                                                    "properties": {
+                                                      "operator": {
+                                                        "enum": [
+                                                          "lt",
+                                                          "lte",
+                                                          "gt",
+                                                          "gte"
+                                                        ]
+                                                      }
+                                                    }
+                                                  },
+                                                  "then": {
+                                                    "properties": {
+                                                      "value": {
+                                                        "type": "number"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "any"
+                              ],
+                              "properties": {
+                                "any": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 16,
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "device",
+                                          "property",
+                                          "operator",
+                                          "value"
+                                        ],
+                                        "properties": {
+                                          "device": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 128
+                                          },
+                                          "property": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 129
+                                          },
+                                          "operator": {
+                                            "enum": [
+                                              "eq",
+                                              "ne",
+                                              "lt",
+                                              "lte",
+                                              "gt",
+                                              "gte"
+                                            ]
+                                          },
+                                          "value": {
+                                            "oneOf": [
+                                              {
+                                                "type": "number"
+                                              },
+                                              {
+                                                "type": "boolean"
+                                              },
+                                              {
+                                                "type": "string"
+                                              }
+                                            ]
+                                          },
+                                          "unit": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 64
+                                          }
+                                        },
+                                        "allOf": [
+                                          {
+                                            "if": {
+                                              "properties": {
+                                                "operator": {
+                                                  "enum": [
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            "then": {
+                                              "properties": {
+                                                "value": {
+                                                  "type": "number"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "all"
+                                        ],
+                                        "properties": {
+                                          "all": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "maxItems": 16,
+                                            "items": {
+                                              "type": "object",
+                                              "required": [
+                                                "device",
+                                                "property",
+                                                "operator",
+                                                "value"
+                                              ],
+                                              "properties": {
+                                                "device": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 128
+                                                },
+                                                "property": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 129
+                                                },
+                                                "operator": {
+                                                  "enum": [
+                                                    "eq",
+                                                    "ne",
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                },
+                                                "value": {
+                                                  "oneOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "boolean"
+                                                    },
+                                                    {
+                                                      "type": "string"
+                                                    }
+                                                  ]
+                                                },
+                                                "unit": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 64
+                                                }
+                                              },
+                                              "allOf": [
+                                                {
+                                                  "if": {
+                                                    "properties": {
+                                                      "operator": {
+                                                        "enum": [
+                                                          "lt",
+                                                          "lte",
+                                                          "gt",
+                                                          "gte"
+                                                        ]
+                                                      }
+                                                    }
+                                                  },
+                                                  "then": {
+                                                    "properties": {
+                                                      "value": {
+                                                        "type": "number"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "any"
+                                        ],
+                                        "properties": {
+                                          "any": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "maxItems": 16,
+                                            "items": {
+                                              "type": "object",
+                                              "required": [
+                                                "device",
+                                                "property",
+                                                "operator",
+                                                "value"
+                                              ],
+                                              "properties": {
+                                                "device": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 128
+                                                },
+                                                "property": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 129
+                                                },
+                                                "operator": {
+                                                  "enum": [
+                                                    "eq",
+                                                    "ne",
+                                                    "lt",
+                                                    "lte",
+                                                    "gt",
+                                                    "gte"
+                                                  ]
+                                                },
+                                                "value": {
+                                                  "oneOf": [
+                                                    {
+                                                      "type": "number"
+                                                    },
+                                                    {
+                                                      "type": "boolean"
+                                                    },
+                                                    {
+                                                      "type": "string"
+                                                    }
+                                                  ]
+                                                },
+                                                "unit": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 64
+                                                }
+                                              },
+                                              "allOf": [
+                                                {
+                                                  "if": {
+                                                    "properties": {
+                                                      "operator": {
+                                                        "enum": [
+                                                          "lt",
+                                                          "lte",
+                                                          "gt",
+                                                          "gte"
+                                                        ]
+                                                      }
+                                                    }
+                                                  },
+                                                  "then": {
+                                                    "properties": {
+                                                      "value": {
+                                                        "type": "number"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          }
+                                        },
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
               }
             },
             "actions": {
@@ -1040,33 +4002,66 @@
               "minItems": 1,
               "maxItems": 16,
               "items": {
-                "type": "object",
-                "required": [
-                  "device",
-                  "set"
-                ],
-                "properties": {
-                  "device": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 128
-                  },
-                  "set": {
+                "oneOf": [
+                  {
                     "type": "object",
                     "required": [
-                      "path",
-                      "value"
+                      "device",
+                      "set"
                     ],
                     "properties": {
-                      "path": {
-                        "type": "string"
+                      "device": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
                       },
-                      "value": {}
+                      "set": {
+                        "type": "object",
+                        "required": [
+                          "path",
+                          "value"
+                        ],
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "value": {}
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "device",
+                      "invoke"
+                    ],
+                    "properties": {
+                      "device": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "invoke": {
+                        "type": "object",
+                        "required": [
+                          "path",
+                          "input"
+                        ],
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "input": {}
+                        },
+                        "additionalProperties": false
+                      }
                     },
                     "additionalProperties": false
                   }
-                },
-                "additionalProperties": false
+                ]
               }
             },
             "cooldown_ms": {
@@ -1078,28 +4073,112 @@
           "additionalProperties": false
         },
         "event": {
-          "type": "object",
-          "required": [
-            "device_id",
-            "path",
-            "historical",
-            "data"
-          ],
-          "properties": {
-            "device_id": {
-              "type": "string"
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "device_id",
+                "path",
+                "historical",
+                "data"
+              ],
+              "properties": {
+                "device_id": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "historical": {
+                  "type": "boolean"
+                },
+                "data": {
+                  "type": "object"
+                }
+              },
+              "additionalProperties": false
             },
-            "path": {
-              "type": "string"
-            },
-            "historical": {
-              "type": "boolean"
-            },
-            "data": {
-              "type": "object"
+            {
+              "type": "object",
+              "required": [
+                "device_id",
+                "path",
+                "historical",
+                "previous",
+                "current"
+              ],
+              "properties": {
+                "device_id": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "historical": {
+                  "type": "boolean"
+                },
+                "previous": {
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "observed_at",
+                    "quality",
+                    "source"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "observed_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "quality": {
+                      "enum": [
+                        "confirmed",
+                        "estimated",
+                        "unknown"
+                      ]
+                    },
+                    "source": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "current": {
+                  "type": "object",
+                  "required": [
+                    "value",
+                    "observed_at",
+                    "quality",
+                    "source"
+                  ],
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "observed_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "quality": {
+                      "enum": [
+                        "confirmed",
+                        "estimated",
+                        "unknown"
+                      ]
+                    },
+                    "source": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
             }
-          },
-          "additionalProperties": false
+          ]
         }
       },
       "additionalProperties": false
@@ -1310,6 +4389,52 @@
                   "type": "null"
                 }
               ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "device_id",
+            "bundle_id",
+            "expected_model_revision",
+            "expected_binding_revision"
+          ],
+          "properties": {
+            "type": {
+              "const": "devices.bind-bundle"
+            },
+            "device_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+            },
+            "expected_model_revision": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^sha256:[a-f0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "expected_binding_revision": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "bundle_id": {
+              "type": "string",
+              "pattern": "^bundle-[a-f0-9]{64}$"
             }
           }
         }
@@ -3420,6 +6545,1260 @@
         }
       },
       "$ref": "#/$defs/change"
+    },
+    "media": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://limeiot.run/contracts/media.schema.json",
+      "title": "Local bounded PCM audio changes and receipts",
+      "$comment": "Schema只校验结构；运行时另核对WAV完整性、容量、绑定、权限、期限和耐久结果。operation是历史决定，不能用来判断当前授权。",
+      "$defs": {
+        "identifier": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "audio": {
+          "type": "object",
+          "properties": {
+            "sample_rate": {
+              "type": "integer",
+              "minimum": 8000,
+              "maximum": 48000
+            },
+            "channels": {
+              "enum": [
+                1,
+                2
+              ]
+            },
+            "bits_per_sample": {
+              "const": 16
+            },
+            "frames": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2880000
+            }
+          },
+          "required": [
+            "sample_rate",
+            "channels",
+            "bits_per_sample",
+            "frames"
+          ],
+          "additionalProperties": false
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "media_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "space_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "content_type": {
+              "const": "audio/wav"
+            },
+            "purpose": {
+              "const": "device_playback"
+            },
+            "actor": {
+              "const": "local_owner"
+            },
+            "byte_length": {
+              "type": "integer",
+              "minimum": 46,
+              "maximum": 4194304
+            },
+            "content_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "audio": {
+              "$ref": "#/$defs/audio"
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            }
+          },
+          "required": [
+            "media_id",
+            "space_id",
+            "content_type",
+            "purpose",
+            "actor",
+            "byte_length",
+            "content_digest",
+            "audio",
+            "created_at",
+            "expires_at"
+          ],
+          "additionalProperties": false
+        },
+        "upload": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "media.upload"
+            },
+            "content_base64": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 5592408,
+              "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+            },
+            "retain_seconds": {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 86400
+            }
+          },
+          "required": [
+            "type",
+            "content_base64",
+            "retain_seconds"
+          ],
+          "additionalProperties": false
+        },
+        "delete": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "media.delete"
+            },
+            "media_id": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "type",
+            "media_id"
+          ],
+          "additionalProperties": false
+        },
+        "grant": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "media.grant"
+            },
+            "media_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "device_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "expected_binding_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "valid_for_seconds": {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 600
+            }
+          },
+          "required": [
+            "type",
+            "media_id",
+            "device_id",
+            "expected_binding_revision",
+            "valid_for_seconds"
+          ],
+          "additionalProperties": false
+        },
+        "revoke": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "media.revoke"
+            },
+            "grant_id": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "type",
+            "grant_id"
+          ],
+          "additionalProperties": false
+        },
+        "change": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/upload"
+            },
+            {
+              "$ref": "#/$defs/delete"
+            },
+            {
+              "$ref": "#/$defs/grant"
+            },
+            {
+              "$ref": "#/$defs/revoke"
+            }
+          ]
+        },
+        "uploaded": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "uploaded"
+            },
+            "media": {
+              "$ref": "#/$defs/metadata"
+            }
+          },
+          "required": [
+            "type",
+            "media"
+          ],
+          "additionalProperties": false
+        },
+        "deleted": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "deleted"
+            },
+            "media_id": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "type",
+            "media_id"
+          ],
+          "additionalProperties": false
+        },
+        "granted": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "granted"
+            },
+            "grant_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "media_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "device_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "binding_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "issued_in_process": {
+              "type": "boolean",
+              "description": "只表示回执由当前进程签发；撤销或过期后也可为true。当前状态须查询media列表。"
+            }
+          },
+          "required": [
+            "type",
+            "grant_id",
+            "media_id",
+            "device_id",
+            "binding_revision",
+            "created_at",
+            "expires_at",
+            "issued_in_process"
+          ],
+          "additionalProperties": false
+        },
+        "revoked": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "revoked"
+            },
+            "grant_id": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "type",
+            "grant_id"
+          ],
+          "additionalProperties": false
+        },
+        "operation": {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "idempotency_key": {
+              "$ref": "#/$defs/identifier"
+            },
+            "request_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "kind": {
+              "enum": [
+                "media.upload",
+                "media.delete",
+                "media.grant",
+                "media.revoke"
+              ]
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            },
+            "result": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/uploaded"
+                },
+                {
+                  "$ref": "#/$defs/deleted"
+                },
+                {
+                  "$ref": "#/$defs/granted"
+                },
+                {
+                  "$ref": "#/$defs/revoked"
+                }
+              ]
+            },
+            "space_id": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "operation_id",
+            "idempotency_key",
+            "request_digest",
+            "kind",
+            "created_at",
+            "result",
+            "space_id"
+          ],
+          "additionalProperties": false
+        },
+        "pull": {
+          "type": "object",
+          "properties": {
+            "prepared_at": {
+              "$ref": "#/$defs/time"
+            },
+            "method": {
+              "enum": [
+                "GET",
+                "HEAD"
+              ]
+            },
+            "range_start": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4194303
+            },
+            "range_end": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4194303
+            },
+            "status": {
+              "enum": [
+                200,
+                206
+              ]
+            }
+          },
+          "required": [
+            "prepared_at",
+            "method",
+            "range_start",
+            "range_end",
+            "status"
+          ],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "$ref": "#/$defs/metadata"
+            },
+            "available": {
+              "type": "boolean"
+            },
+            "deleted_at": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "metadata",
+            "available",
+            "deleted_at"
+          ],
+          "additionalProperties": false
+        },
+        "authorization": {
+          "type": "object",
+          "properties": {
+            "grant_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "media_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "device_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "binding_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "active_in_process": {
+              "type": "boolean"
+            },
+            "binding_current": {
+              "type": "boolean"
+            },
+            "revoked_at": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "pulls": {
+              "type": "array",
+              "maxItems": 16,
+              "items": {
+                "$ref": "#/$defs/pull"
+              }
+            }
+          },
+          "required": [
+            "grant_id",
+            "media_id",
+            "device_id",
+            "binding_revision",
+            "created_at",
+            "expires_at",
+            "active_in_process",
+            "binding_current",
+            "revoked_at",
+            "pulls"
+          ],
+          "additionalProperties": false
+        },
+        "page": {
+          "type": "object",
+          "properties": {
+            "configured": {
+              "type": "boolean"
+            },
+            "items": {
+              "type": "array",
+              "maxItems": 256,
+              "items": {
+                "$ref": "#/$defs/object"
+              }
+            },
+            "grants": {
+              "type": "array",
+              "maxItems": 512,
+              "items": {
+                "$ref": "#/$defs/authorization"
+              }
+            },
+            "next_cursor": {
+              "type": "null"
+            },
+            "space_id": {
+              "$ref": "#/$defs/identifier"
+            }
+          },
+          "required": [
+            "configured",
+            "items",
+            "grants",
+            "next_cursor",
+            "space_id"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "$ref": "#/$defs/change"
+    },
+    "execution-plan-change": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "LimeIoT bounded execution plans",
+      "$ref": "#/$defs/change",
+      "$defs": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "nullable_time": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nullable_string": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,63}\\.[a-z][a-z0-9_-]{0,63}$"
+        },
+        "device_operation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "path",
+            "value"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "property.set",
+                "action.invoke"
+              ]
+            },
+            "path": {
+              "$ref": "#/$defs/path"
+            },
+            "value": {}
+          }
+        },
+        "completion": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "const": "command"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "path",
+                "timeout_ms"
+              ],
+              "properties": {
+                "type": {
+                  "const": "event"
+                },
+                "path": {
+                  "$ref": "#/$defs/path"
+                },
+                "timeout_ms": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 900000
+                }
+              }
+            }
+          ]
+        },
+        "step": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "step_id",
+            "device_id",
+            "model_revision",
+            "operation",
+            "command_timeout_ms",
+            "completion"
+          ],
+          "properties": {
+            "step_id": {
+              "$ref": "#/$defs/id"
+            },
+            "device_id": {
+              "$ref": "#/$defs/id"
+            },
+            "model_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "operation": {
+              "$ref": "#/$defs/device_operation"
+            },
+            "command_timeout_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "completion": {
+              "$ref": "#/$defs/completion"
+            }
+          }
+        },
+        "stage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "steps"
+          ],
+          "properties": {
+            "steps": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": {
+                "$ref": "#/$defs/step"
+              }
+            }
+          }
+        },
+        "create": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "plan_id",
+            "generation",
+            "stages",
+            "expires_at"
+          ],
+          "properties": {
+            "type": {
+              "const": "plans.create"
+            },
+            "plan_id": {
+              "$ref": "#/$defs/id"
+            },
+            "generation": {
+              "$ref": "#/$defs/id"
+            },
+            "stages": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 16,
+              "items": {
+                "$ref": "#/$defs/stage"
+              }
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            }
+          }
+        },
+        "start": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "plan_id",
+            "expected_revision"
+          ],
+          "properties": {
+            "type": {
+              "const": "plans.start"
+            },
+            "plan_id": {
+              "$ref": "#/$defs/id"
+            },
+            "expected_revision": {
+              "$ref": "#/$defs/digest"
+            }
+          }
+        },
+        "cancel": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "plan_id",
+            "expected_revision"
+          ],
+          "properties": {
+            "type": {
+              "const": "plans.cancel"
+            },
+            "plan_id": {
+              "$ref": "#/$defs/id"
+            },
+            "expected_revision": {
+              "$ref": "#/$defs/digest"
+            }
+          }
+        },
+        "release": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "plan_id",
+            "expected_revision"
+          ],
+          "properties": {
+            "type": {
+              "const": "plans.release"
+            },
+            "plan_id": {
+              "$ref": "#/$defs/id"
+            },
+            "expected_revision": {
+              "$ref": "#/$defs/digest"
+            }
+          }
+        },
+        "change": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/create"
+            },
+            {
+              "$ref": "#/$defs/start"
+            },
+            {
+              "$ref": "#/$defs/cancel"
+            },
+            {
+              "$ref": "#/$defs/release"
+            }
+          ]
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "space_id",
+            "idempotency_key",
+            "change"
+          ],
+          "properties": {
+            "space_id": {
+              "$ref": "#/$defs/id"
+            },
+            "idempotency_key": {
+              "$ref": "#/$defs/id"
+            },
+            "change": {
+              "$ref": "#/$defs/change"
+            }
+          }
+        },
+        "binding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "device_id",
+            "model_revision",
+            "boot_id",
+            "session_id"
+          ],
+          "properties": {
+            "device_id": {
+              "$ref": "#/$defs/id"
+            },
+            "model_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "boot_id": {
+              "$ref": "#/$defs/id"
+            },
+            "session_id": {
+              "$ref": "#/$defs/id"
+            }
+          }
+        },
+        "device_event": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "device_id",
+            "model_revision",
+            "boot_id",
+            "session_id",
+            "message_id",
+            "seq",
+            "event_id",
+            "path",
+            "occurred_at",
+            "received_at",
+            "body_digest",
+            "data"
+          ],
+          "properties": {
+            "device_id": {
+              "$ref": "#/$defs/id"
+            },
+            "model_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "boot_id": {
+              "$ref": "#/$defs/id"
+            },
+            "session_id": {
+              "$ref": "#/$defs/id"
+            },
+            "message_id": {
+              "$ref": "#/$defs/id"
+            },
+            "seq": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "event_id": {
+              "$ref": "#/$defs/id"
+            },
+            "path": {
+              "$ref": "#/$defs/path"
+            },
+            "occurred_at": {
+              "$ref": "#/$defs/time"
+            },
+            "received_at": {
+              "$ref": "#/$defs/time"
+            },
+            "body_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "data": {}
+          }
+        },
+        "child": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "stage_index",
+            "step_id",
+            "command_id",
+            "event_deadline",
+            "event"
+          ],
+          "properties": {
+            "stage_index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "step_id": {
+              "$ref": "#/$defs/id"
+            },
+            "command_id": {
+              "$ref": "#/$defs/id"
+            },
+            "event_deadline": {
+              "$ref": "#/$defs/nullable_time"
+            },
+            "event": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/device_event"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "plan": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "plan_id",
+            "generation",
+            "revision",
+            "definition_digest",
+            "stages",
+            "bindings",
+            "expires_at",
+            "created_at",
+            "started_at",
+            "ended_at",
+            "status",
+            "reason",
+            "current_stage",
+            "children",
+            "physical_stop",
+            "released"
+          ],
+          "properties": {
+            "plan_id": {
+              "$ref": "#/$defs/id"
+            },
+            "generation": {
+              "$ref": "#/$defs/id"
+            },
+            "revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "definition_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "stages": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 16,
+              "items": {
+                "$ref": "#/$defs/stage"
+              }
+            },
+            "bindings": {
+              "type": "object",
+              "minProperties": 1,
+              "maxProperties": 8,
+              "propertyNames": {
+                "$ref": "#/$defs/id"
+              },
+              "additionalProperties": {
+                "$ref": "#/$defs/binding"
+              }
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            },
+            "started_at": {
+              "$ref": "#/$defs/nullable_time"
+            },
+            "ended_at": {
+              "$ref": "#/$defs/nullable_time"
+            },
+            "status": {
+              "enum": [
+                "draft",
+                "running",
+                "completed",
+                "failed",
+                "partial",
+                "cancelled",
+                "unknown"
+              ]
+            },
+            "reason": {
+              "$ref": "#/$defs/nullable_string"
+            },
+            "current_stage": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 16
+            },
+            "children": {
+              "type": "array",
+              "maxItems": 16,
+              "items": {
+                "$ref": "#/$defs/child"
+              }
+            },
+            "physical_stop": {
+              "enum": [
+                "not_requested",
+                "unknown"
+              ]
+            },
+            "released": {
+              "type": "boolean"
+            }
+          }
+        },
+        "resource": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id",
+            "revision"
+          ],
+          "properties": {
+            "kind": {
+              "const": "execution_plan"
+            },
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "revision": {
+              "$ref": "#/$defs/digest"
+            }
+          }
+        },
+        "operation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operation_id",
+            "request",
+            "request_digest",
+            "status",
+            "reason",
+            "result",
+            "created_at"
+          ],
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/id"
+            },
+            "request": {
+              "$ref": "#/$defs/request"
+            },
+            "request_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "status": {
+              "enum": [
+                "applied",
+                "conflict",
+                "rejected"
+              ]
+            },
+            "reason": {
+              "$ref": "#/$defs/nullable_string"
+            },
+            "result": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/resource"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            }
+          }
+        }
+      }
+    },
+    "speech": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://limeiot.dev/contracts/speech.schema.json",
+      "title": "有界本地文字转语音",
+      "$defs": {
+        "identifier": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "voice": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,64}$"
+        },
+        "input": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "voice": {
+              "$ref": "#/$defs/voice"
+            },
+            "retain_seconds": {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 86400
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            }
+          },
+          "required": [
+            "text",
+            "voice",
+            "retain_seconds",
+            "expires_at"
+          ],
+          "additionalProperties": false
+        },
+        "deployment": {
+          "type": "object",
+          "properties": {
+            "adapter": {
+              "const": "local-http-speech-v1"
+            },
+            "revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9_:./-]+$"
+            },
+            "data_location": {
+              "const": "local"
+            }
+          },
+          "required": [
+            "adapter",
+            "revision",
+            "model",
+            "data_location"
+          ],
+          "additionalProperties": false
+        },
+        "task": {
+          "type": "object",
+          "properties": {
+            "synthesis_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "space_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "idempotency_key": {
+              "$ref": "#/$defs/identifier"
+            },
+            "request_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "input_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "input_characters": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000
+            },
+            "voice": {
+              "$ref": "#/$defs/voice"
+            },
+            "retain_seconds": {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 86400
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "deployment": {
+              "$ref": "#/$defs/deployment"
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/time"
+            },
+            "status": {
+              "enum": [
+                "running",
+                "succeeded",
+                "failed",
+                "unknown",
+                "discarded"
+              ]
+            },
+            "media_id": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/identifier"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "error_code": {
+              "oneOf": [
+                {
+                  "enum": [
+                    "speech_output_discarded",
+                    "speech_provider_unknown",
+                    "speech_deadline_exceeded",
+                    "speech_interrupted",
+                    "speech_provider_rejected",
+                    "invalid_speech_audio",
+                    "speech_output_too_large",
+                    "speech_output_unavailable",
+                    "speech_origin_not_local",
+                    "speech_provider_unavailable"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "synthesis_id",
+            "space_id",
+            "idempotency_key",
+            "request_digest",
+            "input_digest",
+            "input_characters",
+            "voice",
+            "retain_seconds",
+            "expires_at",
+            "deployment",
+            "created_at",
+            "updated_at",
+            "status",
+            "media_id",
+            "error_code"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "$ref": "#/$defs/input"
     }
   }
 }
