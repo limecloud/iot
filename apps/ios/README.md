@@ -83,6 +83,34 @@ Keychain适配器供NAS与云库复用，云记录使用独立的`limeiot.contro
 
 `npm run test:media:native`检查库；`npm run test:media:native:state`编译运行实际`MediaStore`与文件读取器，通过真实Rust/SQLite/MQTT及软件音箱检查丢回执、明确授权/播放、客户端进程和网关重启、撤销/删除与原键不复活正文。另查本地无副作用、确认失效、取消保存后零POST、离线禁写和401。恢复文件为宿主夹具，不代替Keychain、系统文件选择器或SwiftUI运行。完整Xcode/iOS SDK缺失的限制保留，实机按用户要求跳过。
 
+## 本地文字转语音库
+
+`SpeechClient(gateway:store:)`复用NAS会话，提供`capabilities`、`submit`、`records`、`resolve`和`discard`。`SpeechRequests.input`校验文本、声音、保留时间与截止时间，并将时间规范为UTC毫秒。独立`origin#speech-syntheses`最多保存128条摘要记录，每条最多8个明确放弃意图；不保存文本。首次提交和新放弃意图均先保存并回读，同键仅GET，结果未知继续阻止换键生成。响应必须匹配原摘要，部署与任务身份不得漂移，终态不得回退。
+
+根目录`npm run test:speech:native:contract`检查共享JS/Schema向量、Swift 10组与Kotlin 10项宿主行为。Swift检查也由`swift run ClientChecks`执行。保存调用取消或丢失确认后，同一客户端只接受上次观测或自己预期写入的完整字节，其他变化仍拒绝；恢复查询不会重新POST。
+
+“设置 → 音频 → 文字转语音”已接入`SpeechStore`和SwiftUI：填写文本、声音和保留时间后生成；running自动查询，unknown继续占用，放弃输出须再次确认。成功刷新媒体并选中对应编号，授权保持未勾选。进入后台、离开页面、离线或会话失效时清除文本与确认，迟到响应不更新页面；前台恢复只查原任务。
+
+`npm run test:speech:native:state`运行实际状态层、既有媒体回归及两端真实Rust/SQLite/MQTT旅程，覆盖丢回执、独立授权与软件音箱Range播放、新进程及网关重启、unknown占用和明确放弃。HTTP提供方、音箱与恢复文件为夹具；SwiftUI完成语法与工程引用检查，HomeStore类型检查独立执行，完整iOS构建、Keychain及系统界面运行仍待验收。
+
+## 本地语音识别
+
+“设置 → 音频 → 语音识别”接入 `TranscriptionStore` 与 SwiftUI。先上传音频，读取识别状态，选择音频及语言后开始。running自动查询，unknown阻止换键，放弃输出需要确认。后台、离开、断线、会话失效或期限经过后清除识别正文；返回前台只恢复任务元数据，已完成正文通过明确查询读取。
+
+`TranscriptionClient(gateway:store:)` 使用现有会话和安全存储端口；`TranscriptionRequests.input(mediaId:mediaDigest:language:expiresAt:)` 固定源录音及摘要。`origin#audio-transcriptions` 只保存原请求、去正文 `observation` 和放弃意图，最多128条；不保存识别文本，也不伪造服务器清除标记。`records` 无正文，`submit/resolve` 当次返回可带文本，网络响应必须核对UTF-8摘要、期限及不可变任务身份。
+
+根目录 `npm run test:transcription:native:contract` 检查共享向量及两端库，`npm run test:transcription:native:state` 编译实际状态层并验证真实网关恢复、源删除清文和零设备副作用。恢复文件和识别提供方为宿主夹具，SwiftUI仅检查语法及工程引用；完整iOS运行、Keychain与识别质量分别验收，实机按用户要求跳过。
+
+## 本地图片观察
+
+`VisionClient(gateway:store:)` 接入[正式视觉合同](../../contracts/vision.md)，`VisionRequests.input(bytes:contentType:prompt:retainSeconds:expiresAt:)` 构造单张PNG/JPEG请求。图片最大2 MiB，问题最多512个Unicode标量；客户端检查大小、格式标记和问题，网关完成静态图片解码及1024像素边长校验。
+
+本机 `origin#vision-observations` 只保存摘要、去正文观测与清除意图。原键重复只查询，unknown阻止换键；`discard` 可放弃未完成输出或清除成功正文，重复同一意图只GET。`records` 无正文，`submit/resolve` 当次返回可带文本，调用方须按期限及页面生命周期清除内存，不将结果用于自动控制。
+
+“设置 → 图片观察”已接SwiftUI页面与`VisionStore`，通过系统文件导入选择PNG/JPEG，后台有界读取最多2 MiB并构造请求。提交后清图片与问题；后台、离线、离开、退出或会话切换清正文，迟到响应不回填。前台刷新只恢复元数据，成功正文需明确查询；放弃和清除均需确认，取消零POST。
+
+`npm run test:vision:native:contract` 验证共享合同，`npm run test:vision:native` 验证宿主库，`npm run test:vision:native:state` 编译实际状态层并运行真实网关恢复和共享文件读取回归。SwiftUI作语法及工程装配检查，系统图片选择、Keychain与完整iOS运行另验；提供方为夹具，真实模型质量独立验收。
+
 ## 本地固件升级
 
 家庭网关“设置 → 固件升级”使用 `OtaClient`、`App/FirmwareStore.swift` 和 `App/FirmwareViews.swift`。独立填写并核对固件公钥指纹，再建立10分钟计划；读取当前完整任务后明确批准，再次读取后开始安装。unknown只查询原设备结果，不重复安装。云服务入口不提供OTA。

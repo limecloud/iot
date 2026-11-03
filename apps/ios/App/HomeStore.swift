@@ -10,6 +10,9 @@ import LimeIoTKit
     @Published private(set) var snapshot: Snapshot?
     @Published private(set) var firmware: FirmwareStore?
     @Published private(set) var media: MediaStore?
+    @Published private(set) var speech: SpeechStore?
+    @Published private(set) var transcription: TranscriptionStore?
+    @Published private(set) var vision: VisionStore?
     @Published private(set) var pending: [String: CommandIntent] = [:]
     @Published var message = ""
     @Published var draftPrompt = "" { didSet { if oldValue != draftPrompt { draftProof = nil } } }
@@ -24,7 +27,7 @@ import LimeIoTKit
     private var generation = 0
 
     func connect(token: String?, restore: Bool = false) async {
-        guard !busy, !draftBusy, firmware?.busy != true, media?.busy != true else { return }
+        guard !busy, !draftBusy, firmware?.busy != true, media?.busy != true, speech?.busy != true, transcription?.busy != true, vision?.busy != true else { return }
         busy = true; message = ""; defer { busy = false }
         do {
             let origin = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -32,6 +35,7 @@ import LimeIoTKit
             if restore { try await next.restore() } else { try await next.login(token: token ?? "") }
             firmware?.close(); firmware = nil
             media?.close(); media = nil
+            speech?.close(); speech = nil; transcription?.close(); transcription = nil; vision?.close(); vision = nil
             client = next; endpoint = origin; generation += 1
             if let data = try await vault.load(origin: origin + "#pending") { pending = try JSONDecoder().decode([String: CommandIntent].self, from: data) } else { pending = [:] }
             draftReference = try await vault.load(origin: origin + "#draft").map { try JSONDecoder().decode(DraftReference.self, from: $0) }
@@ -53,8 +57,23 @@ import LimeIoTKit
             if firmware == nil { firmware = FirmwareStore(client: OtaClient(gateway: client, store: vault), space: next.space, authFailure: { [weak self] in self?.report($0) }) }
             if media?.space != next.space { media?.close(); media = MediaStore(client: MediaClient(gateway: client, store: vault), space: next.space, authFailure: { [weak self] in self?.report($0) }) }
             media?.setOnline(true)
+            if speech?.space != next.space, let media {
+                speech?.close()
+                speech = SpeechStore(client: SpeechClient(gateway: client, store: vault), space: next.space, authFailure: { [weak self] in self?.report($0) }, onGenerated: { [weak media] id in await media?.useGenerated(id) })
+            }
+            speech?.setOnline(true)
+            if transcription?.space != next.space {
+                transcription?.close()
+                transcription = TranscriptionStore(client: TranscriptionClient(gateway: client, store: vault), media: MediaClient(gateway: client, store: vault), space: next.space, authFailure: { [weak self] in self?.report($0) })
+            }
+            transcription?.setOnline(true)
+            if vision?.space != next.space {
+                vision?.close()
+                vision = VisionStore(client: VisionClient(gateway: client, store: vault), space: next.space, authFailure: { [weak self] in self?.report($0) })
+            }
+            vision?.setOnline(true)
             if draftReference != nil && (draft == nil || draft?.status == "running") { await recoverDraft() }
-        } catch { if current == generation { if !(error is CancellationError) { online = false; media?.setOnline(false) }; report(error) } }
+        } catch { if current == generation { if !(error is CancellationError) { online = false; media?.setOnline(false); speech?.setOnline(false); transcription?.setOnline(false); vision?.setOnline(false) }; report(error) } }
     }
     private func savePending(_ next: [String: CommandIntent]) async throws {
         try await vault.save(origin: endpoint + "#pending", data: JSONEncoder().encode(next))
@@ -73,7 +92,7 @@ import LimeIoTKit
         } catch let error as GatewayError {
             if error.definitiveRejection { var next = pending; next.removeValue(forKey: device.id); try? await savePending(next); report(error) }
             else { message = "操作结果尚未确认，请查询原操作" }
-        } catch { if submitted { online = false; media?.setOnline(false); message = "操作结果尚未确认，请查询原操作" } else { message = "无法保存本地操作记录，请稍后重试" } }
+        } catch { if submitted { online = false; media?.setOnline(false); speech?.setOnline(false); transcription?.setOnline(false); vision?.setOnline(false); message = "操作结果尚未确认，请查询原操作" } else { message = "无法保存本地操作记录，请稍后重试" } }
     }
     func recover(_ device: Device) async {
         guard let client, let snapshot, let intent = pending[device.id], !busy else { return }
@@ -162,12 +181,13 @@ import LimeIoTKit
         do { try await client.stop(space: snapshot.space, deployment: deployment); await refresh() } catch { report(error) }
     }
     func logout() async {
-        guard let client, !busy, !draftBusy, firmware?.busy != true, media?.busy != true else { return }
+        guard let client, !busy, !draftBusy, firmware?.busy != true, media?.busy != true, speech?.busy != true, transcription?.busy != true, vision?.busy != true else { return }
         busy = true; defer { busy = false }
         do {
             try await client.logout(); generation += 1; self.client = nil
             firmware?.close(); firmware = nil
             media?.close(); media = nil
+            speech?.close(); speech = nil; transcription?.close(); transcription = nil; vision?.close(); vision = nil
             connected = false; online = false; snapshot = nil; pending = [:]
             draftReference = nil; draft = nil; draftPrompt = ""; draftMessage = ""; draftProof = nil
         } catch { report(error) }
@@ -176,7 +196,7 @@ import LimeIoTKit
         if error is CancellationError { return }
         if let error = error as? GatewayError {
             message = error.message
-            if error == .unauthenticated { generation += 1; firmware?.close(); firmware = nil; media?.close(); media = nil; connected = false; snapshot = nil; pending = [:]; draftReference = nil; draft = nil; draftPrompt = ""; draftProof = nil; draftMessage = "" }
-        } else { online = false; media?.setOnline(false); message = "无法连接家庭网关，请检查本地网络" }
+            if error == .unauthenticated { generation += 1; firmware?.close(); firmware = nil; media?.close(); media = nil; speech?.close(); speech = nil; transcription?.close(); transcription = nil; vision?.close(); vision = nil; connected = false; snapshot = nil; pending = [:]; draftReference = nil; draft = nil; draftPrompt = ""; draftProof = nil; draftMessage = "" }
+        } else { online = false; media?.setOnline(false); speech?.setOnline(false); transcription?.setOnline(false); vision?.setOnline(false); message = "无法连接家庭网关，请检查本地网络" }
     }
 }

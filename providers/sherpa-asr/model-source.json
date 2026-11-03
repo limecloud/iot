@@ -1,0 +1,87 @@
+{
+  "artifacts": {
+    "whisper-tiny-int8": {
+      "checked_at": "2026-11-03T06:55:12.435282+00:00",
+      "source": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-tiny.tar.bz2",
+      "archive_bytes": 116204861,
+      "archive_sha256": "c46116994e539aa165266d96b325252728429c12535eb9d8b6a2b10f129e66b1",
+      "upstream_published_digest": null,
+      "digest_scope": "SHA-256 measured from the downloaded official release; not an upstream signature",
+      "selected_files": [
+        {
+          "file": "tiny-encoder.int8.onnx",
+          "bytes": 12937772,
+          "sha256": "d24fb083ae3b1041fc24e97971d60e280c9342201fbb67b0ab428a8b4a51a434"
+        },
+        {
+          "file": "tiny-decoder.int8.onnx",
+          "bytes": 89855401,
+          "sha256": "d2fece8dd42771f1df975c6c0445770d0c292bf7547c2cae04a6c0cc57540925"
+        },
+        {
+          "file": "tiny-tokens.txt",
+          "bytes": 816730,
+          "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126"
+        }
+      ],
+      "engine": {
+        "name": "sherpa-onnx",
+        "version": "2.0.1",
+        "license": "Apache-2.0",
+        "source": "https://github.com/k2-fsa/sherpa-onnx"
+      },
+      "original_model": {
+        "name": "Whisper Tiny multilingual",
+        "license": "MIT",
+        "license_statement": "https://github.com/openai/whisper#license",
+        "notice": "WHISPER-LICENSE.txt"
+      },
+      "weights_in_repository": false,
+      "gateway_loads_model": false
+    },
+    "paraformer-small-int8": {
+      "checked_at": "2026-11-03T07:05:32.482124+00:00",
+      "source": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-paraformer-zh-small-2024-03-09.tar.bz2",
+      "archive_bytes": 77920048,
+      "archive_sha256": "da92b3db5218c5be53aad53e57d1b6e63e7fc98a0e054fbdd6dbe18e9c6b1450",
+      "upstream_published_digest": null,
+      "digest_scope": "SHA-256 measured from the downloaded official release; not an upstream signature",
+      "selected_files": [
+        {
+          "file": "model.int8.onnx",
+          "bytes": 81828675,
+          "sha256": "3ef6c19369b912f7caf3cef8e545c5ccd1a33d9d7ec792a46668dc41c4b229ec"
+        },
+        {
+          "file": "tokens.txt",
+          "bytes": 75352,
+          "sha256": "4b2d964e18b9cf139b473003b6698fb2ed9a2a5ec55b93daa677b28f578897aa"
+        }
+      ],
+      "engine": {
+        "name": "sherpa-onnx",
+        "version": "2.0.1",
+        "license": "Apache-2.0"
+      },
+      "model_license_evidence": [
+        {
+          "source": "https://modelscope.cn/api/v1/models/crazyant/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-onnx",
+          "model": "crazyant/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-onnx",
+          "license": "",
+          "license_link": "",
+          "checked_at": "2026-11-03T07:03:02.984801+00:00"
+        },
+        {
+          "source": "https://modelscope.cn/api/v1/models/damo/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-tensorflow1",
+          "model": "damo/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-tensorflow1",
+          "license": "Apache License 2.0",
+          "license_link": "",
+          "checked_at": "2026-11-03T07:03:04.283689+00:00"
+        }
+      ],
+      "converted_weights_redistribution_license_confirmed": false,
+      "weights_in_repository": false,
+      "gateway_loads_model": false
+    }
+  }
+}

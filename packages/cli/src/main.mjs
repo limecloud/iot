@@ -12,6 +12,12 @@ if(process.argv[2]==='tui') {
   await (await import('./execution-plans.mjs')).runExecutionPlans(process.argv.slice(2));
 } else if(process.argv[2]==='media'||['media.list','media-changes.create','media-changes.resolve'].includes(registryOperation)) {
   await (await import('./media.mjs')).runMedia(process.argv.slice(2));
+} else if(['speech-syntheses.create','speech-syntheses.resolve','speech-syntheses.discard'].includes(registryOperation)) {
+  await (await import('./speech.mjs')).runSpeech(process.argv.slice(2));
+} else if(['audio-transcriptions.create','audio-transcriptions.resolve','audio-transcriptions.discard'].includes(registryOperation)) {
+  await (await import('./transcription.mjs')).runTranscription(process.argv.slice(2));
+} else if(['vision-observations.create','vision-observations.resolve','vision-observations.discard'].includes(registryOperation)) {
+  await (await import('./vision.mjs')).runVision(process.argv.slice(2));
 } else if(process.argv[2]==='ota') {
   await (await import('./ota.mjs')).runOta(process.argv.slice(3));
 } else if(process.argv[2]==='model') {

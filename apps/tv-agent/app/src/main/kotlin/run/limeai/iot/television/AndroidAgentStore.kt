@@ -126,6 +126,21 @@ class AndroidAgentStore(context: Context, private val vault: EnrollmentVault = A
         return current
     }
 
+    /** 原库的一致性读取；不迁移日志、不修改授权/身份决定、不创建或删除键。 */
+    @Synchronized internal fun apkContinuity(): ApkContinuitySnapshot {
+        usable()
+        val db = helper.writableDatabase
+        db.beginTransaction()
+        try {
+            AndroidApkContinuity.verifyBounds(db)
+            val snapshot = AndroidApkContinuity.capture(db, keys, maintenance(), readIdentity(db), allowed()) { request ->
+                readRotation(db, request) ?: throw AgentStoreFault("identity_mismatch")
+            }
+            db.setTransactionSuccessful()
+            return snapshot
+        } finally { db.endTransaction() }
+    }
+
     private fun <T : DeviceIdentityMetadata> readCredentials(db: SQLiteDatabase, parse: (ByteArray) -> T): T? {
         return db.rawQuery("SELECT binding, credentials FROM agent WHERE slot=1", null).use {
             if (!it.moveToFirst()) return@use null
@@ -539,10 +554,10 @@ class AndroidAgentStore(context: Context, private val vault: EnrollmentVault = A
     @Synchronized fun allowed(): Set<String> {
         usable()
         val db = helper.writableDatabase
-        return db.rawQuery("SELECT package FROM applications ORDER BY package", null).use {
+        return db.rawQuery("SELECT package,slot FROM applications ORDER BY package", null).use {
             val packages = linkedSetOf<String>()
             while (it.moveToNext()) {
-                if (packages.size >= 128) throw AgentStoreFault("storage_corrupt")
+                if (packages.size >= 128 || it.getInt(1) != 1 || !validApplication(it.getString(0))) throw AgentStoreFault("storage_corrupt")
                 packages += it.getString(0)
             }
             packages
@@ -550,7 +565,7 @@ class AndroidAgentStore(context: Context, private val vault: EnrollmentVault = A
     }
     @Synchronized fun authorize(packageName: String, allow: Boolean) {
         usable()
-        if (packageName.length > 255 || !Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+").matches(packageName)) throw AgentStoreFault("invalid_application")
+        if (!validApplication(packageName)) throw AgentStoreFault("invalid_application")
         val db = helper.writableDatabase
         db.beginTransaction()
         try {
@@ -564,5 +579,6 @@ class AndroidAgentStore(context: Context, private val vault: EnrollmentVault = A
             db.setTransactionSuccessful()
         } finally { db.endTransaction() }
     }
+    private fun validApplication(value: String) = value.length <= 255 && Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+").matches(value)
     @Synchronized override fun close() { helper.close() }
 }

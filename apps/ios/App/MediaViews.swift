@@ -5,6 +5,8 @@ import LimeIoTKit
 struct MediaView: View {
     @ObservedObject var media: MediaStore
     let names: [String: String]
+    let speech: SpeechStore?
+    let transcription: TranscriptionStore?
     @Environment(\.scenePhase) private var scenePhase
     @State private var picker = false
     @State private var reading = false
@@ -35,6 +37,8 @@ struct MediaView: View {
             if !media.message.isEmpty { Text(media.message).font(.footnote).foregroundStyle(Palette.amber11).accessibilityIdentifier("media-message") }
             Button(media.busy ? "正在读取" : "读取音频状态") { media.refresh() }.disabled(media.busy || !media.online || reading)
             if media.page?.configured == false { Text("此网关未启用音频服务").font(.footnote).foregroundStyle(Palette.sand11) }
+            if let speech { SpeechSection(speech: speech) }
+            if let transcription { TranscriptionSection(transcription: transcription) }
             Section("上传音频") {
                 Button(reading ? "正在读取文件" : "选择 WAV 文件") { picker = true }.disabled(!media.writable || reading)
                 if !media.fileName.isEmpty { Text(media.fileName).font(.body) }
@@ -109,7 +113,8 @@ struct MediaSettingsLinks: View {
     @EnvironmentObject private var home: HomeStore
     @ObservedObject var media: MediaStore
     var body: some View {
-        NavigationLink("音频") { MediaView(media: media, names: Dictionary(uniqueKeysWithValues: (home.snapshot?.devices ?? []).map { ($0.id, home.snapshot?.name($0) ?? $0.id) })) }
-        Button("退出登录", role: .destructive) { Task { await home.logout() } }.disabled(home.busy || home.firmware?.busy == true || media.busy)
+        NavigationLink("音频") { MediaView(media: media, names: Dictionary(uniqueKeysWithValues: (home.snapshot?.devices ?? []).map { ($0.id, home.snapshot?.name($0) ?? $0.id) }), speech: home.speech, transcription: home.transcription) }
+        if let vision = home.vision { NavigationLink("图片观察") { VisionView(vision: vision) } }
+        Button("退出登录", role: .destructive) { Task { await home.logout() } }.disabled(home.busy || home.firmware?.busy == true || media.busy || home.speech?.busy == true || home.transcription?.busy == true || home.vision?.busy == true)
     }
 }

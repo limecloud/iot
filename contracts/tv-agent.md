@@ -129,3 +129,163 @@ JDK21及项目工具就绪后，在仓库根目录执行 `npm run test:tv-agent`
 后半由Node串行运行回收、已有设备跨模型换绑及JVM/假ADB组合三条旅程，分别创建临时CA、mTLS Broker、Rust网关、SQLite和独立JVM进程。编译不占连接等待期限，期限与业务断言均未放宽。核心检查、入口导出、实际网络运行和Android端上分别记结果；直接Java原回收旅程与Android宿主/调试APK/lint已复验通过，见 [24第4.17节](../docs/24-实施计划与进度.md#417-tv-agent独立jvm回收与android软件复验)。默认核心任务的网络项仍跳过；实际JVM/假ADB组合的后续软件通过结果见 [24第4.22节](../docs/24-实施计划与进度.md#422-adb身份预检合并与实际jvm组合软件验收)，不提升为本轮整套或端上通过。
 
 应用入口是文件审计夹具。软件检查分别记录真实网络、证书、耐久顺序和进程恢复，不将其提升为 Android APK、真实应用启动、Android端上共存、自动配对或实机验收。真实JVM核心与假ADB同一逻辑设备的组合旅程由tests/tv-agent-composition.test.mjs独立执行，最终结果只在24登记。
+
+## APK离线预检
+
+`tools/tv-agent-apk.py`是独立宿主工具，输出不是安装授权、OTA任务或设备更新回执。它不读取ADB、设备数据库、账户或网络。输入固定基线与候选文件、各自完整小写SHA-256（64位、不带前缀）、独立核对的签名证书SHA-256、SDK build-tools路径、目标API（23–36）及1个或多个不重复的`--device-abi`。ABI接受armeabi、armeabi-v7a、arm64-v8a、x86、x86_64、riscv64；仅验证打包目录有交集，无lib目录视为不依赖打包本机库，不证明实际依赖可运行。
+
+工具以只读且不跟随最终符号链接的方式打开源文件，复制到私有临时目录并核对整包摘要，SDK只处理该副本。aapt2读取编译AndroidManifest，apksigner对给定API执行真实签名验证，要求旧/新包均为run.limeai.iot.television、单一签名证书与固定指纹完全一致、候选版本码严格递增。复制后及检查后重新核对字节；不以文件名、签名主题或自报版本替代安装身份。v1签名警告计数会返回，固定整包摘要仍必须核对，不能仅依赖签名覆盖META-INF。
+
+此实现只接受独立基础APK；拆分/必需split类型、共享UID、versionCodeMajor、额外库/必需硬件/配置/SDK扩展及testOnly拒绝。debuggable候选默认拒绝，`--allow-debug`仅显式放行开发包。签名轮换、多签名和降级另需实现，不自动接受。每份APK上限256MiB及20,000条ZIP记录；SDK进程各自10秒及256KiB实时输出上限，失败不透传SDK或APK可控诊断文本。
+
+成功退出0，JSON为schema_version=1、status=offline_checks_passed，并包含：
+
+- target：调用者提供的api_level/abis；baseline、candidate：整包/签名摘要、包名、版本码、min_sdk/target_sdk/max_sdk、debuggable、permissions、native_abis及signature_warning_count。
+- added_permissions及debug_candidate_explicitly_allowed只描述变化，不授予Android权限。
+- installation_authorized、device_state_verified、storage_compatibility_verified固定为false。临时副本在检查结束后回收，报告不包含可执行安装句柄；未来安装器须重新暂存并核对同一摘要。
+
+拒绝退出1，返回schema_version=1、status=rejected、reason及installation_authorized=false；缺文件、SDK缺失或无法读取等系统错误统一apk_inspection_failed，不打印私有文件内容。参数解析错误沿用argparse行为。两个摘要、证书指纹和目标资料的可信来源由调用者独立核对，本工具不执行发布批准或确认设备当前状态。
+
+用法和验证见 [TV Agent说明](../apps/tv-agent/README.md#apk离线预检)；实际安装器、用户取消/中断后的原会话查询、KeyStore/SQLite及完整原日志的更新连续性仍按 [13第10.1节](../docs/13-OTA与制品交付规范.md#101-tv-agent-更新与设备记录连续性) 分阶段交付。不得将本工具的离线结果转述为实机升级、存储迁移、健康或回滚通过。
+
+## APK安装任务账本
+
+`ApkInstallJournal`是APK专用的原任务账本，`AndroidApkInstallStore`以独立私有`tv-apk-install.db`保存。后续Android系统适配层与连接启动保护见下节；产品更新界面和完整运行门禁仍未接通，不增加MQTT/HTTP更新动作、OTA kind或安装授权。离线预检、账本和系统适配层各自承担材料检查、耐久意图与平台调用，不能相加成实际升级通过。
+
+计划固定requestId、原binding（空间/设备/CA指纹）、旧/新APK摘要、同一签名证书指纹、旧/新版本码、候选长度、continuityDigest及preflightDigest；内部摘要为sha256加冒号及64位小写十六进制，区别于离线CLI的无前缀参数。候选版本严格递增，长度1–256MiB。连续性摘要必须由后续提供方读取实际身份/授权/完整日志等形成，预检摘要只引用被核对的报告，两者不是授权Token或已完成验证的证明。
+
+当前写入格式为schema_version=2、operations数组，每条包含plan、重算一致的request_digest、phase、session_id及local_health；兼容读取不含local_health的v1。严格拒绝未知字段、重复请求/会话、坏摘要/阶段/健康组合和未来版本。最多128条历史/1MiB，不自动回收原键。failed/cancelled及明确接受后的local_health_accepted释放新任务占用，旧请求再次prepare只返回原记录；异参同键拒绝。installed_unverified继续占用，仅可按[本机健康接受](#安装后本机健康核对与明确接受)核对并明确接受；本机决定不等于完整远程更新验收。
+
+| 阶段 | 本层实际语义 |
+| --- | --- |
+| prepared | 原计划已保存，未产生系统会话或授权；仅此阶段可本地取消 |
+| creating | 创建会话前的意图已耐久；失败/丢返回仍留此阶段，不重新创建 |
+| created | 原session_id已保存；系统会话与候选资料仍须提供方核对 |
+| staged | 提供方提交的同一会话读回摘要/长度与计划一致；本层不读取或写入APK |
+| committing | 系统提交前意图已耐久；返回成功或抛异常均不自动改为安装完成 |
+| pending_user | 原系统结果要求用户交互；重开/查询不再次commit或自动弹界面 |
+| installed_unverified | 原系统结果报告已安装；身份/记录、当前包及健康仍未验证 |
+| local_health_accepted | 新代码/候选整包、原记录与有效持钥经本机重验并明确接受；可手动连接，联网控制另验 |
+| failed / cancelled | 原会话系统失败/取消，或prepared的本地取消；历史保留且不重建原请求 |
+
+createSession在外部创建前先保存creating；返回的正session_id再耐久保存。返回丢失时，resolveCreation只接受由未来提供方从当前自有系统会话读取的声明，核对原request_digest、固定包名、长度与唯一会话；零匹配不能证明从未创建，多匹配拒绝，不自行创建替代会话。声明不能由导入文件或客户端伪造。API23没有SessionInfo.isSealed（API26）/isCommitted（API29），不能套用新API或用缺少会话推定可以重装。
+
+commit要求已保存staged，强制调用verifyCurrent：意图保存前及保存后、真正submit之前各核对一次。后续提供方须核对当前安装身份、材料/授权、实际暂存字节、原binding与连续性、运行停止/在途原命令及系统政策；本阶段仅定义并测试这个回调边界，没有实际资格检查实现。第二次核对失败时零submit，保留committing供独立恢复，不改回可重试阶段。systemResult仅接受原请求/会话，待提供方在非导出结果入口校验来源；相同结果只读，冲突终态拒绝，系统安装成功不提升为完整更新成功。
+
+存储接口以原完整文档字节进行原子compareAndSet。SQLite在同一事务比较旧文档、保存新文档，使用实际连接的DELETE日志/FULL同步；冲突或提交异常阻断当前核心实例。可能写入后存储异常还冻结该存储实例，必须关闭并重开读取实际耐久状态，不能用内存猜测重发。重开/快照读取无系统副作用；新库和文档版本独立于身份库v3及材料/命令日志，未知版本与损坏拒绝，不删除、重置或迁移原身份库。不承诺旧备份防回退或真实掉电恢复。
+
+原账本基础的软件结果、失败记录与冻结输入见 [24第4.53节](../docs/24-实施计划与进度.md#453-apk安装原任务账本与sqlite恢复基础)，后续系统适配层见下节。更新前的当前包核对已在下方提供方基线门禁接入；产品更新入口、实际系统确认/取消、进程跨更新、完整记录/KeyStore连续性与健康接受仍是后续门槛。
+
+## Android安装会话与私有回执适配层
+
+`AndroidApkInstaller`将原账本接到`AndroidApkSessions`，后者实际调用PackageInstaller创建/打开会话、写入、fsync、读回与commit。内部端口仅对应APK系统机制，不是通用更新插件；产品入口通过原Runtime队列/Owner接入，构造时必须提供verifyCurrent并组合停止/身份、实际材料/连续性、当前包基线和安装来源政策门禁，不能传空回调作为产品资格检查。具体产品交互和本机健康接受见后续章节，实际在途命令共存与真实更新继续独立验收。
+
+创建固定MODE_FULL_INSTALL、包名、候选长度及系统保存的`LimeIoT update <request_digest>/<candidate_bytes>`标签；API31及以上明确要求USER_ACTION_REQUIRED。创建意图提交后再核对一次资格，失败时零系统创建且保留creating。恢复只读当前UID的mySessions，再核对installerPackageName、原请求摘要、包名和规范化声明长度。API23没有getSize（API27），声明长度从原系统会话标签读取，不借助隐藏字段；API27及以上还要求系统长度一致。该元数据只识别原创建意图，不证明暂存字节，后续仍完整读回核对。
+
+stage仅接受原created会话。新写入以64KiB块检查资格及长度/摘要，fsync并关闭输出后从同一会话读回；已有文件仅在恰好一个base.apk时读回，不自动覆盖部分/错误写入、放弃或重建会话。读回长度和SHA-256必须完全一致才能保存staged。commit在账本提交意图前后分别核对资格、自有会话及完整暂存字节；第二次失败保留committing、零submit。原committing/pending_user/终态查询不产生新commit，Binder异常继续沿原任务恢复。此处的同步不承诺Flash掉电或旧备份防回退。
+
+系统结果使用显式广播PendingIntent，data固定原requestId、request_digest与session_id，API31及以上显式可变，以接收系统填充的状态；不使用一次性PendingIntent。ApkInstallResultReceiver在清单中exported=false，后台单线程接收后重开原SQLite，核对组件、action、完整路由、原摘要/会话及可选包名。未知/错配状态和冲突终态不写原记录；系统取消记录cancelled，成功仍installed_unverified。系统确认Intent不入库且不自动启动，用户交互见原安装任务一节，丢失临时确认后继续保留pending且不重提交；非导出入口及路由核对也不是独立签名的系统安装证明。
+
+AgentRuntime已增加新连接启动保护：在创建RunPermit前读取更新账本，未决/待验证任务或账本读取失败均拒绝新连接。这不停止已有连接，也不替代开始更新前的完整停止/在途命令门禁；installed_unverified继续阻止新连接与另一更新，明确本机健康接受见最后一节。提供方和接收器共用进程Owner锁，跨实例保存仍使用原字节CAS，已有身份库保持独立。
+
+宿主软件范围、API23修复与原始结果见 [24第4.54节](../docs/24-实施计划与进度.md#454-android安装会话与私有回执软件适配)。实际安装/系统确认、安装来源授权、安装后的当前包与完整身份/记录/KeyStore连续性、更新后健康和型号验收仍独立待交付，不提升第二种实际更新机制或正式OTA类别。
+
+## 当前已安装APK的基线核对
+
+`AndroidInstalledApk.verifyBaseline`只从PackageManager读取固定自身包run.limeai.iot.television，核对PackageInfo/ApplicationInfo包名、当前进程UID、独立基础包形态及完整版本码。API23–27使用GET_SIGNATURES，API28起强制GET_SIGNING_CERTIFICATES，缺少现代信息不回退；只接受唯一当前签名、无历史轮换，现代历史必须与当前证书一致。证书为有界、完整且无尾随数据的X.509 DER，其SHA-256必须与原计划同签名指纹一致。shared UID、split、非正版本及大于Int.MAX_VALUE的完整版本均拒绝，不截断高位。
+
+基础包路径只取系统sourceDir，要求绝对路径及1–256MiB普通文件，64KiB有界流式读取实际完整SHA-256，并核对通道长度、读前后路径元数据及重新读取的PackageManager事实。实际版本/摘要必须与原baseline一致；损坏、不可读、系统读取异常或变化均阻断。这依赖Android系统保护安装路径，不是文件inode锁，也不承诺抵抗root/被篡改系统；不从用户传入路径推定当前安装事实。
+
+AndroidApkInstaller默认组合该读取器：创建意图前后各核对一次，暂存前后各一次，提交意图前后各在会话读回前后核对一次。逐块verifyCurrent继续核对运行资格，不重复扫描整包。首次创建前不匹配保留prepared；创建意图后不匹配零系统创建且保留creating；暂存末尾不匹配不推进staged；提交意图后不匹配零submit且保留committing。原创建恢复、staged查询以及committing/pending_user/终态查询不触发新基线扫描或重发。
+
+该核对仅证明更新前基线，不能接受更新后的新包为健康，也不验证preflightDigest/continuityDigest的真实来源。测试可以显式注入当前包夹具；产品不能用空verifyInstalled或verifyCurrent绕过门禁。完整停止/在途原命令、产品交互、身份/完整记录/KeyStore连续性及健康仍待接入；来源授权/政策读取见下节。宿主结果见 [24第4.55节](../docs/24-实施计划与进度.md#455-当前安装包基线核对与提供方接入) 与[脱敏证据](../docs/evidence/2026-11-03-tv-apk-baseline.json)，不提升真实电视或第二种实际更新机制验收。
+
+## 安装来源授权与系统策略
+
+`AndroidApkInstallPolicy`为Android提供方的只读系统门禁。清单声明REQUEST_INSTALL_PACKAGES，读取固定自身包的GET_PERMISSIONS确认声明；声明不等于来源获准，也不等于用户确认安装。不请求系统签名权限，不使用可信来源/设备所有者或静默安装例外。
+
+API23–25按AOSP安装器读取Settings.Secure.INSTALL_NON_MARKET_APPS，缺失/关闭为待用户授权；API26起只使用PackageManager.canRequestPackageInstalls，不回退旧开关。所有版本核对UserManager.DISALLOW_INSTALL_APPS和DISALLOW_INSTALL_UNKNOWN_SOURCES；API29起另验DISALLOW_INSTALL_UNKNOWN_SOURCES_GLOBALLY。管理员限制、缺少声明、系统服务/读取异常分别阻断，不自动修改设置、AppOps、限制或权限。策略读取是当前快照，系统保留最终安装决定。
+
+AndroidApkInstaller默认组合此门禁，与原verifyCurrent在创建/暂存/提交及逐块读取、写入前、fsync前共同检查。写入中失权停止后续块，不推进staged；耐久创建意图后失权零系统创建、保留creating；耐久提交意图后失权零submit、保留committing。未知创建/提交及待用户/终态查询不以授权变化重新创建或提交。原调用方仍必须提供完整身份/预检来源/停止/在途资格检查，不能用空回调代替产品门禁。
+
+sourceAuthorizationIntent只为将来可见页面上的明确用户操作构造跳转：API26起固定MANAGE_UNKNOWN_APP_SOURCES及自身package URI，旧版使用SECURITY_SETTINGS。只返回可用、导出且有调用权限的系统应用Activity，并固定其组件；API24起额外使用MATCH_SYSTEM_ONLY，API23通过返回的应用标志核对。缺少或不可访问的系统设置页返回明确故障；已授权返回空，管理员限制不提供绕过入口。方法不启动Activity，不把设置页返回当作授权，返回后必须重新核对原任务全部门禁。
+
+来源界面尚未接到产品更新入口。实际厂商策略、系统确认、完整停止/在途、跨更新记录/KeyStore与健康仍需独立验收。AOSP Android6/7/8原始参考、5项API边界和新增11方法/19次宿主执行结果见 [24第4.56节](../docs/24-实施计划与进度.md#456-安装来源授权与系统策略门禁) 及[脱敏证据](../docs/evidence/2026-11-03-tv-apk-policy.json)；这是公开源码核对与宿主软件证据，不是小米系统逆向或实机授权结果。
+
+## 更新期间的运行Owner与停止边界
+
+AgentRuntime新增内部withApkInstallation入口，在原单线程存储队列执行同步安装操作，重开独立更新库并组合现有AndroidApkInstaller；不新增网络动作或产品更新界面。进入前及提供方的运行资格回调均要求permit和连接引用同时为空。stop仅撤销旧许可、请求连接关闭；直到原run返回并完成清理才清除permit，因此“已请求停止”不能通过更新门禁。入口不自动停止或重启连接。
+
+提供方、回执及Runtime统一使用同一ReentrantLock，固定Owner→运行锁的嵌套顺序。连接启动先保留已有运行许可的幂等返回；新启动只tryLock，不在主线程等待APK读写。Owner被其他线程占用或由当前线程重入时拒绝新连接；得到Owner后仍核对原更新账本，未决/待验证或坏账本继续拒绝。原任务查询、prepared取消或异常释放Owner都不会自动恢复连接，用户必须再次明确开始。
+
+内部操作在整个同步阶段持有Owner，原存储队列上的维护/授权操作不会与该阶段并行。独立SQLite的CAS、原请求/会话恢复和默认当前包/来源政策检查保持原语义；完成/失败结果回到主线程，异常也释放Owner。该锁只覆盖本进程中的入口，不承诺外部进程数据库写入或root对抗。
+
+可信预检现由后续文件材料入口核对原签名身份、完整报告与候选字节；原verifyMaterials回调入口保留用于宿主故障注入，不能传空回调宣称产品合格。原记录摘要由下方独立门禁强制读取和核对；运行线程退出、更新前材料/摘要与跨更新健康分别验收。实际MQTT在途原命令、安装后完整记录/AndroidKeyStore连续性和健康仍需独立核对。installed_unverified保持占用。
+
+宿主结果见 [24第4.57节](../docs/24-实施计划与进度.md#457-运行owner与更新前线程退出门禁)及[脱敏证据](../docs/evidence/2026-11-03-tv-apk-quiescence.json)。新测试使用实际Runtime线程/队列、原许可生命周期及宿主SQLite，连接端口受控且不运行MQTT；原不透明日志字节保留不能替代有效confirmed/unknown日志或完整更新验收。
+
+## 更新前原记录连续性摘要
+
+AndroidAgentStore.apkContinuity在原库单一事务内取得维护身份、原初次请求、授权、完整命令字节及全部轮换行。解密前限制原表行数与载荷；复用正式DeviceJournal恢复解析器校验confirmed/failed/unknown/JsonNull和high_watermark，只返回绑定、摘要与计数，不迁移日志、不回收记录、不导出凭据或alias。授权读取与写入复用相同包名校验并核对slot。未配置且没有原身份请求时拒绝生成绑定；prepared/creating/pending原请求可只读保留，creating缺钥不重试创建。
+
+摘要v1绑定当前SQLite版本、agent凭据密文字节、原journal精确字节（含null区别）、identity原密文、每条rotation的number/request_id/binding/原密文、完整授权及已记录引用的实际公钥/缺席状态。使用有界行摘要组成canonical文档，不以SQLite物理页摘要为存储合同；重新加密即使明文相同也改变摘要。独立APK任务库不纳入该摘要，避免计划摘要与自身阶段递归。没有新增数据库版本或表；既有helper打开/配置和受支持旧库升级仍单独适用。
+
+历史轮换解密并严格解析，核对相邻候选/前证书/公钥关系；最新身份与轮换继续使用原持钥验证。原已批准deleting/retired状态允许相应旧键缺席，retired又出现或保留键无批准却丢失则拒绝；存在键重新核对实际公钥/原CSR。原CRL、批准时刻和未知删除状态精确保留，不因当前日期重新批准历史决定、不要求已退休中间私钥复活。此层验证记录保全与当前观察状态，不重新证明每项历史管理操作或完整信任迁移。
+
+AgentRuntime.readApkContinuity在原单线程队列与APK Owner内要求旧worker完全退出，再返回实际摘要。withApkInstallation组合的生产提供方在创建、暂存前后及提交边界强制将实际绑定/摘要与原计划比较，材料回调之后再核对，变化报apk_install_continuity_changed；每64KiB仍只做轻量停止/来源/材料资格检查，不重复整库扫描。失败保留原任务/会话，未知提交查询继续只读且不重新核验或重发，没有自动连接或系统交互。
+
+宿主结果见 [24第4.58节](../docs/24-实施计划与进度.md#458-更新前原记录连续性摘要与边界核对)与[证据](../docs/evidence/2026-11-03-tv-apk-continuity.json)。这是更新前的软件门禁；后续签名材料入口已在软件层接入预检来源，产品确认/返回恢复、实际安装、安装后完整身份/授权/日志/KeyStore连续性和健康尚未交付。系统成功仍保持installed_unverified占用，正式OTA类别与通用插件准入不提升。
+
+## 签名预检材料与当前APK信任锚
+
+tools/tv-agent-apk.py保留原无安装授权的JSON输出。可选signed-output在同一轮官方SDK预检通过后，将原报告和实际候选长度封装为签名JAR；必须同时提供signing-java-home、keystore、key-alias、store-pass-env和key-pass-env，缺项/无口令/不匹配证书/已存在输出拒绝。JDK keytool只导出公开证书并核对独立给定的原APK签名指纹，jarsigner通过Keystore签名，口令只用环境变量名传递，私钥不导出。SHA256withRSA或SHA256withECDSA与SHA-256内容摘要固定选择，不使用TSA或发布/安装操作。签名包生成失败不得视作已交付，输出不覆盖原文件。
+
+签名载荷为UTF-8 preflight.json，严格字段为schema=limeiot.tv-apk-preflight、version=1、candidate_bytes和preflight。后者保持原schema_version=1离线报告，installation_authorized/device_state_verified/storage_compatibility_verified仍必须false。candidate_bytes绑定实际候选长度1–256MiB。计划沿用原preflight_digest，取完整载荷的DeviceDocument/JCS摘要；没有APK任务或身份库版本迁移。仅原JSON报告、文件名或随包提供的证书都不能作为信任来源。
+
+JAR总长最多1MiB，仅接受preflight.json、META-INF/MANIFEST.MF、META-INF/LIMEIOT.SF及一个LIMEIOT.RSA或LIMEIOT.EC签名块，可另有META-INF/目录。重复/额外条目拒绝，载荷解压最多64KiB、各元数据最多256KiB。标准JarFile开启验签并完整读完载荷后，要求恰好一个CodeSigner、1–8项证书路径，以叶证书DER指纹匹配系统当前已装自身包的原签名；随包CA链不建立额外信任。SHA-256清单和载荷摘要分别核对。过期/撤销的TLS身份不参与APK签名信任，当前APK原有的多签/轮换限制不放宽。
+
+VerifiedApkPreflight严格校验报告字段、固定包名、旧/新摘要/版本/签名、API23–36目标及ABI、权限差异和debug声明；开发候选还要求本地allowDebug明确允许。AndroidApkMaterials从PackageManager取得自身签名并扫描实际基线，重验JAR来源与候选实际整包字节；不会在电视运行SDK工具或自行实现APK密码算法。报告认证发布者的预检事实，系统安装器仍独立决定APK是否可安装，来源政策、用户批准与存储兼容不由该签名授予。
+
+AgentRuntime.prepareApkInstallation在原Owner/队列、worker完全退出后组合实际材料与原库摘要，耐久保存原计划。文件形式withApkInstallation延迟加载材料，只在实际效果资格检查时读取；轻量块检查只核对计划/目标/文件状态，安装边界重新验签和完整候选摘要，再核对原记录摘要。原始文件应保留或由用户重新选择同一材料；未知提交查询不要求文件仍存在，不重新预检、创建或提交。本机导入/私有路径及权限审阅由下节接入；原安装与系统交互见最后一节，健康接受继续独立交付。
+
+验证见 [24第4.59节](../docs/24-实施计划与进度.md#459-签名预检材料与实际候选来源接入)和[证据](../docs/evidence/2026-11-03-tv-apk-materials.json)。实际JDK/SDK验签和宿主系统事实夹具分别记录；Android6公开源码及6项SDK API边界不能替代实际Android JarVerifier/系统签名取证。未安装或连接电视，installed_unverified仍占用，正式OTA类别、第二种实际更新机制与通用插件准入不提升。
+
+## 本机更新材料导入与可见批准
+
+TelevisionActivity通过非导出的ApkUpdateActivity进入“更新材料与批准”。使用系统ACTION_OPEN_DOCUMENT选择同次发布的签名预检与APK，输入URI只在本次导入使用；显示名、外部路径、持久URI权限和系统确认Intent均不写入计划。副本保存在noBackupFilesDir/apk-imports/apk-UUID目录，固定preflight.jar/candidate.apk；目录名与规范路径严格校验，不接受穿越、符号链接或额外文件。
+
+每项先独占创建part，最多64KiB流式复制，要求非空、正读取进度、文件fd.sync、同目录重命名及目录Os.fsync；新目录和丢弃也请求父目录同步。每份报告最多1MiB、候选最多256MiB，最多128项、累计逻辑文件长度最多512MiB，part和历史副本同样计入。源读取/同步/进程中断保留原目录与part，不覆盖、自动重读URI或换任务。额度不代表设备必然有足够空间，I/O异常保留原副本供核对；这些同步调用不构成已验证的实机断电保证。
+
+未批准导入不占用安装账本。重启从私有目录列出原申请，可继续尚未选择的APK、核对完整材料或明确丢弃；已有part须明确丢弃重选，不覆盖中断写入。仅原账本从未记录的导入允许明确删除副本；即使原计划已取消，也保留其材料与历史，不自动清理或腾挪。副本目录异常会阻止新增导入，但不能隐藏原账本或妨碍取消尚未创建会话的计划。
+
+预览从当前系统APK签名取锚并完整核对材料，展示旧新版本、长度、APK摘要、签名、开发标志及新增/移除权限。开发包默认不勾选，须另行明确允许；签名报告的debug声明不能代替本机决定。批准在原Runtime队列/Owner内重新验签、核对完整候选和原审阅对象，取得当前连续性摘要，在worker完全退出且页面仍可见时仅保存PREPARED计划。预览、取消文件选择、暂不批准、后台完成及重开页面均不创建系统会话、提交安装或自动连接。
+
+已准备计划阻止新连接，可明确cancelPrepared；取消不依赖材料仍可读取，仅适用于尚未创建会话的原计划。原安装推进及来源设置/临时系统确认交互现由下节接通；实机安装与安装后完整健康仍须后续交付。开发包允许仅用于此次明确批准，后续效果仍须重验本机开发包决定及全部原门禁。installed_unverified不释放，未知提交不重新发送。
+
+宿主私有文件、实际Runtime/SQLite及平台Views/SAF返回夹具验证见[24第4.60节](../docs/24-实施计划与进度.md#460-电视更新材料持久导入与可见批准)和[证据](../docs/evidence/2026-11-03-tv-apk-imports.json)。源码页面与宿主生命周期通过不提升为Android电视交互、系统选择器、实际Android验签、安装或断电恢复验收；正式OTA类别、第二种实际更新机制与通用插件准入保持原状态。
+
+## 原安装任务与系统确认交互
+
+PREPARED/CREATED/STAGED原计划在可见页面再次审阅后，通过continueApkUpdate沿原账本创建、流式暂存/核对及单次提交。重验原审阅对象/预检摘要、完整实际候选、当前基线、来源政策、连续性和worker退出；每次onResume创建独占RunPermit，onPause永久停止该许可，旧调用不能借之后重新可见继续。开发包每次显式继续或打开系统确认仍单独允许，旧签名声明和先前批准不代授本次决定。
+
+“核对安装来源设置”只启动已解析并固定的系统设置组件；返回只刷新原记录，RESULT_OK不授予来源权限，也不自动继续。创建返回丢失保留CREATING，显式“查询原安装记录”只匹配当前自有原会话；无会话不足以证明未创建，不补建。COMMITTING/PENDING_USER/INSTALLED_UNVERIFIED/终态的继续或查询只返回原记录，缺材料也不重发，不把会话消失改成失败。
+
+非导出回执先验证原请求/摘要/会话并完成账本CAS，然后ApkInstallConfirmations最多保存一个进程内临时确认入口。仅接受系统返回的有界非空action、固定package/可选component及唯一原session extra；拒绝URI/type、selector、clipData、categories或额外载荷。再次解析为可访问、启用、导出且有系统标记的原package组件，只转交action/显式组件/原session，不转交输入flags/URI授权。损坏或不支持的Intent不撤回PENDING_USER、不覆盖已有合法入口；状态变化通知可见页面刷新，后台不弹出活动。
+
+“核对并打开原系统确认”再次完整核对签名/候选/当前连续性、来源政策和实际自有原会话；主线程最终在Owner下重验同一前台许可、原账本、来源、会话及轻量文件状态，完整核对超过5秒则拒绝本次打开。系统页面返回仅刷新，真正成功/失败/取消仍由原系统回执推进；成功继续INSTALLED_UNVERIFIED，不解除连接阻断。此5秒仅限制检查到启动的延迟，不代替效果边界或抵抗特权外部写入。
+
+确认Intent不序列化到文件/Bundle/数据库。进程重启保留原账本和私有材料，但临时入口可能丢失；此时显示原PENDING_USER及“入口不可用”，查询原任务，不重复commit或自行构造隐藏确认action。公开AOSP中createDetailsIntent指向原安装来源应用，不是系统确认恢复。原系统重复回执可再次提供入口，不能据此承诺所有厂商或跨进程确认自动恢复；不支持的厂商载荷保留待核对。
+
+宿主Runtime/SQLite、系统会话与回执夹具、Views来源设置返回及公开AOSP依据见[24第4.61节](../docs/24-实施计划与进度.md#461-原安装任务推进与系统确认交互)和[证据](../docs/evidence/2026-11-03-tv-apk-interaction.json)。软件入口接通不代表实际安装、Android系统确认/取消、跨更新完整身份/授权/命令/键连续性或健康完成；不新增健康终态、正式OTA类别或通用插件准入。
+
+## 安装后本机健康核对与明确接受
+
+仅INSTALLED_UNVERIFIED可核对并接受本机健康。AndroidInstalledApk复用原整包扫描，同时要求编译期BuildConfig.VERSION_CODE等于原候选版本，当前进程applicationInfo/sourceDir/packageCodePath与系统当前自身基础包路径一致，再验完整候选版本、长度、SHA-256及唯一签名。旧代码不能仅因PackageManager已显示新版本就宣布新包健康；不支持split/shared UID/多签与轮换的原边界继续保持。依赖系统保护安装路径，不承诺抵抗root或被篡改系统。
+
+AndroidApkHealth在原Runtime队列/Owner、worker完全退出后只读核对原连续性摘要，覆盖原身份/密文、应用授权、完整confirmed/failed/unknown/unresolved日志、序号、原轮换与清理决定及实际键状态；普通load/tls要求当前有效凭据和实际持钥解析，随后只读应用发现，再复核已装候选和原摘要。复用DeviceSigningKey.from的随机挑战核对实际私钥句柄，不新增任意签名入口，不补建/删除键、不迁移或改判原命令，不建立Socket或启动应用。应用发现成功不代表授权目标可启动或远程控制成功。
+
+页面“核对更新后状态”只展示本机检查；“接受本机健康”在同一不可复活的前台RunPermit下再次完整核对并比较本次审阅，最终重验可见/退出门禁后CAS保存LOCAL_HEALTH_ACCEPTED及有界local_health记录。预览、页面返回与生命周期不接受健康。接受只解除原更新对手动连接的阻断，不自动连接、重放命令或再次安装；联网与远程操控仍单独验收。COMMITTING/PENDING_USER不因候选版本变化或会话消失成为成功，缺原系统成功回执仍保留阻断。健康核对不依赖导入文件仍存在。
+
+APK账本BLOB schema_version=2，兼容只读v1，下一次正常CAS写v2；SQLite结构/版本仍1，身份库不变。local_health绑定原计划摘要、实际候选摘要/长度/签名、编译版本、原连续性摘要、当前设备证书指纹与有界应用发现数，只能与LOCAL_HEALTH_ACCEPTED同时存在。旧程序拒绝v2，不能降版本冒读。核对失败不写；CAS冲突或提交结果未知冻结原实例，重开只取实际耐久阶段，不能重新安装。重复原系统成功保持已接受决定，冲突失败/取消回执不能覆盖它。
+
+这是本机健康决定，不等于完整远程升级验收。源码与宿主结果见[24第4.62节](../docs/24-实施计划与进度.md#462-安装后本机健康核对与明确接受)和[证据](../docs/evidence/2026-11-03-tv-apk-health.json)。实机包替换、AndroidKeyStore跨更新与断电、厂商交互和完整控制旅程未验收；正式OTA kind仍device-firmware，第二种实际机制与通用插件准入不提升。

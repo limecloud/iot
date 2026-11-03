@@ -83,6 +83,7 @@ class TelevisionActivity : Activity() {
         start = button("开始连接") { requestStart() }
         stop = button(getString(R.string.stop)) { runtime.stop(); stopService(Intent(this, AgentService::class.java)) }
         button("刷新设备与应用") { runtime.refresh() }
+        button("更新材料与批准") { startActivity(Intent(this, ApkUpdateActivity::class.java)) }
         label("允许启动的应用", 22f)
         label("未勾选的应用不会接受远程启动。卸载、禁用或撤销后，执行前还会重新检查。")
         applications = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }.also(content::addView)

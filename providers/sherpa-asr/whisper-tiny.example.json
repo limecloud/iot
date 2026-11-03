@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "model_id": "whisper-tiny-int8",
+  "engine": "whisper-tiny-int8",
+  "threads": 2,
+  "files": {
+    "tiny-encoder.int8.onnx": "d24fb083ae3b1041fc24e97971d60e280c9342201fbb67b0ab428a8b4a51a434",
+    "tiny-decoder.int8.onnx": "d2fece8dd42771f1df975c6c0445770d0c292bf7547c2cae04a6c0cc57540925",
+    "tiny-tokens.txt": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126"
+  }
+}

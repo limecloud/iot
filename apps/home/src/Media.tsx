@@ -3,6 +3,8 @@ import { ApiError, deviceName, errorText, request, when, type Device, type Model
 import { createMediaOriginal, MAX_AUDIO_BYTES, validMediaOriginal, verifyMediaOperation, verifyMediaPage, verifyPcmWav, type MediaChange, type MediaOperation, type MediaOriginal, type MediaPage } from '../../../packages/protocol/media.mjs';
 import { verifyExecutionAdapters, verifyExecutionBinding, type AudioAdapter } from '../../../packages/protocol/execution-bindings.mjs';
 import { parseBoundedJSON, sameJSON } from '../../../packages/protocol/products.mjs';
+import { Speech } from './Speech';
+import { Transcription } from './Transcription';
 
 type Target = { device_id: string; revision: string };
 export function Media({ prefix, session, online, devices, models, onError }: { prefix: string; session: Session; online: boolean; devices: Device[]; models: Record<string, Model>; onError: (error: unknown) => void }) {
@@ -15,6 +17,7 @@ export function Media({ prefix, session, online, devices, models, onError }: { p
   const [deletion, setDeletion] = useState<string | null>(null);
   const active = useRef(true), sending = useRef(false), known = useRef<MediaOriginal[]>([]), received = useRef<Record<string, MediaOperation>>({}), rejected = useRef(new Set<string>()), input = useRef<HTMLInputElement>(null);
   const controller = useRef(new AbortController());
+  const loadGeneration = useRef(0);
   function readOriginals() {
     const found: MediaOriginal[] = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -40,6 +43,7 @@ export function Media({ prefix, session, online, devices, models, onError }: { p
     accept(verifyMediaOperation(await request<unknown>(`${prefix}/media-operations/by-key/${encodeURIComponent(original.idempotency_key)}`, session, undefined, { signal: controller.current.signal }), space, original.idempotency_key, original));
   }
   async function load() {
+    const generation = ++loadGeneration.current;
     setApproved(false); setTargets([]);
     const options = { signal: controller.current.signal };
     const [raw, offers] = await Promise.all([request<unknown>(`${prefix}/media`, session, undefined, options), request<unknown>(`${prefix}/execution-adapters`, session, undefined, options)]);
@@ -50,7 +54,7 @@ export function Media({ prefix, session, online, devices, models, onError }: { p
       const route = binding.routes['playback.play'];
       return route?.adapter_id === item.route.adapter_id && route.revision === item.route.revision ? { device_id: item.device_id, revision: binding.revision } : null;
     }));
-    if (active.current) { setPage(value); setTargets(available.filter((item): item is Target => item !== null)); }
+    if (active.current && generation === loadGeneration.current) { setPage(value); setTargets(available.filter((item): item is Target => item !== null)); }
   }
   async function refresh() {
     const records = readOriginals(); await load();
@@ -90,6 +94,8 @@ export function Media({ prefix, session, online, devices, models, onError }: { p
     <div className="actions"><button disabled={!online || busy} onClick={() => void action(refresh)}>读取音频状态</button></div>
     {message && <p className="notice" role="status">{message}</p>}
     {page && !page.configured && <p className="notice">网关尚未启用音频服务</p>}
+    <Speech prefix={prefix} session={session} online={online} onError={onError} onGenerated={id => { setMediaID(id); setApproved(false); void load().catch(error => { if (active.current) { setMessage(errorText(error)); if (error instanceof ApiError && error.status === 401) onError(error); } }); }} />
+    <Transcription prefix={prefix} session={session} online={online} files={page?.items ?? []} onError={onError} />
     <section className="rule-editor" aria-label="上传音频"><h2>上传音频</h2><form onSubmit={event => { event.preventDefault(); void action(async () => {
       if (!file || file.size > MAX_AUDIO_BYTES || file.size < 46) throw new Error('invalid_media_audio');
       const bytes = new Uint8Array(await file.arrayBuffer()); verifyPcmWav(bytes);

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "model_id": "vits-icefall-zh-aishell3",
+  "voices": {"mandarin": 21},
+  "threads": 2,
+  "rule_fsts": ["phone.fst", "date.fst", "number.fst"],
+  "files": {
+    "model.onnx": "5511d651b7840c0a93a6bbfd4afd070a2c7f39ca1ec3ff2ecd73191519bbb852",
+    "lexicon.txt": "ab2e61d357551e7b24ddd965d924aca784c20165ff58c150794e539c6b5e9e35",
+    "tokens.txt": "50b45a7b7de1752fd3c7b4755661c285f1547f59186eca2281089a81307ad953",
+    "phone.fst": "1ac2b6fa56b1442320c4de7db08353bab8963a2b57f365eebcdd3a2d3562f8d7",
+    "date.fst": "eb8aa079ae3cb81d8f4404992f39d61a0cb990947512b5b8d1e54d1f6980e718",
+    "number.fst": "743f402181fcfebf76cc2f0546b71fa26476e626fbe4e460fb7b4c3a7a8bd5bd"
+  }
+}

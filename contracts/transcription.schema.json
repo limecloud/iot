@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.dev/contracts/transcription.schema.json",
+  "title": "Local finite audio transcription",
+  "$ref": "#/$defs/input",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "media_id",
+        "media_digest",
+        "language",
+        "expires_at"
+      ],
+      "properties": {
+        "media_id": {
+          "type": "string",
+          "pattern": "^media-[A-Za-z0-9_-]{1,122}$"
+        },
+        "media_digest": {
+          "$ref": "#/$defs/hash"
+        },
+        "language": {
+          "enum": [
+            "auto",
+            "zh",
+            "en"
+          ]
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,3})?(?:Z|[+-]\\d\\d:\\d\\d)$"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "content_digest",
+        "expires_at",
+        "cleared_at"
+      ],
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$"
+        },
+        "content_digest": {
+          "$ref": "#/$defs/hash"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/time"
+        },
+        "cleared_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "cleared_at": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "text": {
+              "type": "null"
+            },
+            "cleared_at": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter",
+        "revision",
+        "model",
+        "data_location"
+      ],
+      "properties": {
+        "adapter": {
+          "const": "local-http-transcription-v1"
+        },
+        "revision": {
+          "$ref": "#/$defs/hash"
+        },
+        "model": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_:./-]{1,128}$"
+        },
+        "data_location": {
+          "const": "local"
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transcription_id",
+        "space_id",
+        "idempotency_key",
+        "request_digest",
+        "input",
+        "deployment",
+        "created_at",
+        "updated_at",
+        "status",
+        "output",
+        "error_code"
+      ],
+      "properties": {
+        "transcription_id": {
+          "type": "string",
+          "pattern": "^transcription-[A-Za-z0-9_-]{1,114}$"
+        },
+        "space_id": {
+          "$ref": "#/$defs/id"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/id"
+        },
+        "request_digest": {
+          "$ref": "#/$defs/hash"
+        },
+        "input": {
+          "$ref": "#/$defs/input"
+        },
+        "deployment": {
+          "$ref": "#/$defs/deployment"
+        },
+        "created_at": {
+          "$ref": "#/$defs/time"
+        },
+        "updated_at": {
+          "$ref": "#/$defs/time"
+        },
+        "status": {
+          "enum": [
+            "running",
+            "succeeded",
+            "failed",
+            "unknown",
+            "discarded"
+          ]
+        },
+        "output": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/output"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "running"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "type": "null"
+              },
+              "error_code": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "succeeded"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "type": "object"
+              },
+              "error_code": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "discarded"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "type": "null"
+              },
+              "error_code": {
+                "enum": [
+                  "transcription_output_discarded"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "unknown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "type": "null"
+              },
+              "error_code": {
+                "enum": [
+                  "transcription_provider_unknown",
+                  "transcription_deadline_exceeded",
+                  "transcription_interrupted"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "failed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "output": {
+                "type": "null"
+              },
+              "error_code": {
+                "enum": [
+                  "transcription_provider_rejected",
+                  "invalid_transcription_output",
+                  "transcription_output_too_large",
+                  "transcription_source_unavailable",
+                  "transcription_origin_not_local",
+                  "transcription_provider_unavailable"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

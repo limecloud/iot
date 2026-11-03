@@ -240,7 +240,67 @@ docker compose --env-file ".dev/nas/compose.env" \
 
 模型不可用时不切云、不自动重试，设备控制与已部署联动继续工作。浏览器保存原生成键，原生端保存于 Keychain/Keystore；中断后查询原草案。网关重启会将正在生成的请求恢复为结果未知。本配置已提供出站网络声明，完整 NAS 容器及实际模型主机连通性仍须随安装验收，不能用宿主进程检查替代。
 
+## 可选本地文字转语音
+
+先配置[媒体出口](../../contracts/media.md)，再独立部署符合[语音合同](../../contracts/speech.md)的本地提供方。以下为已有安装的启动覆盖，替换模型、声音和地址：
+
+```sh
+LIMEIOT_TTS_URL="http://192.168.1.10:8000" \
+LIMEIOT_TTS_MODEL="your-installed-model" \
+LIMEIOT_TTS_VOICES="your-voice" \
+docker compose --env-file ".dev/nas/compose.env" \
+  -f "deploy/nas/compose.yaml" -f "deploy/nas/compose.media.yaml" \
+  -f "deploy/nas/compose.speech.yaml" up --build -d
+```
+
+网关通过媒体覆盖的网络访问私有提供方，不额外发布管理HTTP端口。容器内回环地址指向容器本身；使用容器可达的NAS/局域网地址。HTTPS私有CA放入安装目录config，设置 `LIMEIOT_TTS_CA_FILE=/config/tts-ca.crt`。提供方鉴权密钥当前不支持，接口应限制在受信网络。
+
+也可使用仓库提供的[sherpa CPU服务](../../providers/sherpa-tts/README.md)：在基础与媒体文件后叠加`compose.sherpa.yaml`，不叠加`compose.speech.yaml`。设置`LIMEIOT_TTS_MODELS_DIR`、`LIMEIOT_TTS_CONFIG_FILE`为已准备的绝对路径，以及匹配的模型和声音。网关使用`http://speech:8000`；模型与配置只读挂载，服务仅接入独立internal网络，不发布端口，不挂载网关数据库、密钥或设备权限。默认2 CPU、768MiB与64 PID。
+
+网关启动不等待语音服务健康；模型加载慢或服务退出时，本地设备控制与已部署联动继续工作。整套`up --wait`仍可能因语音服务不健康而返回失败，须分别查看各服务状态。需要单独启动基础服务时，在相同变量和Compose文件下执行`up -d --no-deps gateway edge`。语音任务失败或结果未知后查询原键，不自动重试或切云；未知任务的预算占用仍须明确放弃才解除。
+
+API、CLI和家庭网页生成有限音频引用，不创建播放授权。媒体快照首次保存语音任务时写v2；备份包含任务摘要和原音频，恢复将未完成任务置unknown，不重新提交文本。旧程序不能读取v2。提供方模型/配置须在安装者自己的模型制品管理中备份，不复制进网关秘密或媒体快照。Compose隔离配置已通过渲染检查；新镜像、容器网络、NAS性能及权重许可仍须单独验收。
+
+## 可选本地语音识别
+
+先启用媒体服务，并准备遵循[转写合同](../../contracts/transcription.md)的独立本地HTTP提供方。它接收完整WAV与模型/语言请求头，返回有界JSON文本；其他提供方接口需要适配器。示例使用容器可达的私网地址：
+
+```sh
+LIMEIOT_ASR_URL="http://192.168.1.10:8001" \
+LIMEIOT_ASR_MODEL="your-installed-asr-model" \
+docker compose --env-file ".dev/nas/compose.env" \
+  -f "deploy/nas/compose.yaml" -f "deploy/nas/compose.media.yaml" \
+  -f "deploy/nas/compose.transcription.yaml" up --build -d
+```
+
+HTTPS私有CA放入安装目录config，设置`LIMEIOT_ASR_CA_FILE=/config/asr-ca.crt`。网关不等待识别服务健康；服务离线时基础控制继续工作。
+
+同机可选[独立sherpa ASR服务](../../providers/sherpa-asr/README.md)：在基础和媒体覆盖后改用`compose.sherpa-asr.yaml`，与`compose.transcription.yaml`二选一。设置`LIMEIOT_ASR_MODELS_DIR`、`LIMEIOT_ASR_CONFIG_FILE`为预置模型和固定摘要配置的绝对路径，`LIMEIOT_ASR_MODEL`须与配置一致，例如`paraformer-small-int8`。服务只读挂载模型，使用独立internal网络，无主机端口、网关秘密或设备权限，默认2 CPU、768MiB和64 PID；可以与TTS的`compose.sherpa.yaml`并存，两者均无网关启动依赖。模型不构建进镜像，具体权重许可和分发条件独立核对。配置渲染、真实宿主模型、镜像构建与NAS容器分别验收。
+
+在音频页上传WAV，再到“语音识别”选择录音并明确开始。文本保留期限与源录音相同，删除录音也清除其转写文本；转写不执行设备操作。首次任务写媒体快照v3，备份包含录音、文本与原任务，恢复不重新识别；旧程序不能读取v3。原任务未知时查询原键，或明确放弃输出，不能换键绕过预算。
+
+## 本地图片观察
+
+先启用媒体服务，再选择支持图片输入的本地Ollama模型。外部局域网提供方在原Compose文件后叠加`compose.vision.yaml`：
+
+```sh
+LIMEIOT_VISION_URL="http://192.168.1.10:11434" \
+LIMEIOT_VISION_MODEL="your-installed-model:tag" \
+docker compose --env-file ".dev/nas/compose.env" \
+  -f "deploy/nas/compose.yaml" -f "deploy/nas/compose.media.yaml" \
+  -f "deploy/nas/compose.vision.yaml" up --build -d
+```
+
+私有HTTPS CA放入安装目录config，并设置`LIMEIOT_VISION_CA_FILE=/config/vision-ca.crt`。模型地址仅允许本地网络，不传所有者或设备凭据，不代理、不跟随跳转、不自动重试。网关不等待模型健康，模型不可用不阻止基础控制。
+
+同机部署时改用`compose.vision-local.yaml`，与上述外部覆盖二选一。设置`LIMEIOT_VISION_MODEL`和已准备的`LIMEIOT_OLLAMA_MODELS_DIR`；服务复用`compose.ollama-service.yaml`的CPU/内存/只读根及权限限制，使用独立internal网络，不发布端口或挂载网关目录。无需设置文字模型，基础控制不依赖模型健康。默认2 CPU、4GiB内存上限，安装者按实际模型预留资源，平台不下载或分发权重。使用容器时须保留同目录的共享服务定义文件。
+
+在家庭网页“视觉”选择静态PNG/JPEG、填写问题并明确分析。图片和问题正文不入快照，默认观察文本保留10分钟，可明确清除。完整限制与原键恢复见[视觉合同](../../contracts/vision.md)。首次任务将媒体快照升至v4，仍支持旧版本读取，之后TTS/ASR不得降版本；备份原字节包含观察文本及任务，恢复不重新发送图片，运行中任务保持unknown。旧程序不支持v4，不能降级或删除账本后重试。
+
+`npm run test:vision`提供网关、CLI、浏览器、真实Nginx和NAS备份恢复的软件验证。Compose配置渲染与实际容器运行分别记录，真实视觉质量、新镜像和跨架构仍单独验收。
+
 ## 网页固件升级
+
 
 当前源码的家庭页面和完整本地工作台均提供“固件升级”。先上传独立固件信任并填写已独立核对的公钥指纹，再选择设备/签名者、粘贴签名清单创建10分钟计划。读取当前任务后明确批准；再次读取并选择“开始安装”才发送安装指令。尚未执行的计划可以明确取消。
 
@@ -342,6 +402,31 @@ docker compose --env-file ".dev/nas-restored/compose.env" \
 
 独立固件信任、升级计划、明确批准及原决定可通过 [本地CLI](../../contracts/ota-tasks.md) 管理。网关恢复后任务保留、批准清除，重新握手与读取当前任务后再明确批准；恢复旧决定不重启任务。当前未接入设备安装，新增源码镜像尚须独立构建验收。
 
+## 项目内 Linux 交叉构建
+
+macOS ARM64 开发机可在项目内准备 Linux 标准库和 Zig 链接器，编译真实 Linux 制品，再组装本地验收镜像。需要 Python 3.12+、Rust 1.93.1、Node.js 24.21+及已安装的项目依赖；组装镜像和容器检查还需要 Docker。工具链固定版本与 SHA-256，写入`.dev/nas-cross-toolchain`，不调用`rustup target add`或修改全局工具链。
+
+```bash
+npm run test:nas:artifacts
+npm run build:nas:artifacts -- --platform linux/arm64 --output "$PWD/.dev/nas-arm64-build"
+python3 "tools/build-nas-artifacts.py" verify --directory "$PWD/.dev/nas-arm64-build"
+python3 "tools/build-nas-artifacts.py" image --directory "$PWD/.dev/nas-arm64-build" \
+  --tag "limeiot/verification:nas-arm64-local"
+```
+
+输出目录须为新目录；已有完整制品仅在平台、当前源码摘要及全部文件仍匹配时复用。`build.json`记录源码输入、工具链和产物摘要，构建中源码变化会拒绝完成。校验逐项核对Linux ELF架构、动态加载器、可执行权限、文件集合和运行层来源，拒绝Mach-O、错架构、篡改与额外文件。制品清单用于本地完整性核对，不替代发布者签名。
+
+运行层从本仓库正式`Dockerfile`生成，使用相同的Debian基础、系统依赖、入口、用户、环境与健康检查，避免维护第二套运行规则。组装时只在Docker内安装运行依赖和复制制品，构建容器内存限制为96 MiB；Rust编译在宿主单任务运行。没有修改现有Docker虚拟机或已有容器资源。
+
+镜像生成后，继续运行原有容器验收：
+
+```bash
+npm run test:nas:container -- --platform linux/arm64 \
+  --image "limeiot/verification:nas-arm64-local" --no-build
+```
+
+`linux/amd64`使用独立输出与镜像标签，并单独执行对应架构的容器检查。当前交叉构建入口的5组门禁单测通过，ELF为明确字节夹具；真实交叉编译、镜像组装与容器运行尚未完成，进度见[24](../../docs/24-实施计划与进度.md)。不把门禁单测视为Linux制品或新NAS镜像已通过验收。
+
 ## 验证
 
 完整本地工作台使用独立检查，默认从源码构建两种测试镜像：
@@ -376,6 +461,17 @@ npm run test:nas:container
 ```sh
 npm run test:nas:container -- --image "limeiot/verification:YOUR_TEST_TAG" --no-build
 ```
+
+追加`--multimodal`可验收有限音频、TTS、ASR和图片观察的容器集成：
+
+```sh
+npm run test:nas:container -- --platform "linux/arm64" \
+  --image "limeiot/verification:nas-arm64-local" --no-build --multimodal
+```
+
+该模式叠加正式媒体、语音、识别和视觉Compose覆盖，并使用同一待验镜像运行独立Python协议夹具。夹具只接入本次内部网络，不映射宿主端口、不挂载网关数据或密钥。音箱使用固定本次地址；媒体出口仅绑定宿主回环，实际Range拉取经容器网络核对原WAV字节。第三设备模型由待验镜像内的正式校验器规范化，不手工推断模型修订。
+
+旅程检查超过512 KiB的图片上传、其他路由限制、三类推理不隐式授权或播放、明确授权后的DLNA协议与媒体拉取、替换网关不重新推理或播放、媒体v4快照的原字节备份与新目录恢复。恢复中的任务保持unknown并占用预算，恢复只查询原编号；明确放弃、清文和删除后再重启，核对正文不复活。协议夹具只证明集成，不证明真实模型质量、物理音箱播放或具体NAS型号兼容。新增入口的实际运行结果以[24](../../docs/24-实施计划与进度.md)及本次报告为准。
 
 报告逐项记录镜像ID、实际Linux架构、独立CA验证的HTTPS、非root/只读/内部网络、MQTT回执、家庭页面、设备mTLS/ACL/撤销、保留入口时替换网关，以及新目录备份恢复和原操作状态。浏览器专项只验证界面，TLS信任由显式加载本次CA的独立HTTPS连接证明。通过当前架构的容器检查不能代替其他架构或指定NAS型号实测；可选Ollama和云连接覆盖另行验收。
 

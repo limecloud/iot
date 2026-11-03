@@ -1,0 +1,331 @@
+{
+  "evidence_id": "EVID-TV-APK-INSTALLER-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "passed_android_adapter_host_checks_only",
+  "scope": {
+    "hardware": false,
+    "device_connection": false,
+    "apk_installation": false,
+    "installation_authorized": false,
+    "native_app_runtime": false,
+    "package_installer_runtime": false,
+    "product_update_ui": false,
+    "current_package_verified": false,
+    "full_runtime_eligibility_integrated": false,
+    "keystore_continuity_verified": false,
+    "full_record_continuity_verified": false,
+    "health_acceptance": false,
+    "power_loss_verified": false,
+    "host_native_sqlite": true,
+    "host_pending_intent_delivery": true,
+    "published": false,
+    "full_goal_completed": false
+  },
+  "implementation": {
+    "platform_adapter_implemented": true,
+    "private_manifest_receiver_implemented": true,
+    "new_connection_guard_implemented": true,
+    "product_update_entry_implemented": false,
+    "existing_connection_stop_gate_implemented": false,
+    "healthy_terminal_implemented": false,
+    "receiver_exported": false,
+    "automatic_confirmation_ui": false,
+    "confirmation_intent_persisted": false,
+    "automatic_install_retry": false,
+    "api23_uses_hidden_fields_or_newer_session_methods": false,
+    "session_declared_length_source_api23": "original system-owned session label bound to request digest",
+    "system_size_check_min_api": 27,
+    "explicit_user_action_min_api": 31,
+    "explicit_mutable_result_pending_intent_min_api": 31,
+    "identity_database_schema_changed": false,
+    "formal_ota_kind_extended": false,
+    "second_actual_update_mechanism_accepted": false
+  },
+  "test_environment": {
+    "core": "JVM",
+    "app": "Robolectric API23/28/31/33; host native SQLite for result/runtime tests",
+    "session_parameters": "Production Android adapter through Robolectric PackageInstaller shadow; missing owner/size metadata is explicitly supplied by tests.",
+    "session_bytes_and_commit": "Explicit in-memory session I/O fixtures; no APK or system installer is run.",
+    "result_delivery": "The actual Receiver class is explicitly registered in the host dispatcher; an explicit PendingIntent sends pending and success fixtures through onReceive/goAsync to native SQLite. The non-exported manifest declaration is asserted separately.",
+    "emulator_or_device_started": false
+  },
+  "test_modules": {
+    "core": {
+      "tests": 45,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "passed": 42,
+      "skipped_methods": [
+        {
+          "class": "run.limeai.iot.device.DeviceSigningKeyTest",
+          "name": "connected_mqtt_stops_at_actual_certificate_expiry_without_another_application_effect()"
+        },
+        {
+          "class": "run.limeai.iot.device.DeviceSigningKeyTest",
+          "name": "public_csr_roundtrips_the_actual_nas_issuer_and_then_uses_the_same_opaque_key_for_mtls()"
+        },
+        {
+          "class": "run.limeai.iot.device.MqttJourneyTest",
+          "name": "actual_mtls_protocol_device_journal_and_process_restart()"
+        }
+      ]
+    },
+    "app": {
+      "tests": 93,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 91,
+      "skipped_methods": [
+        {
+          "class": "run.limeai.iot.television.LocalIdentityStoreTest",
+          "name": "actual_nas_signing_storage_reopen_and_same_key_mtls"
+        },
+        {
+          "class": "run.limeai.iot.television.LocalIdentityStoreTest",
+          "name": "actual_nas_expired_recovery_preserves_identity_and_broker_rejects_the_expired_certificate"
+        }
+      ]
+    }
+  },
+  "new_test_methods": 18,
+  "new_test_executions": 20,
+  "new_cases": [
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "staging_fsyncs_reads_back_and_recovers_existing_complete_bytes_without_rewriting"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "eligibility_loss_during_candidate_read_stops_before_new_session_bytes"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "candidate_length_hash_and_readback_mismatch_keep_original_session_without_commit"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "lost_system_submit_response_reopens_original_without_any_resubmission"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "partial_extra_or_foreign_session_is_not_overwritten_or_replaced"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "changed_session_bytes_after_commit_intent_are_zero_submit_and_remain_unknown"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "lost_eligibility_after_creation_intent_is_zero_system_create"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "creation_loss_only_recovers_original_owned_session_without_another_create"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "commit_reads_back_before_and_after_durable_intent_and_never_repeats[28]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "android_adapter_sets_fixed_full_install_parameters_and_only_returns_own_claims[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "android_adapter_sets_fixed_full_install_parameters_and_only_returns_own_claims"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "commit_reads_back_before_and_after_durable_intent_and_never_repeats"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkInstallResultReceiverTest",
+      "name": "all_defined_failure_statuses_keep_original_history_and_user_abort_is_cancelled"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkInstallResultReceiverTest",
+      "name": "conflicting_late_result_and_result_before_commit_are_rejected_without_rewriting"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkInstallResultReceiverTest",
+      "name": "runtime_refuses_future_update_database_without_replacing_original_data"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkInstallResultReceiverTest",
+      "name": "storage_version_failure_leaves_original_file_and_result_unresolved"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkInstallResultReceiverTest",
+      "name": "runtime_refuses_a_new_connection_before_creating_a_permit_for_unverified_installation"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkInstallResultReceiverTest",
+      "name": "pending_then_success_reopens_original_and_does_not_launch_or_save_confirmation"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkInstallResultReceiverTest",
+      "name": "malformed_route_digest_session_package_or_status_never_changes_original_bytes"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkInstallResultReceiverTest",
+      "name": "explicit_pending_intent_delivers_repeated_system_updates_through_registered_receiver"
+    }
+  ],
+  "build_passed": true,
+  "gradle_tasks": [
+    ":core:test",
+    ":app:testDebugUnitTest",
+    ":app:assembleDebug",
+    ":app:lintDebug"
+  ],
+  "lint": {
+    "errors": 0,
+    "warnings": 6,
+    "issue_ids": [
+      "NewerVersionAvailable",
+      "NewerVersionAvailable",
+      "TrustAllX509TrustManager",
+      "SetTextI18n",
+      "SetTextI18n",
+      "SetTextI18n"
+    ]
+  },
+  "earlier_failures": [
+    {
+      "attempt": "first-verification.log",
+      "tests": 89,
+      "failures": 1,
+      "skipped": 2,
+      "cause": "SessionInfo.getSize is API27; the API23 host case raised NoSuchMethodError.",
+      "fix": "Read declared length from the original system-owned session label on API23; API27+ also verifies getSize. Actual staged bytes remain fully read back and checked.",
+      "targeted_fix_rounds": 1,
+      "assertions_weakened": false
+    },
+    {
+      "attempt": "first-delivery-verification.log",
+      "subsequent_attempt": "second-delivery-verification.log",
+      "tests": 93,
+      "failures": 1,
+      "skipped": 2,
+      "cause": "Robolectric had no matching broadcast wrapper for a manifest Receiver without intent filters; its log reported Matching wrappers: [].",
+      "subsequent_cause": "After dispatch was registered, an update-store poll raced the async callback and SQLite onConfigure reported SQLITE_BUSY.",
+      "fix": "Registered the actual Receiver in the host dispatcher, then used the existing process Owner lock for runtime startup and observer reads as well as callbacks. PendingIntent/result/SQLite assertions, non-exported manifest assertion and observation budget remain unchanged.",
+      "targeted_fix_rounds": 2,
+      "assertions_weakened": false,
+      "per_result_observation_timeout_seconds": 2
+    },
+    {
+      "attempt": "before-host-registration-fix.log",
+      "cause": "Lint rejected the legacy dynamic-receiver registration branch in the host dispatch test for missing an explicit exported-state flag; all 93 app tests had passed.",
+      "fix": "Run only the registered-dispatch fixture on API33 and use RECEIVER_NOT_EXPORTED plus an explicitly mutable PendingIntent. Retain API23/28/31 parameter, byte and callback checks; do not suppress lint.",
+      "targeted_fix_rounds": 1,
+      "lint_suppressed": false
+    }
+  ],
+  "test_dependency_cache": {
+    "scope": "archive-local offline Robolectric JARs",
+    "sdk33_version": "13-robolectric-9030017-i7",
+    "sdk33_sha512": "0ffcb15c867dcfd87e57b6eef601067de84d23db0e818f8ea8a6035745482a144e91eb65a7f532dd9614ce27eba67204b117b7185058c2aac074dcb26e62acc9",
+    "sdk33_sha256": "1c3fd182c03d47626686ca3b39c4ec5bdb0898b1056f4eb8f96f32c6209a5c04",
+    "mirror_url": "https://repo.huaweicloud.com/repository/maven/org/robolectric/android-all-instrumented/13-robolectric-9030017-i7/android-all-instrumented-13-robolectric-9030017-i7.jar",
+    "canonical_digest_source": "https://repo.maven.apache.org/maven2/org/robolectric/android-all-instrumented/13-robolectric-9030017-i7/android-all-instrumented-13-robolectric-9030017-i7.jar.sha512",
+    "init_script": "offline-robolectric.init.gradle",
+    "previous_build_waiting_on_confirmed_artifact_fetch": true,
+    "previous_build_cancelled_only_after_replacement_artifact_verified": true,
+    "previous_build_exit_code": 130,
+    "business_observation_budget_changed": false,
+    "maven_central_retry_stopped_after_explicit_rate_limit": true
+  },
+  "artifact": {
+    "sha256": "f9e6ad8f11fd72701010e11e57837b981c6fe8b063bfea6f7097f2dde696c75e",
+    "debug": true,
+    "installed": false
+  },
+  "input_sha256": {
+    "apps/tv-agent/app/src/main/AndroidManifest.xml": "b311185d0697c952d324e720137c01f479666ba48ed84db6330497675adeb884",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AgentRuntime.kt": "7697b69ba63781e3581b00d0ada415edb5dc2bb6016d173fe3faacacf5338183",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidApkInstaller.kt": "edc574a6156608ba481064ac340339effa4fab0b6b339a9d9dea4a9ff880951a",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/ApkInstallResultReceiver.kt": "0f7d6e35fed2dd2f8a0f922c5ac171f78092169fdaeecdaa31969235ee5143b4",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AndroidApkInstallerTest.kt": "a96876c3ea1b51a65fe7ed7947879dd06484fa6224a40b547484eab71272b695",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/ApkInstallResultReceiverTest.kt": "957cbbdc8f8b3075b104e5d17f37cc10fb0e32159169a9f7e4a4795460e50100"
+  },
+  "raw_evidence_sha256": {
+    "before-delivery-source-manifest.json": "177c47c10f33801d9829b595179bafaa061a11c6168b34fbdcfd08a3fe10f2c9",
+    "before-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "d080cec7c3e49a17d3540247522bd428c07a76c6c0ef23c72392f5d3fd6a1b9b",
+    "before-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "b1d8fec530ae8ebe90c8f1646ea463793f43b20cd186bc5604d4f4cd8afb8401",
+    "before-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "2f9820affbaad70f09f638def37fcbdd2ba544639e10cbb49ae0d04dfddeb158",
+    "before-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "2ebc3af4f3280e3d3b54b2d83a47afec012453b1d305fefabe236f35874db738",
+    "before-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "c8c3a2e977844da7188601a1c5595ffc9fb0905dd4d8b84413ea93b44b51cbc4",
+    "before-delivery-verification.log": "6380b42cfae0d552da09982988a96473b209e7f0ec0d7a3c8529cf80f5be7d49",
+    "before-host-registration-fix-lint.xml": "253ce8088c807ccddeae96a408d7c1e93262565537243606f593d2ad44fbc970",
+    "before-host-registration-fix-source-manifest.json": "69a77faaf7feaaee90f6b6069659a4eb09448507455f83c9edf14c0b79ab1001",
+    "before-host-registration-fix-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "177221ac6f1cf8a2074511f07251b0400a942ec1a25ab3fad41bcd98dafd099e",
+    "before-host-registration-fix-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "c414eeedc7f5af69f1a069b9473aa91e729e19c4b39400b9cd97c3ddf2d660b0",
+    "before-host-registration-fix-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "fab2906c7cdf6cbe6286bc5180de0fea640e687dc7143857262a292fe223f757",
+    "before-host-registration-fix-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "a0d5a6f4c345451441eda0ffadda3be1a519c8329f9d15841d6f624a5eb31be7",
+    "before-host-registration-fix-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "84d28f64f36f18d51e4f9154c3f0cdd8d7ec5b0a4a917ca36a8bb3501044be05",
+    "before-host-registration-fix.log": "a46e060f5ad5bacafa6fa2138e8e2105fd21d1c81a080dca4a1d94a75d1bf142",
+    "final-test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "92b0a07080b7671bbc944cdba29074bbf2d5427703c3bd17cc52f81f2d426824",
+    "final-test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "a00c34844c64adae42ef4bd12837e84d0ab78484c768937b5ba78f5f0cabf515",
+    "final-test-results/app/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "dcc4792538e3b090529909521ed59d490fdcd42aa270fdee903293f96bf10dd1",
+    "final-test-results/app/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "398e8399988344d07929afc84c848cf194c8a528f397a132dfc0161b895bf6ec",
+    "final-test-results/app/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "43640b7d79149ae3eaba96a581e8441a3d507a628074768700be2bb6bc1c427a",
+    "final-test-results/core/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "2f4a2a68d63d250cc33253bcff1ee453b083e1ee75e958e45913499618346a1f",
+    "final-test-results/core/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "801ba18792b7c3dfca3628586e5779f68125b1cf29e2fa9d76d3f31d3cdf1798",
+    "final-test-results/core/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "39d1ac5db5048f7f31ff7112f7bb46a6bb5bc0e037468bebc54621def3d849f3",
+    "final-test-results/core/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "6a8f31257c55829998fb77a73eda7f0e4cbf2a3cc402bc06d33879d9a282e779",
+    "final-test-results/core/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "97862635e8428b30ea3a1d3eca57e6e25dd510b652e5cc1b1c4595ddca64558a",
+    "final-verification.log": "92c86d04d295a597e20423e356dde3ed9b43b3d19c6434abe12153d3624ece72",
+    "first-delivery-source-manifest.json": "a7bcef698b8665383a3d0a782d6a7b905a4fc6b755924760f0f8b55469d990cb",
+    "first-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "ad584c6d2c882c78bf5b8523575c4a2db078353c7e8020d9c23534e7888f83d7",
+    "first-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "618c2628595b68ba6ec130cff000db2208334bef135eaf0be0146510808a2e38",
+    "first-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "07a9c38a3b661af8137893da405d05fb0bc11e7e310ddea4f06511bb5ddc3c10",
+    "first-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "003dc9986f2595677cd3ba964610f731135a0cc8780913ac4b23b0584c8d6815",
+    "first-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "57921a798b54282e7cc13cea2612e69203cbde123b607f4b8c640d65005e4268",
+    "first-delivery-verification.log": "a3fc912c789779ebad252b8116ba96500e5df6ce354b841e1acfed7345112d71",
+    "first-source-manifest.json": "311ca6ba88aba1bf4d561616e1bcdda59223b32144468bcf5da5c482b10b2a23",
+    "first-test-results/app/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "6f11457034b6031d13de0b03256eed7254eb63531adcb27a206b1f304766a40d",
+    "first-test-results/app/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "81cfb0ce70f79fa15da3469378ad09965849e85075e2e97f8bdac7f6a6575dc3",
+    "first-test-results/app/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "e6d1331fa483bdcebedc0d86327808cb7cc8fa24040b63d3618dc1456ff6d4bc",
+    "first-test-results/app/testDebugUnitTest/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "8a8b9ea9e03c3df296fad702cc4e316539d185e9e3e8dbdb80e99fa67df135a2",
+    "first-test-results/app/testDebugUnitTest/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "06c5a5ed3b69f5b86f510575beed06ccf4063ca2d0d2b3b3742e924c42aeb7aa",
+    "first-test-results/core/test/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "93146bd452eda8575351290592a4176d63587f0e4d2309f78479aa3c2670329f",
+    "first-test-results/core/test/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "fb0331550e8055a2a8f2122ac3944ee86d29da9ac2b47f005c695af752a7a35c",
+    "first-test-results/core/test/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "b9a23101468fe5a9f94c821a03c5e659741fc1615f25c6140c04846c0a9f0db4",
+    "first-test-results/core/test/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "324667dac35496b9b28607d217d61aaa15c15ca8bc8e5c6d5bf40d07e24f12d2",
+    "first-test-results/core/test/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "fc2032f687963b16e42d59e53dec5971b269a87b52b27701fbe5c70cf9052346",
+    "first-verification.log": "7876874a8288105ff1b4aa98e1f7543233c6cb322ccda3939eb5a3714a7e6bcf",
+    "lint-results-debug.xml": "b6447d390bb329aea423c0247cc085c5154a16e986dce0734c7fd133cda175dd",
+    "network-wait-cancellation.json": "f0cc30d7cf82daacf7b2829305c529f85a6f480c00784ca0f6ab214b15e35e04",
+    "network-wait-verification.log": "b987acf7cc6b4377f7c8fe4368ff86a55d9fe76731776d7041b58a2739b3655c",
+    "offline-robolectric.init.gradle": "1fe3c0ad5d36ca0d8ef19845511a44c28a829d7376b3cc20e7c59e10e698fe5e",
+    "report.json": "1fca9809675fc4e8afa06fd406fb0749a1f0f2351e6a4ce3ecb0cf7d71f43bf2",
+    "sdk33-cache.json": "677f7d44d28d0db652daf3664a2a237bb8cf6ef008fcbf9d1d297b000752d2b9",
+    "sdk33-download-state.json": "a6277111dc795f91ca8d248c3087f1dfd680878a6b8943ed1eeb18ed0082afa9",
+    "second-delivery-source-manifest.json": "67d3011f7fb4be12a0e3e6f421dfd98d40c1e88837330f036d6ed9de44253a49",
+    "second-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "c35a36d813d85c24dd0a899b602169dc7dce52fd9ce565819d6c3277daef2fea",
+    "second-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "948d798656be4652e6ecc212ee7f064f35a268182bcf65447d19a5fb5546dfae",
+    "second-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "37bb0e3841e4664d50f73ccbc67c40a4b724c3c6517f134dd0d38769b664ae75",
+    "second-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "376679f565064dba21278bfe4e1a135346654c8392100d5f00972c625b9d9026",
+    "second-delivery-test-results/testDebugUnitTest/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "4ac9d890f10d94b36190878055e52656d584cf7d98e771c3cb92921ca1ad6feb",
+    "second-delivery-verification.log": "93a24e5d5c109512fd13eeed4af37e8177a2b9da06d0e071c19ffdcc331e4594",
+    "source-manifest.json": "c6a4e5d1ec8382aa1b1f9774ba3cab4917db99f03831f5cf6c58fd76886dcf1e",
+    "threads-12142.txt": "69c9e9c66e730082ec4377137aff2a309703444ad519d9a363f2e1f36888af14",
+    "threads-13034.txt": "2a2927cbfebf3766f8d527043b98db4e79e453302879f526fa86e13dc195159e",
+    "tv-agent-installer-debug.apk": "f9e6ad8f11fd72701010e11e57837b981c6fe8b063bfea6f7097f2dde696c75e"
+  },
+  "limits": [
+    "The Android APIs are implemented, but production update UI, current-package/preflight-source validation and install-source permission/policy handling are not connected.",
+    "verifyCurrent remains an explicit fixture in these tests; the provider requires a future caller holding the full stopped/identity/in-flight-command gate.",
+    "The runtime guard only refuses new connections; it does not stop an existing connection or establish complete update eligibility.",
+    "User confirmation intents are neither persisted nor launched; interactive confirmation and recovery after losing temporary UI state remain unimplemented.",
+    "API23 creation claims verify declared system metadata; actual byte integrity is checked separately through session readback, whose I/O is a fixture in this evidence.",
+    "System success stays INSTALLED_UNVERIFIED and continues blocking new connections and updates; full records, KeyStore and health acceptance are not verified.",
+    "Host PendingIntent delivery proves this explicitly registered fixture's dispatch/async persistence path, not real Android manifest resolution, installation or a cryptographic system attestation.",
+    "Five existing network/issuer tests remain skipped; no new live MQTT/NAS or cross-update journey is claimed.",
+    "The frozen README predates this stage documentation; all built code matches the current root source.",
+    "Television debugging remains paused; no device operation, emulator, new REA, Git commit, push or publication."
+  ]
+}

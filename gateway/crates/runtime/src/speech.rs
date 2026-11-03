@@ -14,13 +14,9 @@ use limeiot_core::{
     speech::{Deployment, Input, Task},
     Result,
 };
-use reqwest::{redirect::Policy, Client, Url};
+use reqwest::{Client, Url};
 use serde_json::{json, Value};
-use std::{
-    net::{IpAddr, SocketAddr},
-    sync::Arc,
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 use tokio::sync::Semaphore;
 
 pub trait SpeechProvider: Send + Sync {
@@ -37,18 +33,6 @@ struct LocalHttp {
     deployment: Deployment,
     voices: Vec<String>,
     ca: Option<reqwest::Certificate>,
-}
-fn private(ip: IpAddr) -> bool {
-    match ip {
-        IpAddr::V4(ip) => ip.is_loopback() || ip.is_private(),
-        IpAddr::V6(ip) => {
-            ip.is_loopback()
-                || ip
-                    .to_ipv4_mapped()
-                    .is_some_and(|ip| ip.is_loopback() || ip.is_private())
-                || ip.segments()[0] & 0xfe00 == 0xfc00
-        }
-    }
 }
 pub fn configured(media_configured: bool) -> Result<Option<Arc<Speech>>> {
     let settings: Vec<Option<String>> =
@@ -121,44 +105,7 @@ pub fn configured(media_configured: bool) -> Result<Option<Arc<Speech>>> {
 }
 impl LocalHttp {
     async fn client(&self) -> Result<Client> {
-        let host = self
-            .origin
-            .host_str()
-            .ok_or_else(|| err("speech_provider_unavailable"))?;
-        let port = self
-            .origin
-            .port_or_known_default()
-            .ok_or_else(|| err("speech_provider_unavailable"))?;
-        let addresses: Vec<SocketAddr> =
-            if let Ok(ip) = host.trim_matches(['[', ']']).parse::<IpAddr>() {
-                vec![SocketAddr::new(ip, port)]
-            } else {
-                tokio::time::timeout(
-                    Duration::from_secs(2),
-                    tokio::net::lookup_host((host, port)),
-                )
-                .await
-                .map_err(|_| err("speech_provider_unavailable"))?
-                .map_err(|_| err("speech_provider_unavailable"))?
-                .collect()
-            };
-        ensure(
-            !addresses.is_empty() && addresses.iter().all(|addr| private(addr.ip())),
-            "speech_origin_not_local",
-        )?;
-        let mut builder = Client::builder()
-            .no_proxy()
-            .retry(reqwest::retry::never())
-            .redirect(Policy::none())
-            .connect_timeout(Duration::from_secs(2))
-            .timeout(Duration::from_secs(90))
-            .resolve_to_addrs(host, &addresses);
-        if let Some(ca) = &self.ca {
-            builder = builder.add_root_certificate(ca.clone());
-        }
-        builder
-            .build()
-            .map_err(|_| err("speech_provider_unavailable"))
+        crate::local_provider::client(&self.origin, self.ca.as_ref(), "speech").await
     }
 }
 impl SpeechProvider for LocalHttp {

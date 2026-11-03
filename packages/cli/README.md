@@ -294,6 +294,30 @@ npm run cli -- control auth logout --session-file "/absolute/private/session.jso
 
 先撤销本站会话，再清除文件中的会话秘密；从Console导入的子会话退出不撤销父网页登录。私有实例直接登录的CLI会话独立于浏览器会话。
 
+## 本地文字转语音
+
+`schema speech-syntheses.create`发现输入。将文本、已配置voice、保留秒数和未来90秒内的expires_at写入JSON，再调用：
+
+```sh
+limeiot speech-syntheses create --space-id space-demo --input ./speech.json --idempotency-key speech-01
+limeiot speech-syntheses resolve speech-01 --space-id space-demo
+limeiot speech-syntheses discard speech-01 --space-id space-demo
+```
+
+首次提交前只耐久保存摘要，正文不写入CLI原记录。同键再次create只查询原任务，404保持未知。成功返回media_id，授权和播放仍使用媒体/设备原合同。未知任务占用语音预算，discard明确放弃输出并解除占用，不承诺提供方取消；已成功任务须通过媒体删除处理。退出码6未知、7明确失败。完整规范见[语音合同](../../contracts/speech.md)。
+
+## 本地图片观察
+
+本地图片观察使用 `schema vision-observations.create` 发现输入：`image_base64`、`content_type`、`prompt`、`retain_seconds` 与未来90秒内的 `expires_at`。静态PNG/JPEG最大2MiB、宽高各不超过1024，问题最多512个Unicode标量。
+
+```sh
+limeiot vision-observations create --space-id space-demo --input "./vision.json" --idempotency-key vision-01
+limeiot vision-observations resolve vision-01 --space-id space-demo
+limeiot vision-observations discard vision-01 --space-id space-demo
+```
+
+原记录只保存图片和问题摘要；自行准备的JSON输入文件仍含原文，应保存在私有目录。相同键再次create只GET，未知任务继续占用；discard先保存独立意图，再放弃未完成输出或清除成功文本。成功观察不具有设备执行权，完整边界见[视觉合同](../../contracts/vision.md)。
+
 ## 错误与验证
 
 退出码0表示请求已受理或读取成功；2输入错误、3身份/权限、4冲突、5服务/文件故障、6结果未知、7已确认的失败/拒绝/过期。未知错误保留 `original`中的原键与文件引用；不根据网络失败推断设备未执行。

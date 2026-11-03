@@ -77,13 +77,18 @@ class MainActivity : ComponentActivity() {
     var tab by remember { mutableIntStateOf(0) }
     var firmwareOpen by remember { mutableStateOf(false) }
     var mediaOpen by remember { mutableStateOf(false) }
+    var visionOpen by remember { mutableStateOf(false) }
+    val visionController = state.vision
+    val visionBusy = visionController?.state?.collectAsStateWithLifecycle()?.value?.busy == true
     val firmwareController = state.firmware
     val firmwareBusy = firmwareController?.state?.collectAsStateWithLifecycle()?.value?.busy == true
     val mediaController = state.media
     val mediaBusy = mediaController?.state?.collectAsStateWithLifecycle()?.value?.busy == true
+    val transcriptionBusy = state.transcription?.state?.collectAsStateWithLifecycle()?.value?.busy == true
+    val speechBusy = state.speech?.state?.collectAsStateWithLifecycle()?.value?.busy == true
     Scaffold(bottomBar = { NavigationBar(containerColor = Sand1, tonalElevation = 0.dp) { listOf("设备", "自动化", "执行记录", "设置").forEachIndexed { index, label -> NavigationBarItem(modifier = Modifier.testTag("nas-tab-$index"), selected = tab == index, onClick = { tab = index }, icon = {}, label = { Text(label, fontSize = 14.sp) }) } } }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            Text(if (tab == 3 && firmwareOpen) "固件升级" else if (tab == 3 && mediaOpen) "音频" else listOf("我的设备", "自动化", "执行记录", "设置")[tab], fontSize = 28.sp)
+            Text(if (tab == 3 && firmwareOpen) "固件升级" else if (tab == 3 && mediaOpen) "音频" else if (tab == 3 && visionOpen) "图片观察" else listOf("我的设备", "自动化", "执行记录", "设置")[tab], fontSize = 28.sp)
             if (!state.online) Text("连接中断，当前显示上次观测", fontSize = 12.sp, color = Amber11)
             if (state.message.isNotEmpty()) Text(state.message, fontSize = 14.sp, color = Amber11)
             when (tab) {
@@ -95,12 +100,16 @@ class MainActivity : ComponentActivity() {
                     FirmwarePanel(firmwareController, state.snapshot?.devices.orEmpty(), state.online && !state.busy)
                 } else if (mediaOpen && mediaController != null) {
                     TextButton(onClick = { mediaOpen = false }) { Text("返回设置") }
-                    MediaPanel(mediaController, state.snapshot?.let { snapshot -> snapshot.devices.associate { it.deviceId to snapshot.name(it) } }.orEmpty(), state.online && !state.busy)
+                    MediaPanel(mediaController, state.snapshot?.let { snapshot -> snapshot.devices.associate { it.deviceId to snapshot.name(it) } }.orEmpty(), state.online && !state.busy, state.speech, state.transcription)
+                } else if (visionOpen && visionController != null) {
+                    TextButton(onClick = { visionOpen = false }) { Text("返回设置") }
+                    VisionPanel(visionController, state.online && !state.busy)
                 } else {
                     Text(state.origin, fontSize = 14.sp); Text(if (state.online) "本地已连接" else "连接中断", fontSize = 14.sp)
-                    if (state.firmware != null) TextButton(onClick = { firmwareOpen = true; mediaOpen = false }, modifier = Modifier.testTag("nas-firmware")) { Text("固件升级") }
-                    if (mediaController != null) TextButton(onClick = { mediaOpen = true; firmwareOpen = false }, modifier = Modifier.testTag("nas-media")) { Text("音频") }
-                    TextButton(onClick = vm::logout, enabled = !state.busy && !firmwareBusy && !mediaBusy) { Text("退出登录") }
+                    if (state.firmware != null) TextButton(onClick = { firmwareOpen = true; mediaOpen = false; visionOpen = false }, modifier = Modifier.testTag("nas-firmware")) { Text("固件升级") }
+                    if (mediaController != null) TextButton(onClick = { mediaOpen = true; firmwareOpen = false; visionOpen = false }, modifier = Modifier.testTag("nas-media")) { Text("音频") }
+                    if (visionController != null) TextButton(onClick = { visionOpen = true; firmwareOpen = false; mediaOpen = false }, modifier = Modifier.testTag("nas-vision")) { Text("图片观察") }
+                    TextButton(onClick = vm::logout, enabled = !state.busy && !firmwareBusy && !mediaBusy && !speechBusy && !transcriptionBusy && !visionBusy) { Text("退出登录") }
                 }
             }
             TextButton(onClick = vm::refreshNow) { Text("刷新") }

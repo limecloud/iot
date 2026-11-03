@@ -1,0 +1,280 @@
+{
+  "evidence_id": "EVID-TV-APK-IMPORTS-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "passed_private_import_and_visible_review_host_checks_only",
+  "scope": {
+    "host_private_file_import": true,
+    "host_platform_views": true,
+    "host_runtime_native_sqlite": true,
+    "product_update_ui_source": true,
+    "hardware": false,
+    "device_connection": false,
+    "emulator_started": false,
+    "apk_installation": false,
+    "actual_android_jar_verifier": false,
+    "system_file_picker_on_hardware": false,
+    "source_settings_return_integrated": false,
+    "system_confirmation_return_integrated": false,
+    "cross_update_continuity_verified": false,
+    "health_acceptance": false,
+    "published": false,
+    "full_goal_completed": false
+  },
+  "implementation": {
+    "private_no_backup_copies": true,
+    "external_uri_or_path_persisted": false,
+    "streaming_bounded_copy": true,
+    "file_and_directory_sync_requested": true,
+    "device_power_loss_durability_verified": false,
+    "per_report_max_bytes": 1048576,
+    "per_candidate_max_bytes": 268435456,
+    "total_logical_bytes_limit": 536870912,
+    "max_retained_imports": 128,
+    "interrupted_imports_retained": true,
+    "automatic_overwrite_or_eviction": false,
+    "unapproved_import_blocks_connection": false,
+    "visible_review_with_version_signer_hash_and_permission_changes": true,
+    "local_debug_checkbox_required": true,
+    "approval_revalidates_signature_and_complete_candidate": true,
+    "approval_binds_exact_review_and_current_continuity": true,
+    "approval_requires_current_visibility_and_worker_exit": true,
+    "approval_only_prepares_original_journal": true,
+    "lifecycle_starts_installer_or_connects": false,
+    "background_completion_starts_picker_or_dialog": false,
+    "unknown_or_damaged_materials_hide_original_journal": false,
+    "prepared_cancellation_requires_materials": false,
+    "imports_with_any_journal_record_can_be_discarded": false,
+    "schema_or_identity_storage_changed": false,
+    "healthy_terminal_implemented": false,
+    "formal_ota_kind_extended": false,
+    "second_actual_update_mechanism_accepted": false,
+    "generic_update_plugin_admission": false
+  },
+  "test_environment": {
+    "core": "JVM",
+    "app": "Robolectric API23/28 plus existing API29/31/33 cases; native host SQLite for Runtime and Activity tests",
+    "materials": "Actual host JDK RSA/ECDSA JAR signatures; small APK byte files, PackageManager/source facts, SAF result and system sessions are explicit host fixtures.",
+    "files": "Host file streams and reopen; logical quota uses a sparse fixture. Directory fd/fsync are explicit Linux shadows on API28 (framework stubs on API23), including sync-failure injection; no actual directory syscall or device power-loss guarantee is claimed.",
+    "observation_timeout_seconds": 2
+  },
+  "test_modules": {
+    "core": {
+      "tests": 48,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "passed": 45
+    },
+    "app": {
+      "tests": 169,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 167
+    }
+  },
+  "new_test_methods": 7,
+  "new_test_executions": 13,
+  "new_cases": [
+    {
+      "class": "run.limeai.iot.television.AgentApkQuiescenceTest",
+      "name": "product_import_review_and_visible_approval_survive_reopen_without_starting_installation"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkImportsTest",
+      "name": "total_quota_and_path_validation_refuse_copy_without_touching_other_files[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkImportsTest",
+      "name": "interrupted_stream_stays_incomplete_and_requires_explicit_discard_without_overwrite[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkImportsTest",
+      "name": "empty_zero_read_and_oversize_streams_never_become_usable_materials[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkImportsTest",
+      "name": "private_copies_reopen_with_same_id_and_exact_bytes_without_external_uri[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkImportsTest",
+      "name": "total_quota_and_path_validation_refuse_copy_without_touching_other_files"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkImportsTest",
+      "name": "interrupted_stream_stays_incomplete_and_requires_explicit_discard_without_overwrite"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkImportsTest",
+      "name": "empty_zero_read_and_oversize_streams_never_become_usable_materials"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkImportsTest",
+      "name": "private_copies_reopen_with_same_id_and_exact_bytes_without_external_uri"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkUpdateActivityTest",
+      "name": "backgrounded_import_keeps_copy_without_opening_picker_or_dialog_until_user_returns[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkUpdateActivityTest",
+      "name": "document_selection_recovers_original_request_after_activity_recreation_and_cancel_does_not_approve[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkUpdateActivityTest",
+      "name": "backgrounded_import_keeps_copy_without_opening_picker_or_dialog_until_user_returns"
+    },
+    {
+      "class": "run.limeai.iot.television.ApkUpdateActivityTest",
+      "name": "document_selection_recovers_original_request_after_activity_recreation_and_cancel_does_not_approve"
+    }
+  ],
+  "build_passed": true,
+  "gradle_tasks": [
+    ":core:test",
+    ":core:journeyRuntime",
+    ":app:testDebugUnitTest",
+    ":app:assembleDebug",
+    ":app:lintDebug"
+  ],
+  "lint": {
+    "errors": 0,
+    "warnings": 4,
+    "new_warnings": 0
+  },
+  "verification_history": [
+    "Initial compilation rejected Android-unpublished OsConstants.O_DIRECTORY; one targeted fix uses public Os.open(O_RDONLY) and directory validation. No fsync requirement or assertion was removed.",
+    "Second compilation rejected direct test access to protected onActivityResult; one targeted test-only fix dispatches the same callback with ReflectionHelpers without widening the product API.",
+    "First host execution had eight failures: API28 ShadowLinux cannot open directories using RandomAccessFile, causing seven import/dependent failures; API23 negative-dialog dismissal is queued on the main looper. One targeted test-only fix explicitly shadows directory fd/fsync (with sync-request and injected-failure checks), and pumps the original two-second budget for actual dialog dismissal. Production sync behavior and original assertions remain.",
+    "Second host execution passed all thirteen new cases but an existing continuity test hit a native SQLite helper configuration lock while worker-exit refresh read concurrently. One targeted fix seeds that fixture on the original Runtime queue, retaining every continuity assertion and the two-second budget.",
+    "Scoping the Linux shadow per method caused seven dependent failures: Robolectric retained a base ShadowLinux object and attempted to cast it to the import fixture. Restore the consistent class-level shadow scope already used by the successful new-case run; this is a test-only configuration correction, with no product change or relaxed assertion.",
+    "The next full test build passed all 212 Kotlin executions (five existing skips), but archive validation found two new SetTextI18n warnings. Move those two messages into Android string resources and reverify; do not suppress or accept the new warnings."
+  ],
+  "artifact": {
+    "sha256": "3a72084c2a8ea9ae283a99901b56e11b274d6945ac58826810c5d5f41148cf77",
+    "debug": true,
+    "installed": false
+  },
+  "input_sha256": {
+    "apps/tv-agent/app/src/main/AndroidManifest.xml": "ea435411c27741dbcc11fd7b29c9d650d0199eb78516e2941e185600ab7254bf",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AgentRuntime.kt": "f78ffd7a48f6d2f9aebfc5375b03ed02608709f1c6018b88b8a24c50820268ee",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidApkImports.kt": "474c86a7e03693e746ef9e7354df5259c1da04ee7f53a6a22f705871a1fa0891",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidApkMaterials.kt": "58f3be87fd6a86023d534e0e7f239c5ec28dcb3beea0b79914bd8ea209114767",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/ApkUpdateActivity.kt": "ff9998c6ec720a96dc164a5fcb1e3ceb0ce2e03ed63fe66fdbbe87f56fd3373a",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/TelevisionActivity.kt": "2a776be55fdbfd1e141e49f209ae8b6621e25cffbdd065b38805c9e4a2f6ae71",
+    "apps/tv-agent/app/src/main/res/values/strings.xml": "a74eba94433c28a83c19b901255089d1c038d2ac54e415b4f0e74093a93fcc38",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AgentApkQuiescenceTest.kt": "76bb1d2226cc52244b03bcadb17fc36a2353bf39e9f5fe223d46de5fccb75063",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AndroidApkImportsTest.kt": "2c95497d952de495dbea0801b97a5d82ed8faa70d69ac50e979cbbfc980fe4e7",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/ApkUpdateActivityTest.kt": "e56aed305bb8e92f1f341a4c5d4308bae757a40aa21fe283a6998638b198beb8"
+  },
+  "raw_evidence_sha256": {
+    "attempt-1-compilation.log": "54f7bd7122370ce8a019ce739171769c08cb84e69e704e36e869775ea22ca45d",
+    "attempt-1-source-manifest.json": "045016da478886d0b285e726e542ebabb657936af1d5af5106a8a3490772fc67",
+    "attempt-1-source/apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AgentRuntime.kt": "b4e64970afa4bac08c6786c3bc04db0f35f7ecf36d5119bf220538b38f67801b",
+    "attempt-1-source/apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidApkImports.kt": "f9b1dfd41ff6cc24c64c96ad8b92653d2a552c24b41064dde5891f601adab219",
+    "attempt-1-source/apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/ApkUpdateActivity.kt": "73c68d2c379e39fa4d5a5d256053c0e31ce16974af460fe9fce73f522362f391",
+    "attempt-1-source/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AgentApkQuiescenceTest.kt": "48e290bdce568ebd9bf73c19df942306682dc7d03e2bb24b65cb744721e7e1f8",
+    "attempt-2-compilation.log": "427763396e4782f618d68f9a1a2d2b72c6509fb28a98b86302ea4f5016c9a2c4",
+    "attempt-2-source-manifest.json": "556571d0fdc5415c84d1b6679848d123c8f954bc30078a88f2225cd207a7ca97",
+    "attempt-2-source/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/ApkUpdateActivityTest.kt": "07f55d0980b865cd03448e844ad968802896f8b622338d05e108e05ab1d3dea4",
+    "attempt-3-source-manifest.json": "5975b0e348df6f3b115532068076f6e381c25a9033ccae7313a98a25161e9130",
+    "attempt-3-source/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AgentApkQuiescenceTest.kt": "f1b4517682bb01a3a2e75a92290f8b0d91237a17b469d88771e8bb54508daa1b",
+    "attempt-3-source/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AndroidApkImportsTest.kt": "6681f72b411800e8549a15f45ba70313c56829285061551ce200ea08712836f1",
+    "attempt-3-source/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/ApkUpdateActivityTest.kt": "9105189332aac0744ac687e3cd86fde71203cce717469259ef5bba34a0346719",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "1b06755740a70503d814e725b769853187618b28bf221051f1099f0e9d302f0c",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.AndroidApkContinuityTest.xml": "8f052225961827c39d3543654d971b8693ed1cccac9b09dd18e8a5c9c8bf767e",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.AndroidApkImportsTest.xml": "98b88654bbbedd41c5fd2412793a2bc40b9ad10dfeec1ccc1e66ccf4141fe971",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.AndroidApkInstallPolicyTest.xml": "f5e6aa4654e227a21a994e33a010c1513add7183b76c9036a863c6b693467dd1",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "8d3de244bbd0c506a47780000632dde6a90afa569c124478222eae51cca38437",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "ab8d67586817dd1089791a229433ed370d68b2dbb88323826676ef8e92bd90a4",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.AndroidApkMaterialsTest.xml": "0d66ae6d50d46acdcdde75c0b151049690f524dd9fe879281162694c509805d7",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "89b3a71d6c999a0a473ecb965a7cff2f64359053e692d8492420efc8d97de3d1",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.AndroidInstalledApkTest.xml": "c31b476c42134516aba58f6a43987e77a1ab75bcd08ad0ad06773687dedfc21c",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "e21006f5170207f2652496754a441fe8a9ec60ffd830a39e9168ff26a0036dbf",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.ApkUpdateActivityTest.xml": "45111c0985aa7504836dbadece5f3dd1611787f03c50bc5be72d87179130cbb6",
+    "attempt-3-test-results/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "58fa97d3b19acd3513ee0306c3e246096c53a0b3d812762420e120781d46f900",
+    "attempt-3-tests.log": "53077090cd7b2e0a05c2baaf78bce20913b2b17ac846ea382ce4b07d0cc40cca",
+    "attempt-4-source-manifest.json": "705070ec551f342d9c77d5df3c0c37207469bb34d6934d45d2ce005ab41024f2",
+    "attempt-4-source/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AgentApkQuiescenceTest.kt": "d676d6c4c1cc106cc0e0a651e6cbb4fa97689bd4ab1c30453bade8b87dd6ca68",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "7cfa9db13c89dd342820f06409d478f9abdaf61dab2fcd0b646f30a675be5fc9",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.AndroidApkContinuityTest.xml": "065aafbe0729bae5f9a3d22a4f46d9dc673d8fd32a8a305b1890550199b7a654",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.AndroidApkImportsTest.xml": "8d7c4ff382c83bda513769840bd74be6dc6122e81245764c47790d1bca535922",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.AndroidApkInstallPolicyTest.xml": "c28002c07509a2084cbc48b8c9a4c033923d48af364faa4dfc4a8e9a4a2e310a",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "e1a68206ebe2bb6dd3972e1b02ad68e60df2b58b5a35284d9af24b32f9c03689",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "cb8f4a7bcec5cdec5ca370a628aea2983862c969a434c415568029eeed0110f7",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.AndroidApkMaterialsTest.xml": "1790022232826b118015d28814135c9c8e11da346b12e253743f6a9e9cc2c14d",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "bc800ecacf7e1907cbfe07fa9b857a66630abeb97f6a0bbb006c369ed187499d",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.AndroidInstalledApkTest.xml": "08d5aba40e765ef0bae0ad36500496271ef3fd1348d08bace3148f1dbd39b490",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "22478561c4a5227cc7214742a7f962711682b002f71d7a2994ad75fc8cb57bde",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.ApkUpdateActivityTest.xml": "7ac5c7cc3d4737f51a12d4e1c94c785c3fae4b84f709897d3c2a0c26b3ff52ed",
+    "attempt-4-test-results/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "1ddc655d9a9904f1b821cdbe529f62a6f253085ed85b212d5cc1dbe4525ef44e",
+    "attempt-4-tests.log": "b2ddfe606ea9704e7f7a05973ed65ae7a8ec15406a597e20010421c9ea4e98e2",
+    "attempt-5-source-manifest.json": "74f2da4de471919c4b7dc3161e6dabc809b90640b9f12225f9f620acaf3faf0d",
+    "attempt-5-source/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AgentApkQuiescenceTest.kt": "88b01e5fb393ab96c8325dc0bb6e18c5281e9de9886323a6d82a54302bf809bf",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "7f12a38212428894e986c210cca1974a604994b7a0809f9deee4d4101962c43f",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.AndroidApkContinuityTest.xml": "9ceff3023218253259ddefed28406a3c2d920d0c5e1c59c5ba52f1150e70b4e8",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.AndroidApkImportsTest.xml": "f27c8dba95cb386eb77209e901ad82a40bdfaf3be2f8233125eb822fd65b6d47",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.AndroidApkInstallPolicyTest.xml": "089625ebc68c832f22deb0fd3a6cc2282a5d177f1b90a7e4ae1955dc8f1f5bd4",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "a6efe12d7847a2bf92ca9c1d7f9f196843a105317db39dd02e7a1a8cf75b2bef",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "d7b2626a6ee43a386b9b04fba91230f1d0608bb09219261ea6f3b4c1e7ee0987",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.AndroidApkMaterialsTest.xml": "ba132e54d972ab56d433920c1dda37ce87edb11568d1f839af844d0fbdc02241",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "e10944d285e501bde5429f59e8fbd9c4e7ab6ed07a01a297c08555e4f0dcaead",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.AndroidInstalledApkTest.xml": "e516eaa4d4d3684aa306e42b1619b4c104ac97578215d92dadf0e26001932d9d",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "bf1c63e2fbb69f109949afc86d462b64eda95adf0e566f67537dea6637486dd4",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.ApkUpdateActivityTest.xml": "38099cf676bd4889f8fbcaa093df04888ecc6c0357770ca9cb24fcf2a83b00b9",
+    "attempt-5-test-results/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "286ae627e017e9871b90a28c990d4e2e774dac2f56060293078592830ff678ff",
+    "attempt-5-tests.log": "d49fc74343454dfdd33ddfa317306646c5f9ebf7631c08df03cec7ca3e61b52d",
+    "attempt-6-lint-results-debug.xml": "dc2527b282ef66f519fc1f58ce99cc5762a1d54f70f24db8ee8833ee6d411812",
+    "attempt-6-passed-tests-new-lint.log": "a7d0e929804578246792151deb2d8e3db41a67a3177b40a232e6352939ae1c9c",
+    "attempt-6-source-manifest.json": "f4d9cb7f1610bb270b9965e5d414749e4ba1c11fcaa5398006b44f7b17a5ffd1",
+    "attempt-6-source/apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/ApkUpdateActivity.kt": "7bc6c39ad4cd58be0a4e52503aa3ed093f1186169a4c6f066acdb911253425b3",
+    "attempt-6-source/apps/tv-agent/app/src/main/res/values/strings.xml": "bf6b6ae519dec51a6c2968f61706a5caf5001e3a3b723af7c4d898b6161e54a2",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "095be920d4e51f5af076e2510db4bbddae2e38f36e5687bec129aac1e0121de2",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.AndroidApkContinuityTest.xml": "08c0d11550b2f71709758212eb5e009251cbc08d6d3b9c57736ba756dac482cb",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.AndroidApkImportsTest.xml": "4bbe8315b84c71cb15c3cefff587003f1feed2924e2dd2f300bcb0a7d57fb2a3",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallPolicyTest.xml": "de5688b73a43828efe3893505591dca13d3d0c149461c983fc2e78cfd98e1423",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "d6eb2ded524afab7d229d7b0fdac69085aebbe5a8a774678e3649b864227ba24",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "0cbf8b1427e7cf93ad202f4a3c3b7ebc5ac4a30367a72ad13ac119a73ad431d9",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.AndroidApkMaterialsTest.xml": "a9972737adb2d8138dbd6122902db68b463ee05695f7b88c0b1d0d18ae2cd5e9",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "542a80ac22df763e5c3313a67024def00058116afd21eb6b3b9afa4826713b9a",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.AndroidInstalledApkTest.xml": "4f1483cfc087f2c9797cc70bf8bb4cbc1468110da0518d287399f632e50b0f67",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "030e64202326de07f3366b24d14082394dbe17ad34019aad89b34d8d03c45032",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.ApkUpdateActivityTest.xml": "2a82a6dfff19ff1d3047259b6e66145653ff9d60cf9be024f21e72a0b3d41547",
+    "attempt-6-test-results/app/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "aed8dfcdb43c733cc17f8a503b5d5307d744ee3c047f0df53edab18ae76442ec",
+    "attempt-6-test-results/core/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "374403f9211aea5879c156770d1cf73cd3d819aafd69cc19286a4f1392895763",
+    "attempt-6-test-results/core/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "abaa757e4959042d2cc1aa6f47503291a3962db51627a1d2481df11d71fc28f7",
+    "attempt-6-test-results/core/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "ba2d3831ae576171f9f5730f34b261ba46f82450efaa57e6d50d88c956c11198",
+    "attempt-6-test-results/core/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "c46f1afb845e339eb76bebd1c1ec67e162b7dd6eeece917466d7be083c483120",
+    "attempt-6-test-results/core/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "4d8fa5dad469c50df2375cacec88892a64a750e62fc402aab46bad142427662e",
+    "lint-results-debug.xml": "4dcb239bc24411de21361b5c6150d42142eb2e5528a0466dacbc0bd457c2937e",
+    "previous-evidence-sha256.json": "26e79b761f67eddd072eac3f76535a9905f4b306ae64298d02db307884cafc82",
+    "source-manifest.json": "ff6148ef7962c9b44e1f535d0f9947d3210bf3ee58d26a64c2e82ce2dd8b18a8",
+    "test-results/app/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "bdd47f0840aec0bd54ec2f21b2c51017fb362ef973a0565e5790636dc46c4ce8",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkContinuityTest.xml": "c0641977867715942d1ea2fb795f17fae8887efaf196bd0f240dd6407b9dbdb4",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkImportsTest.xml": "95b11797150fb9f342d27caa87f7a5a276300a9e9cf0842ee4b5d663511ada11",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallPolicyTest.xml": "bbd9ca6226e4c5c54d3a59db73a8961740694eb90d0c81958c07bbfe9b113067",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "534caca6330e47dda622fa0f51c128d225d67ac2e5af66a9e69e6c03146610f8",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "e02991492f2304549d9614e28663545546ecb821c14efa224eb4310bbb94123d",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkMaterialsTest.xml": "e4dc57f3bbefbdd9e1e26a1aa4816f78b4d48d5408c5f3f6122ee51f7eb2cc00",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "a24c108645f0b0ddb09978489b6cfbd702e2ce2758ac911b889972b51060ee72",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidInstalledApkTest.xml": "2e7989b4e17b332a873ef33c5c2dfd8a87c7aa15e150cbb9522f90c8936ebb74",
+    "test-results/app/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "8052a69c499e2ac875871b82af3e4c251058565a59df3482902a89ae13298291",
+    "test-results/app/TEST-run.limeai.iot.television.ApkUpdateActivityTest.xml": "2569fc13997476ca902daa2985953bd64045398087bc9e4ec6a07fb650ee7cd7",
+    "test-results/app/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "7b7e32b30885fe4865b4b3507eb4a0a055cf68bcd21fd553727ef4fcb9575b53",
+    "test-results/core/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "374403f9211aea5879c156770d1cf73cd3d819aafd69cc19286a4f1392895763",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "abaa757e4959042d2cc1aa6f47503291a3962db51627a1d2481df11d71fc28f7",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "ba2d3831ae576171f9f5730f34b261ba46f82450efaa57e6d50d88c956c11198",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "c46f1afb845e339eb76bebd1c1ec67e162b7dd6eeece917466d7be083c483120",
+    "test-results/core/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "4d8fa5dad469c50df2375cacec88892a64a750e62fc402aab46bad142427662e",
+    "tv-agent-imports-debug.apk": "3a72084c2a8ea9ae283a99901b56e11b274d6945ac58826810c5d5f41148cf77",
+    "verification.log": "4746dba6ecb9cf5d7655f4df72d87ca611343f41a092325bcc7d9c022ecb2d98"
+  },
+  "limits": [
+    "The new product entry only imports, reviews, prepares and cancels a not-yet-created plan. It does not create, stage or commit a system installation.",
+    "System source-settings return and pending-user confirmation recovery, real installation and complete post-update identity/grant/journal/key continuity and health remain separate work.",
+    "The source URI is used only during an explicit import. Failed part files remain and cannot be overwritten; only unapproved copies with no journal record may be explicitly discarded.",
+    "Debug allowance is local to the explicit review approval. Later installation effects must reapply debug/material/source/continuity gates; the signed report does not grant authorization.",
+    "Approved records and copies, including cancelled history, are retained and count against quotas. No automatic garbage collection or health terminal was added.",
+    "installed_unverified and unknown system outcomes remain blocking. Host platform Views and JDK crypto are not Android TV UI, Android JarVerifier or installation evidence."
+  ]
+}

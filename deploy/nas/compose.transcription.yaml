@@ -1,0 +1,7 @@
+# 在基础与媒体覆盖后叠加。识别服务保持独立，不阻塞网关启动。
+services:
+  gateway:
+    environment:
+      LIMEIOT_ASR_URL: ${LIMEIOT_ASR_URL:?}
+      LIMEIOT_ASR_MODEL: ${LIMEIOT_ASR_MODEL:?}
+      LIMEIOT_ASR_CA_FILE: ${LIMEIOT_ASR_CA_FILE:-}

@@ -1,0 +1,481 @@
+{
+  "input": {
+    "media_id": "media-source",
+    "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "language": "zh",
+    "expires_at": "2026-11-03T08:01:25.123+08:00"
+  },
+  "normalized": {
+    "media_id": "media-source",
+    "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "language": "zh",
+    "expires_at": "2026-11-03T00:01:25.123Z"
+  },
+  "original": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "idempotency_key": "original",
+    "input": {
+      "media_id": "media-source",
+      "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "language": "zh",
+      "expires_at": "2026-11-03T00:01:25.123Z"
+    },
+    "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4"
+  },
+  "capabilities": {
+    "configured": true,
+    "capability": "audio.transcribe",
+    "deployment": {
+      "adapter": "local-http-transcription-v1",
+      "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "model": "test/zh-small",
+      "data_location": "local"
+    },
+    "languages": [
+      "auto",
+      "zh",
+      "en"
+    ],
+    "concurrency": 1,
+    "max_audio_bytes": 4194304,
+    "max_audio_seconds": 60,
+    "max_text_bytes": 8192,
+    "max_characters": 2048,
+    "max_deadline_seconds": 90,
+    "streaming": false,
+    "provider_cancellation": false
+  },
+  "tasks": {
+    "running": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:00.123Z",
+      "status": "running",
+      "output": null,
+      "error_code": null
+    },
+    "succeeded": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:00.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "unknown": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:02.123Z",
+      "status": "unknown",
+      "output": null,
+      "error_code": "transcription_interrupted"
+    },
+    "discarded": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:03.123Z",
+      "status": "discarded",
+      "output": null,
+      "error_code": "transcription_output_discarded"
+    },
+    "failed": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "failed",
+      "output": null,
+      "error_code": "invalid_transcription_output"
+    },
+    "cleared": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": null,
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:00.123Z",
+        "cleared_at": "2026-11-03T00:00:05.123Z"
+      },
+      "error_code": null
+    },
+    "empty": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "",
+        "content_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "expires_at": "2026-11-03T00:10:00.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "timezone": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T08:01:25.123+08:00"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:00.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    }
+  },
+  "invalid_tasks": {
+    "digest": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "expires_at": "2026-11-03T00:10:00.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "control": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "bad\rtext",
+        "content_digest": "sha256:2e1a3df17d8fc1b86f60cfa05b459bd603c4347738124a22d209df2272c3f06b",
+        "expires_at": "2026-11-03T00:10:00.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "too_many": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋",
+        "content_digest": "sha256:032958f25b142cd5635d6ca0b835639e4b99e281d65bdfc48417b3ef49b18e0f",
+        "expires_at": "2026-11-03T00:10:00.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "missing_text": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:00.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "cleared_text": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:00.123Z",
+        "cleared_at": "2026-11-03T00:00:05.123Z"
+      },
+      "error_code": null
+    },
+    "short_ttl": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:00:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "long_ttl": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-04T00:00:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "late_success": {
+      "transcription_id": "transcription-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:7e46e74ba651d42c67e3fdaf8b7122f8d292eb5b96e8fc077a3537b18bcaa7b4",
+      "input": {
+        "media_id": "media-source",
+        "media_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "language": "zh",
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "model": "test/zh-small",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:01:25.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:00.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    }
+  }
+}

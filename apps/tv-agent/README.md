@@ -6,6 +6,8 @@
 
 ## 构建与验证
 
+2026-11-03真实MiTV4-ANSM0/API23验证已取得AES-GCM/错误主机名2项、P-256不可导出/CSR/重开1项和一次实际目标Activity启动的证据；完整旅程仍未通过。第二条命令为confirmed/submitted，但未得到第二条Activity生命周期记录；测试目标改为singleTask后仅构建/lint通过，尚未安装复验。用户因家人观看暂停电视调试，自有Agent测试进程已停止；后续不自动恢复实机动作。详情及前台服务限制见 [24第4.51节](../../docs/24-实施计划与进度.md#451-tv-agent-api23兼容修复与实机阶段暂停) 和 [型号台账](../../docs/30-设备支持矩阵与证据台账.md#9-dev-cand-08-tv-agent-api23阶段验证)。
+
 需要 JDK21；协议旅程另需仓库 Rust/Node24 工具、OpenSSL 和测试 Broker，Android 任务需 Android SDK 36/build-tools 36.0.0 并设置 `ANDROID_HOME`。复用手机工程现有 Gradle wrapper，两个工程分别配置和构建，不依赖手机核心库：
 
 ```sh
@@ -35,7 +37,9 @@ node --test --test-concurrency=1 "tests/tv-agent.test.mjs" "tests/tv-agent-model
 
 实际JVM Agent/假ADB组合的后续软件验收已通过，见 [24第4.22节](../../docs/24-实施计划与进度.md#422-adb身份预检合并与实际jvm组合软件验收)。三个JVM、同一逻辑设备，原生与假ADB各两次模拟效果；验证单路径离线、两端撤销、网关/JVM重启及unknown保留不重放。等待新原生启动时同时核对apps.launch可用，不以ADB维持的聚合ready代替。ADB身份查询已合并为固定只读命令，仍核对两项身份和原期限；Android端上完整入口及物理归属继续未验收。
 
-`core` 和 `app` 输出 Java 8 字节码，使用 Kotlin、Jackson流式解析、Paho MQTT5和OkHttp主机校验；依赖在各模块独立锁定。APK 位于 `app/build/outputs/apk/debug/app-debug.apk`，包名 `run.limeai.iot.television`，minSdk=23、targetSdk=36、versionCode=3/versionName=0.3.0。这是调试构建；真实Keystore/TLS、系统运行政策和指定电视仍需端上验收。
+`core` 和 `app` 输出 Java 8 字节码，使用 Kotlin、Jackson流式解析、Paho MQTT5和OkHttp主机校验；依赖在各模块独立锁定。APK 位于 `app/build/outputs/apk/debug/app-debug.apk`，包名 `run.limeai.iot.television`，minSdk=23、targetSdk=36、versionCode=3/versionName=0.3.0。这是调试构建；真实Keystore/TLS的分项证据与系统运行政策、完整指定电视验收分别记录。
+
+外部Broker配置仍只接受`ssl://`。Paho1.2.5默认TLS模块引用API24才有的`SNIHostName`，已用其公开传输SPI接入`VerifiedMqttTls`，仅内部使用`limeiot-ssl`。系统分层TLS工厂接收原始host，保持独立CA、客户端证书、握手期限及OkHttp严格主机名校验；不回退明文或系统CA。APK合并第一方与Paho的SPI服务声明。这是固定依赖的传输兼容修复，不是通用设备插件机制；实际正向mTLS使用旧PEM材料路线，不能替代本机EC身份的完整签发/连接验收。
 
 ## 本机导入与运行
 
@@ -61,7 +65,7 @@ python3 "tools/tv-agent-enrollment.py" \
 
 ## 本机持钥与CSR基础层
 
-核心提供无需导出私钥的`DeviceSigningKey`、持钥TLS及标准P-256 CSR生成/恢复；Android已接初次本机请求、公开证书确认、SQLite恢复与电视界面。旧PEM材料仍可独立导入；已有身份走独立受控轮换，不能通过初次请求覆盖。初次与双键轮换已有软件证据，见 [24第4.29节](../../docs/24-实施计划与进度.md#429-tv双键轮换激活证明与撤旧软件闭环)；实际Android EC持钥与完整运行仍未验收。
+核心提供无需导出私钥的`DeviceSigningKey`、持钥TLS及标准P-256 CSR生成/恢复；Android已接初次本机请求、公开证书确认、SQLite恢复与电视界面。旧PEM材料仍可独立导入；已有身份走独立受控轮换，不能通过初次请求覆盖。初次与双键轮换已有软件证据，见 [24第4.29节](../../docs/24-实施计划与进度.md#429-tv双键轮换激活证明与撤旧软件闭环)；实际API23 EC不可导出/CSR/重开单项结果见4.51，完整身份接入、轮换与运行仍待验收。
 
 初次流程为：所有者准备公开配置 → 电视导入并核对CA/身份 → 明确申请并保存原CSR → 导出并独立核对SPKI → 管理端按原请求签发/恢复 → 电视只导入`device.crt`并明确保存 → 授权应用并开始连接。公开配置格式见 [Schema](../../contracts/tv-agent-identity.schema.json)，其准备方式如下（输出目录须为本人私有目录，输出文件必须不存在）：
 
@@ -85,7 +89,7 @@ sh "apps/android/gradlew" --no-daemon -p "apps/tv-agent" :core:test --tests "*De
 
 可将Python路径替换为按 [签发合同](../../contracts/device-enrollment.md#准备与发现) 准备的私有环境，不需要安装全局依赖。测试只在`.dev/tv-key-csr-*`新建隔离NAS材料并留下公开结果，不访问用户NAS；临时目录中的CA及Broker私钥仍需作为测试秘密保管。默认`:core:test`在缺少明确环境时跳过该管理签发项，纯JVM持钥/CSR与TLS检查仍运行。
 
-`IdentityKeyRuntimeTest`另外定义实际Android EC不可导出、重开及缺钥不补建的门槛；测试APK编译不代表该测试已运行。使用相同环境执行`:app:testDebugUnitTest --tests "*LocalIdentityStoreTest"`验证存储/故障与实际NAS签发→重开→同键mTLS；未配置管理环境时该集成项显式跳过。`npm run test:tv-agent:android`还运行公开配置工具与严格Schema检查。软件、构建与端上状态分别见 [24第4.29节](../../docs/24-实施计划与进度.md#429-tv双键轮换激活证明与撤旧软件闭环)，完整身份流程见 [34第5.5节](../../docs/34-电视终端与AndroidTV接入.md#55-本机身份接入与保留原记录的换钥方案)。
+`IdentityKeyRuntimeTest`的EC不可导出、CSR、重开及缺钥不补建方法已在真实API23通过，见4.51；另一个删除测试方法未运行，不将其编译计为端上通过。使用相同环境执行`:app:testDebugUnitTest --tests "*LocalIdentityStoreTest"`验证存储/故障与实际NAS签发→重开→同键mTLS；未配置管理环境时该集成项显式跳过。`npm run test:tv-agent:android`还运行公开配置工具与严格Schema检查。软件、构建与端上状态分别见 [24第4.29节](../../docs/24-实施计划与进度.md#429-tv双键轮换激活证明与撤旧软件闭环)，完整身份流程见 [34第5.5节](../../docs/34-电视终端与AndroidTV接入.md#55-本机身份接入与保留原记录的换钥方案)。
 
 ## 保留原记录的换钥
 
@@ -108,7 +112,7 @@ sh "apps/android/gradlew" --no-daemon -p "apps/tv-agent" :core:test --tests "*De
 3. 使用“导入换钥回执与证书”，选择原操作回执和当前有效的新证书，核对后明确切换。新恢复须使用管理v3；由原普通换钥进入维护时，可以核对该原操作的v2回执，不能删字段或改用途伪装新恢复。原空间、设备、CA、模型、应用授权及完整命令记录保留。
 4. 导出原激活证明，沿原ID完成`complete-rotation`并核对管理完成结果。管理者重载Broker并检查连接后，才能按下节独立核对并清理原旧键。
 
-维护对象不提供TLS或私钥导出，普通读取与连接继续拒绝过期证书。内部恢复记录v3、管理恢复回执v3和设备材料v3属于不同格式；数据库仍v3，旧内部v1/v2保持可读。原请求、候选缺钥和切换不确定时均保留原记录，不自动补建或转用另一用途。当前软件与端上证据分别见[实施进度](../../docs/24-实施计划与进度.md)，实机按用户要求跳过。
+维护对象不提供TLS或私钥导出，普通读取与连接继续拒绝过期证书。内部恢复记录v3、管理恢复回执v3和设备材料v3属于不同格式；数据库仍v3，旧内部v1/v2保持可读。原请求、候选缺钥和切换不确定时均保留原记录，不自动补建或转用另一用途。当前软件与端上证据分别见[实施进度](../../docs/24-实施计划与进度.md)；该单台电视分项结果与用户暂停状态见4.51，其他实机继续跳过。
 
 已经连接时证书到期，也会停止接受新控制并结束连接；缓存TLS工厂不能建立新连接。页面和运行时阻止增加应用授权，仍可撤权。原尝试和结果继续保存，未能发送的结果不会变成重新启动应用的理由。软件验证及未验收范围见 [24第4.33节](../../docs/24-实施计划与进度.md#433-tv过期身份维护与持续有效期软件闭环)。
 
@@ -138,7 +142,7 @@ sh "apps/android/gradlew" --no-daemon -p "apps/tv-agent" :core:test --tests "*De
 | `AndroidIdentityKeys.kt` | AndroidKeyStore明确创建/读取及核对公钥后的受控删除，由耐久原意图控制；不提供自动缺钥补建 |
 | `DeviceEnrollment.kt` | 严格本机材料、身份摘要与Broker地址校验 |
 | `DeviceIdentitySetup.kt` / `LocalIdentityRecord.kt` | 公开配置、耐久原请求与指纹恢复；本机引用不由外部文件提供 |
-| `DeviceMqtt.kt` | Paho传输、有界消息、重连与当前连接检查 |
+| `DeviceMqtt.kt` / `VerifiedMqttTls.kt` | Paho传输、API23兼容TLS SPI、有界消息、重连与当前连接检查 |
 | `DeviceAgentTest.kt` | 重复、未知、存储故障、撤权、期限及恢复 |
 | `MqttJourneyTest.kt` | 根目录Node旅程驱动的独立JVM设备及文件硬件夹具 |
 | `MqttJourneyMain.kt` | 测试专用Java入口，复用同一协议旅程及失败断言 |
@@ -148,3 +152,108 @@ sh "apps/android/gradlew" --no-daemon -p "apps/tv-agent" :core:test --tests "*De
 | `app/TelevisionActivity.kt` | 遥控器可操作的材料确认、连接、授权及诊断 |
 
 Android通过 `DeviceStorage`、`ApplicationPort`、`DeviceClock` 接入设备核心；应用端口只依赖当前授权函数，便于独立检查系统API。没有复制网关模型或命令状态机，也没有增加通用Android设备SDK或插件宿主。宿主API23启动检查不覆盖该系统的SQLite/Keystore实际运行；存储故障使用支持的原生SQLite沙箱，最终范围见24。
+
+## APK离线预检
+
+现有工具比较两个固定APK，检查包名、单签名证书、版本递增、目标API与打包ABI；不连接电视或执行安装。需要Python3、JDK21与已安装的Android build-tools 36.0.0，确保apksigner可找到JDK。SHA-256参数均为64位小写十六进制，不带sha256前缀；基线/候选整包摘要与签名证书指纹须从独立可信资料核对，不能只对未知下载现场算摘要便视为已批准。
+
+```sh
+python3 "tools/tv-agent-apk.py" \
+  --build-tools "$ANDROID_HOME/build-tools/36.0.0" \
+  --baseline "/private/approved-old.apk" --baseline-sha256 "<基线整包摘要>" \
+  --candidate "/private/approved-new.apk" --candidate-sha256 "<候选整包摘要>" \
+  --signer-sha256 "<签名证书DER摘要>" \
+  --device-api 23 --device-abi armeabi-v7a --device-abi armeabi
+npm run test:tv-agent:apk
+```
+
+示例占位值必须替换。普通调用默认拒绝调试候选；仅受控开发样本额外传`--allow-debug`，不放行testOnly或其他错误。包名固定run.limeai.iot.television；暂不支持split、共享UID、证书轮换、多签名或降级，也不自动接受额外系统库/硬件要求。输出会列出新增权限；offline_checks_passed始终保留installation_authorized/device_state_verified/storage_compatibility_verified=false。ABI是打包目录检查，非ELF加载或设备运行证明。
+
+专项入口使用官方工具生成真实签名的隔离测试APK，核对篡改、错误签名、API23的v2-only拒绝、API/ABI、版本、拆分依赖及进程预算；没有ADB或模拟器前提。工具路径可用LIMEIOT_ANDROID_BUILD_TOOLS和LIMEIOT_ANDROID_PLATFORM_JAR指定；默认复用ANDROID_HOME或本仓库开发SDK。13项及隔离TV Agent版本码3→4候选包的离线结果见 [24第4.52节](../../docs/24-实施计划与进度.md#452-tv-agent-apk离线预检与签名制品验证)，输出边界见 [合同](../../contracts/tv-agent.md#apk离线预检)。版本4仅为测试构建覆盖，根工程版本保持0.3.0/3；没有安装到电视或发布。
+
+## APK安装账本基础
+
+`core/ApkInstallJournal.kt`保存原请求及创建/提交前意图，`app/AndroidApkInstallStore.kt`用独立私有`tv-apk-install.db`进行原字节CAS与FULL同步事务；身份库tv-agent.db及其v3格式保持独立。重复请求、存储冲突/丢返回、未知创建/提交与系统结果均保留原记录，查询或重开不调用系统安装。最多128条历史/1MiB，达到上限拒绝，不清旧记录。
+
+本阶段没有PackageInstaller实现、界面入口或运行门禁接线。创建/提交与资格核对端口在测试中为显式夹具，系统回执也由夹具注入；不能据此报告实际安装、当前包核对、用户确认或健康。系统“已安装”只保存installed_unverified并继续阻止新更新，后续仍需身份/授权/完整原日志和健康接受流程。
+
+验证沿用已有`npm run test:tv-agent:android`入口，或在已配置JDK21/SDK36环境执行下列完整Gradle任务；命令不连接ADB、电视或模拟器：
+
+```sh
+sh "apps/android/gradlew" --no-daemon -p "apps/tv-agent" \
+  :core:test :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
+```
+
+专用12项核心与7项原生SQLite宿主检查分别覆盖耐久意图、12种提交前/后故障、CAS冲突、创建丢返回、未知提交、待用户状态/重复结果、重开与独立身份库不变。实际结果见 [24第4.53节](../../docs/24-实施计划与进度.md#453-apk安装原任务账本与sqlite恢复基础)，字段和阶段语义见 [合同](../../contracts/tv-agent.md#apk安装任务账本)。宿主SQLite与错误处理不证明AndroidKeyStore、系统安装器、Flash掉电或真实电视更新。
+
+## Android安装会话适配层
+
+后续新增`AndroidApkInstaller`与`AndroidApkSessions`，以PackageInstaller完成固定原会话的写入/fsync/完整读回/提交，并通过非导出的`ApkInstallResultReceiver`保存原结果。创建/提交前强制调用资格端口；API23从系统保存的原标签核对声明长度，API27起额外核对getSize，实际字节始终读回。API31起要求用户动作及显式可变广播PendingIntent；不自动弹确认界面、不重建部分会话、不重发未知提交。
+
+AgentRuntime在新建连接许可前拒绝未决/待验证更新或不可读的更新库。产品更新入口、安装来源授权界面、预检来源验证、停止已有连接与在途门禁、系统确认交互、完整连续性和健康接受仍待接入，不能绕过这些前提直接使用空资格回调。软件测试继续使用上方Gradle任务，平台参数、字节端口夹具及回执投递的精确结果见 [24第4.54节](../../docs/24-实施计划与进度.md#454-android安装会话与私有回执软件适配)与[合同](../../contracts/tv-agent.md#android安装会话与私有回执适配层)。这些代码没有安装或连接电视。
+
+## 当前安装包基线核对
+
+AndroidApkInstaller已默认使用AndroidInstalledApk，在创建、暂存及提交关键边界核对系统当前自身包、UID、完整版本码、唯一DER签名与实际基础包SHA-256。API23走旧签名接口，API28起必须有现代签名信息；shared UID、split、多签/轮换、版本高位、错摘要、包读取前后变化均拒绝。逐块资格检查不重复扫描整包，未知提交查询保持只读。实现和文件系统信任边界见[合同](../../contracts/tv-agent.md#当前已安装apk的基线核对)。
+
+新增12个测试方法在API23/28/31共执行16项通过，全部核心/App共149通过/5项既有跳过，Debug APK与lint通过；离线lint为0错误/4既有警告，没有新增警告，原两条依赖新版本提示未在离线运行发出。测试读取真实宿主文件，包/签名元数据、安装会话和完整运行资格仍是明确夹具，文件并非系统实际已装APK。结果见 [24第4.55节](../../docs/24-实施计划与进度.md#455-当前安装包基线核对与提供方接入)；冻结APK未安装，电视保持暂停。
+
+该层不验证预检/连续性材料的可信来源，不完成来源授权界面、停止已有连接/在途门禁或健康接受；产品仍无更新入口。当前包软件核验不能代替实际电视核验或更新后的记录/KeyStore连续性。
+
+## 安装来源与系统策略门禁
+
+AndroidApkInstaller已默认组合AndroidApkInstallPolicy：清单声明与实际来源授权分别核对，API23–25读Secure未知来源开关，API26起读按应用来源授权，各版本核对用户/管理员限制，API29起另验全局未知来源限制。逐块和关键边界失权即阻断，不改设置、不自动重试原提交。可供用户主动打开的系统设置Intent只构造和核对目标，不自动弹出；产品更新页面尚未接入。精确行为见[合同](../../contracts/tv-agent.md#安装来源授权与系统策略)。
+
+新增11方法/19次宿主执行通过，全部核心/App共168通过/5项既有跳过，Debug APK和lint通过（0错误/4既有警告、无新增警告）。设置/限制/解析器为Robolectric夹具，没有修改宿主或电视设置，没有启动设置页或模拟器。AOSP参考、失败修复和冻结证据见 [24第4.56节](../../docs/24-实施计划与进度.md#456-安装来源授权与系统策略门禁)；实际厂商安装和完整更新验收继续独立。
+
+## 更新前停止与运行Owner
+
+AgentRuntime的内部更新入口已组合原提供方与独立更新库，要求旧运行线程实际退出并清理后才能开始；stop已撤销许可但线程尚未退出时继续拒绝。提供方/回执/启动统一Owner→运行锁顺序，新连接tryLock立即拒绝忙Owner，已有连接的重复开始仍不结束当前服务。原未决账本继续阻断重连，失败/取消不会自动重连。原记录摘要已由下方独立连续性门禁接入，可信预检材料和产品交互仍待补齐，见[合同](../../contracts/tv-agent.md#更新期间的运行owner与停止边界)。
+
+新增5项宿主Runtime检查通过，全部核心/App共173通过/5项既有跳过，Debug APK及lint通过（0错误/4既有警告，无新增）。线程、队列与SQLite实际运行，连接端口明确为夹具；没有MQTT网络、实机安装或完整在途记录验收。证据和静态复核后的复验见 [24第4.57节](../../docs/24-实施计划与进度.md#457-运行owner与更新前线程退出门禁)，电视继续暂停。
+
+## 更新前原记录摘要
+
+新增只读DeviceJournalInspection与Android原库连续性摘要，覆盖合法confirmed/failed/unknown/未决日志及序号上界、原身份请求、授权、全部轮换/原清理决定和实际键状态。Runtime在原队列/Owner内读取，在安装关键边界强制匹配原计划；状态变化拒绝效果，旧键按原清理决定缺席无需补建。原始字节、未知状态和原批准时间均保留，规则见[合同](../../contracts/tv-agent.md#更新前原记录连续性摘要)。
+
+新增15项宿主执行通过；核心45过/3跳、App143过/2跳，Debug APK/lint通过（0错误/4既有警告）。精确文件字节断言覆盖已打开库内的只读事务，重开另以完整业务行摘要核对；既有helper打开会改变SQLite文件头计数，不承诺物理文件完全不变。测试使用宿主SQLite/EC及显式Vault、安装器夹具，没有实际AndroidKeyStore、网络连接或APK安装。证据见 [24第4.58节](../../docs/24-实施计划与进度.md#458-更新前原记录连续性摘要与边界核对)；后续签名材料接入见下节；产品更新及安装后健康仍待交付。
+
+## 签名预检材料
+
+原离线预检可另输出由同一APK签名身份认证的JAR，将下列选项追加到原命令：
+
+```sh
+--signed-output "/path/to/preflight.jar" \
+--signing-java-home "/path/to/jdk" \
+--keystore "/private/release.p12" --key-alias "release" \
+--store-pass-env LIMEIOT_APK_STORE_PASSWORD \
+--key-pass-env LIMEIOT_APK_KEY_PASSWORD
+```
+
+口令由部署者独立提供给相应环境变量，参数只传变量名；私钥不导出，已有输出不覆盖。默认SHA256withRSA，EC使用signature-algorithm=SHA256withECDSA。原JSON仍不授予安装或存储兼容资格。完整封装、用途和限制见[合同](../../contracts/tv-agent.md#签名预检材料与当前apk信任锚)。
+
+新增VerifiedApkPreflight/AndroidApkMaterials及Runtime签名材料入口：从系统当前自身签名取信任锚，核对实际基线、签名报告与候选字节，再结合原库摘要准备原计划；API/ABI、权限差异和本地开发包批准分别核对。完整验签/摘要在效果边界执行，未知提交查询不要求文件仍存在。原回调入口只用于故障注入，产品应走文件材料入口。
+
+核心45过/3跳、App154过/2跳、Python15项通过；新增8方法/13次执行通过，另有2条真实SDK→签名包→最终JVM验签链。APK/lint通过（0错误/4既有警告）。宿主App测试中的APK字节和系统签名元数据是明确夹具；另行SDK链使用真实隔离签名APK，均不冒称实际Android验签或安装。结果见 [24第4.59节](../../docs/24-实施计划与进度.md#459-签名预检材料与实际候选来源接入)。本机导入/保留与权限审阅见下节；系统确认恢复、真实安装和健康继续待交付。
+
+## 本机更新材料与批准
+
+设备页面选择“更新材料与批准”，停止连接后通过系统文件选择器依次导入同次发布的preflight.jar和APK。私有副本不参与备份，重启保留原申请；可核对版本、签名、整包摘要及新增/移除权限。开发包须另行勾选明确允许。批准会重新核对完整材料与当前原记录，并保存尚未开始安装的计划；原计划阻止连接，可明确取消以手动恢复连接。
+
+未批准导入可明确丢弃，已进入账本的材料和历史保留；失败part不覆盖。单报告1MiB、APK256MiB、合计512MiB、最多128项，容量满时拒绝新增，不自动淘汰历史。页面后台完成不弹文件选择或确认框；副本异常仍可查看原计划、取消尚未开始的计划。
+
+4.60阶段交付导入、审阅、保存及取消计划；后续原安装与系统来源/确认交互见下节。实际安装和更新后完整健康仍待验证，没有访问电视或启动模拟器。核心45过/3跳、App167过/2跳，新增7方法/13次执行通过，APK/lint通过（0错误/4既有警告）。宿主Views/文件/SQLite与实际电视交互分开，详见[合同](../../contracts/tv-agent.md#本机更新材料导入与可见批准)及[24第4.60节](../../docs/24-实施计划与进度.md#460-电视更新材料持久导入与可见批准)。
+
+## 继续原系统安装
+
+已保存计划可以选择“核对安装来源设置”，在系统允许后返回，再明确“核对并继续原安装”。页面再次展示原申请、版本/签名/摘要/权限变化，开发包须重新明确允许；Runtime沿原计划暂存、读回并提交一次。离开页面立即使本次前台许可失效，回来不会自动继续。只有系统回执改变安装结果，设置或确认页面的返回码只触发刷新。
+
+收到合法待确认回执后，可明确“核对并打开原系统确认”。入口仅在进程内保留，每次重验原材料/连续性、来源、自有原会话和系统组件；后台回执只刷新记录。进程丢失临时入口时保留原任务，不使用重新提交或隐藏action补取。创建未知只查询原自有会话；提交未知与系统成功待验继续占用。真实系统安装、厂商交互及安装后完整健康仍待设备验证。
+
+本阶段核心45过/3跳、App185过/2跳，新增9方法/18次宿主执行通过，Debug APK/lint通过（0错误/4既有警告）。系统会话/来源/确认均为明确夹具，没有安装或访问电视，见[合同](../../contracts/tv-agent.md#原安装任务与系统确认交互)及[24第4.61节](../../docs/24-实施计划与进度.md#461-原安装任务推进与系统确认交互)。
+
+## 安装后本机健康核对与明确接受
+
+系统成功后重新打开更新后的Agent，在原更新记录选择“核对更新后状态”，审阅后明确“接受本机健康”。核对实际候选整包、编译版本/加载路径、原身份/授权/命令/键及当前有效凭据；接受时完整重验。接受后仅允许手动连接，没有自动重连或命令重放。原提交未知仍阻断，不能借重新安装补取成功。
+
+APK账本写v2、读v1/v2，SQLite与身份库结构不变；旧程序拒绝v2。核心50过/3跳、App201过/2跳，合计251过/5跳，新增13方法/21次执行通过，Debug APK与lint通过（0错误/4既有警告）。系统包/加载路径为宿主夹具，宿主EC持钥不等于AndroidKeyStore；实际安装和跨更新完整控制旅程仍待验，未访问电视。详见[合同](../../contracts/tv-agent.md#安装后本机健康核对与明确接受)、[阶段4.62](../../docs/24-实施计划与进度.md#462-安装后本机健康核对与明确接受)及[证据](../../docs/evidence/2026-11-03-tv-apk-health.json)。

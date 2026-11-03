@@ -206,6 +206,10 @@ pub struct State {
     pub operations: BTreeMap<String, Operation>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub speech: BTreeMap<String, crate::speech::Task>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub transcriptions: BTreeMap<String, crate::transcription::Task>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub visions: BTreeMap<String, crate::vision::Task>,
 }
 pub struct GrantTarget {
     pub device_id: String,
@@ -222,6 +226,8 @@ impl State {
             grants: BTreeMap::new(),
             operations: BTreeMap::new(),
             speech: BTreeMap::new(),
+            transcriptions: BTreeMap::new(),
+            visions: BTreeMap::new(),
         }
     }
     pub fn active_object(&self, id: &str, now: DateTime<Utc>) -> Result<&Object> {
@@ -234,6 +240,52 @@ impl State {
             "media_not_found",
         )?;
         Ok(object)
+    }
+    /// 上传与模型输出共用对象校验；内部生成不借用调用者的幂等键命名空间。
+    pub fn add_audio(
+        &mut self,
+        bytes: &[u8],
+        retain_seconds: u32,
+        now: DateTime<Utc>,
+    ) -> Result<Metadata> {
+        ensure(now >= self.saved_at, "media_clock_invalid")?;
+        ensure(
+            (60..=86400).contains(&retain_seconds),
+            "invalid_media_upload",
+        )?;
+        let audio = wav(bytes)?;
+        self.prune(now);
+        let total: usize = self
+            .objects
+            .values()
+            .filter(|o| o.content_base64.is_some())
+            .map(|o| o.metadata.byte_length)
+            .sum();
+        ensure(
+            self.objects.len() < MAX_OBJECTS && total + bytes.len() <= MAX_TOTAL_BYTES,
+            "media_capacity",
+        )?;
+        let metadata = Metadata {
+            media_id: format!("media-{}", crate::id()),
+            space_id: self.space_id.clone(),
+            content_type: "audio/wav".into(),
+            purpose: "device_playback".into(),
+            actor: "local_owner".into(),
+            byte_length: bytes.len(),
+            content_digest: content_digest(bytes),
+            audio,
+            created_at: now,
+            expires_at: now + Duration::seconds(i64::from(retain_seconds)),
+        };
+        self.objects.insert(
+            metadata.media_id.clone(),
+            Object {
+                metadata: metadata.clone(),
+                content_base64: Some(STANDARD.encode(bytes)),
+                deleted_at: None,
+            },
+        );
+        Ok(metadata)
     }
     pub fn grant(&self, id: &str, epoch: &str, now: DateTime<Utc>) -> Result<&Grant> {
         let record = self.grants.get(id).ok_or_else(|| err("media_not_found"))?;
@@ -250,9 +302,35 @@ impl State {
     }
     pub fn prune(&mut self, now: DateTime<Utc>) -> bool {
         let mut changed = false;
+        for task in self.visions.values_mut() {
+            if let Some(output) = task.output.as_mut() {
+                if output.expires_at <= now && output.text.take().is_some() {
+                    output.cleared_at = Some(now);
+                    changed = true;
+                }
+            }
+        }
         for object in self.objects.values_mut() {
             if object.metadata.expires_at <= now && object.content_base64.take().is_some() {
                 changed = true;
+            }
+        }
+        for task in self.transcriptions.values_mut() {
+            let available = self
+                .objects
+                .get(&task.input.media_id)
+                .is_some_and(|object| {
+                    object.deleted_at.is_none()
+                        && object.content_base64.is_some()
+                        && now < object.metadata.expires_at
+                });
+            if !available {
+                if let Some(output) = task.output.as_mut() {
+                    if output.text.take().is_some() {
+                        output.cleared_at = Some(now);
+                        changed = true;
+                    }
+                }
             }
         }
         changed
@@ -300,38 +378,9 @@ impl State {
                     STANDARD.encode(&bytes) == *content_base64,
                     "invalid_media_upload",
                 )?;
-                let audio = wav(&bytes)?;
-                let total: usize = self
-                    .objects
-                    .values()
-                    .filter(|o| o.content_base64.is_some())
-                    .map(|o| o.metadata.byte_length)
-                    .sum();
-                ensure(
-                    self.objects.len() < MAX_OBJECTS && total + bytes.len() <= MAX_TOTAL_BYTES,
-                    "media_capacity",
-                )?;
-                let metadata = Metadata {
-                    media_id: format!("media-{}", crate::id()),
-                    space_id: self.space_id.clone(),
-                    content_type: "audio/wav".into(),
-                    purpose: "device_playback".into(),
-                    actor: "local_owner".into(),
-                    byte_length: bytes.len(),
-                    content_digest: content_digest(&bytes),
-                    audio,
-                    created_at: now,
-                    expires_at: now + Duration::seconds(i64::from(*retain_seconds)),
-                };
-                self.objects.insert(
-                    metadata.media_id.clone(),
-                    Object {
-                        metadata: metadata.clone(),
-                        content_base64: Some(content_base64.clone()),
-                        deleted_at: None,
-                    },
-                );
-                Receipt::Uploaded { media: metadata }
+                Receipt::Uploaded {
+                    media: self.add_audio(&bytes, *retain_seconds, now)?,
+                }
             }
             Change::Delete { media_id } => {
                 ensure(identifier(media_id), "invalid_media_change")?;
@@ -430,20 +479,39 @@ impl State {
         };
         self.operations
             .insert(request.idempotency_key, operation.clone());
+        self.prune(now);
         self.saved_at = now;
         Ok(operation)
     }
     pub fn validate(&self) -> Result<()> {
         let valid = || err("media_storage_corrupt");
         ensure(
-            ((self.schema_version == 1 && self.speech.is_empty())
-                || (self.schema_version == 2 && !self.speech.is_empty()))
-                && identifier(&self.space_id)
+            ((self.schema_version == 1
+                && self.speech.is_empty()
+                && self.transcriptions.is_empty())
+                || (self.schema_version == 2
+                    && !self.speech.is_empty()
+                    && self.transcriptions.is_empty())
+                || (self.schema_version == 3 && !self.transcriptions.is_empty()))
+                && self.visions.is_empty()
+                || self.schema_version == 4 && !self.visions.is_empty(),
+            "media_storage_corrupt",
+        )?;
+        ensure(
+            identifier(&self.space_id)
                 && self.objects.len() <= MAX_OBJECTS
                 && self.grants.len() <= MAX_GRANTS
                 && self.operations.len() <= MAX_OPERATIONS,
             "media_storage_corrupt",
         )?;
+        ensure(
+            self.visions.len() <= crate::vision::MAX_TASKS,
+            "media_storage_corrupt",
+        )?;
+        for (key, task) in &self.visions {
+            ensure(key == &task.idempotency_key, "media_storage_corrupt")?;
+            task.validate(&self.space_id, self.saved_at)?;
+        }
         ensure(
             self.speech.len() <= crate::speech::MAX_TASKS,
             "media_storage_corrupt",
@@ -458,6 +526,30 @@ impl State {
                         && object.metadata.created_at == task.updated_at
                         && object.metadata.expires_at
                             == task.updated_at + Duration::seconds(i64::from(task.retain_seconds)),
+                    "media_storage_corrupt",
+                )?;
+            }
+        }
+        ensure(
+            self.transcriptions.len() <= crate::transcription::MAX_TASKS,
+            "media_storage_corrupt",
+        )?;
+        for (key, task) in &self.transcriptions {
+            ensure(key == &task.idempotency_key, "media_storage_corrupt")?;
+            task.validate(&self.space_id, self.saved_at)?;
+            let object = self.objects.get(&task.input.media_id).ok_or_else(valid)?;
+            ensure(
+                object.metadata.content_digest == task.input.media_digest
+                    && object.metadata.created_at <= task.created_at,
+                "media_storage_corrupt",
+            )?;
+            if let Some(output) = &task.output {
+                ensure(
+                    output.expires_at == object.metadata.expires_at
+                        && (output.text.is_none()
+                            || self
+                                .active_object(&task.input.media_id, self.saved_at)
+                                .is_ok()),
                     "media_storage_corrupt",
                 )?;
             }

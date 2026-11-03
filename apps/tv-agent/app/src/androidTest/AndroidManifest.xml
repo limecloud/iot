@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <!-- 仅在隔离测试APK提供真实Leanback目标，正式应用不包含此入口。 -->
-        <activity android:name="run.limeai.iot.television.RuntimeTargetActivity" android:exported="true">
+        <activity android:name="run.limeai.iot.television.RuntimeTargetActivity" android:exported="true" android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />

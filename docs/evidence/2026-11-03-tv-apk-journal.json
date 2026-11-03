@@ -1,0 +1,186 @@
+{
+  "evidence_id": "EVID-TV-APK-JOURNAL-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "passed_host_journal_foundation_only",
+  "scope": {
+    "hardware": false,
+    "device_connection": false,
+    "apk_installation": false,
+    "installation_authorized": false,
+    "actual_package_installer": false,
+    "product_ui_integrated": false,
+    "runtime_eligibility_integrated": false,
+    "device_state_verified": false,
+    "native_app_runtime": false,
+    "host_native_sqlite": true,
+    "keystore_continuity_verified": false,
+    "full_record_continuity_verified": false,
+    "health_acceptance": false,
+    "power_loss_verified": false,
+    "published": false,
+    "full_goal_completed": false
+  },
+  "implementation": {
+    "core": "apps/tv-agent/core/src/main/kotlin/run/limeai/iot/device/ApkInstallJournal.kt",
+    "storage": "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidApkInstallStore.kt",
+    "database": "tv-apk-install.db",
+    "schema_version": 1,
+    "identity_database_schema_changed": false,
+    "max_records": 128,
+    "max_document_bytes": 1048576,
+    "candidate_max_bytes": 268435456,
+    "sqlite_journal_mode": "delete",
+    "sqlite_synchronous": "full",
+    "installed_unverified_blocks_another_install": true,
+    "healthy_terminal_implemented": false,
+    "automatic_retry": false,
+    "formal_ota_kind_extended": false,
+    "generic_update_plugin_contract_completed": false
+  },
+  "test_environment": {
+    "core": "JVM",
+    "app": "Robolectric API28 with host native SQLite",
+    "device_or_emulator_started": false
+  },
+  "test_modules": {
+    "core": {
+      "tests": 45,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "passed": 42,
+      "dedicated_test_methods": [
+        "lost_commit_response_and_restart_never_resubmit_or_infer_success()",
+        "storage_failures_before_and_after_durability_freeze_and_reopen_actual_phase_without_effects()",
+        "invalid_plans_and_corrupt_future_or_conflicting_records_are_never_rewritten()",
+        "bounded_original_history_has_no_automatic_retirement_or_id_reuse()",
+        "missing_creation_response_only_adopts_one_matching_original_session()",
+        "stale_instances_cannot_overwrite_another_original_decision_or_invoke_effects()",
+        "only_original_system_failure_or_cancellation_releases_occupancy()",
+        "pending_user_and_installed_results_preserve_original_session_and_still_block_another_install()",
+        "immediate_system_result_is_preserved_in_the_commit_return_and_original_record()",
+        "create_and_commit_intents_are_durable_before_each_system_effect()",
+        "original_request_is_idempotent_and_does_not_grant_installation_or_clear_history()",
+        "recheck_failure_before_or_after_intent_is_zero_commit_without_retry_fallback()"
+      ],
+      "skipped_methods": [
+        {
+          "class": "run.limeai.iot.device.DeviceSigningKeyTest",
+          "method": "connected_mqtt_stops_at_actual_certificate_expiry_without_another_application_effect()"
+        },
+        {
+          "class": "run.limeai.iot.device.DeviceSigningKeyTest",
+          "method": "public_csr_roundtrips_the_actual_nas_issuer_and_then_uses_the_same_opaque_key_for_mtls()"
+        },
+        {
+          "class": "run.limeai.iot.device.MqttJourneyTest",
+          "method": "actual_mtls_protocol_device_journal_and_process_restart()"
+        }
+      ]
+    },
+    "app": {
+      "tests": 73,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 71,
+      "dedicated_test_methods": [
+        "system_result_and_pending_confirmation_survive_store_reopen_without_automatic_installation",
+        "actual_sqlite_abort_before_intent_is_zero_session_creation_and_preserves_original",
+        "future_database_version_and_corrupt_document_refuse_without_resetting_original",
+        "durable_commit_followed_by_lost_return_reopens_intent_without_recreating_session",
+        "separate_update_store_does_not_touch_original_identity_grants_or_command_journal",
+        "native_sqlite_reopens_original_record_and_checks_cas_across_instances",
+        "corrupt_sqlite_file_is_not_deleted_or_replaced_by_android_helper"
+      ],
+      "skipped_methods": [
+        {
+          "class": "run.limeai.iot.television.LocalIdentityStoreTest",
+          "method": "actual_nas_signing_storage_reopen_and_same_key_mtls"
+        },
+        {
+          "class": "run.limeai.iot.television.LocalIdentityStoreTest",
+          "method": "actual_nas_expired_recovery_preserves_identity_and_broker_rejects_the_expired_certificate"
+        }
+      ]
+    }
+  },
+  "dedicated_test_methods": 19,
+  "storage_fault_matrix_cases": 12,
+  "gradle_tasks": [
+    ":core:test",
+    ":app:testDebugUnitTest",
+    ":app:assembleDebug",
+    ":app:lintDebug"
+  ],
+  "build_passed": true,
+  "lint": {
+    "errors": 0,
+    "warnings": 6,
+    "issue_counts": {
+      "NewerVersionAvailable": 2,
+      "TrustAllX509TrustManager": 1,
+      "SetTextI18n": 3
+    }
+  },
+  "artifact": {
+    "sha256": "48bef16c6e9ca82eb29b594ad603c530c632113fa58c062731591ff7cd124c58",
+    "debug": true,
+    "installed": false
+  },
+  "earlier_failures": [
+    {
+      "attempt": "first-build.log",
+      "failure": "App test compilation could not access the private shared certificate fixture.",
+      "fix": "Changed only the existing Fixtures object visibility to internal and reused its certificate data.",
+      "targeted_fix_rounds": 1
+    },
+    {
+      "attempt": "verification.log",
+      "failure": "SQLite synchronous=FULL assertion queried a separate connection and observed that connection's NORMAL setting.",
+      "fix": "Asserted FULL on the production store connection and added DELETE journal verification; no production durability requirement was reduced.",
+      "targeted_fix_rounds": 1
+    }
+  ],
+  "input_sha256": {
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidApkInstallStore.kt": "bbc9b6c481b313dade68c3492c16477e0682492a0d85e7f3c2a2c3d38a48e1e9",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AndroidBoundaryTest.kt": "81ec9fa16989dd123dc9bba8b8fe87994b3543b4b76402fc28f6fb67c862fb63",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AndroidApkInstallStoreTest.kt": "69c0e64d88f35cffd02e2cfd14ee2abece36a2bee083dd048ccf7dde6c1dc34f",
+    "apps/tv-agent/core/src/main/kotlin/run/limeai/iot/device/ApkInstallJournal.kt": "e8e024b93e6311924a2d2cec660928c8c4285a71a880e1d5bca9198d0f5d552c",
+    "apps/tv-agent/core/src/test/kotlin/run/limeai/iot/device/ApkInstallJournalTest.kt": "a7c7accab7c7cf6223a41db24a2e948da7809aa221b78da3a1001c802705f8ff"
+  },
+  "raw_evidence_sha256": {
+    "before-connection-fix-source-manifest.json": "f67f14276ed024bf6724aa83d8b62ea1142cd2a09ec8e7d83cd22b4a99a777f9",
+    "before-connection-fix-test-results/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "1b33544a48fb267cffdf8d7d298a3bc38f5e731590292ed232c05f3c6dc3d810",
+    "before-connection-fix-test-results/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "d08a19d122d78365a355ae53b258965e9c3a8e0f56f3db31a594d3c6cd415c75",
+    "before-connection-fix-test-results/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "803b70d6e1d904b84096b0f9d9686a2c4141169b584762762b7db1e65f62e628",
+    "final-test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "cb4b72c6ed17ebd97ff9783b2a27b0679c120fa3be8c003f85942ac33a06c39f",
+    "final-test-results/app/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "a1d019bcadfed24e8cfc0ff688aa4a915d9f6b24cb9667ff571cb0bbca03f57e",
+    "final-test-results/app/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "d0a3e443b7b656f24201cd6c311cffbd2bfc9eb678b94c3b65e63b707377bb4b",
+    "final-test-results/core/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "a2b6e1208c3cb83c2a04706159e7e803740b0c56212416e140409f41f36d5e57",
+    "final-test-results/core/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "52936fcad5d24ccac88b804bd5f56a391bf3041b64175bb4d75150dd54cd73b8",
+    "final-test-results/core/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "1451fb4de70b12729cd5a4d97451452a34add2193dbbf4a6ed0fe07618710f15",
+    "final-test-results/core/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "d9adfbfdd94925d9f41a5f59dbdde246818644252810dcf79814f475c17b4a42",
+    "final-test-results/core/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "9bd00d3b0acd6bc0a98e0fbc9a6dc82de3bbfdedd58ca4b88601cb68728888ec",
+    "final-verification.log": "41be873198b928ba002d48d61c78b46ba51eff982a17c30c51632974ca3a91d6",
+    "first-build.log": "84c742f02f8acdd6f3bec2be6650ad2680f25ffe312c11d7212c8dbd4f6b6076",
+    "first-source-manifest.json": "d4f8837ac1f8309d476d82341edc6363f1f4954fb327df01a549783c31c5bf86",
+    "lint-results-debug.xml": "80cf33404eb8ceffedce798e8f42598e166c35467598760feb9a7981e9789eaa",
+    "report.json": "2164c1018ba16cd155ea732d88812f80c8d37ad79f67e45368b3d305e1c637a5",
+    "source-manifest.json": "032068dad3c34ffe63218d350a50da56e177ac58ee458d57a9e59f82ab11989e",
+    "tv-agent-journal-debug.apk": "48bef16c6e9ca82eb29b594ad603c530c632113fa58c062731591ff7cd124c58",
+    "verification.log": "47e6d8987150776b82c52bd3677d90d6b5d2e2e7bde843d2bc3ffb38a5877b6b"
+  },
+  "limits": [
+    "Create, submit, eligibility checks, session claims and system results are explicit fixtures; no Android PackageInstaller or result receiver is implemented.",
+    "Staged digest and length are supplied values; this core does not read or write APK bytes.",
+    "A failed second eligibility check leaves COMMITTING with zero submit; only an independent recovery may resolve it.",
+    "Unknown creation with zero or ambiguous session matches is not retried; missing API23 sessions do not prove that creation never happened.",
+    "System success remains INSTALLED_UNVERIFIED and retains occupancy; no health acceptance or state release is implemented.",
+    "Host SQLite checks prove transaction/CAS and database isolation under these fixtures, not physical power loss, rollback resistance or cross-update full-record/KeyStore continuity.",
+    "Five existing dedicated network/issuer tests were skipped; no new MQTT/NAS journey is claimed.",
+    "Lint retained six warnings: dependency versions, BouncyCastle dependency trust-manager analysis and existing Activity text concatenation; no new security acceptance is claimed.",
+    "The frozen build includes unchanged previous TV work and matches current code; its README predates this stage's documentation update.",
+    "Television debugging remains paused; no device operation, emulator, new REA evidence, Git commit, push or publication."
+  ]
+}

@@ -63,6 +63,39 @@ class DeviceAgentTest {
     }
     private fun fault(code: String, block: () -> Unit) { assertEquals(code, assertFailsWith<DeviceFault>(block = block).code) }
 
+    @Test fun readonly_inspection_validates_all_results_without_resolving_or_rewriting_original_attempts() {
+        val f = Fixture(); f.open(); f.execute()
+        f.applications.allowed = false; f.execute(f.command(ledgerId(2)))
+        f.applications.allowed = true; f.applications.fail = true; f.execute(f.command(ledgerId(3)))
+        val doc = f.storage.document()
+        val entries = doc.getValue("entries").obj().mapValues { it.value.obj() } + (ledgerId(4) to obj("command" to f.command(ledgerId(4)), "result" to JsonNull))
+        val bytes = DeviceDocument.canonical(DeviceJournal.encode(f.identity, entries, 4)).toByteArray()
+        val original = bytes.copyOf(); val commits = f.storage.calls
+        assertEquals(DeviceJournalInspection(4, 1, 1, 1, 1, false), DeviceJournalInspection.inspect(f.identity, bytes))
+        assertContentEquals(original, bytes); assertEquals(commits, f.storage.calls)
+    }
+
+    @Test fun inspection_preserves_legacy_head_and_pending_model_migration_without_performing_it() {
+        val f = Fixture(); f.open(); f.execute(f.command(ledgerId(7)))
+        val legacy = JsonObject(f.storage.document().filterKeys { it != "high_watermark" } + ("version" to JsonPrimitive(1)))
+        val bytes = ("  " + legacy.toString() + "\n").toByteArray(); val original = bytes.copyOf()
+        val composed = DeviceIdentity(f.identity.space, f.identity.device, DeviceModelProfile.COMPOSED_REMOTE)
+        assertEquals(DeviceJournalInspection(7, 1, 0, 0, 0, true), DeviceJournalInspection.inspect(composed, bytes))
+        assertContentEquals(original, bytes)
+        assertEquals(DeviceJournalInspection(0, 0, 0, 0, 0, true), DeviceJournalInspection.inspect(composed, null))
+    }
+
+    @Test fun inspection_refuses_invalid_head_and_result_evidence_instead_of_counting_them() {
+        val f = Fixture(); f.open(); f.execute()
+        val doc = f.storage.document(); val entry = doc.getValue("entries").obj().getValue(ledgerId(1)).obj()
+        val result = entry.getValue("result").obj()
+        val invalid = listOf(
+            JsonObject(doc + ("high_watermark" to JsonPrimitive(0))),
+            JsonObject(doc + ("entries" to obj(ledgerId(1) to JsonObject(entry + ("result" to JsonObject(result + ("evidence" to obj("type" to text("action_result")))))))))
+        )
+        for (value in invalid) fault("storage_corrupt") { DeviceJournalInspection.inspect(f.identity, value.toString().toByteArray()) }
+    }
+
     @Test fun strict_documents_reject_duplicates_invalid_unicode_and_unbounded_inputs() {
         for (raw in listOf("{\"v\":1,\"v\":1}", "{\"v\":1,\"\\u0076\":1}", "{\"a\":{\"b\":1,\"b\":2}}", "{}{}", "{}\u0000", "{\"v\":1.0}", "{\"v\":1e0}", "{\"v\":9007199254740992}", "{\"v\":\"\\ud800\"}", "{\"v\":\"\\udfff\"}")) {
             fault("invalid_message") { DeviceDocument.parse(raw.toByteArray()) }

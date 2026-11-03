@@ -12,6 +12,7 @@ pub mod execution_plans;
 pub mod media;
 pub mod model;
 pub mod model_bundles;
+pub mod model_job;
 pub mod model_registry;
 pub mod ota;
 pub mod ota_execution;
@@ -25,7 +26,9 @@ pub mod rule_graph;
 pub mod rule_schedule;
 pub mod rule_thresholds;
 pub mod speech;
+pub mod transcription;
 pub mod validation;
+pub mod vision;
 
 use serde::{Deserialize, Serialize};
 

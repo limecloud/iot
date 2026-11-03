@@ -1,0 +1,3 @@
+import { runModelJob } from './model-jobs.mjs';
+import { parseTranscriptionInput,createTranscriptionOriginal,validTranscriptionOriginal,verifyTranscriptionTask } from '../../protocol/transcription.mjs';
+export const runTranscription = args => runModelJob(args, { family:'audio-transcriptions',discards:'transcription-discards',discardAction:'transcription.discard',parseInput:parseTranscriptionInput,createOriginal:createTranscriptionOriginal,validOriginal:validTranscriptionOriginal,verifyTask:verifyTranscriptionTask,requestError:'invalid_transcription_request',notFound:'transcription_not_found' });

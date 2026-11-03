@@ -1,4 +1,5 @@
 //! 有界文字转语音任务。正文只用于当次调用，日志保存摘要；完成不代表播放授权。
+pub use crate::model_job::{Deployment, Status};
 use crate::{digest, ensure, identifier, media, Result};
 use chrono::{DateTime, Duration, SubsecRound, Utc};
 use serde::{Deserialize, Serialize};
@@ -46,23 +47,6 @@ impl Input {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Deployment {
-    pub adapter: String,
-    pub revision: String,
-    pub model: String,
-    pub data_location: String,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Status {
-    Running,
-    Succeeded,
-    Failed,
-    Unknown,
-    Discarded,
-}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Task {

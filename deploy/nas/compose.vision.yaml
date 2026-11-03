@@ -1,0 +1,7 @@
+# 在基础与媒体覆盖后叠加；仅连接显式配置的局域网视觉引擎，不自动拉取模型。
+services:
+  gateway:
+    environment:
+      LIMEIOT_VISION_URL: ${LIMEIOT_VISION_URL:?}
+      LIMEIOT_VISION_MODEL: ${LIMEIOT_VISION_MODEL:?}
+      LIMEIOT_VISION_CA_FILE: ${LIMEIOT_VISION_CA_FILE:-}

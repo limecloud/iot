@@ -1,0 +1,47 @@
+# 在compose.yaml和compose.media.yaml后叠加；与compose.transcription.yaml二选一。
+services:
+  gateway:
+    environment:
+      LIMEIOT_ASR_URL: http://transcription:8000
+      LIMEIOT_ASR_MODEL: ${LIMEIOT_ASR_MODEL:?}
+      LIMEIOT_ASR_CA_FILE: ""
+    networks:
+      transcription: {}
+  transcription:
+    image: limeiot/sherpa-asr:0.4.0
+    build:
+      context: ../..
+      dockerfile: providers/sherpa-asr/Dockerfile
+    user: "${LIMEIOT_UID:?}:${LIMEIOT_GID:?}"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ["/tmp:mode=1777,size=16m"]
+    cpus: ${LIMEIOT_ASR_CPUS:-2}
+    mem_limit: ${LIMEIOT_ASR_MEMORY_LIMIT:-768m}
+    pids_limit: 64
+    stop_grace_period: 10s
+    environment:
+      OPENBLAS_NUM_THREADS: "1"
+    volumes:
+      - type: bind
+        source: ${LIMEIOT_ASR_MODELS_DIR:?}
+        target: /models
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${LIMEIOT_ASR_CONFIG_FILE:?}
+        target: /config/provider.json
+        read_only: true
+        bind: {create_host_path: false}
+    healthcheck:
+      test: [CMD, python, -I, -c, "import urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2); assert r.status == 200"]
+      interval: 10s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
+    networks: [transcription]
+networks:
+  transcription:
+    internal: true

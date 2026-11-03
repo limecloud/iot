@@ -75,6 +75,18 @@ import LimeIoTKit
         }
     }
     func refresh() { run { epoch in self.ready = false; try await self.read(epoch); self.message = "" } }
+    func useGenerated(_ id: String) async {
+        guard active, online, !Task.isCancelled else { return }
+        approved = false; deletion = nil
+        await waitForIdle()
+        guard active, online, !Task.isCancelled else { return }
+        run { epoch in
+            try await self.read(epoch)
+            self.selectedMedia = self.page?.items.contains(where: { $0.id == id && $0.available }) == true ? id : ""
+            self.approved = false
+        }
+        await waitForIdle()
+    }
     private func submit(_ change: JSONValue) {
         run { epoch in
             let result = try await self.client.submit(space: self.space, change: change); try self.current(epoch)

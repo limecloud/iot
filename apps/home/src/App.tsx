@@ -6,12 +6,13 @@ import { ControlLinks } from './ControlLinks';
 import { ModelRegistry } from './ModelRegistry';
 import { Firmware } from './Firmware';
 import { Media } from './Media';
+import { Vision } from './Vision';
 import { ConditionEvidence } from './Conditions';
 import { conditionSources } from '../../../packages/protocol/condition-form.mjs';
 
 interface Snapshot { space: string; devices: Device[]; models: Record<string, Model>; inference: Inference | null; commands: Command[]; deployments: Deployment[]; runs: Run[]; next: string | null }
 const empty: Snapshot = { space: '', devices: [], models: {}, inference: null, commands: [], deployments: [], runs: [], next: null };
-const navigation = [['devices', '设备'], ['automation', '自动化'], ['media', '音频'], ['activity', '执行记录'], ['connections', '网关配对'], ['models', '设备接入'], ['firmware', '固件升级']] as const;
+const navigation = [['devices', '设备'], ['automation', '自动化'], ['media', '音频'], ['vision', '视觉'], ['activity', '执行记录'], ['connections', '网关配对'], ['models', '设备接入'], ['firmware', '固件升级']] as const;
 function currentView() { const view = new URLSearchParams(location.search).get('view'); return navigation.some(([id]) => id === view) ? view! : 'devices'; }
 function Icon({ name }: { name: string }) {
   const paths: Record<string, string> = {
@@ -22,6 +23,7 @@ function Icon({ name }: { name: string }) {
     models: 'M12 3 3 8v9l9 5 9-5V8z M3 8l9 5 9-5 M12 13v9',
     firmware: 'M12 16V3 M7 8l5-5 5 5 M4 14v6h16v-6',
     media: 'M9 18V5l11-2v13 M9 5l11-2 M9 14c-7-2-7 7 0 4 M20 12c-7-2-7 7 0 4',
+    vision: 'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M16 9h.01',
     menu: 'M4 6h16 M4 12h16 M4 18h16',
   };
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name] ?? paths.devices} /></svg>;
@@ -145,12 +147,13 @@ function Home({ session, onExpired, embeddedView }: { session: Session; onExpire
     } catch (error) { handleError(error); }
   }
   const Heading = embeddedView === 'connections' ? 'h2' : 'h1';
-  const content = <><div className="page-heading"><Heading>{tab === 'devices' ? '我的设备' : tab === 'automation' ? '自动化' : tab === 'media' ? '音频' : tab === 'connections' ? '本地配对批准' : tab === 'models' ? '设备接入' : tab === 'firmware' ? '固件升级' : '执行记录'}</Heading><button onClick={() => void refresh()}>刷新</button></div>
+  const content = <><div className="page-heading"><Heading>{tab === 'devices' ? '我的设备' : tab === 'automation' ? '自动化' : tab === 'media' ? '音频' : tab === 'vision' ? '视觉' : tab === 'connections' ? '本地配对批准' : tab === 'models' ? '设备接入' : tab === 'firmware' ? '固件升级' : '执行记录'}</Heading><button onClick={() => void refresh()}>刷新</button></div>
     {(!online || error) && <div className="notice" role="alert">{error || '网关连接已中断，当前显示上次观测'}{updated && <span>上次更新 {when(updated)}</span>}</div>}
     {tab === 'devices' && <Devices {...snapshot} prefix={prefix} session={session} online={online} refresh={refresh} onError={handleError} />}
     {tab === 'automation' && <Automation {...snapshot} prefix={prefix} session={session} online={online} refresh={refresh} onError={handleError} />}
     {tab === 'activity' && <Activity {...snapshot} more={more} />}
     {tab === 'media' && prefix && <Media key={prefix} prefix={prefix} session={session} online={online} devices={snapshot.devices} models={snapshot.models} onError={handleError} />}
+    {tab === 'vision' && prefix && <Vision key={prefix} prefix={prefix} session={session} online={online} onError={handleError} />}
     {tab === 'connections' && prefix && <ControlLinks prefix={prefix} session={session} online={online} onError={handleError} />}
     {tab === 'models' && prefix && <ModelRegistry key={prefix} prefix={prefix} session={session} online={online} onError={handleError} refresh={refresh} />}
     {tab === 'firmware' && prefix && <Firmware key={prefix} prefix={prefix} session={session} online={online} devices={snapshot.devices} models={snapshot.models} onError={handleError} />}

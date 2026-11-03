@@ -1,0 +1,655 @@
+{
+  "input": {
+    "image_base64": "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAIAAAB7QOjdAAAAC0lEQVR4nGMwAgMABCEBLehevrwAAAAASUVORK5CYII=",
+    "content_type": "image/png",
+    "prompt": "请观察青柠🍋与é，有什么形状？",
+    "retain_seconds": 600,
+    "expires_at": "2026-11-03T08:01:25.123+08:00"
+  },
+  "normalized": {
+    "image_base64": "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAIAAAB7QOjdAAAAC0lEQVR4nGMwAgMABCEBLehevrwAAAAASUVORK5CYII=",
+    "content_type": "image/png",
+    "prompt": "请观察青柠🍋与é，有什么形状？",
+    "retain_seconds": 600,
+    "expires_at": "2026-11-03T00:01:25.123Z"
+  },
+  "original": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "idempotency_key": "original",
+    "input": {
+      "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+      "image_bytes": 68,
+      "content_type": "image/png",
+      "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+      "retain_seconds": 600,
+      "expires_at": "2026-11-03T00:01:25.123Z"
+    },
+    "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5"
+  },
+  "capabilities": {
+    "configured": true,
+    "capability": "vision.understand",
+    "deployment": {
+      "adapter": "ollama-vision-v1",
+      "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "model": "fixture:vision",
+      "data_location": "local"
+    },
+    "content_types": [
+      "image/png",
+      "image/jpeg"
+    ],
+    "max_image_bytes": 2097152,
+    "max_edge": 1024,
+    "max_prompt_characters": 512,
+    "max_text_bytes": 8192,
+    "max_characters": 2048,
+    "max_deadline_seconds": 90,
+    "max_retain_seconds": 3600,
+    "concurrency": 1,
+    "streaming": false,
+    "provider_cancellation": false,
+    "input_storage": "digest_only",
+    "device_execution": false
+  },
+  "tasks": {
+    "running": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:00.123Z",
+      "status": "running",
+      "output": null,
+      "error_code": null
+    },
+    "succeeded": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "cleared": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": null,
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": "2026-11-03T00:00:04.123Z"
+      },
+      "error_code": null
+    },
+    "unknown": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:02.123Z",
+      "status": "unknown",
+      "output": null,
+      "error_code": "vision_interrupted"
+    },
+    "discarded": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:03.123Z",
+      "status": "discarded",
+      "output": null,
+      "error_code": "vision_output_discarded"
+    },
+    "failed": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "failed",
+      "output": null,
+      "error_code": "vision_provider_rejected"
+    },
+    "timezone": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T08:01:25.123+08:00"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    }
+  },
+  "invalid_tasks": {
+    "empty": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "",
+        "content_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "whitespace": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": " \t",
+        "content_digest": "sha256:d7b7af63870551553faf46d2286caf4b564ea065b0712440a9d805e2628a4e40",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "digest": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "retention": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:02.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "dimensions": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 1025,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "body": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z",
+        "prompt": "请观察青柠🍋与é，有什么形状？"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "oversize": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "content_digest": "sha256:d2bc1d811fcb4da2cc5719f1fc1654084a6ed72d777e7c1bed597f6dbf007829",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "controls": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "x\r",
+        "content_digest": "sha256:896dfdaceccde1790c65d5cf32aa62d534947892db8caf916ec499f84f3ae398",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "tools": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": null,
+        "tools": []
+      },
+      "error_code": null
+    },
+    "cleared_text": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "青柠🍋\n你好",
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": "2026-11-03T00:00:04.123Z"
+      },
+      "error_code": null
+    },
+    "cleared_before_result": {
+      "vision_id": "vision-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:d4cc8ce6a0be1d2d44683ac28dcd6d8bfc9b597279cda3b9240865fc9a7bf9e5",
+      "input": {
+        "image_digest": "sha256:998b892d47802cc404493e153f3876d4b293c1248989098dd5ffabe2e5a5815c",
+        "image_bytes": 68,
+        "content_type": "image/png",
+        "prompt_digest": "sha256:a49386866ed9a448dbce0376b3f633d8f7772ea4962b20f61d09efb0cff50881",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-03T00:01:25.123Z"
+      },
+      "image": {
+        "width": 2,
+        "height": 1
+      },
+      "deployment": {
+        "adapter": "ollama-vision-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:vision",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": null,
+        "content_digest": "sha256:cb29c2f05d26ae53a01bdbb9ea4f753b1ce7f7832c98d55f631e9885ddc19190",
+        "expires_at": "2026-11-03T00:10:01.123Z",
+        "cleared_at": "2026-11-03T00:00:00.123Z"
+      },
+      "error_code": null
+    }
+  }
+}

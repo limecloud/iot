@@ -18,6 +18,20 @@ pub struct Store {
     tick: std::time::Instant,
     _lock: File,
 }
+// 新能力共用快照后，先按实际JSON转义计数，避免成功写入却超过启动读取上限。
+struct SnapshotBudget(usize);
+impl Write for SnapshotBudget {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        self.0 = self
+            .0
+            .checked_sub(bytes.len())
+            .ok_or_else(|| std::io::Error::other("snapshot_capacity"))?;
+        Ok(bytes.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
 impl Store {
     pub fn open(path: &Path, space_id: &str) -> Result<Self> {
         let fail = || err("media_storage_unavailable");
@@ -138,6 +152,22 @@ impl Store {
                 interrupted = true;
             }
         }
+        for task in next.transcriptions.values_mut() {
+            if task.status == limeiot_core::model_job::Status::Running {
+                task.status = limeiot_core::model_job::Status::Unknown;
+                task.error_code = Some("transcription_interrupted".into());
+                task.updated_at = now;
+                interrupted = true;
+            }
+        }
+        for task in next.visions.values_mut() {
+            if task.status == limeiot_core::model_job::Status::Running {
+                task.status = limeiot_core::model_job::Status::Unknown;
+                task.error_code = Some("vision_interrupted".into());
+                task.updated_at = now;
+                interrupted = true;
+            }
+        }
         if interrupted {
             next.saved_at = now;
             store.persist(next)?;
@@ -155,8 +185,11 @@ impl Store {
         self.tick = std::time::Instant::now();
         Ok(self.clock)
     }
-    fn persist(&mut self, next: State) -> Result<()> {
+    pub(crate) fn persist(&mut self, mut next: State) -> Result<()> {
         self.ready()?;
+        next.prune(next.saved_at);
+        serde_json::to_writer(SnapshotBudget(48 * 1024 * 1024 - 1), &next)
+            .map_err(|_| err("media_capacity"))?;
         let temp = self
             .path
             .with_extension(format!("media-{}.tmp", limeiot_core::id()));
@@ -232,11 +265,20 @@ impl Store {
             self.state.speech.len() < limeiot_core::speech::MAX_TASKS,
             "speech_capacity",
         )?;
+        ensure(
+            !self.state.speech.values().any(|task| {
+                matches!(
+                    task.status,
+                    limeiot_core::speech::Status::Running | limeiot_core::speech::Status::Unknown
+                )
+            }),
+            "speech_busy",
+        )?;
         let now = self.now()?;
         let task =
             limeiot_core::speech::Task::new(&self.state.space_id, &key, input, deployment, now)?;
         let mut next = self.state.clone();
-        next.schema_version = 2;
+        next.schema_version = next.schema_version.max(2);
         next.saved_at = now;
         next.speech.insert(key, task.clone());
         self.persist(next)?;
@@ -267,23 +309,10 @@ impl Store {
             result
         };
         let publication = match result {
-            Ok(bytes) => {
-                use base64::{engine::general_purpose::STANDARD, Engine};
-                let request = Request {
-                    space_id: next.space_id.clone(),
-                    idempotency_key: task.synthesis_id.clone(),
-                    change: limeiot_core::media::Change::Upload {
-                        content_base64: STANDARD.encode(bytes),
-                        retain_seconds: task.retain_seconds,
-                    },
-                };
-                next.apply(request, None, "speech", now)
-                    .map(|op| match op.result {
-                        limeiot_core::media::Receipt::Uploaded { media } => media.media_id,
-                        _ => unreachable!("typed upload"),
-                    })
-                    .map_err(|_| err("speech_output_unavailable"))
-            }
+            Ok(bytes) => next
+                .add_audio(&bytes, task.retain_seconds, now)
+                .map(|media| media.media_id)
+                .map_err(|_| err("speech_output_unavailable")),
             Err(error) => Err(error),
         };
         match publication {
@@ -319,7 +348,7 @@ impl Store {
             .cloned()
             .ok_or_else(|| err("speech_not_found"))?;
         ensure(task.status != Status::Succeeded, "speech_already_completed")?;
-        if task.status != Status::Running {
+        if !matches!(task.status, Status::Running | Status::Unknown) {
             return Ok(task);
         }
         let now = self.now()?;
@@ -329,6 +358,148 @@ impl Store {
         let mut next = self.state.clone();
         next.speech.insert(key.into(), task.clone());
         next.saved_at = now;
+        self.persist(next)?;
+        Ok(task)
+    }
+}
+
+impl Store {
+    pub fn transcription_accept(
+        &mut self,
+        key: String,
+        input: &limeiot_core::transcription::Input,
+        deployment: limeiot_core::model_job::Deployment,
+    ) -> Result<(limeiot_core::transcription::Task, bool, Vec<u8>)> {
+        use base64::{engine::general_purpose::STANDARD, Engine};
+        use limeiot_core::{
+            model_job::Status,
+            transcription::{Task, MAX_TASKS},
+        };
+        self.ready()?;
+        let digest = input.request_digest(&self.state.space_id, &key)?;
+        if let Some(old) = self.state.transcriptions.get(&key) {
+            ensure(old.request_digest == digest, "idempotency_conflict")?;
+            return Ok((old.clone(), false, Vec::new()));
+        }
+        ensure(
+            self.state.transcriptions.len() < MAX_TASKS,
+            "transcription_capacity",
+        )?;
+        ensure(
+            !self
+                .state
+                .transcriptions
+                .values()
+                .any(|task| matches!(task.status, Status::Running | Status::Unknown)),
+            "transcription_busy",
+        )?;
+        let now = self.now()?;
+        let task = Task::new(&self.state.space_id, &key, input, deployment, now)?;
+        let object = self.state.active_object(&input.media_id, now)?;
+        ensure(
+            object.metadata.content_digest == input.media_digest,
+            "transcription_source_mismatch",
+        )?;
+        let bytes = STANDARD
+            .decode(object.content_base64.as_ref().expect("active audio"))
+            .map_err(|_| err("media_storage_corrupt"))?;
+        let mut next = self.state.clone();
+        next.schema_version = next.schema_version.max(3);
+        next.saved_at = now;
+        next.transcriptions.insert(key, task.clone());
+        self.persist(next)?;
+        Ok((task, true, bytes))
+    }
+    pub fn transcription_finish(
+        &mut self,
+        key: &str,
+        result: Result<String>,
+    ) -> Result<limeiot_core::transcription::Task> {
+        use limeiot_core::{
+            model_job::Status,
+            transcription::{text, Output},
+        };
+        self.ready()?;
+        let mut task = self
+            .state
+            .transcriptions
+            .get(key)
+            .cloned()
+            .ok_or_else(|| err("transcription_not_found"))?;
+        if task.status != Status::Running {
+            return Ok(task);
+        }
+        let now = self.now()?;
+        let result = if now >= task.input.expires_at {
+            Err(err("transcription_deadline_exceeded"))
+        } else {
+            result
+        };
+        let publication = result.and_then(|value| {
+            ensure(text(&value), "invalid_transcription_output")?;
+            let source = self
+                .state
+                .active_object(&task.input.media_id, now)
+                .map_err(|_| err("transcription_source_unavailable"))?;
+            Ok(Output {
+                text: Some(value.clone()),
+                content_digest: limeiot_core::media::content_digest(value.as_bytes()),
+                expires_at: source.metadata.expires_at,
+                cleared_at: None,
+            })
+        });
+        match publication {
+            Ok(output) => {
+                task.status = Status::Succeeded;
+                task.output = Some(output);
+            }
+            Err(error) => {
+                task.status = if matches!(
+                    error.code.as_str(),
+                    "transcription_provider_unknown"
+                        | "transcription_deadline_exceeded"
+                        | "transcription_interrupted"
+                ) {
+                    Status::Unknown
+                } else {
+                    Status::Failed
+                };
+                task.error_code = Some(error.code);
+            }
+        }
+        task.updated_at = now;
+        let mut next = self.state.clone();
+        next.saved_at = now;
+        next.transcriptions.insert(key.into(), task.clone());
+        self.persist(next)?;
+        Ok(task)
+    }
+    pub fn transcription_discard(
+        &mut self,
+        key: &str,
+    ) -> Result<limeiot_core::transcription::Task> {
+        use limeiot_core::model_job::Status;
+        self.ready()?;
+        let mut task = self
+            .state
+            .transcriptions
+            .get(key)
+            .cloned()
+            .ok_or_else(|| err("transcription_not_found"))?;
+        ensure(
+            task.status != Status::Succeeded,
+            "transcription_already_completed",
+        )?;
+        if !matches!(task.status, Status::Running | Status::Unknown) {
+            return Ok(task);
+        }
+        let now = self.now()?;
+        task.status = Status::Discarded;
+        task.error_code = Some("transcription_output_discarded".into());
+        task.updated_at = now;
+        let mut next = self.state.clone();
+        next.saved_at = now;
+        next.transcriptions.insert(key.into(), task.clone());
         self.persist(next)?;
         Ok(task)
     }
@@ -359,6 +530,87 @@ mod tests {
             let _ = std::fs::remove_dir_all(&self.directory);
         }
     }
+    fn speech_input() -> limeiot_core::speech::Input {
+        limeiot_core::speech::Input {
+            text: "不保存这段私密文本".into(),
+            voice: "local".into(),
+            retain_seconds: 600,
+            expires_at: chrono::DateTime::from_timestamp_millis(
+                chrono::Utc::now().timestamp_millis() + 60000,
+            )
+            .unwrap(),
+        }
+    }
+    fn speech_deployment() -> limeiot_core::speech::Deployment {
+        limeiot_core::speech::Deployment {
+            adapter: "local-http-speech-v1".into(),
+            model: "test".into(),
+            revision: format!("sha256:{}", "a".repeat(64)),
+            data_location: "local".into(),
+        }
+    }
+    #[test]
+    fn speech_restart_never_resends_text_and_discard_blocks_late_publication() {
+        use limeiot_core::speech::Status;
+        let fixture = Fixture::new();
+        let input = speech_input();
+        let mut store = Store::open(&fixture.path, "space").unwrap();
+        let (task, first) = store
+            .speech_accept("first".into(), &input, speech_deployment())
+            .unwrap();
+        assert!(first);
+        assert!(
+            !store
+                .speech_accept("first".into(), &input, speech_deployment())
+                .unwrap()
+                .1
+        );
+        let mut changed = input.clone();
+        changed.text.push('!');
+        assert_eq!(
+            store
+                .speech_accept("first".into(), &changed, speech_deployment())
+                .unwrap_err()
+                .code,
+            "idempotency_conflict"
+        );
+        assert!(!std::fs::read_to_string(&fixture.path)
+            .unwrap()
+            .contains(&input.text));
+        drop(store);
+        let mut store = Store::open(&fixture.path, "space").unwrap();
+        assert_eq!(store.state.speech["first"].status, Status::Unknown);
+        assert_eq!(store.state.speech["first"].synthesis_id, task.synthesis_id);
+        assert_eq!(
+            store
+                .speech_finish("first", Err(err("speech_provider_unknown")))
+                .unwrap()
+                .error_code
+                .as_deref(),
+            Some("speech_interrupted")
+        );
+        assert_eq!(
+            store
+                .speech_accept("blocked".into(), &input, speech_deployment())
+                .unwrap_err()
+                .code,
+            "speech_busy"
+        );
+        store.speech_discard("first").unwrap();
+        store
+            .speech_accept("second".into(), &input, speech_deployment())
+            .unwrap();
+        store.speech_discard("second").unwrap();
+        assert_eq!(
+            store
+                .speech_finish("second", Ok(vec![0; 46]))
+                .unwrap()
+                .status,
+            Status::Discarded
+        );
+        assert!(store.state.objects.is_empty());
+        store.state.validate().unwrap();
+    }
     fn request(key: &str) -> Request {
         let mut bytes = vec![0; 46];
         bytes[..4].copy_from_slice(b"RIFF");
@@ -381,6 +633,231 @@ mod tests {
                 retain_seconds: 60,
             },
         }
+    }
+
+    #[test]
+    fn transcription_result_retention_source_delete_and_restart() {
+        use limeiot_core::{model_job::Deployment, transcription::Input};
+        let fixture = Fixture::new();
+        let mut store = Store::open(&fixture.path, "home").unwrap();
+        let now = store.now().unwrap();
+        let Receipt::Uploaded { media } = store
+            .apply(request("source"), None, "epoch", now)
+            .unwrap()
+            .result
+        else {
+            panic!("uploaded source")
+        };
+        let input = Input {
+            media_id: media.media_id.clone(),
+            media_digest: media.content_digest.clone(),
+            language: "auto".into(),
+            expires_at: chrono::DateTime::from_timestamp_millis(now.timestamp_millis() + 60000)
+                .unwrap(),
+        };
+        let deployment = Deployment {
+            adapter: "local-http-transcription-v1".into(),
+            revision: format!("sha256:{}", "a".repeat(64)),
+            model: "fixture".into(),
+            data_location: "local".into(),
+        };
+        let (original, created, bytes) = store
+            .transcription_accept("first".into(), &input, deployment.clone())
+            .unwrap();
+        assert!(created);
+        assert!(!bytes.is_empty());
+        assert_eq!(store.state.schema_version, 3);
+        store.state.validate().unwrap();
+        let text = "识别结果不会变成设备指令";
+        let completed = store
+            .transcription_finish("first", Ok(text.into()))
+            .unwrap();
+        assert_eq!(
+            completed.output.as_ref().unwrap().text.as_deref(),
+            Some(text)
+        );
+        // 两种能力共存时，后续TTS受理不得将媒体v3降回v2。
+        store
+            .speech_accept("tts".into(), &speech_input(), speech_deployment())
+            .unwrap();
+        assert_eq!(store.state.schema_version, 3);
+        store.speech_discard("tts").unwrap();
+        store.state.validate().unwrap();
+        drop(store);
+        let mut store = Store::open(&fixture.path, "home").unwrap();
+        store.state.validate().unwrap();
+        assert_eq!(
+            store.state.transcriptions["first"].transcription_id,
+            original.transcription_id
+        );
+        let mut expired = store.state.clone();
+        let later = media.expires_at + chrono::Duration::seconds(1);
+        assert!(expired.prune(later));
+        expired.saved_at = later;
+        expired.validate().unwrap();
+        assert!(expired.transcriptions["first"]
+            .output
+            .as_ref()
+            .unwrap()
+            .text
+            .is_none());
+        let now = store.now().unwrap();
+        store
+            .apply(
+                Request {
+                    space_id: "home".into(),
+                    idempotency_key: "delete".into(),
+                    change: Change::Delete {
+                        media_id: media.media_id,
+                    },
+                },
+                None,
+                "epoch",
+                now,
+            )
+            .unwrap();
+        let output = store.state.transcriptions["first"].output.as_ref().unwrap();
+        assert!(output.text.is_none());
+        assert!(output.cleared_at.is_some());
+        store.state.validate().unwrap();
+        drop(store);
+        let store = Store::open(&fixture.path, "home").unwrap();
+        assert!(store.state.transcriptions["first"]
+            .output
+            .as_ref()
+            .unwrap()
+            .text
+            .is_none());
+        let mut tampered = store.state.clone();
+        tampered.schema_version = 2;
+        assert!(tampered.validate().is_err());
+    }
+
+    #[test]
+    fn transcription_commit_failure_keeps_original_unknown_and_blocks_late_results() {
+        use limeiot_core::{
+            model_job::{Deployment, Status},
+            transcription::Input,
+        };
+        let fixture = Fixture::new();
+        let mut store = Store::open(&fixture.path, "home").unwrap();
+        let now = store.now().unwrap();
+        let Receipt::Uploaded { media } = store
+            .apply(request("source"), None, "epoch", now)
+            .unwrap()
+            .result
+        else {
+            panic!("source")
+        };
+        let input = Input {
+            media_id: media.media_id,
+            media_digest: media.content_digest,
+            language: "zh".into(),
+            expires_at: chrono::DateTime::from_timestamp_millis(now.timestamp_millis() + 60000)
+                .unwrap(),
+        };
+        let deployment = Deployment {
+            adapter: "local-http-transcription-v1".into(),
+            revision: format!("sha256:{}", "a".repeat(64)),
+            model: "fixture".into(),
+            data_location: "local".into(),
+        };
+        store
+            .transcription_accept("first".into(), &input, deployment.clone())
+            .unwrap();
+        store.path = fixture.directory.join("missing/snapshot.json");
+        assert_eq!(
+            store
+                .transcription_finish("first", Ok("不能发布未保存的结果".into()))
+                .unwrap_err()
+                .code,
+            "media_storage_unavailable"
+        );
+        assert!(store.ready().is_err());
+        drop(store);
+        let mut store = Store::open(&fixture.path, "home").unwrap();
+        assert_eq!(store.state.transcriptions["first"].status, Status::Unknown);
+        assert_eq!(
+            store
+                .transcription_accept("new".into(), &input, deployment)
+                .unwrap_err()
+                .code,
+            "transcription_busy"
+        );
+        store.transcription_discard("first").unwrap();
+        assert_eq!(
+            store
+                .transcription_finish("first", Ok("迟到结果".into()))
+                .unwrap()
+                .status,
+            Status::Discarded
+        );
+        assert!(store.state.transcriptions["first"].output.is_none());
+        store.state.validate().unwrap();
+    }
+    #[test]
+    fn speech_output_has_independent_identity_and_atomic_storage_failure() {
+        use limeiot_core::speech::Status;
+        let fixture = Fixture::new();
+        let mut store = Store::open(&fixture.path, "home").unwrap();
+        let input = speech_input();
+        let (task, _) = store
+            .speech_accept("speech".into(), &input, speech_deployment())
+            .unwrap();
+        let uploaded = store
+            .apply(
+                request(&task.synthesis_id),
+                None,
+                "epoch",
+                chrono::Utc::now(),
+            )
+            .unwrap();
+        let Receipt::Uploaded { media: uploaded } = uploaded.result else {
+            panic!("upload");
+        };
+        let limeiot_core::media::Change::Upload { content_base64, .. } = request("unused").change
+        else {
+            panic!("upload");
+        };
+        let bytes = STANDARD.decode(content_base64).unwrap();
+        let finished = store.speech_finish("speech", Ok(bytes.clone())).unwrap();
+        assert_eq!(finished.status, Status::Succeeded);
+        assert_ne!(
+            finished.media_id.as_deref(),
+            Some(uploaded.media_id.as_str())
+        );
+        assert_eq!(store.state.operations.len(), 1);
+        assert_eq!(store.state.objects.len(), 2);
+        store.state.validate().unwrap();
+        drop(store);
+        assert_eq!(
+            Store::open(&fixture.path, "home").unwrap().state.speech["speech"].status,
+            Status::Succeeded
+        );
+
+        let fixture = Fixture::new();
+        let mut store = Store::open(&fixture.path, "home").unwrap();
+        store
+            .speech_accept("speech".into(), &input, speech_deployment())
+            .unwrap();
+        let before = std::fs::read(&fixture.path).unwrap();
+        let previous = fixture.path.with_extension("previous");
+        std::fs::rename(&fixture.path, &previous).unwrap();
+        std::fs::create_dir(&fixture.path).unwrap();
+        assert_eq!(
+            store.speech_finish("speech", Ok(bytes)).unwrap_err().code,
+            "media_storage_unavailable"
+        );
+        assert_eq!(store.state.speech["speech"].status, Status::Running);
+        assert!(store.state.objects.is_empty());
+        assert!(store.ready().is_err());
+        assert_eq!(std::fs::read(&previous).unwrap(), before);
+        drop(store);
+        std::fs::remove_dir(&fixture.path).unwrap();
+        std::fs::rename(previous, &fixture.path).unwrap();
+        let recovered = Store::open(&fixture.path, "home").unwrap();
+        assert_eq!(recovered.state.speech["speech"].status, Status::Unknown);
+        assert!(recovered.state.objects.is_empty());
     }
     #[test]
     fn media_store_durable_receipt_single_writer_and_restore() {

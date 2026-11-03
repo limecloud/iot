@@ -1,0 +1,160 @@
+{
+  "input": {
+    "text": "青柠🍋\n玩具/萌宠\t说：你好！",
+    "voice": "local",
+    "retain_seconds": 600,
+    "expires_at": "2026-11-03T08:01:25.123+08:00"
+  },
+  "normalized": {
+    "text": "青柠🍋\n玩具/萌宠\t说：你好！",
+    "voice": "local",
+    "retain_seconds": 600,
+    "expires_at": "2026-11-03T00:01:25.123Z"
+  },
+  "original": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "idempotency_key": "original",
+    "request_digest": "sha256:fa0837c470fbcd08ba87db292de125b646e442b41032e7f6527a4767ddadcdad",
+    "input_digest": "sha256:7fe2c4164c4f094d3381eafae28f29a65d889f0a192cdc4296440807718e77b2",
+    "input_characters": 15,
+    "voice": "local",
+    "retain_seconds": 600,
+    "expires_at": "2026-11-03T00:01:25.123Z"
+  },
+  "capabilities": {
+    "configured": true,
+    "capability": "audio.synthesize",
+    "deployment": {
+      "adapter": "local-http-speech-v1",
+      "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "model": "fixture/local-model",
+      "data_location": "local"
+    },
+    "voices": [
+      "local",
+      "other"
+    ],
+    "concurrency": 1,
+    "max_text_bytes": 4096,
+    "max_characters": 1000,
+    "max_output_bytes": 4194304,
+    "max_audio_seconds": 60,
+    "max_deadline_seconds": 90,
+    "streaming": false,
+    "provider_cancellation": false
+  },
+  "tasks": {
+    "running": {
+      "synthesis_id": "speech-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:fa0837c470fbcd08ba87db292de125b646e442b41032e7f6527a4767ddadcdad",
+      "input_digest": "sha256:7fe2c4164c4f094d3381eafae28f29a65d889f0a192cdc4296440807718e77b2",
+      "input_characters": 15,
+      "voice": "local",
+      "retain_seconds": 600,
+      "expires_at": "2026-11-03T00:01:25.123Z",
+      "deployment": {
+        "adapter": "local-http-speech-v1",
+        "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "model": "fixture/local-model",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:00.123Z",
+      "status": "running",
+      "media_id": null,
+      "error_code": null
+    },
+    "succeeded": {
+      "synthesis_id": "speech-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:fa0837c470fbcd08ba87db292de125b646e442b41032e7f6527a4767ddadcdad",
+      "input_digest": "sha256:7fe2c4164c4f094d3381eafae28f29a65d889f0a192cdc4296440807718e77b2",
+      "input_characters": 15,
+      "voice": "local",
+      "retain_seconds": 600,
+      "expires_at": "2026-11-03T00:01:25.123Z",
+      "deployment": {
+        "adapter": "local-http-speech-v1",
+        "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "model": "fixture/local-model",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "succeeded",
+      "media_id": "media-original",
+      "error_code": null
+    },
+    "unknown": {
+      "synthesis_id": "speech-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:fa0837c470fbcd08ba87db292de125b646e442b41032e7f6527a4767ddadcdad",
+      "input_digest": "sha256:7fe2c4164c4f094d3381eafae28f29a65d889f0a192cdc4296440807718e77b2",
+      "input_characters": 15,
+      "voice": "local",
+      "retain_seconds": 600,
+      "expires_at": "2026-11-03T00:01:25.123Z",
+      "deployment": {
+        "adapter": "local-http-speech-v1",
+        "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "model": "fixture/local-model",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:02.123Z",
+      "status": "unknown",
+      "media_id": null,
+      "error_code": "speech_interrupted"
+    },
+    "discarded": {
+      "synthesis_id": "speech-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:fa0837c470fbcd08ba87db292de125b646e442b41032e7f6527a4767ddadcdad",
+      "input_digest": "sha256:7fe2c4164c4f094d3381eafae28f29a65d889f0a192cdc4296440807718e77b2",
+      "input_characters": 15,
+      "voice": "local",
+      "retain_seconds": 600,
+      "expires_at": "2026-11-03T00:01:25.123Z",
+      "deployment": {
+        "adapter": "local-http-speech-v1",
+        "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "model": "fixture/local-model",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:03.123Z",
+      "status": "discarded",
+      "media_id": null,
+      "error_code": "speech_output_discarded"
+    },
+    "failed": {
+      "synthesis_id": "speech-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:fa0837c470fbcd08ba87db292de125b646e442b41032e7f6527a4767ddadcdad",
+      "input_digest": "sha256:7fe2c4164c4f094d3381eafae28f29a65d889f0a192cdc4296440807718e77b2",
+      "input_characters": 15,
+      "voice": "local",
+      "retain_seconds": 600,
+      "expires_at": "2026-11-03T00:01:25.123Z",
+      "deployment": {
+        "adapter": "local-http-speech-v1",
+        "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "model": "fixture/local-model",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-03T00:00:00.123Z",
+      "updated_at": "2026-11-03T00:00:01.123Z",
+      "status": "failed",
+      "media_id": null,
+      "error_code": "invalid_speech_audio"
+    }
+  }
+}

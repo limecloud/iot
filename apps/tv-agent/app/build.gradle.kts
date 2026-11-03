@@ -5,6 +5,7 @@ android {
     namespace = "run.limeai.iot.television"
     compileSdk = 36
     buildToolsVersion = "36.0.0"
+    buildFeatures { buildConfig = true }
     defaultConfig {
         applicationId = "run.limeai.iot.television"
         minSdk = 23; targetSdk = 36; versionCode = 3; versionName = "0.3.0"
@@ -15,6 +16,7 @@ android {
     packaging.resources {
         // 保留各密码库的许可正文；Android不加载JAR内的OSGi运行清单。
         merges += "META-INF/LICENSE.md"
+        merges += "META-INF/services/org.eclipse.paho.mqttv5.client.spi.NetworkModuleFactory"
         excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
     }
     providers.gradleProperty("limeiot.runtimeAssets").orNull?.let { sourceSets.getByName("androidTest").assets.srcDir(it) }

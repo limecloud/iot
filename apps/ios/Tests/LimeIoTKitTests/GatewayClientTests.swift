@@ -112,6 +112,7 @@ private func actualGatewayDeviceResultAndSessionRevocation() async throws {
 
 @main enum ClientChecks {
     static func main() async throws {
+        if ProcessInfo.processInfo.environment["LIMEIOT_VISION_CHECK"] == "1" { try await visionLiveChecks(); return }
         try numericValuesPreserveIntegerContract()
         try endpointsRequireSecureExactOrigins()
         try await sessionHeadersAndUnknownSubmissionDoNotRetry()
@@ -119,6 +120,12 @@ private func actualGatewayDeviceResultAndSessionRevocation() async throws {
         let otaChecks = try await otaContractChecks()
         let mediaChecks = try await mediaContractChecks()
         print("{\"media_contract_checks\":\(mediaChecks)}")
+        let speechChecks = try await speechContractChecks()
+        print("{\"speech_contract_checks\":\(speechChecks)}")
+        let transcriptionChecks = try await transcriptionContractChecks()
+        print("{\"transcription_contract_checks\":\(transcriptionChecks)}")
+        let visionChecks = try await visionContractChecks()
+        print("{\"vision_contract_checks\":\(visionChecks)}")
         let mediaTargetChecks = try await mediaTargetContractChecks()
         print("{\"media_target_contract_checks\":\(mediaTargetChecks)}")
         let controlChecks = try await controlContractChecks()

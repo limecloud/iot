@@ -299,7 +299,7 @@ class AndroidBoundaryTest {
     companion object { private const val PLAYER = "com.example.player"; private const val TOPIC = "limeiot/v1/space-demo/device-tv/down/" }
 }
 
-private object Fixtures {
+internal object Fixtures {
     private val directory = Files.createTempDirectory("limeiot-tv-android-fixtures-")
     private fun openssl(vararg args: String) {
         val process = ProcessBuilder(listOf("openssl") + args).directory(directory.toFile()).redirectErrorStream(true).start()

@@ -1,0 +1,142 @@
+{
+  "evidence_id": "EVID-TV-APK-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "passed_offline_checks_only",
+  "scope": {
+    "hardware": false,
+    "device_connection": false,
+    "apk_installation": false,
+    "installation_authorized": false,
+    "device_state_verified": false,
+    "storage_compatibility_verified": false,
+    "native_app_runtime": false,
+    "published": false,
+    "full_goal_completed": false
+  },
+  "implementation": {
+    "tool": "tools/tv-agent-apk.py",
+    "test_entry": "npm run test:tv-agent:apk",
+    "android_build_tools": "36.0.0",
+    "compiled_fixture_platform": 36,
+    "api_input_range": {
+      "minimum": 23,
+      "maximum": 36
+    },
+    "single_apk_max_bytes": 268435456,
+    "max_archive_entries": 20000,
+    "per_sdk_process_timeout_seconds": 10,
+    "per_sdk_process_output_bytes": 262144,
+    "formal_ota_kind_extended": false
+  },
+  "tests": {
+    "passed": true,
+    "tests": 13,
+    "failures": 0,
+    "errors": 0,
+    "signed_fixture_count": 21,
+    "observed_sdk_inspection_calls": 88,
+    "cases": [
+      "valid_signed_upgrade_and_permission_delta",
+      "certificate_pin_and_continuity",
+      "whole_file_digest_rejection_before_sdk",
+      "signed_payload_tampering",
+      "unsigned_and_api23_v2_only_rejection",
+      "package_and_version_monotonicity",
+      "min_max_api_and_packaged_abi",
+      "debug_opt_in_and_test_only_rejection",
+      "split_shared_uid_major_version_and_required_split_types",
+      "mandatory_hardware_library_and_sdk_extension",
+      "duplicate_zip_and_symlink",
+      "cli_result_and_diagnostic_redaction",
+      "actual_process_timeout_and_output_limit"
+    ]
+  },
+  "actual_tv_project_apks": {
+    "baseline": {
+      "package_name": "run.limeai.iot.television",
+      "version_code": 3,
+      "min_sdk": 23,
+      "target_sdk": 36,
+      "max_sdk": null,
+      "debuggable": true,
+      "permissions": [
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.CHANGE_NETWORK_STATE",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE",
+        "android.permission.INTERNET",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "sha256": "d2a91aa17a4cc7070ff9abf1d12b5c5ef18c7b119508fd255a2127a69d76d5a2",
+      "signer_sha256": "98eb2195ca359e93f307aa55ccac0d044e32a55b4f8e7b2e811217b17e94cdef",
+      "native_abis": [],
+      "signature_warning_count": 8
+    },
+    "candidate": {
+      "package_name": "run.limeai.iot.television",
+      "version_code": 4,
+      "min_sdk": 23,
+      "target_sdk": 36,
+      "max_sdk": null,
+      "debuggable": true,
+      "permissions": [
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.CHANGE_NETWORK_STATE",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE",
+        "android.permission.INTERNET",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "sha256": "257512c3da8621488a3f948be9eb8097cd98e742bde21ef4f79d86f914e634ea",
+      "signer_sha256": "98eb2195ca359e93f307aa55ccac0d044e32a55b4f8e7b2e811217b17e94cdef",
+      "native_abis": [],
+      "signature_warning_count": 8
+    },
+    "target": {
+      "api_level": 23,
+      "abis": [
+        "armeabi-v7a",
+        "armeabi"
+      ]
+    },
+    "default_debug_candidate_rejected": true,
+    "explicit_debug_offline_check_passed": true,
+    "source_build_override": {
+      "version_code": 4,
+      "version_name": "0.3.1-preflight",
+      "production_root_version_changed": false
+    },
+    "apk_bytes_archived": true,
+    "candidate_installed": false
+  },
+  "input_sha256": {
+    "tools/tv-agent-apk.py": "62d5d43493daae4048d779567144ae94c93be05aee18b84593556efa03bbb1e3",
+    "tests/test_tv_agent_apk.py": "aa82c6009856caf76e84aab14b2c86b3b17a7be45a7f0c70cfdad3b0d255f4a6",
+    "aapt2": "a8844d4089b442b034aed8953deee1893253053c900e03141ae7173e3edd8157",
+    "apksigner": "b47549e373b895ce6ca620d0c7887e674d9615ffa837a86ac601dcfd04adb0f0",
+    "apksigner.jar": "3716d9311e55d2b0918a2fd9d54ba9e406c5f6abeea700b287f11259bc163dec",
+    "android.jar": "d9eb9da824d9e247a352f570f01e1169e725b2954bca9e283a71786c59b59f9a"
+  },
+  "raw_evidence_sha256": {
+    "source-manifest.json": "6a911aa411bd16ab59120dbb96870d113553fa86e820dcf306b5f448af9a2e2a",
+    "build-overrides.json": "a78963a9ce3e20a1d30ca1aac0a5a99480e6f9f4b8c0c39d67d4c3c98c3047f3",
+    "build.log": "f42138dc48e1b87e9de75e41168e00fb58b9e9b12b4ddc2f17a4c968bbf77c16",
+    "final-test-report.json": "c4eb07f88dedd288f5b69bc69dcd540b9e9ed1bd9ba147c9fa84cd4d83b735e1",
+    "default_debug_rejection.json": "6c85e091958b66aa1927136a48a97917c016aca7544511adae910d63650278ac",
+    "explicit_debug_offline_check.json": "99a5441ccb74f7eb15b8252d5b1739acfcd29b5f528b4e9766427a6ee7d16e25",
+    "source/tools/tv-agent-apk.py": "62d5d43493daae4048d779567144ae94c93be05aee18b84593556efa03bbb1e3",
+    "source/tests/test_tv_agent_apk.py": "aa82c6009856caf76e84aab14b2c86b3b17a7be45a7f0c70cfdad3b0d255f4a6",
+    "tv-apk-preflight-first.log": "388fa87d616de3622e274fd12acbb5a878a5ab54a00ef6afdd735ab172e7a023",
+    "tv-apk-preflight-entry.log": "e9252ffb8ff7ebd1bef68e72af0f5ca977eb9411b46fde283f692645edae2c19",
+    "tv-apk-preflight-final.log": "16535e5448361f8e5f440b387e8d6092feec3848805db9db49d37b12050d3f47"
+  },
+  "limits": [
+    "Baseline APK and target profile are supplied data; no live device state is verified.",
+    "Packaged lib directory ABI only; no ELF loading, native linkage or runtime health is verified.",
+    "Debug candidate allowed only for the explicit local fixture; no release or production approval.",
+    "No installer, user cancellation, installation-session recovery or KeyStore/SQLite continuity acceptance.",
+    "Split packages, signer rotation, multiple signers, downgrade and extra platform requirements are not implemented.",
+    "APK offline checks do not complete a second actual update mechanism or general provider contract.",
+    "Television debugging remains paused; no device reads or writes, emulators, new REA evidence, Git commit or publication."
+  ]
+}

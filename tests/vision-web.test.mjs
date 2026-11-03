@@ -1,0 +1,50 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { chromium, expect } from '@playwright/test';
+import { until } from '../tools/dev-stack.mjs';
+import { visionStack, base, png } from './helpers/vision.mjs';
+const storage = `limeiot.vision:${base}`;
+async function setup(t) {
+  const result = await visionStack(t), browser = await chromium.launch({ headless: true, executablePath: process.env.LIMEIOT_BROWSER_EXECUTABLE }); t.after(() => browser.close());
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' }), page = await context.newPage(); page.setDefaultTimeout(15000);
+  const login = async () => { await page.getByLabel('所有者凭据', { exact: true }).fill(result.stack.env.LIMEIOT_TOKEN); await page.getByRole('button', { name: '连接家庭网关', exact: true }).click(); };
+  await page.goto(result.stack.env.LIMEIOT_ENDPOINT + '/?view=vision'); await login();
+  const panel = page.getByRole('region', { name: '图片观察', exact: true }); await expect(panel.getByLabel('图片', { exact: true })).toBeEnabled();
+  const select = async () => { const [chooser] = await Promise.all([page.waitForEvent('filechooser'), panel.getByRole('button', { name: '选择图片', exact: true }).click()]); await chooser.setFiles({ name: 'color.png', mimeType: 'image/png', buffer: png() }); await expect(panel.getByRole('button', { name: '读取视觉状态', exact: true })).toBeEnabled(); await panel.getByLabel('问题', { exact: true }).fill('请描述颜色与形状。'); await expect(panel.getByRole('button', { name: '分析图片', exact: true })).toBeEnabled(); };
+  return { ...result, context, page, panel, login, select };
+}
+test('390px视觉网页：先保存摘要，丢回执只查原键，后台清正文及明确删除', { timeout: 150000 }, async t => {
+  const { stack, directory, page, panel, select, calls, errors, text } = await setup(t); let posts = 0, discards = 0;
+  page.on('request', req => { if (req.method() === 'POST' && new URL(req.url()).pathname === base + '/vision-observations') posts++; if (req.method() === 'POST' && req.url().endsWith('/discard')) discards++; });
+  await select();
+  await page.evaluate(key => { const original = Storage.prototype.setItem; window.__restoreVisionStorage = () => { Storage.prototype.setItem = original; }; Storage.prototype.setItem = function (name, value) { if (name === key) throw new Error('fixture_write_failed'); return original.call(this, name, value); }; }, storage);
+  await panel.getByRole('button', { name: '分析图片', exact: true }).click(); await expect(panel.getByRole('status')).toHaveText('观察记录不可用，已暂停新请求'); assert.equal(posts, 0); assert.equal(calls.length, 0);
+  await page.evaluate(() => window.__restoreVisionStorage()); await page.reload(); await expect(panel.getByLabel('图片', { exact: true })).toBeEnabled(); await select();
+  await page.route('**/vision-observations', async route => { if (route.request().method() === 'POST') { await route.fetch(); await route.abort(); } else await route.continue(); });
+  await panel.getByRole('button', { name: '分析图片', exact: true }).click(); await expect(panel.getByRole('status')).toHaveText('观察结果待核实，请查询原任务');
+  await panel.getByRole('button', { name: '查询原任务', exact: true }).click(); await expect(panel.getByLabel('观察结果', { exact: true })).toHaveText(text); assert.equal(posts, 1); assert.equal(calls.length, 1);
+  const saved = await page.evaluate(key => localStorage.getItem(key), storage); assert.equal(saved.includes('请描述颜色与形状。'), false); assert.equal(saved.includes(png().toString('base64')), false); assert.equal(saved.includes(text), false); assert.equal(await panel.getByLabel('问题', { exact: true }).inputValue(), '');
+  await page.reload(); await expect(panel.getByRole('button', { name: '查询原任务', exact: true })).toBeEnabled(); await expect(panel.getByText('查询原任务可查看结果', { exact: true })).toBeVisible(); await expect(panel.getByLabel('观察结果', { exact: true })).toHaveCount(0); assert.equal(posts, 1);
+  await panel.getByRole('button', { name: '查询原任务', exact: true }).click(); await expect(panel.getByLabel('观察结果', { exact: true })).toHaveText(text);
+  await page.evaluate(() => { window.__visionHidden = true; Object.defineProperty(document, 'hidden', { configurable: true, get: () => window.__visionHidden }); document.dispatchEvent(new Event('visibilitychange')); }); await expect(panel.getByLabel('观察结果', { exact: true })).toHaveCount(0);
+  await page.evaluate(() => { window.__visionHidden = false; document.dispatchEvent(new Event('visibilitychange')); }); await expect(panel.getByRole('button', { name: '查询原任务', exact: true })).toBeEnabled(); await expect(panel.getByLabel('观察结果', { exact: true })).toHaveCount(0);
+  await panel.getByRole('button', { name: '查询原任务', exact: true }).click(); await expect(panel.getByLabel('观察结果', { exact: true })).toHaveText(text);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true); await page.screenshot({ path: path.join(directory, 'vision-mobile.png'), fullPage: true });
+  await panel.getByRole('button', { name: '清除观察结果', exact: true }).click(); await panel.getByRole('button', { name: '取消', exact: true }).click(); assert.equal(discards, 0);
+  await panel.getByRole('button', { name: '清除观察结果', exact: true }).click(); await panel.getByRole('button', { name: '确认清除输出', exact: true }).click(); await expect(panel.getByText('观察结果已清除', { exact: true })).toBeVisible(); assert.equal(discards, 1);
+  await panel.getByRole('button', { name: '查询原任务', exact: true }).click(); await expect(panel.getByLabel('观察结果', { exact: true })).toHaveCount(0); assert.equal(posts, 1); assert.equal(calls.length, 1); assert.equal((await stack.request(base + '/commands')).value.items.length, 0); assert.deepEqual(errors, []);
+  await writeFile(path.join(directory, 'vision-web-result.json'), JSON.stringify({ passed: true, viewport: 390, real_browser: true, real_gateway: true, storage_failure_prevents_post: true, raw_input_and_output_absent_from_storage: true, lost_response_get_only: true, foreground_requires_explicit_completed_query: true, clear_is_explicit_and_durable: true, horizontal_overflow: false, create_posts: posts, discard_posts: discards, provider_calls: calls.length, provider_fixture: true, hardware: false, published: false, full_goal_completed: false }, null, 2)); console.log(JSON.stringify({ report: path.join(directory, 'vision-web-result.json') }));
+});
+test('视觉网页重启未知占用，取消不提交，放弃后拒绝迟到正文，损坏记录阻止新请求', { timeout: 150000 }, async t => {
+  const { stack, directory, page, panel, select, calls, holds, setMode, login, errors } = await setup(t); let posts = 0, discards = 0;
+  page.on('request', req => { if (req.method() === 'POST' && new URL(req.url()).pathname === base + '/vision-observations') posts++; if (req.method() === 'POST' && req.url().endsWith('/discard')) discards++; });
+  setMode('hold'); await select(); await panel.getByRole('button', { name: '分析图片', exact: true }).click(); await until(() => holds.length === 1);
+  await stack.restartGateway(); await page.reload(); await login(); await expect(panel.getByText('结果待核实', { exact: true })).toBeVisible(); await expect(panel.getByRole('button', { name: '分析图片', exact: true })).toBeDisabled(); assert.equal(posts, 1); assert.equal(calls.length, 1);
+  await panel.getByRole('button', { name: '放弃观察输出', exact: true }).click(); await panel.getByRole('button', { name: '取消', exact: true }).click(); assert.equal(discards, 0);
+  await panel.getByRole('button', { name: '放弃观察输出', exact: true }).click(); await panel.getByRole('button', { name: '确认清除输出', exact: true }).click(); await expect(panel.getByText('已放弃输出', { exact: true })).toBeVisible(); holds.shift()();
+  await panel.getByRole('button', { name: '查询原任务', exact: true }).click(); await expect(panel.getByLabel('观察结果', { exact: true })).toHaveCount(0); assert.equal(posts, 1); assert.equal(discards, 1);
+  await page.evaluate(key => localStorage.setItem(key, '{invalid'), storage); await page.reload(); await expect(panel.getByRole('status')).toHaveText('观察记录不可用，已暂停新请求'); assert.equal(posts, 1); assert.deepEqual(errors, []);
+  await writeFile(path.join(directory, 'vision-web-unknown-result.json'), JSON.stringify({ passed: true, unknown_blocks_new_work: true, cancelled_confirmation_zero_post: true, late_output_ignored: true, corrupt_storage_blocks_new_post: true, create_posts: posts, discard_posts: discards, provider_calls: calls.length, provider_fixture: true, hardware: false, full_goal_completed: false }, null, 2)); console.log(JSON.stringify({ report: path.join(directory, 'vision-web-unknown-result.json') }));
+});

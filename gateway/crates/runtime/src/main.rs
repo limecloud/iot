@@ -8,6 +8,7 @@ mod execution_api;
 mod execution_plan_api;
 mod identity;
 mod inference;
+mod local_provider;
 mod media;
 mod media_store;
 mod model_api;
@@ -17,7 +18,10 @@ mod relay;
 mod relay_rpc;
 mod speech;
 mod store;
+mod transcription;
 mod tv;
+mod vision;
+mod vision_store;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

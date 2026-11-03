@@ -107,10 +107,30 @@ npm run test:android
 
 端到端测试使用动态回环端口、独立状态目录和随机凭据，完成后关闭自己的进程。日志保存在 `.dev/run-*`，不读取现有服务数据库。关键状态与事件在一个 SQLite 事务中提交；内存总线只通知读取耐久事件。发送意图先提交，发送后的失联或重启保留 `unknown`，不自动补发。
 
+## 本地文字转语音
+
+先启用[媒体服务](../../contracts/media.md)，再为同一个网关进程配置 `LIMEIOT_TTS_URL`、`LIMEIOT_TTS_MODEL` 与 `LIMEIOT_TTS_VOICES`。本地提供方须接受 `POST /v1/audio/speech`并返回完整PCM WAV，具体格式、期限与隐私边界见[语音合同](../../contracts/speech.md)。Ollama规则草案不提供TTS。
+
+仓库提供可选的[sherpa CPU服务](../../providers/sherpa-tts/README.md)，使用项目私有Python环境和仓库外模型。先准备固定摘要配置、核对声音编号并启动服务，再将网关指向其本地origin。服务不下载模型，模型许可、真实音质和目标部署性能须单独核对；机器配置见[Schema](../../providers/sherpa-tts/config.schema.json)。
+
+在输入JSON中填写text、voice、retain_seconds及未来90秒内的expires_at，然后执行：
+
+```sh
+npm run cli -- schema speech-syntheses.create
+npm run cli -- speech-syntheses create --space-id space-demo --input ".dev/speech-input.json" --idempotency-key speech-01
+npm run cli -- speech-syntheses resolve speech-01 --space-id space-demo
+```
+
+成功仅返回media_id；到原音频管理入口创建音箱授权，再单独播放。unknown继续占用语音预算，明确放弃输出使用 `speech-syntheses discard speech-01 --space-id space-demo`，不保证提供方已停止计算。`npm run test:speech`运行合同及软件旅程，不验证真实模型质量。
+
+家庭网页打开“音频 → 文字转语音”，填写文本、声音和保留时间，再点击“生成音频”。成功后到“播放授权”选择音箱并明确授权，最后在设备页播放。断线或结果未知时使用“查询原任务”；需要放弃时单独确认。浏览器须支持安全上下文和Web Locks，记录不可用时暂停提交。`npm run test:speech:web`运行语音网页和已有音频旅程，使用确定性提供方及软件音箱。
+
 ## 当前运行边界
 
 开发脚本只监听回环地址；CLI使用所有者Bearer，浏览器与原生端使用独立会话。网关校验精确Host/Origin；非回环监听必须配置HTTPS来源并放在受控TLS入口之后。NAS清单不发布内部HTTP或明文MQTT。Broker禁止匿名并限制各设备Topic；这些能力不等于设备mTLS/认领、多用户授权或公网远程交付。
 
 最多 64 台设备、4096 个命令、64 条规则、1024 个运行和 4096 个事件去重身份；达到上限拒绝新写入。事件读取每批最多 100 条，保留最近约 5000 条，过旧游标明确返回 `event_gap`。当前持久化采用小规模聚合快照；规模化和正式迁移需另行实现。
+
+本地图片观察先启用媒体服务，再设置`LIMEIOT_VISION_URL`与`LIMEIOT_VISION_MODEL`，按需设置`LIMEIOT_VISION_CA_FILE`。家庭网页打开“视觉”；CLI使用`schema vision-observations.create`、`vision-observations create/resolve/discard`。只接单张静态PNG/JPEG与明确问题，图片和问题只保存摘要，结果不控制设备。完整边界见[视觉合同](../../contracts/vision.md)，软件入口`npm run test:vision`；真实视觉质量与完整NAS容器另验。
 
 没有实机、NAS 镜像、多用户授权、ESP-IDF SDK、证书生命周期、签名 OTA、Go 控制面或生态桥接验收。官网与文档中心在 `iotweb`，不属于本地模拟进程。

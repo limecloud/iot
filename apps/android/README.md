@@ -10,6 +10,34 @@
 
 仓库根目录`npm run test:media:native`检查库；`npm run test:media:native:state`运行实际`MediaController`、有界读取器与真实Rust/SQLite/MQTT及软件音箱，覆盖本地无副作用、确认失效、取消保存后零POST、离线禁写、401、丢回执和进程/网关重启恢复。需要JDK21、Android SDK和Swift。恢复文件为宿主夹具，不代表Android Keystore、系统文件选择器或Compose运行；既有模拟器ANR状态保留，实机按用户要求跳过。
 
+## 本地文字转语音库
+
+`SpeechClient(gateway, store)`复用NAS会话，提供`capabilities`、`submit`、`records`、`resolve`和`discard`。`SpeechRequests.input`校验输入，并将时间规范为UTC毫秒。独立`origin#speech-syntheses`最多保存128条摘要记录，每条最多8个明确放弃意图；不保存文本。首次提交和新放弃意图均先保存并回读，同键仅GET，结果未知继续阻止换键生成；跨实例共用Mutex，取消后不补发。响应必须匹配原摘要，部署与任务身份不得漂移，终态不得回退。
+
+根目录`npm run test:speech:native:contract`执行共享JS/Schema、Swift 10组及`SpeechClientTest`的Kotlin 10项宿主检查，需要Swift和JDK21。保存调用取消或丢失确认后，同一客户端只接受上次观测或自己预期写入的完整字节，其他变化仍拒绝；恢复查询不会重新POST。
+
+“设置 → 音频 → 文字转语音”已接入`SpeechController`和Compose：生成、自动查询running、原键恢复及明确确认放弃；成功刷新并选中对应媒体，授权保持未勾选。进入后台、离开页面、离线或会话失效时清除文本和确认，取消旧代次，迟到结果不更新页面；前台恢复只查询。
+
+`npm run test:speech:native:state`执行7项语音状态检查、既有媒体/OTA回归、Debug APK/lint及两端实际Rust/SQLite/MQTT旅程。每端覆盖真实HTTP丢回执、独立授权播放、四次原生宿主进程和两次网关重启、unknown占用与明确放弃；提供方、音箱与恢复文件为夹具。Android Keystore、完整Compose运行和实际发声仍待验收，既有端上环境阻塞保留。
+
+## 本地语音识别
+
+“设置 → 音频 → 语音识别”接入 `TranscriptionController` 与 Compose。先上传音频，读取识别状态，明确选择音频和语言后开始。running自动查询，unknown保持占用，放弃须确认。后台、离开、断线或会话失效清除正文与确认；输出或源录音到期后清除正文，迟到响应不更新旧页面。
+
+`TranscriptionClient(gateway, store)` 使用原NAS会话，`TranscriptionRequests.input(mediaId, mediaDigest, language, expiresAt)` 固定媒体摘要和UTC毫秒期限。必填安全存储的 `origin#audio-transcriptions` 最多128条原记录及每条8个放弃意图。`observation` 明确省略 `output.text`，`records` 只返回元数据，`submit/resolve` 当次返回可带易失文本。网络响应严格核对文本UTF-8摘要、标量/字节上限、保留期限及任务身份，已清除结果不得复活。
+
+根目录 `npm run test:transcription:native:contract` 检查共享向量及两端库，`npm run test:transcription:native:state` 检查实际状态层、Debug APK/lint及真实网关恢复旅程。恢复文件和提供方为宿主夹具，不代表Keystore、Compose系统界面运行或识别质量；完整原生应用及新NAS整包独立验收，实机按用户要求跳过。
+
+## 本地图片观察
+
+`VisionClient(gateway, store)` 接入[正式视觉合同](../../contracts/vision.md)，`VisionRequests.input(bytes, contentType, prompt, retainSeconds, expiresAt)` 构造单张PNG/JPEG请求。图片最大2 MiB，问题最多512个Unicode码点；客户端检查大小、格式标记和问题，网关完成静态图片解码及1024像素边长校验。
+
+本机 `origin#vision-observations` 只保存摘要、去正文观测与清除意图。原键重复只查询，unknown阻止换键；`discard` 可放弃未完成输出或清除成功正文，重复同一意图只GET。`records` 无正文，`submit/resolve` 当次返回可带文本，调用方须按期限及页面生命周期清除内存，不将结果用于自动控制。
+
+“设置 → 图片观察”已接Compose页面与`VisionController`，使用OpenDocument选择PNG/JPEG，后台有界读取最多2 MiB并构造请求。提交后清图片与问题；后台、离线、离开、退出或会话切换清正文，迟到响应不回填。前台刷新只恢复元数据，成功正文需明确查询；放弃和清除均需确认，取消零POST。
+
+`npm run test:vision:native:contract` 验证共享合同，`npm run test:vision:native` 验证JVM宿主库，`npm run test:vision:native:state` 验证实际状态层、真实网关恢复、共享文件读取、Debug APK和lint。系统选择器、Keystore及完整Android界面运行另验；提供方为夹具，真实模型质量独立验收。
+
 ## 环境读数
 
 规则库支持与事件互斥的属性阈值触发、模型单位、上升/下降及滞回；严格触发解码不受宽松模型读取配置影响。`simulate`在属性规则下接收包含previous/current两份观测的JSON对象，预演不修改运行基线或创建设备命令。Compose可创建/编辑单操作阈值规则、完整展示及停用；`ThresholdEditor`按十进制解析常用单位，不截断超精度输入，并生成标记为simulation.ui的预演采样。`RuleTriggerTest`包含合同、表单和可选真实HTTP检查，根目录入口为`npm run test:rules:thresholds`。Debug APK与lint不代表Android端上运行，既有启动ANR阻塞保留。

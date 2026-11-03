@@ -560,6 +560,88 @@ class LocalIdentityStoreTest {
     }
 
     private data class CompletedRotation(val old: DeviceEnrollment, val view: RotationRequestView, val certificate: ByteArray)
+
+    @Test fun apk_snapshot_preserves_pending_request_and_refuses_missing_key_without_recreation() {
+        val request = store().use { it.requestIdentity(setup()) }
+        val snapshot = store().use { it.apkContinuity() }
+        assertEquals(request.setup.binding, snapshot.binding); assertNull(snapshot.journal)
+        assertEquals(snapshot, store().use { it.apkContinuity() }); assertEquals(1, keys.creates)
+        keys.pairs.clear()
+        store().use { assertFails { it.apkContinuity() } }
+        assertEquals(1, keys.creates)
+    }
+
+    @Test fun apk_snapshot_reads_original_creating_state_before_or_after_lost_creation_response() {
+        keys.failAfterCreate = true
+        store().use { assertFails { it.requestIdentity(setup()) } }
+        keys.failAfterCreate = false
+        val snapshot = store().use { it.apkContinuity() }
+        assertNull(snapshot.journal); assertEquals(1, keys.creates)
+        store().use {
+            val request = it.requestIdentity(setup()); assertEquals("pending", request.phase)
+            assertNotEquals(snapshot.digest, it.apkContinuity().digest)
+        }
+        assertEquals(1, keys.creates)
+    }
+
+    @Test fun apk_snapshot_keeps_creating_request_with_no_key_and_never_retries_creation() {
+        keys.failBeforeCreate = true
+        store().use { assertFails { it.requestIdentity(setup()) } }
+        val snapshot = store().use { it.apkContinuity() }
+        assertEquals(snapshot, store().use { it.apkContinuity() }); assertEquals(0, keys.creates)
+    }
+
+    @Test fun apk_snapshot_keeps_prepared_initial_request_and_refuses_unapproved_missing_retained_key() {
+        vault.failSealPhase = "creating"
+        store().use { assertFails { it.requestIdentity(setup()) } }
+        vault.failSealPhase = null
+        val prepared = store().use { it.apkContinuity() }
+        assertEquals(0, keys.creates); assertNull(prepared.journal)
+        val rotated = store().use { completeRotation(it) }
+        keys.pairs.remove(rotated.old.keyReference)
+        store().use { assertEquals("identity_key_unavailable", assertFailsWith<AgentStoreFault> { it.apkContinuity() }.code) }
+        assertEquals(0, keys.retirements); assertEquals(2, keys.creates)
+    }
+
+    @Test fun apk_snapshot_covers_all_history_and_retired_keys_without_reapproving_or_recreating_them() {
+        val first = store().use { completeRotation(it, "retire-one") }
+        val second = store().use { completeRotation(it, "retire-two") }
+        val original = ApkJournalFixture.bytes(second.view.candidate.setup.identity)
+        val crl = IdentityFixtures.crl(first.old.publicCertificate(), second.old.publicCertificate())
+        store().use {
+            it.authorize("com.example.player", true); it.journal(first.old.binding).commit(original)
+            it.retirePreviousKey(it.previewKeyRetirement("retire-two", crl))
+            it.retirePreviousKey(it.previewKeyRetirement("retire-one", crl))
+        }
+        val snapshot = store().use {
+            it.allowed()
+            val before = context.getDatabasePath("tv-agent.db").readBytes()
+            val value = it.apkContinuity()
+            assertEquals(value, it.apkContinuity())
+            assertContentEquals(before, context.getDatabasePath("tv-agent.db").readBytes())
+            value
+        }
+        assertEquals(DeviceJournalInspection(9, 1, 1, 1, 1, false), snapshot.journal)
+        assertEquals(snapshot, store().use { it.apkContinuity() })
+        assertEquals(3, keys.creates); assertEquals(2, keys.retirements); assertEquals(1, keys.pairs.size)
+        database().use { it.execSQL("UPDATE rotations SET number=number+10") }
+        assertNotEquals(snapshot.digest, store().use { it.apkContinuity() }.digest)
+        store().use { assertContentEquals(original, it.journal(first.old.binding).read()) }
+    }
+
+    @Test fun apk_snapshot_preserves_unknown_retirement_without_repeating_the_delete() {
+        val rotated = store().use { completeRotation(it) }
+        keys.failAfterRetire = true
+        store().use { assertFails { it.retirePreviousKey(it.previewKeyRetirement("retire-one", IdentityFixtures.crl(rotated.old.publicCertificate()))) } }
+        keys.failAfterRetire = false
+        val snapshot = store().use { it.apkContinuity() }
+        store().use {
+            assertEquals("deleting", it.keyRetirements().single().phase); assertEquals(snapshot, it.apkContinuity())
+        }
+        assertEquals(1, keys.retirements); assertEquals(2, keys.creates)
+        store().use { it.retirePreviousKey(it.previewKeyRetirement("retire-one")); assertNotEquals(snapshot.digest, it.apkContinuity().digest) }
+        assertEquals(1, keys.retirements)
+    }
     private fun completeRotation(storage: AndroidAgentStore, id: String = "retire-one"): CompletedRotation {
         val old = storage.load() ?: activate(storage)
         val view = storage.requestRotation(id); val cert = IdentityFixtures.sign(view.candidate.request!!.pem)

@@ -21,6 +21,8 @@ pub struct App {
     pub audio: Arc<crate::audio::Adapters>,
     pub media: Option<Arc<crate::media::Media>>,
     pub speech: Option<Arc<crate::speech::Speech>>,
+    pub transcription: Option<Arc<crate::transcription::Transcription>>,
+    pub vision: Option<Arc<crate::vision::Vision>>,
 }
 pub fn setting(key: &str, default: &str) -> String {
     std::env::var(key).unwrap_or_else(|_| default.into())
@@ -60,6 +62,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     ))?)?;
     let media = crate::media::configured(&config.space_id)?;
     let speech = crate::speech::configured(media.is_some())?;
+    let transcription = crate::transcription::configured(media.is_some())?;
+    let vision = crate::vision::configured(media.is_some())?;
     let media_listener = if let Some(media) = &media {
         Some(tokio::net::TcpListener::bind(media.listen).await?)
     } else {
@@ -85,6 +89,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         audio: Arc::new(audio_adapters.clone()),
         media,
         speech,
+        transcription,
+        vision,
     };
     let relay_tls = crate::relay::configured(app.control.as_deref())?;
     let relay = relay_tls.map(|tls| tokio::spawn(crate::relay::run(app.clone(), tls)));

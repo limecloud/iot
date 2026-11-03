@@ -1,5 +1,11 @@
 # 当前工具与模型合同
 
+[本地图片观察](vision.md)及[视觉Schema](vision.schema.json)定义 `vision.understand` 的有界 PNG/JPEG、问题摘要、独立 Ollama 适配、耐久任务、到期清文和原键恢复。API、CLI与家庭网页共用合同，图片和问题正文不入任务快照，视觉结果不执行设备操作；真实模型质量、原生视觉页面和新NAS整包分别验收。
+
+[本地有限语音识别](transcription.md)及[转写Schema](transcription.schema.json)定义`audio.transcribe`的已有录音/摘要输入、本地HTTP适配、耐久任务、文本保留与原键恢复。Swift/Kotlin库与原生页面状态层复用同一合同，本机observation明确去正文，网络仍校验完整文本和摘要。转写不执行设备操作；可选[独立sherpa ASR](../providers/sherpa-asr/README.md)已有真实引擎软件集成，合成中文语音质量未通过，完整原生界面运行及NAS容器另验。
+
+[本地文字转语音](speech.md)及[语音Schema](speech.schema.json)定义 `audio.synthesize` 的本地提供方适配、有界WAV、摘要任务、原键恢复和明确放弃。API与CLI生成媒体引用，授权与播放仍是独立操作；真实模型质量、原生语音界面及NAS新镜像另验。
+
 [有界执行计划](execution-plans.md)（[English](execution-plans.en.md)）与[机器 Schema](execution-plans.schema.json)定义本地所有者的分阶段多设备编排、类型化任务完成、原键恢复及明确解除占用。复用原命令账本；取消不等于物理急停，不提供节拍同步或云转发。
 
 [已受理实时设备事件](device-events.md)（[English](device-events.en.md)）和[严格投影 Schema](device-event.schema.json)定义本地轮询/SSE中可消费的设备事件数据、原身份与去重摘要。投影与原状态先耐久提交，重复/历史/过期或非法事件不产生新业务投影；不扩展云端转发或授予设备控制权。

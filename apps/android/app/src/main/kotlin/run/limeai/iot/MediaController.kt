@@ -62,6 +62,13 @@ class MediaController(private val client: MediaClient, val space: String, privat
         }
     }
     fun refresh() = task { epoch -> mutable.update { it.copy(ready = false) }; read(epoch); mutable.update { it.copy(message = "") } }
+    suspend fun useGenerated(id: String) {
+        currentCoroutineContext().ensureActive(); if (!active || !mutable.value.online) return
+        mutable.update { it.copy(approved = false, deletion = null) }; waitForIdle()
+        currentCoroutineContext().ensureActive(); if (!active || !mutable.value.online) return
+        task { epoch -> read(epoch); mutable.update { old -> old.copy(selectedMedia = id.takeIf { value -> old.page?.items?.any { it.id == value && it.available } == true }.orEmpty(), approved = false) } }
+        waitForIdle()
+    }
     private fun submit(change: JsonObject) = task { epoch -> val result = client.submit(space, change); current(epoch); read(epoch); mutable.update { it.copy(message = result.statusText) } }
     fun upload() {
         if (!active || !mutable.value.writable) return

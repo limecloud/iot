@@ -1,0 +1,8 @@
+# 与compose.media.yaml叠加；推理引擎由安装者在独立本地服务部署。
+services:
+  gateway:
+    environment:
+      LIMEIOT_TTS_URL: ${LIMEIOT_TTS_URL:?}
+      LIMEIOT_TTS_MODEL: ${LIMEIOT_TTS_MODEL:?}
+      LIMEIOT_TTS_VOICES: ${LIMEIOT_TTS_VOICES:?}
+      LIMEIOT_TTS_CA_FILE: ${LIMEIOT_TTS_CA_FILE:-}

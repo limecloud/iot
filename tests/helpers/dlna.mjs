@@ -31,5 +31,5 @@ export async function rendererFixture(database,{expectedMedia}={}) {
   });
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const config={schema_version:1,target:`127.0.0.1:${server.address().port}`,description_path:'/description.xml',av_transport_path:'/av',rendering_control_path:'/render',udn:identity,playback_volume:10,volume_limit:20,media:[{media_id:'chime',url:`http://127.0.0.1:${media.address().port}/chime.wav`,expires_at:new Date(Date.now()+300_000).toISOString()}],timeout_ms:3000};
-  return {config,effects,proofs,pulls,renderedPulls,descriptions,setFault(value){fault=value;},setIdentity(value){identity=value;},setDatabase(value){database=value;},async close(){await Promise.all([server,media].map(s=>new Promise(resolve=>{s.closeAllConnections();s.close(resolve);})));}};
+  return {config,effects,proofs,pulls,renderedPulls,descriptions,setExpectedMedia(value){assert.ok(Buffer.isBuffer(value));expectedMedia=Buffer.from(value);},setFault(value){fault=value;},setIdentity(value){identity=value;},setDatabase(value){database=value;},async close(){await Promise.all([server,media].map(s=>new Promise(resolve=>{s.closeAllConnections();s.close(resolve);})));}};
 }

@@ -9,8 +9,8 @@ import SwiftUI
         WindowGroup {
             RootView().environmentObject(home).environmentObject(cloud).tint(Palette.grass9)
                 .task(id: connection + (scenePhase == .active ? ":active" : ":paused")) {
-                    guard scenePhase == .active else { home.media?.pause(); return }
-                    if connection == "cloud" { home.media?.pause(); await cloud.runForeground(); return }
+                    guard scenePhase == .active else { home.media?.pause(); home.speech?.pause(); home.transcription?.pause(); home.vision?.pause(); return }
+                    if connection == "cloud" { home.media?.pause(); home.speech?.pause(); home.transcription?.pause(); home.vision?.pause(); await cloud.runForeground(); return }
                     if !home.connected && !home.endpoint.isEmpty { await home.connect(token: nil, restore: true) }
                     while !Task.isCancelled {
                         await home.refresh()

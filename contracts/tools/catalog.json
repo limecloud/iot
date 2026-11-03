@@ -430,6 +430,58 @@
       "space_required": true,
       "output_schema": "speech#/$defs/task",
       "description": "耐久放弃尚未完成的本地输出；不证明提供方已经取消。响应丢失后查询原任务。"
+    },
+    {
+      "operation_id": "audio-transcriptions.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/audio-transcriptions",
+      "space_required": true,
+      "output_schema": "transcription#/$defs/task",
+      "input_schema": "transcription",
+      "idempotency_required": true,
+      "original_request": true,
+      "recovery_operation": "audio-transcriptions.resolve"
+    },
+    {
+      "operation_id": "audio-transcriptions.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/audio-transcriptions/by-key/{id}",
+      "space_required": true,
+      "output_schema": "transcription#/$defs/task"
+    },
+    {
+      "operation_id": "audio-transcriptions.discard",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/audio-transcriptions/by-key/{id}/discard",
+      "space_required": true,
+      "output_schema": "transcription#/$defs/task",
+      "description": "耐久放弃未完成的转写输出，不证明提供方已停止；响应丢失后查询原任务。"
+    },
+    {
+      "operation_id": "vision-observations.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/vision-observations",
+      "space_required": true,
+      "input_schema": "vision",
+      "idempotency_required": true,
+      "recovery_operation": "vision-observations.resolve",
+      "output_schema": "vision#/$defs/task",
+      "original_request": true
+    },
+    {
+      "operation_id": "vision-observations.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/vision-observations/by-key/{id}",
+      "space_required": true,
+      "output_schema": "vision#/$defs/task"
+    },
+    {
+      "operation_id": "vision-observations.discard",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/vision-observations/by-key/{id}/discard",
+      "space_required": true,
+      "output_schema": "vision#/$defs/task",
+      "description": "耐久放弃未完成的输出，或清除已完成观察的文本；不证明模型已停止。响应丢失后查询原任务。"
     }
   ],
   "schemas": {
@@ -7799,6 +7851,678 @@
         }
       },
       "$ref": "#/$defs/input"
+    },
+    "transcription": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://limeiot.dev/contracts/transcription.schema.json",
+      "title": "Local finite audio transcription",
+      "$ref": "#/$defs/input",
+      "$defs": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "media_id",
+            "media_digest",
+            "language",
+            "expires_at"
+          ],
+          "properties": {
+            "media_id": {
+              "type": "string",
+              "pattern": "^media-[A-Za-z0-9_-]{1,122}$"
+            },
+            "media_digest": {
+              "$ref": "#/$defs/hash"
+            },
+            "language": {
+              "enum": [
+                "auto",
+                "zh",
+                "en"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,3})?(?:Z|[+-]\\d\\d:\\d\\d)$"
+            }
+          }
+        },
+        "output": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "content_digest",
+            "expires_at",
+            "cleared_at"
+          ],
+          "properties": {
+            "text": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 2048,
+              "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$"
+            },
+            "content_digest": {
+              "$ref": "#/$defs/hash"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "cleared_at": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "oneOf": [
+            {
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "cleared_at": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "text": {
+                  "type": "null"
+                },
+                "cleared_at": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "adapter",
+            "revision",
+            "model",
+            "data_location"
+          ],
+          "properties": {
+            "adapter": {
+              "const": "local-http-transcription-v1"
+            },
+            "revision": {
+              "$ref": "#/$defs/hash"
+            },
+            "model": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_:./-]{1,128}$"
+            },
+            "data_location": {
+              "const": "local"
+            }
+          }
+        },
+        "task": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "transcription_id",
+            "space_id",
+            "idempotency_key",
+            "request_digest",
+            "input",
+            "deployment",
+            "created_at",
+            "updated_at",
+            "status",
+            "output",
+            "error_code"
+          ],
+          "properties": {
+            "transcription_id": {
+              "type": "string",
+              "pattern": "^transcription-[A-Za-z0-9_-]{1,114}$"
+            },
+            "space_id": {
+              "$ref": "#/$defs/id"
+            },
+            "idempotency_key": {
+              "$ref": "#/$defs/id"
+            },
+            "request_digest": {
+              "$ref": "#/$defs/hash"
+            },
+            "input": {
+              "$ref": "#/$defs/input"
+            },
+            "deployment": {
+              "$ref": "#/$defs/deployment"
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/time"
+            },
+            "status": {
+              "enum": [
+                "running",
+                "succeeded",
+                "failed",
+                "unknown",
+                "discarded"
+              ]
+            },
+            "output": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/output"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "error_code": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "running"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "output": {
+                    "type": "null"
+                  },
+                  "error_code": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "succeeded"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "output": {
+                    "type": "object"
+                  },
+                  "error_code": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "discarded"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "output": {
+                    "type": "null"
+                  },
+                  "error_code": {
+                    "enum": [
+                      "transcription_output_discarded"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "unknown"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "output": {
+                    "type": "null"
+                  },
+                  "error_code": {
+                    "enum": [
+                      "transcription_provider_unknown",
+                      "transcription_deadline_exceeded",
+                      "transcription_interrupted"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "failed"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "output": {
+                    "type": "null"
+                  },
+                  "error_code": {
+                    "enum": [
+                      "transcription_provider_rejected",
+                      "invalid_transcription_output",
+                      "transcription_output_too_large",
+                      "transcription_source_unavailable",
+                      "transcription_origin_not_local",
+                      "transcription_provider_unavailable"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "vision": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://limeiot.dev/contracts/vision.schema.json",
+      "title": "Local finite image observation",
+      "$ref": "#/$defs/request",
+      "$defs": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "output": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "content_digest",
+            "expires_at",
+            "cleared_at"
+          ],
+          "properties": {
+            "text": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 2048,
+              "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$",
+              "minLength": 1
+            },
+            "content_digest": {
+              "$ref": "#/$defs/hash"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "cleared_at": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "oneOf": [
+            {
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "cleared_at": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "text": {
+                  "type": "null"
+                },
+                "cleared_at": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "adapter",
+            "revision",
+            "model",
+            "data_location"
+          ],
+          "properties": {
+            "adapter": {
+              "const": "ollama-vision-v1"
+            },
+            "revision": {
+              "$ref": "#/$defs/hash"
+            },
+            "model": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_:./-]{1,128}$"
+            },
+            "data_location": {
+              "const": "local"
+            }
+          }
+        },
+        "request_time": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,3})?(?:Z|[+-]\\d\\d:\\d\\d)$"
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "image_base64",
+            "content_type",
+            "prompt",
+            "retain_seconds",
+            "expires_at"
+          ],
+          "properties": {
+            "image_base64": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 2796204,
+              "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+            },
+            "content_type": {
+              "enum": [
+                "image/png",
+                "image/jpeg"
+              ]
+            },
+            "prompt": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$"
+            },
+            "retain_seconds": {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 3600
+            },
+            "expires_at": {
+              "$ref": "#/$defs/request_time"
+            }
+          }
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "image_digest",
+            "image_bytes",
+            "content_type",
+            "prompt_digest",
+            "retain_seconds",
+            "expires_at"
+          ],
+          "properties": {
+            "image_digest": {
+              "$ref": "#/$defs/hash"
+            },
+            "image_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2097152
+            },
+            "content_type": {
+              "enum": [
+                "image/png",
+                "image/jpeg"
+              ]
+            },
+            "prompt_digest": {
+              "$ref": "#/$defs/hash"
+            },
+            "retain_seconds": {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 3600
+            },
+            "expires_at": {
+              "$ref": "#/$defs/request_time"
+            }
+          }
+        },
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "width",
+            "height"
+          ],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1024
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1024
+            }
+          }
+        },
+        "task": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "vision_id",
+            "space_id",
+            "idempotency_key",
+            "request_digest",
+            "input",
+            "image",
+            "deployment",
+            "created_at",
+            "updated_at",
+            "status",
+            "output",
+            "error_code"
+          ],
+          "properties": {
+            "vision_id": {
+              "type": "string",
+              "pattern": "^vision-[A-Za-z0-9_-]{1,121}$"
+            },
+            "space_id": {
+              "$ref": "#/$defs/id"
+            },
+            "idempotency_key": {
+              "$ref": "#/$defs/id"
+            },
+            "request_digest": {
+              "$ref": "#/$defs/hash"
+            },
+            "input": {
+              "$ref": "#/$defs/input"
+            },
+            "image": {
+              "$ref": "#/$defs/image"
+            },
+            "deployment": {
+              "$ref": "#/$defs/deployment"
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/time"
+            },
+            "status": {
+              "enum": [
+                "running",
+                "succeeded",
+                "failed",
+                "unknown",
+                "discarded"
+              ]
+            },
+            "output": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/output"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "error_code": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "oneOf": [
+            {
+              "properties": {
+                "status": {
+                  "const": "running"
+                },
+                "output": {
+                  "type": "null"
+                },
+                "error_code": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "status": {
+                  "const": "succeeded"
+                },
+                "output": {
+                  "$ref": "#/$defs/output"
+                },
+                "error_code": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "status": {
+                  "const": "failed"
+                },
+                "output": {
+                  "type": "null"
+                },
+                "error_code": {
+                  "enum": [
+                    "vision_provider_rejected",
+                    "invalid_vision_output",
+                    "vision_output_too_large",
+                    "vision_origin_not_local",
+                    "vision_provider_unavailable"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "status": {
+                  "const": "unknown"
+                },
+                "output": {
+                  "type": "null"
+                },
+                "error_code": {
+                  "enum": [
+                    "vision_provider_unknown",
+                    "vision_deadline_exceeded",
+                    "vision_interrupted"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "status": {
+                  "const": "discarded"
+                },
+                "output": {
+                  "type": "null"
+                },
+                "error_code": {
+                  "enum": [
+                    "vision_output_discarded"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
     }
   }
 }

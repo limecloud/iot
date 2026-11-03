@@ -1,0 +1,201 @@
+{
+  "evidence_id": "EVID-TV-APK-QUIESCENCE-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "passed_runtime_quiescence_host_checks_only",
+  "scope": {
+    "hardware": false,
+    "device_connection": false,
+    "apk_installation": false,
+    "installation_authorized": false,
+    "emulator_started": false,
+    "native_app_runtime": false,
+    "package_installer_runtime": false,
+    "actual_mqtt_connection": false,
+    "actual_inflight_protocol_drain_verified": false,
+    "full_runtime_eligibility_integrated": false,
+    "preflight_source_verified": false,
+    "full_continuity_snapshot_verified": false,
+    "product_update_ui": false,
+    "keystore_continuity_verified": false,
+    "health_acceptance": false,
+    "published": false,
+    "full_goal_completed": false,
+    "host_runtime_worker_owner": true,
+    "host_native_sqlite": true
+  },
+  "implementation": {
+    "runtime_internal_update_owner_integrated": true,
+    "worker_exit_required_before_update": true,
+    "inactive_permit_treated_as_worker_exit": false,
+    "owner_then_runtime_lock_order": true,
+    "startup_waits_for_apk_owner": false,
+    "same_thread_update_owner_can_start_connection": false,
+    "duplicate_active_start_invokes_finished": false,
+    "existing_provider_and_receiver_share_owner": true,
+    "required_material_callback_preserved": true,
+    "automatic_connection_stop": false,
+    "automatic_connection_restart": false,
+    "unknown_queries_resubmit": false,
+    "identity_database_schema_changed": false,
+    "identity_grants_or_command_bytes_rewritten": false,
+    "product_update_entry_implemented": false,
+    "healthy_terminal_implemented": false,
+    "formal_ota_kind_extended": false,
+    "second_actual_update_mechanism_accepted": false
+  },
+  "test_environment": {
+    "core": "JVM",
+    "app": "Robolectric API23/28/31/33; new Runtime cases on API28 with host native SQLite",
+    "new_runtime_cases": "Production Runtime worker thread, original permit lifecycle, serial storage executor, update store and shared Owner. A controlled connection adapter wraps the constructed production MQTT object but does not call its run method or connect to a Broker.",
+    "baseline_and_source_case": "Production default provider, actual host file bytes and explicit PackageManager/signing/source-authorization fixtures; required material validation refuses before creating a session.",
+    "record_preservation_case": "Original opaque command bytes plus identity and grants are preserved byte-for-byte. The opaque payload is not presented as a validated confirmed/unknown journal or full continuity snapshot.",
+    "observation_timeout_seconds": 2,
+    "controlled_worker_cleanup_timeout_seconds": 5,
+    "offline_cache": "Previously verified archive-local Robolectric dependency JARs; no download or emulator startup."
+  },
+  "test_modules": {
+    "core": {
+      "tests": 45,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "passed": 42,
+      "skipped_methods": [
+        {
+          "class": "run.limeai.iot.device.DeviceSigningKeyTest",
+          "name": "connected_mqtt_stops_at_actual_certificate_expiry_without_another_application_effect()"
+        },
+        {
+          "class": "run.limeai.iot.device.DeviceSigningKeyTest",
+          "name": "public_csr_roundtrips_the_actual_nas_issuer_and_then_uses_the_same_opaque_key_for_mtls()"
+        },
+        {
+          "class": "run.limeai.iot.device.MqttJourneyTest",
+          "name": "actual_mtls_protocol_device_journal_and_process_restart()"
+        }
+      ]
+    },
+    "app": {
+      "tests": 133,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 131,
+      "skipped_methods": [
+        {
+          "class": "run.limeai.iot.television.LocalIdentityStoreTest",
+          "name": "actual_nas_signing_storage_reopen_and_same_key_mtls"
+        },
+        {
+          "class": "run.limeai.iot.television.LocalIdentityStoreTest",
+          "name": "actual_nas_expired_recovery_preserves_identity_and_broker_rejects_the_expired_certificate"
+        }
+      ]
+    }
+  },
+  "new_test_methods": 5,
+  "new_test_executions": 5,
+  "new_cases": [
+    {
+      "class": "run.limeai.iot.television.AgentApkQuiescenceTest",
+      "name": "unknown_update_lookup_preserves_identity_grants_and_command_bytes_without_new_checks"
+    },
+    {
+      "class": "run.limeai.iot.television.AgentApkQuiescenceTest",
+      "name": "update_owner_refuses_new_start_before_waiting_and_durable_task_keeps_it_blocked"
+    },
+    {
+      "class": "run.limeai.iot.television.AgentApkQuiescenceTest",
+      "name": "failed_update_operation_releases_owner_and_reports_on_main_without_restarting"
+    },
+    {
+      "class": "run.limeai.iot.television.AgentApkQuiescenceTest",
+      "name": "active_and_stop_requested_workers_refuse_updates_until_actual_worker_cleanup"
+    },
+    {
+      "class": "run.limeai.iot.television.AgentApkQuiescenceTest",
+      "name": "runtime_provider_requires_material_guard_after_real_baseline_and_source_fixture_checks"
+    }
+  ],
+  "build_passed": true,
+  "gradle_tasks": [
+    ":core:test",
+    ":app:testDebugUnitTest",
+    ":app:assembleDebug",
+    ":app:lintDebug"
+  ],
+  "lint": {
+    "errors": 0,
+    "warnings": 4,
+    "new_warnings": 0,
+    "issue_ids": [
+      "TrustAllX509TrustManager",
+      "SetTextI18n",
+      "SetTextI18n",
+      "SetTextI18n"
+    ],
+    "prior_dependency_version_warnings_not_emitted_offline": 2
+  },
+  "review_followup": {
+    "first_build_passed": true,
+    "failed_checks": [],
+    "additional_change": "After the first pass, review identified two startup paths: an already active duplicate start must preserve the existing no-callback behavior, and a reentrant same-thread update Owner must not create a new connection. Added both guards and refusal assertions, then reverified the entire task set.",
+    "assertions_weakened": false,
+    "observation_budget_extended": false
+  },
+  "artifact": {
+    "sha256": "5606d6a66e83e0d2628d41b5df8cc7bda459a806821ae3e207d87b9bb1f7e100",
+    "debug": true,
+    "installed": false
+  },
+  "input_sha256": {
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AgentRuntime.kt": "ae828796b16c3aacae54f863528f5744ced6d8ea0ce429d0a9d388701871e47a",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidApkInstaller.kt": "7c6c658be9dfda008df143c2a413d38d283c1c53e959f452a60e0a4d78244af2",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/ApkInstallResultReceiver.kt": "06a8f138b438bfddc690098efc49ec8078af532b102fcaf8de4685213a9f5e8c",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AgentApkQuiescenceTest.kt": "83b518fc68ac3e9cc744add6cf29697a4f2f198fe39174a9a849f0db22e9e707",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/ApkInstallResultReceiverTest.kt": "7cb69d33f7917bdf74bf41f8d4f4bd2b149bc7b32ca1d2b830cf0300ce2fba2d"
+  },
+  "raw_evidence_sha256": {
+    "source-manifest.json": "e5d94782a35db8a4dc4ebd2649a814a3659923a09c385b574dbd186f4409511b",
+    "first-source-manifest.json": "4c3cee0d2af62f0bc97f5d1c9418a989c7ca69bf179a3af0ae087b4f24863d9d",
+    "first-verification.log": "6de28d54004058d30362c856e493cf0afd0f7685051f435bcfd8690d6cb4cd26",
+    "final-verification.log": "6e678ea923abcde09df2466c8a5fb823ff7f527b88a38f10d6a9b83474988955",
+    "first-lint-results-debug.xml": "d48e3dd6a3a57ff120b4820a069639b84f0704d4231d416b48b59eb1d27d8321",
+    "lint-results-debug.xml": "d48e3dd6a3a57ff120b4820a069639b84f0704d4231d416b48b59eb1d27d8321",
+    "tv-agent-quiescence-debug.apk": "5606d6a66e83e0d2628d41b5df8cc7bda459a806821ae3e207d87b9bb1f7e100",
+    "test-results/app/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "c8db702f1192c6a72b1f66b39144e1834e3e686dd9a20e36c1b8bea8826ed065",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallPolicyTest.xml": "f571ec9eeafc76ba57da2670459c4ea1b1890f7f41411f52043b9d2e555c93e3",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "ab96edbf6ac478ba890ef00d07eed9ac371641e58363bbdb8b7dea2ffb6e9cb4",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "50c285a0d07d63ac38a5ef5b405546241739ed5116c5ae13acbb4d81b02c0e6c",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "23b561daa5cb79c227b503b226cb13efa1aaea908510e428dbe251bbf8268344",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidInstalledApkTest.xml": "eeb349195c28d1b06e97dead54c2c453b4d7ac4af219e56cacf9a3c27507bed0",
+    "test-results/app/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "437198f1b07aa8760e894c31898c5d5d61dc7d59bec3affee6c16addcb1a7d78",
+    "test-results/app/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "c66d2b1590daae489867bbfe81ec37c6429b3eb8d8718672896a5c134c98b95b",
+    "test-results/core/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "bf2371fa189d479043b2d372d0d9dbb90fd5fbc5b8c4ade158eb86cc2cca5911",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "34aa917b14614298fe3c193516c19d2ebdd347ebd557932aa4921e1e86c5c346",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "8ddf774e07aa0b061b087dafa6cbca55db5f94ee1d1a91a2ba378780d714b573",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "1308b908ff97f3339f468528911872b8ab466a464b00e65fb312f4bb888e6c11",
+    "test-results/core/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "a66f264c618c348027407bcf1138f3ab001a39ec5d97648ec0552592acfbb0cb",
+    "first-test-results/app/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "634647c1db56e8bec3859c1914fd50abdb008371de565ce3f2798e27ebf56bd1",
+    "first-test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallPolicyTest.xml": "66bafb5875fb37ddd8e74d862cc3f95b45e0e3263ffd5bba34b653ce3c46530d",
+    "first-test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "75e0e3dfc0093b8da60d47548688709e81bbff1244be82341f6d38b1a60e9484",
+    "first-test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "a3091a46ffa54f2b58436c1dd4c696e26ef5f305056fe6b0311c4cdeedcb6527",
+    "first-test-results/app/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "4a33eba41f24ecb95c255051cd2b5aa083127f990c96d6bc9ddbef303d0ab005",
+    "first-test-results/app/TEST-run.limeai.iot.television.AndroidInstalledApkTest.xml": "4006612eed43a66fba6992f40f07b38de7d8b8d461543e2ea44a6117713e1a51",
+    "first-test-results/app/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "7b4ef4af62cd1f90bce222aeb6aaf6835739c78fa2f63eb3892207046a99fea5",
+    "first-test-results/app/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "f70c684fae8fca1c5156bd6ab5d0b16b2a35283440159954323351e8818a9038",
+    "first-test-results/core/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "bf2371fa189d479043b2d372d0d9dbb90fd5fbc5b8c4ade158eb86cc2cca5911",
+    "first-test-results/core/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "34aa917b14614298fe3c193516c19d2ebdd347ebd557932aa4921e1e86c5c346",
+    "first-test-results/core/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "8ddf774e07aa0b061b087dafa6cbca55db5f94ee1d1a91a2ba378780d714b573",
+    "first-test-results/core/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "1308b908ff97f3339f468528911872b8ab466a464b00e65fb312f4bb888e6c11",
+    "first-test-results/core/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "a66f264c618c348027407bcf1138f3ab001a39ec5d97648ec0552592acfbb0cb",
+    "first-source/apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AgentRuntime.kt": "72599db5cc6eac39b51a7d5e52488f4ce6165edeb5833e185661d2668010bc20",
+    "first-source/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AgentApkQuiescenceTest.kt": "455ae82153e089ecfbc8d851cd8fcd977ce0c7c65c6f4e2ffa9ffa251de2c90e"
+  },
+  "limits": [
+    "The internal Runtime update Owner is connected to the existing provider, but it is not a product update UI, trusted preflight source or complete identity/record continuity gate.",
+    "The controlled worker proves Runtime exit/ownership behavior; it is not actual MQTT, a live in-flight command drain or hardware execution evidence.",
+    "Original opaque journal byte preservation does not prove confirmed/unknown semantics, high-watermark validation or update health.",
+    "Actual installation, user interaction recovery, full identity/authorization/journal/KeyStore continuity and healthy acceptance remain incomplete; installed_unverified is not released."
+  ]
+}

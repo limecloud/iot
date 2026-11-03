@@ -1,0 +1,131 @@
+{
+  "evidence_id": "EVID-TV-20261103-02",
+  "observed_on": "2026-11-03",
+  "status": "partial_failed_then_paused_by_user",
+  "device": {
+    "model": "MiTV4-ANSM0",
+    "android": "6.0.1",
+    "api_level": 23,
+    "abi": [
+      "armeabi-v7a",
+      "armeabi"
+    ],
+    "build_fingerprint": "Xiaomi/xmen/xmen:6.0.1/MHC19J/2061:user/release-keys"
+  },
+  "scope": {
+    "hardware": true,
+    "native_app_runtime": false,
+    "automatic_ui_enrollment": false,
+    "same_device_adb_coexistence": false,
+    "phone_runtime": false,
+    "nas_runtime": false,
+    "apk_update_acceptance": false,
+    "published": false,
+    "full_goal_completed": false
+  },
+  "transport_fix": {
+    "paho": "1.2.5",
+    "api23_issue": "Default SSLNetworkModule references API24 SNIHostName",
+    "implementation": "Paho NetworkModuleFactory SPI, layered TLS socket with original hostname, strict hostname verification",
+    "external_broker_scheme": "ssl",
+    "internal_scheme": "limeiot-ssl",
+    "general_plugin_mechanism": false
+  },
+  "results": {
+    "security_tests_passed": 2,
+    "p256_nonexportable_csr_reopen_test_passed": 1,
+    "ec_key_deletion": "not_run",
+    "mtls_session": "passed_using_imported_pem_identity",
+    "formal_commands": [
+      {
+        "name": "foreground",
+        "command_id": "c1-2-38305b81-94fd-4ac3-9993-ee3a22968459",
+        "status": "confirmed"
+      },
+      {
+        "name": "background-api23",
+        "command_id": "c1-3-baeae082-12f2-4429-b1d6-adfb311afeed",
+        "status": "confirmed"
+      }
+    ],
+    "command_completion": "submitted",
+    "independent_activity_records": 1,
+    "first_activity_window_verified": true,
+    "second_activity_record": "timeout",
+    "revocation": "not_run",
+    "new_process_restore": "not_run",
+    "foreground_service_promotion": "vendor_denial_observed_long_term_behavior_not_verified",
+    "final_fixture_single_task": "build_and_lint_only_not_installed",
+    "owned_agent_process": "force_stopped_on_user_pause"
+  },
+  "software": {
+    "core": {
+      "tests": 33,
+      "passed": 30,
+      "skipped": 3,
+      "failures": 0,
+      "errors": 0
+    },
+    "android_host": {
+      "tests": 66,
+      "passed": 64,
+      "skipped": 2,
+      "failures": 0,
+      "errors": 0
+    },
+    "jvm_retirement_journey": "passed_real_mtls_broker_gateway_sqlite_file_application_fixture",
+    "lint": {
+      "errors": 0,
+      "warnings": 6
+    },
+    "pending_test_apk_build": "passed"
+  },
+  "isolation": {
+    "gateway": "frozen_local_artifact_from_prior_ota_checkout",
+    "broker": "local_test_mtls_via_adb_reverse",
+    "physical_test_application_id": "run.limeai.iot.tv.runtimeproof",
+    "test_id_override_only_in_isolated_checkout": true,
+    "production_apk_has_enrollment_asset": false,
+    "runtime_test_apk_bytes_retained": false,
+    "runtime_test_apk_digest_retained": true
+  },
+  "artifacts": {
+    "production_apk_sha256": "d2a91aa17a4cc7070ff9abf1d12b5c5ef18c7b119508fd255a2127a69d76d5a2",
+    "runtime_test_apk_sha256": "408daaa53062ed695144f10ddd5892b360943bccdda534fc8b42d1aacfac97f3",
+    "runtime_test_apk_bytes_retained": false,
+    "pending_test_apk_sha256": "7b82720590ce5ba4eb858f80be9c391125176844014e7bd138c276c4b314b800",
+    "pending_test_apk_installed": false,
+    "gateway_sha256": "3471e5eceea04fcdf6d52aaaf6c05ecfa0b112993ff4b4bfe67d52fc48cc4731"
+  },
+  "raw_evidence_sha256": {
+    "runtime-used-source-manifest.json": "18accfc1aa0f02bc94ea829c914bd0e06824be02750b27c52635511f151f5ce0",
+    "source-manifest.json": "7508df890b9ba12aa61c4bd18c0862fc0c51383c4f60e5238653b7fb88bd020b",
+    "checkout-inputs.json": "91d434587ec2766e558b9960916a6231dc6b88bf497573e248df82d2241d776c",
+    "locked-dependency-artifacts.json": "37971ff524da711c6098f2d560739b003dcac9443f4c825e83eb00aed73db5d8",
+    "physical-build-overrides.json": "48668ec1411509044feff035d0ffb868cdea8ed6fc704846b1782a8714bbdf93",
+    "security.log": "4cd575d92d1026cc2911680dba59bcbe4d04959f839948925dc9224291c3ceb7",
+    "identity-key.log": "4ff94325e6ae5147f15ac3246c6af9e2f1e16d852d478fb68cf8849c5a2117c7",
+    "journey.log": "ba9363daf71ce08a7ee8493975f7a0ebb053cb62d2b1452c8e566ef522e17c01",
+    "foreground-result.json": "d316746b60d65cc0ec4b676e25bd3d0b1bc724ba3594ec14ff264d69c0a5dff6",
+    "background-api23-result.json": "1f252d6f69f3cc0b50ce5024f9971f41b31df6859aee32907268b3457ba8896d",
+    "first-target-focus.txt": "1f9c3121478dab54301ed3da529b92304968ad995be4a2f81d96c087bda23f13",
+    "after-background-logcat.txt": "c89e59d348ef6ad5926e02a1d795b6998d5a94c6ec441fcf77d2041cf66695f9",
+    "activity-observation.json": "d17e09da2c7ac7de51fed0568796831c08182352cd74dfc9b9f1315e3e868270",
+    "java-fixture-build.log": "9600ed89724ac6ee020741cefbd0a52a583b869562c76993b92eae5ceda24321",
+    "single-task-build.log": "2c29af48e9fb71f169155f3e4ea62e998e31aaaec6f7a7eb01cadf27374cac60",
+    "jvm-regression.log": "0289127445905b7d4ce79eb809f32f4583e656f5c3f8f979ec10f293f653e058",
+    "report.json": "257452751dae3215ab45b9c67a8db892a7073f687bda17fd95fb9051d0ea7972",
+    "user-pause.json": "369375fed28efe517eb0ffc539df44835ce007000cb21a4979d13d7ec5c40333",
+    "user-pause-stop.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "limits": [
+    "Single television; no general brand or model acceptance.",
+    "P256 key primitive and PEM mTLS are separate checks; no complete EC enrollment or rotation journey.",
+    "Agent and ADB used separate logical devices; physical composition is not verified.",
+    "Second submitted command does not prove a second Activity lifecycle delivery.",
+    "Prepared singleTask fixture has not been installed or run.",
+    "No foreground-service longevity, standby, restart restore, production claiming, phone, NAS or OTA acceptance.",
+    "All television debugging paused for family viewing; no automatic resumption."
+  ],
+  "provenance": "Ordinary ADB, Android instrumentation and local software logs; no new REA evidence."
+}

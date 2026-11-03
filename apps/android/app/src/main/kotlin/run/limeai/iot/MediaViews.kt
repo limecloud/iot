@@ -21,7 +21,7 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import run.limeai.iot.core.*
 
-@Composable fun MediaPanel(controller: MediaController, names: Map<String, String>, online: Boolean) {
+@Composable fun MediaPanel(controller: MediaController, names: Map<String, String>, online: Boolean, speech: SpeechController? = null, transcription: TranscriptionController? = null) {
     val state by controller.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -63,6 +63,8 @@ import run.limeai.iot.core.*
     if (state.message.isNotEmpty()) Text(state.message, fontSize = 14.sp, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("media-message"))
     OutlinedButton(onClick = controller::refresh, enabled = !state.busy && online && !reading, border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)) { Text(if (state.busy) "正在读取" else "读取音频状态") }
     if (state.page?.configured == false) Text("此网关未启用音频服务", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    if (speech != null) SpeechPanel(speech, online)
+    if (transcription != null) TranscriptionPanel(transcription, online)
     Text("上传音频", fontSize = 16.sp)
     OutlinedButton(onClick = { picker.launch(arrayOf("audio/wav", "audio/x-wav", "audio/vnd.wave", "application/octet-stream")) }, enabled = writable, border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)) { Text(if (reading) "正在读取文件" else "选择 WAV 文件") }
     if (state.fileName.isNotEmpty()) Text(state.fileName, fontSize = 14.sp)
@@ -107,7 +109,7 @@ import run.limeai.iot.core.*
     }
     state.deletion?.let { id -> AlertDialog(onDismissRequest = controller::cancelDelete, title = { Text("删除此音频及其授权？") }, text = { Text(id, fontSize = 12.sp) }, confirmButton = { TextButton(onClick = controller::confirmDelete, enabled = writable) { Text("删除音频") } }, dismissButton = { TextButton(onClick = controller::cancelDelete) { Text("取消") } }) }
 }
-@Composable private fun MediaPicker(label: String, selected: String, items: List<Pair<String, String>>, enabled: Boolean, onSelect: (String) -> Unit) {
+@Composable internal fun MediaPicker(label: String, selected: String, items: List<Pair<String, String>>, enabled: Boolean, onSelect: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         OutlinedButton(onClick = { expanded = true }, enabled = enabled && items.isNotEmpty(), border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)) { Text(label + "：" + (items.firstOrNull { it.first == selected }?.second ?: "请选择"), fontSize = 14.sp) }

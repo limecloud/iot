@@ -110,9 +110,21 @@ body { margin: 0; }
 .home-app .registry-row { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding-block: 20px; border-bottom: .5px solid var(--slate-6); }
 .home-app .registry-row > div { min-width: 0; overflow-wrap: anywhere; }
 .home-app .registry-row > button { flex-shrink: 0; }
+.home-app .vision-form { display: grid; gap: 12px; max-width: 640px; }
+.home-app .vision-form > button { justify-self: start; }
+.home-app .vision-form textarea { resize: vertical; }
+.home-app .vision-file { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; min-width: 0; }
+.home-app .vision-file span { overflow-wrap: anywhere; }
+.home-app .vision-task { display: grid; gap: 16px; border-bottom: 0; padding-bottom: 0; }
+.home-app .vision-task details { margin-top: 12px; }
 .home-app .media-library { display: grid; gap: 24px; min-width: 0; }
 .home-app .media-library form { display: grid; gap: 12px; max-width: 640px; }
 .home-app .media-library form > button { justify-self: start; }
+.home-app :is(.speech-generation, .audio-transcription) > .actions { margin-block: 12px; }
+.home-app :is(.speech-generation, .audio-transcription) textarea { resize: vertical; }
+.home-app :is(.speech-generation, .audio-transcription) .registry-row > .actions { flex-shrink: 0; flex-direction: column; }
+.home-app :is(.speech-generation, .audio-transcription) .registry-row > .actions button { white-space: nowrap; }
+.home-app :is(.speech-generation, .audio-transcription) .registry-row:last-child { border-bottom: 0; padding-bottom: 0; }
 .home-app .media-library select, .home-app .media-library input[type='file'] { width: 100%; min-width: 0; }
 .home-app .media-approval { display: flex; align-items: center; gap: 8px; }
 .home-app .media-approval input[type='checkbox'] { flex: 0 0 auto; width: 18px; height: 18px; margin: 0; }

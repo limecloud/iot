@@ -1,0 +1,324 @@
+{
+  "evidence_id": "EVID-TV-APK-MATERIALS-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "passed_signed_preflight_material_host_checks_only",
+  "scope": {
+    "hardware": false,
+    "device_connection": false,
+    "emulator_started": false,
+    "apk_installation": false,
+    "installation_authorized": false,
+    "actual_mqtt_connection": false,
+    "android_keystore": false,
+    "actual_android_jar_verifier": false,
+    "system_signer_anchor_on_hardware": false,
+    "product_update_ui": false,
+    "cross_update_health": false,
+    "published": false,
+    "full_goal_completed": false,
+    "host_signed_preflight_verified": true,
+    "host_sdk_apk_verification": true,
+    "host_runtime_native_sqlite": true
+  },
+  "implementation": {
+    "standard_jdk_jar_signing_and_verification": true,
+    "installed_apk_signer_anchor": true,
+    "imported_report_or_certificate_supplies_anchor": false,
+    "single_code_signer_and_pinned_leaf_certificate": true,
+    "certificate_chain_is_ca_trust": false,
+    "report_claims_installation_authority": false,
+    "actual_candidate_bytes_bound": true,
+    "strict_target_versions_permissions_and_debug_policy": true,
+    "local_debug_approval_required": true,
+    "runtime_verified_plan_preparation": true,
+    "runtime_file_material_entry_integrated": true,
+    "full_signature_or_apk_hash_on_each_64kib_block": false,
+    "unknown_commit_query_requires_original_files": false,
+    "unknown_queries_resubmit": false,
+    "legacy_callback_is_trusted_preflight_source": false,
+    "schema_or_identity_storage_changed": false,
+    "healthy_terminal_implemented": false,
+    "formal_ota_kind_extended": false,
+    "second_actual_update_mechanism_accepted": false
+  },
+  "test_environment": {
+    "core": "JVM",
+    "app": "Robolectric API23/28/31/33; new material cases API23/28 and Runtime case API28",
+    "crypto": "Actual host JDK RSA/ECDSA JAR signing and JarFile verification. PackageManager/signing/source facts and small APK byte files in app tests are explicit host fixtures, not Android runtime evidence.",
+    "sdk_chain": "Official SDK aapt2/apksigner on actual isolated signed APK fixtures, original certificate exported from the same isolated PKCS12 key, both function and CLI signed bundles consumed by the final compiled JVM verifier.",
+    "passwords": "JDK reads password environment variables; test keys/passwords are isolated fixtures, no production signing key used.",
+    "observation_timeout_seconds": 2
+  },
+  "test_modules": {
+    "core": {
+      "tests": 48,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "passed": 45,
+      "skipped_methods": [
+        {
+          "class": "run.limeai.iot.device.DeviceSigningKeyTest",
+          "name": "connected_mqtt_stops_at_actual_certificate_expiry_without_another_application_effect()"
+        },
+        {
+          "class": "run.limeai.iot.device.DeviceSigningKeyTest",
+          "name": "public_csr_roundtrips_the_actual_nas_issuer_and_then_uses_the_same_opaque_key_for_mtls()"
+        },
+        {
+          "class": "run.limeai.iot.device.MqttJourneyTest",
+          "name": "actual_mtls_protocol_device_journal_and_process_restart()"
+        }
+      ]
+    },
+    "app": {
+      "tests": 156,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 154,
+      "skipped_methods": [
+        {
+          "class": "run.limeai.iot.television.LocalIdentityStoreTest",
+          "name": "actual_nas_signing_storage_reopen_and_same_key_mtls"
+        },
+        {
+          "class": "run.limeai.iot.television.LocalIdentityStoreTest",
+          "name": "actual_nas_expired_recovery_preserves_identity_and_broker_rejects_the_expired_certificate"
+        }
+      ]
+    }
+  },
+  "python_preflight_tests": {
+    "tests": 15,
+    "passed": 15,
+    "failures": 0,
+    "errors": 0,
+    "new_methods": 2
+  },
+  "new_kotlin_test_methods": 6,
+  "new_kotlin_executions": 11,
+  "new_cases": [
+    {
+      "class": "run.limeai.iot.television.AgentApkQuiescenceTest",
+      "name": "signed_material_source_prepares_original_plan_and_unknown_queries_do_not_read_missing_artifacts"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkMaterialsTest",
+      "name": "signed_debug_report_still_requires_local_explicit_approval[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkMaterialsTest",
+      "name": "complete_byte_verification_at_boundaries_detects_changes_hidden_from_light_file_metadata[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkMaterialsTest",
+      "name": "authentic_rsa_and_ec_materials_bind_actual_baseline_candidate_target_and_plan[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkMaterialsTest",
+      "name": "even_authenticated_reports_cannot_claim_installation_authority_or_inconsistent_permissions[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkMaterialsTest",
+      "name": "unsigned_tampered_and_differently_signed_reports_do_not_supply_trust[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkMaterialsTest",
+      "name": "signed_debug_report_still_requires_local_explicit_approval"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkMaterialsTest",
+      "name": "complete_byte_verification_at_boundaries_detects_changes_hidden_from_light_file_metadata"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkMaterialsTest",
+      "name": "authentic_rsa_and_ec_materials_bind_actual_baseline_candidate_target_and_plan"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkMaterialsTest",
+      "name": "even_authenticated_reports_cannot_claim_installation_authority_or_inconsistent_permissions"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkMaterialsTest",
+      "name": "unsigned_tampered_and_differently_signed_reports_do_not_supply_trust"
+    }
+  ],
+  "new_test_methods_total": 8,
+  "new_test_executions_total": 13,
+  "sdk_to_signed_bundle_to_jvm": {
+    "status": "passed",
+    "sdk_cli_exit": 0,
+    "checks": [
+      {
+        "bundle_name": "signed-preflight.jar",
+        "bundle_sha256": "58da3a49028e31d6db3590ca1e5c80caec950cc6f45b03826e47de02989befc5",
+        "jvm_result": {
+          "baseline_version": 3,
+          "candidate_bytes": 8596,
+          "candidate_sha256": "sha256:f18be41e2a7ff5611cd71b5557c65069e38aa7aefc68838be96877b0e0b01737",
+          "candidate_version": 4,
+          "digest": "sha256:30127f082b7fb3e0cb9e75a5db1568f51d1799845c7637a382c1315441097300",
+          "hardware": false,
+          "installation_authorized": false,
+          "signer_sha256": "sha256:e5b6832d1cb7d4159b86119b9105d1ce7a113492043c18b755a4da1296c91e7c",
+          "status": "signed_preflight_verified"
+        }
+      },
+      {
+        "bundle_name": "cli-preflight.jar",
+        "bundle_sha256": "869f4dde16bc827238b2932dad6e9f388666021348fc88d901d8f790597a2132",
+        "jvm_result": {
+          "baseline_version": 3,
+          "candidate_bytes": 8596,
+          "candidate_sha256": "sha256:f18be41e2a7ff5611cd71b5557c65069e38aa7aefc68838be96877b0e0b01737",
+          "candidate_version": 4,
+          "digest": "sha256:30127f082b7fb3e0cb9e75a5db1568f51d1799845c7637a382c1315441097300",
+          "hardware": false,
+          "installation_authorized": false,
+          "signer_sha256": "sha256:e5b6832d1cb7d4159b86119b9105d1ce7a113492043c18b755a4da1296c91e7c",
+          "status": "signed_preflight_verified"
+        }
+      }
+    ],
+    "device_connection": false,
+    "apk_installation": false,
+    "final_compiled_core": true
+  },
+  "build_passed": true,
+  "gradle_tasks": [
+    ":core:test",
+    ":core:journeyRuntime",
+    ":app:testDebugUnitTest",
+    ":app:assembleDebug",
+    ":app:lintDebug"
+  ],
+  "lint": {
+    "errors": 0,
+    "warnings": 4,
+    "new_warnings": 0,
+    "issue_ids": [
+      "TrustAllX509TrustManager",
+      "SetTextI18n",
+      "SetTextI18n",
+      "SetTextI18n"
+    ]
+  },
+  "api_boundaries": {
+    "api_versions_sha256": "923f7e6367759e127679b6b5a4156ee801100e3cc07dc1d99cb811e791e45435",
+    "checks": [
+      {
+        "class": "java/util/jar/JarFile",
+        "method": "<init>(Ljava/io/File;Z)V",
+        "since": 1
+      },
+      {
+        "class": "java/util/jar/JarFile",
+        "method": "getJarEntry(Ljava/lang/String;)Ljava/util/jar/JarEntry;",
+        "since": 1
+      },
+      {
+        "class": "java/util/jar/JarEntry",
+        "method": "getCodeSigners()[Ljava/security/CodeSigner;",
+        "since": 1
+      },
+      {
+        "class": "java/security/CodeSigner",
+        "method": "getSignerCertPath()Ljava/security/cert/CertPath;",
+        "since": 1
+      },
+      {
+        "class": "java/security/cert/CertPath",
+        "method": "getCertificates()Ljava/util/List;",
+        "since": 1
+      },
+      {
+        "class": "java/util/jar/Manifest",
+        "method": "<init>(Ljava/io/InputStream;)V",
+        "since": 1
+      }
+    ],
+    "android_runtime_verified": false
+  },
+  "aosp_references": [
+    {
+      "url": "https://android.googlesource.com/platform/libcore/+/android-6.0.1_r81/luni/src/main/java/java/util/jar/JarEntry.java?format=TEXT",
+      "file": "JarEntry.java",
+      "sha256": "3eccb9384d3356083371ecef12cb35b480e83bf18df769c47caa9418f123ecf5"
+    },
+    {
+      "url": "https://android.googlesource.com/platform/libcore/+/android-6.0.1_r81/luni/src/main/java/java/util/jar/JarVerifier.java?format=TEXT",
+      "file": "JarVerifier.java",
+      "sha256": "7e6fa47d0ef42df899a82800952b7c95d37db1fae6c4fee759884ca65c556eff"
+    }
+  ],
+  "verification_history": {
+    "first_build": "Test fixture used ProcessBuilder.Redirect.DISCARD, absent from the Android compilation API. One targeted fix redirects diagnostics to a temporary file; production verification and assertions were unchanged.",
+    "source_review": "Android 6 JarEntry source confirms separate CodeSigner paths; use one CodeSigner and its pinned leaf, not the flattened certificate count. Rechecked six SDK API boundaries.",
+    "assertions_weakened": false,
+    "business_observation_budget_extended": false
+  },
+  "artifact": {
+    "sha256": "3ebc40630cf3836a271a244d9898b634c0986f06120fe2faf5e4f7d9d21799e4",
+    "debug": true,
+    "installed": false
+  },
+  "input_sha256": {
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AgentRuntime.kt": "ef5c2ed5e772d062ae6f2b952ea18d3d54af15c32b31d33d993077d4c4239b4e",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidApkMaterials.kt": "e51d2e6b44be114a2baf8ce45a9e712d02693159256c7cf341c3ea62b51f9d95",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidInstalledApk.kt": "9193ab3a70c58c8967e4c6aed9a54dd435f56441880a856fc1f466bf29428d93",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AgentApkQuiescenceTest.kt": "ba79c0ac4ad45bde7dab6e118ae15886d841e21c3c2e9a335e13efd3f842087b",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AndroidApkMaterialsTest.kt": "129d9edbf226625cab2515f2c0e67fa837231c9612c9d18013bd403045e7a39b",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/ApkPreflightFixture.kt": "0391d79cf276d04a5cdf456ded360a80e3d577e2f39350ef638ef016e7280ee9",
+    "apps/tv-agent/core/src/main/kotlin/run/limeai/iot/device/VerifiedApkPreflight.kt": "b80c2a82d0c5fb3aca0cca584b029774455df64f742358085870d0b7527a185d",
+    "apps/tv-agent/core/src/test/kotlin/run/limeai/iot/device/ApkPreflightCheckMain.kt": "c2470aaf3ade59b7d891ca5a19c8d57516278e55a1f5cb647a3f808e3287880b",
+    "tests/test_tv_agent_apk.py": "59780d5b94915807f86b148fd9e3f8feebc9b5534491a28b128d4a806e0da309",
+    "tools/tv-agent-apk.py": "1a4cc966bf4607225db1b5b26e9342eebec3fcfa02c3efc505d2ac9052413f4f"
+  },
+  "raw_evidence_sha256": {
+    "attempt-1-compilation.log": "d865cafd74f375371ede9b1f3cf34aef0ef638175fcad388a88829c40369487c",
+    "attempt-1-source-manifest.json": "d4ba14d70eb3cf032fbafd3fc618748c10e8b5051302ae40498930380d7309b9",
+    "attempt-1-source/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/ApkPreflightFixture.kt": "15b86af27c5c8373537e912b9174f845a6eabaaab9f60f373c949327bc645876",
+    "attempt-1-source/apps/tv-agent/core/src/main/kotlin/run/limeai/iot/device/VerifiedApkPreflight.kt": "2dd018db664947f384059f7146c46601795dc5d348c5687e1ddab080977631ce",
+    "first-signed-cross-language.json": "2661c827ef453cd48f148550f4ce16523d1734cc729bd002aff60a19ace8f7e2",
+    "jar-aosp-reference.json": "dfb147db5ee3653323bda6ee6471023b34a15738fec0f502efe4823f497530f5",
+    "jar-api-boundaries.json": "63895c41a7b87f3f1557838028b88dda6bf7f31855af2480d7604d6ca0c5c912",
+    "lint-results-debug.xml": "16a46176fa16ada6c8744fc892ab87084af25c4d62bf7953894165db996090d5",
+    "python-preflight-report.json": "3e6f38990c3cc4ecc9a3d9a43499ba5c6de12ddba2be9add7ffec2be3b58f18b",
+    "python-verification.log": "7b6157ff4535258004c2ce65febe775c10b0ad288ee296a1a4dc2e5bea4a4070",
+    "reference/JarEntry.java": "3eccb9384d3356083371ecef12cb35b480e83bf18df769c47caa9418f123ecf5",
+    "reference/JarVerifier.java": "7e6fa47d0ef42df899a82800952b7c95d37db1fae6c4fee759884ca65c556eff",
+    "sdk-baseline.apk": "c909a629ec08492b8472bca36989f51e0f791a5c6aa1dff801f1e44121dd36b5",
+    "sdk-candidate.apk": "f18be41e2a7ff5611cd71b5557c65069e38aa7aefc68838be96877b0e0b01737",
+    "sdk-cli-preflight.jar": "869f4dde16bc827238b2932dad6e9f388666021348fc88d901d8f790597a2132",
+    "sdk-signed-preflight.jar": "58da3a49028e31d6db3590ca1e5c80caec950cc6f45b03826e47de02989befc5",
+    "signed-cli.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "signed-cli.stdout.json": "4f6742139784212d9eeff90df0d6827bf20f2b6902a5a31de6abaf6b27f915b6",
+    "signed-cross-language.json": "584e2cd61d296a8722394965adf5caf2f5787f974a3a265f233126bafb8b3875",
+    "source-manifest.json": "e54fc5b0a327354d8f6df5fbf17ff348c80c13e9d79cbee6aa9555765de3238d",
+    "test-results/app/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "d4cb859bc23453709d4d64f9eba277194e4e119fa4818a2942ff3a0bf586bbb3",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkContinuityTest.xml": "2abbe11c86e5c4915325c6c44a1f7c020e405f3218eab68c68a964c0c1f36886",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallPolicyTest.xml": "a1fc45b64cb29ac2c28d7917792b54a114fd6a2290b53c18ce715d5551f7bbae",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "949b8cf05679b7c0a981271c743611cb7f1072350efc13bd609c6dbc88ac8e28",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "454b005247e6e8282b239958710b256f482056ac387a3fa3166322273ddf7493",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkMaterialsTest.xml": "36b200c2bd62977003f0c9f0d049a1594fde1be0594dc13d41f30d94fd8c1ef5",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "24e0c377cd93ec2039337019bab27962f06a9ff7ffa3b5d05dbc3734aff28a88",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidInstalledApkTest.xml": "36bd40d851e9d9fc304a0a0c580abbdc3eac3bea448cc779d5e850fb89af7565",
+    "test-results/app/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "528dd955f1b1defa893a925655d9b8b391a5784706d940feeffccf59804b7692",
+    "test-results/app/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "90bbf2ed2bb6676e99ac0efc12f512020750504265612b33d36646464e24b84f",
+    "test-results/core/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "bf9ff5413c9c1b0fb3b054a044fb67c0147d3d906ccb1b61fcef65bfe7df1e6c",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "5a0328fce0655c40d1e63e455cb1bfc4981419e5870a1dd7f0ae38f76e93e541",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "bebdb2ac8c627a28e25d5279a78b8b019fca8629948e8c06f161e824857da295",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "cbc5f386dc59343e400bb5be166bb38d1f2239c72d18cc94f3104382dfde86ec",
+    "test-results/core/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "aa568d2b2cff8bb9b8d513b0e1a6b88d5270831d3155752013a29acb6e2cbec1",
+    "tv-agent-materials-debug.apk": "3ebc40630cf3836a271a244d9898b634c0986f06120fe2faf5e4f7d9d21799e4",
+    "verification.log": "9b6f743fc34698859c39a63edbe1ce61f0b4665f31e6d9321a56178eb4f049df"
+  },
+  "limits": [
+    "This integrates authenticated preflight materials and plan preparation on the host; actual Android JAR verification, system signing facts and installation still need device evidence.",
+    "The signed report authenticates the APK publisher assertion and exact APK bytes; it remains an offline preflight with installation_authorized/device_state_verified/storage_compatibility_verified=false. It does not supply user approval, storage compatibility or update health.",
+    "Only RSA/ECDSA signed JARs with one CodeSigner and a bounded certificate path are accepted. The leaf is pinned to the current single, nonrotated APK signer; imported chains do not create a CA trust policy.",
+    "Original artifact files must be retained or reselected for new effects. Unknown commit queries remain readable without the files and never resubmit.",
+    "Product import/persistence, visible permission review and source/system-confirmation recovery, actual installation and complete identity/grant/journal/key health acceptance remain unfinished. installed_unverified remains blocking."
+  ]
+}

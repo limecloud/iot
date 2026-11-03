@@ -1,0 +1,237 @@
+{
+  "evidence_id": "EVID-TV-APK-BASELINE-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "passed_installed_package_host_checks_only",
+  "scope": {
+    "hardware": false,
+    "device_connection": false,
+    "apk_installation": false,
+    "installation_authorized": false,
+    "emulator_started": false,
+    "native_app_runtime": false,
+    "package_installer_runtime": false,
+    "current_package_verified_on_hardware": false,
+    "full_runtime_eligibility_integrated": false,
+    "preflight_source_verified": false,
+    "product_update_ui": false,
+    "keystore_continuity_verified": false,
+    "full_record_continuity_verified": false,
+    "health_acceptance": false,
+    "root_or_compromised_os_resistance_verified": false,
+    "published": false,
+    "full_goal_completed": false,
+    "host_installed_package_validation": true
+  },
+  "implementation": {
+    "installed_package_reader_implemented": true,
+    "default_provider_gate_integrated": true,
+    "package_and_uid_checked": true,
+    "whole_baseline_sha256_checked": true,
+    "system_metadata_rechecked_after_read": true,
+    "single_current_der_certificate_checked": true,
+    "modern_missing_signing_info_falls_back": false,
+    "signing_rotation_accepted": false,
+    "split_or_shared_uid_accepted": false,
+    "version_high_word_truncated": false,
+    "baseline_scanned_per_candidate_block": false,
+    "unknown_query_rescans_or_resubmits": false,
+    "identity_database_schema_changed": false,
+    "install_source_permission_declared": false,
+    "existing_connection_stop_gate_implemented": false,
+    "healthy_terminal_implemented": false,
+    "product_update_entry_implemented": false,
+    "formal_ota_kind_extended": false,
+    "second_actual_update_mechanism_accepted": false
+  },
+  "test_environment": {
+    "core": "JVM",
+    "app": "Robolectric API23/28/31/33; existing host native SQLite cases retained",
+    "new_reader_cases": "Production reader, explicit PackageManager/SigningInfo metadata and actual host file bytes. The fixture file is not a system-installed APK; the certificate is a real DER certificate supplied as system signing metadata.",
+    "composed_provider_case": "Production default reader and journal, explicit in-memory system-session I/O and eligibility fixtures.",
+    "file_trust_boundary": "Only PackageManager's installed self sourceDir, protected by the Android system. Bounded stream, whole hash, channel length, path metadata and PackageManager reread; not an inode lock or a root/compromised-system guarantee.",
+    "offline_robolectric_cache": "Reused the verified archive-local API23/28/31/33 dependency cache; no SDK download or emulator startup."
+  },
+  "test_modules": {
+    "core": {
+      "tests": 45,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "passed": 42,
+      "skipped_methods": [
+        {
+          "class": "run.limeai.iot.device.DeviceSigningKeyTest",
+          "name": "connected_mqtt_stops_at_actual_certificate_expiry_without_another_application_effect()"
+        },
+        {
+          "class": "run.limeai.iot.device.DeviceSigningKeyTest",
+          "name": "public_csr_roundtrips_the_actual_nas_issuer_and_then_uses_the_same_opaque_key_for_mtls()"
+        },
+        {
+          "class": "run.limeai.iot.device.MqttJourneyTest",
+          "name": "actual_mtls_protocol_device_journal_and_process_restart()"
+        }
+      ]
+    },
+    "app": {
+      "tests": 109,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 107,
+      "skipped_methods": [
+        {
+          "class": "run.limeai.iot.television.LocalIdentityStoreTest",
+          "name": "actual_nas_signing_storage_reopen_and_same_key_mtls"
+        },
+        {
+          "class": "run.limeai.iot.television.LocalIdentityStoreTest",
+          "name": "actual_nas_expired_recovery_preserves_identity_and_broker_rejects_the_expired_certificate"
+        }
+      ]
+    }
+  },
+  "new_test_methods": 12,
+  "new_test_executions": 16,
+  "new_cases": [
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "default_provider_rejects_missing_system_baseline_without_creating_a_session"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "baseline_drift_at_stage_or_commit_boundaries_keeps_original_without_submit"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidApkInstallerTest",
+      "name": "baseline_mismatch_at_each_creation_boundary_is_zero_system_create"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "modern_signing_information_does_not_fall_back_or_accept_a_rotation_history"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "wrong_package_uid_shared_or_split_metadata_is_rejected"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "missing_multiple_malformed_and_wrong_certificate_signers_are_rejected"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "actual_file_missing_empty_directory_oversize_or_same_length_corruption_is_rejected"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "package_manager_failure_is_unavailable_and_never_returns_a_match"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "default_provider_scans_baseline_at_boundaries_and_unknown_lookup_remains_read_only"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "zero_negative_and_changed_versions_are_rejected_without_low_word_comparison"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "baseline_requires_current_system_version_unique_certificate_and_whole_file_digest[28]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "package_source_version_or_signer_drift_during_read_is_rejected"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "missing_multiple_malformed_and_wrong_certificate_signers_are_rejected[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "zero_negative_and_changed_versions_are_rejected_without_low_word_comparison[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "baseline_requires_current_system_version_unique_certificate_and_whole_file_digest[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidInstalledApkTest",
+      "name": "baseline_requires_current_system_version_unique_certificate_and_whole_file_digest"
+    }
+  ],
+  "build_passed": true,
+  "gradle_tasks": [
+    ":core:test",
+    ":app:testDebugUnitTest",
+    ":app:assembleDebug",
+    ":app:lintDebug"
+  ],
+  "lint": {
+    "errors": 0,
+    "warnings": 4,
+    "issue_ids": [
+      "TrustAllX509TrustManager",
+      "SetTextI18n",
+      "SetTextI18n",
+      "SetTextI18n"
+    ],
+    "new_warnings": 0,
+    "prior_dependency_version_warnings_not_emitted_offline": 2
+  },
+  "earlier_failures": [
+    {
+      "attempt": "first-verification.log",
+      "stage": "test compilation",
+      "cause": "Robolectric shadow getPackageInfo returns nullable PackageInfo to Kotlin.",
+      "fix": "Convert null to NameNotFoundException in the test-only superclass delegation.",
+      "targeted_fix_rounds": 1,
+      "assertions_weakened": false
+    },
+    {
+      "attempt": "second-verification.log",
+      "stage": "Gradle argument resolution",
+      "cause": "Relative init-script path was resolved against the isolated project directory.",
+      "fix": "Use the original absolute archive-local init-script path.",
+      "targeted_fix_rounds": 1,
+      "source_changed": false,
+      "tests_ran": false
+    }
+  ],
+  "artifact": {
+    "sha256": "86b149ee4a45b20d201aaf8df6206a17bf5647f4dff7529bba3b7b8000dfb9e8",
+    "debug": true,
+    "installed": false
+  },
+  "input_sha256": {
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidApkInstaller.kt": "39e41635b5dd2274a68f22d61148a46f4f3e69278d90852eccc45058fc6b74cf",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidInstalledApk.kt": "fca4b27e05c99a10bee9a284baabc036d5502425bad07e21bb08fb1847ae8e79",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AndroidApkInstallerTest.kt": "7e8be6e216c61721bf05194327d64a0349020fd5be13178b226ef05bdd5ad334",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AndroidInstalledApkTest.kt": "60cf6c5038fc52ab0bb0f75a12f73aa3b8ae243109c439c5c97d0e3aa73ae493"
+  },
+  "raw_evidence_sha256": {
+    "source-manifest.json": "cd5a222c3fd9d91616294c013fbfa6f9d501c44e4f7c3f39264d9082a330417a",
+    "first-source-manifest.json": "8812c6af0487dae4ad80b4493fbf4f7d704539ddbce711a24838d428adac2e26",
+    "first-AndroidInstalledApkTest.kt": "90346c7344416876d88debf2a945aed6c85dd98e087a3c9e37010b7e63ef14a0",
+    "first-verification.log": "108e53028d30bbb6ec960fb925cc08fd1fd67e4bcc8d3c0e9a6f188ac41469e8",
+    "second-verification.log": "2a0f319b099918d7c6dc0facb388107b8ee88632eeba548bc1334d0542f3985c",
+    "third-verification.log": "7d1be8e990fb204de9fe3ebe3f1c3e40d2fbe905f85a7d1acf03df8deed1f176",
+    "lint-results-debug.xml": "4581e6281f3f13c1aaeab1773ce03c774f3041a6ea64aa6b3297acb822cb326b",
+    "tv-agent-baseline-debug.apk": "86b149ee4a45b20d201aaf8df6206a17bf5647f4dff7529bba3b7b8000dfb9e8",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallStoreTest.xml": "c64144c9428bad90e107983769f993c70325e1051cb5c15ffed6818810163dcd",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidApkInstallerTest.xml": "82cfc3a295e3a0498613fec692ba64a88a7de660b13c61b270081d2d4aa425f6",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidBoundaryTest.xml": "dd6255bc6191dc42b22d2b607e772382223e8508c3607e08d2ca9d7a46de5eea",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidInstalledApkTest.xml": "94b8270024558aeae7e68bfb5d0881c2755c0b2fb04c2ead14a53a21ddcb9f97",
+    "test-results/app/TEST-run.limeai.iot.television.ApkInstallResultReceiverTest.xml": "51c43a5b76d0d3fc974cb483dd1b9bd9964fecedcc79525050f20b9bf2629950",
+    "test-results/app/TEST-run.limeai.iot.television.LocalIdentityStoreTest.xml": "211c3e465ea4ab724541b0408dbecfbb4c1768775c96c6c75ef0d5efd2bf952e",
+    "test-results/core/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "7a967305f258dc0ce481b2c40fb344530787adac20b9c28edab091ed5e5e54b9",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "2239a6f20b40a203e78528aefdc62b09da4b600994e0eff180166bea8a5a6f35",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "6b87b3d71030c33a2f9be1a93147a99e2d80188ea441c9c6596102085e8651a0",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "975837c18cc68bbd9710f070f7950f1e7624503e16d1702c1abb145fd9b1a05f",
+    "test-results/core/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "4fd87d8e1be359ffd221ac55c3c3d75c1b044f0d80356db8ec85881747ce71e9"
+  },
+  "limits": [
+    "This is the pre-update baseline gate only. Successful system installation still remains installed_unverified; it is not healthy acceptance.",
+    "The plan's preflight/continuity references are not verified by this reader; install-source policy, complete runtime stop/in-flight gates and product UI remain unconnected.",
+    "Host PackageManager/signing/session fixtures are not live package facts, real PackageInstaller installation or TV acceptance."
+  ]
+}

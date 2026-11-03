@@ -90,6 +90,30 @@ internal data class DeviceJournal(
     }
 }
 
+/** 只读恢复摘要；不规范化原字节、不迁移模型，也不把未决尝试改判为成功。 */
+data class DeviceJournalInspection(
+    val highWatermark: Long,
+    val confirmed: Int,
+    val failed: Int,
+    val unknown: Int,
+    val unresolved: Int,
+    val migrationPending: Boolean,
+) {
+    val entries: Int get() = confirmed + failed + unknown + unresolved
+
+    companion object {
+        fun inspect(identity: DeviceIdentity, bytes: ByteArray?): DeviceJournalInspection {
+            val journal = DeviceJournal.read(identity, bytes)
+            val statuses = journal.entries.values.map { entry ->
+                if (entry["result"] == JsonNull) "unresolved" else entry.getValue("result").obj().text("status")
+            }
+            return DeviceJournalInspection(journal.highWatermark, statuses.count { it == "confirmed" },
+                statuses.count { it == "failed" }, statuses.count { it == "unknown" },
+                statuses.count { it == "unresolved" }, journal.migrationPending)
+        }
+    }
+}
+
 /** 本机确认模型变更时，供平台在同一事务中保存材料与完整迁移日志。 */
 object DeviceJournalMigration {
     fun prepare(identity: DeviceIdentity, bytes: ByteArray?): ByteArray {

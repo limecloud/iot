@@ -326,17 +326,19 @@ ESP选项 ota_https_ca_pem 非空时配置提供方，要求已有独立完整�
 
 ### ESP原生提供方宿主
 
-`npm run test:firmware:native-ota`独立编译并直接运行生产ESP `ota_transfer.c`的暂存、激活和观察入口，4.47冻结版本的7组99场景通过。需要固定`LIMEIOT_IDF_PATH`与已有身份宿主密码库；`node tools/test-firmware-native-ota.mjs --build-only`只编译。源码、SDK实现/结构、外部库及二进制摘要在构建和运行前后核对，开启严格诊断与ASan/UBSan；每行为组45秒、每宿主10秒、测试进程120秒。共享宿主和构建入口已有组合草稿修改，当前工作区尚未复验，历史报告不能作为当前源码的通过证明。
+`npm run test:firmware:native-ota`独立编译并直接运行生产ESP `ota_transfer.c`的暂存、激活和观察入口，4.47冻结版本的7组99场景通过。需要固定`LIMEIOT_IDF_PATH`与已有身份宿主密码库；`node tools/test-firmware-native-ota.mjs --build-only`只编译。源码、SDK实现/结构、外部库及二进制摘要在构建和运行前后核对，开启严格诊断与ASan/UBSan；每行为组45秒、每宿主10秒、测试进程120秒。共享宿主和构建入口后续的99场景复验结果见[4.49](../docs/24-实施计划与进度.md#449-esp原生安装组合与隔离回归)；各报告限定其冻结输入，不证明后续工作树变化通过。
 
 真实回环HTTPS经OpenSSL底层API桥向生产代码提供原始响应头与内容；摘要及元数据CRC使用固定SDK实现，应用描述/otadata采用SDK原始结构。覆盖完整65,537字节/无长度正例、响应和分区故障、叶证书/CA到期与时钟失信，以及选择前拒绝、已选择但报错、返回实际绑定和成功/回滚/未决观察。分区是独立文件，镜像结构验证与选择结果是显式夹具；不运行ESP HTTP/TLS或真实Bootloader，也不请求硬件重启。
 
 此入口不运行生产worker、安装消费者或NVS日志，不与上一节的12项组合结果拼接为完整原生安装证明。结果与归档见 [24第4.47节](../docs/24-实施计划与进度.md#447-esp原生ota提供方宿主软件验证)，后续组合及目标系统矩阵见 [23第5.6节](../docs/23-测试策略与验收矩阵.md#56-esp原生提供方的分层待验收矩阵)；芯片Flash、掉电、实际镜像与启动健康仍单列，实机按用户要求跳过。
 
-### ESP原生安装组合草稿
+<a id="esp原生安装组合草稿"></a>
 
-工作区已有[组合宿主](tests/esp_native_install_host.c)及[12项场景草稿](../tests/firmware-native-install.test.mjs)，入口为`npm run test:firmware:native-install`；`node tools/test-firmware-native-ota.mjs --integration --build-only`只用于编译。它们尚未编译或运行，不是可复用的通过记录。计划在正式网关OTA API、真实隔离mTLS/HTTPS与Rust/SQLite之间连接生产worker、消费者、原生提供方和耐久日志，另起设备进程观察原绑定并恢复原任务；normal/transfer/activation分别为3/4/5项待执行场景。
+### ESP原生安装组合
 
-执行与回归要求见 [23第5.6.1节](../docs/23-测试策略与验收矩阵.md#561-原生组合草稿与待执行场景)，当前证据状态见 [24第4.48节](../docs/24-实施计划与进度.md#448-原生组合草稿与冻结证据文档同步)。正式日志字段、reconcile状态、队列排空和重开语义须先核对；所有实际输入含递归头文件须冻结。文件分区/NVS、合成镜像验证、启动元数据与重启请求仍为夹具，模拟新进程不等于真实系统启动；恢复原有效凭据不等于换证或续期。独立99场景及受影响运行期入口复验后再分别登记结果。
+现有[组合宿主](tests/esp_native_install_host.c)及[12项场景](../tests/firmware-native-install.test.mjs)，入口为`npm run test:firmware:native-install`；`node tools/test-firmware-native-ota.mjs --integration --build-only`只用于编译。隔离冻结版本的normal/transfer/activation共3/4/5项通过，在正式网关OTA API、真实隔离mTLS/HTTPS与Rust/SQLite之间连接生产worker、消费者、原生提供方和耐久日志，新设备进程按原绑定观察并恢复原任务。
+
+退出条件见 [23第5.6.1节](../docs/23-测试策略与验收矩阵.md#561-原生组合场景与退出条件)，当前证据状态见 [24第4.49节](../docs/24-实施计划与进度.md#449-esp原生安装组合与隔离回归)。独立99场景、共享运行期3条回归分别通过，旧安装与恢复入口仅构建。所有实际输入含递归头文件冻结；组合及运行期只证明隔离快照，主工作树后续变更不继承。文件分区/NVS、合成镜像验证、启动元数据、FreeRTOS与重启仍为夹具，模拟新进程不等于真实系统启动；恢复原有效凭据不等于换证或续期。
 
 ## 启动结果恢复
 

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "model_id": "paraformer-small-int8",
+  "engine": "paraformer-small-int8",
+  "threads": 2,
+  "files": {
+    "model.int8.onnx": "3ef6c19369b912f7caf3cef8e545c5ccd1a33d9d7ec792a46668dc41c4b229ec",
+    "tokens.txt": "4b2d964e18b9cf139b473003b6698fb2ed9a2a5ec55b93daa677b28f578897aa"
+  }
+}

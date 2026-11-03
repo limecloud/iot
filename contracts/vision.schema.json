@@ -1,0 +1,359 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.dev/contracts/vision.schema.json",
+  "title": "Local finite image observation",
+  "$ref": "#/$defs/request",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "content_digest",
+        "expires_at",
+        "cleared_at"
+      ],
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2048,
+          "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$",
+          "minLength": 1
+        },
+        "content_digest": {
+          "$ref": "#/$defs/hash"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/time"
+        },
+        "cleared_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "cleared_at": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "text": {
+              "type": "null"
+            },
+            "cleared_at": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter",
+        "revision",
+        "model",
+        "data_location"
+      ],
+      "properties": {
+        "adapter": {
+          "const": "ollama-vision-v1"
+        },
+        "revision": {
+          "$ref": "#/$defs/hash"
+        },
+        "model": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_:./-]{1,128}$"
+        },
+        "data_location": {
+          "const": "local"
+        }
+      }
+    },
+    "request_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,3})?(?:Z|[+-]\\d\\d:\\d\\d)$"
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "image_base64",
+        "content_type",
+        "prompt",
+        "retain_seconds",
+        "expires_at"
+      ],
+      "properties": {
+        "image_base64": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 2796204,
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+        },
+        "content_type": {
+          "enum": [
+            "image/png",
+            "image/jpeg"
+          ]
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$"
+        },
+        "retain_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600
+        },
+        "expires_at": {
+          "$ref": "#/$defs/request_time"
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "image_digest",
+        "image_bytes",
+        "content_type",
+        "prompt_digest",
+        "retain_seconds",
+        "expires_at"
+      ],
+      "properties": {
+        "image_digest": {
+          "$ref": "#/$defs/hash"
+        },
+        "image_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2097152
+        },
+        "content_type": {
+          "enum": [
+            "image/png",
+            "image/jpeg"
+          ]
+        },
+        "prompt_digest": {
+          "$ref": "#/$defs/hash"
+        },
+        "retain_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600
+        },
+        "expires_at": {
+          "$ref": "#/$defs/request_time"
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vision_id",
+        "space_id",
+        "idempotency_key",
+        "request_digest",
+        "input",
+        "image",
+        "deployment",
+        "created_at",
+        "updated_at",
+        "status",
+        "output",
+        "error_code"
+      ],
+      "properties": {
+        "vision_id": {
+          "type": "string",
+          "pattern": "^vision-[A-Za-z0-9_-]{1,121}$"
+        },
+        "space_id": {
+          "$ref": "#/$defs/id"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/id"
+        },
+        "request_digest": {
+          "$ref": "#/$defs/hash"
+        },
+        "input": {
+          "$ref": "#/$defs/input"
+        },
+        "image": {
+          "$ref": "#/$defs/image"
+        },
+        "deployment": {
+          "$ref": "#/$defs/deployment"
+        },
+        "created_at": {
+          "$ref": "#/$defs/time"
+        },
+        "updated_at": {
+          "$ref": "#/$defs/time"
+        },
+        "status": {
+          "enum": [
+            "running",
+            "succeeded",
+            "failed",
+            "unknown",
+            "discarded"
+          ]
+        },
+        "output": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/output"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "status": {
+              "const": "running"
+            },
+            "output": {
+              "type": "null"
+            },
+            "error_code": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "status": {
+              "const": "succeeded"
+            },
+            "output": {
+              "$ref": "#/$defs/output"
+            },
+            "error_code": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "status": {
+              "const": "failed"
+            },
+            "output": {
+              "type": "null"
+            },
+            "error_code": {
+              "enum": [
+                "vision_provider_rejected",
+                "invalid_vision_output",
+                "vision_output_too_large",
+                "vision_origin_not_local",
+                "vision_provider_unavailable"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "output": {
+              "type": "null"
+            },
+            "error_code": {
+              "enum": [
+                "vision_provider_unknown",
+                "vision_deadline_exceeded",
+                "vision_interrupted"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "status": {
+              "const": "discarded"
+            },
+            "output": {
+              "type": "null"
+            },
+            "error_code": {
+              "enum": [
+                "vision_output_discarded"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

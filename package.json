@@ -1,6 +1,6 @@
 {
   "name": "limeiot",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -11,6 +11,8 @@
     "build:home": "npm run build --workspace @limeiot/home",
     "build:control": "npm run build --workspace @limeiot/console && npm run build --workspace @limeiot/admin",
     "build:firmware": "python3 tools/build-firmware.py",
+    "build:nas:artifacts": "python3 tools/build-nas-artifacts.py build",
+    "test:nas:artifacts": "python3 tests/test_nas_artifacts.py",
     "check": "cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings",
     "test": "cargo test --workspace --locked",
     "test:e2e": "npm run build && node --test tests/e2e.test.mjs tests/nas.test.mjs tests/device-identity.test.mjs",
@@ -67,6 +69,7 @@
     "test:tv-agent": "cargo build --workspace --locked && sh apps/android/gradlew --no-daemon -p apps/tv-agent :core:test :core:journeyRuntime && node --test --test-concurrency=1 tests/tv-agent.test.mjs tests/tv-agent-model-binding.test.mjs tests/tv-agent-composition.test.mjs",
     "test:tv-agent:android": "sh apps/android/gradlew --no-daemon -p apps/tv-agent :core:test :app:testDebugUnitTest :app:assembleDebug :app:lintDebug && node --test tests/tv-identity-setup.test.mjs",
     "test:tv-agent:identity": "sh apps/android/gradlew --no-daemon -p apps/tv-agent :core:test :core:journeyRuntime :app:testDebugUnitTest && node --test --test-concurrency=1 tests/tv-identity-setup.test.mjs tests/tv-identity-expiry.test.mjs",
+    "test:tv-agent:apk": "python3 tests/test_tv_agent_apk.py",
     "test:firmware:ota": "node tools/test-firmware-ota.mjs",
     "test:tui": "cargo build --workspace --locked && node --test --test-concurrency=1 tests/threshold-editor.test.mjs tests/condition-editor.test.mjs tests/tui-boundaries.test.mjs tests/tui.test.mjs tests/tui-thresholds.test.mjs tests/tui-conditions.test.mjs",
     "test:firmware:storage": "node --test --test-concurrency=1 tests/firmware-storage.test.mjs tests/provisioning.test.mjs",
@@ -82,7 +85,21 @@
     "test:firmware:native-install": "node tools/test-firmware-native-ota.mjs --integration",
     "test:device-enrollment": "node --test --test-concurrency=1 tests/device-enrollment.test.mjs tests/device-identity.test.mjs",
     "test:model-bundles": "npm run build && cargo test --locked -p limeiot-core --test model_bundles --test model_registry && cargo test --locked -p limeiot-gateway store::tests && sh apps/android/gradlew --no-daemon -p apps/tv-agent :core:test :core:journeyRuntime && node --test --test-concurrency=1 tests/model-registry-boundaries.test.mjs tests/model-bundles-web.test.mjs tests/tv-agent-model-binding.test.mjs",
-    "test:speech": "cargo test --locked -p limeiot-core --test speech && cargo test --locked -p limeiot-gateway speech_ && cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node --test --test-concurrency=1 tests/speech.test.mjs"
+    "test:transcription": "npm run build:home && cargo test --locked -p limeiot-gateway transcription_ && cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node --test --test-concurrency=1 tests/transcription.test.mjs tests/transcription-web.test.mjs",
+    "test:transcription:provider": "python3 tests/test_asr_provider.py && node --test tests/asr-compose.test.mjs",
+    "test:transcription:provider:live": "npm run build:home && cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node --test tests/asr-live.test.mjs",
+    "test:speech": "cargo test --locked -p limeiot-core --test speech && cargo test --locked -p limeiot-gateway speech_ && cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node --test --test-concurrency=1 tests/speech.test.mjs tests/speech-availability.test.mjs",
+    "test:speech:web": "npm run build:home && cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node --test --test-concurrency=1 tests/speech-web.test.mjs tests/media-clients-web.test.mjs",
+    "test:speech:provider": "python3 tests/test_sherpa_provider.py && node --test tests/sherpa-compose.test.mjs",
+    "test:speech:provider:live": "npm run build:home && cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node --test tests/sherpa-live.test.mjs",
+    "test:transcription:native:contract": "node --test --test-concurrency=1 tests/transcription-native-contract.test.mjs",
+    "test:transcription:native:state": "cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node tools/test-transcription-native-state.mjs",
+    "test:speech:native:contract": "node --test --test-concurrency=1 tests/speech-native-contract.test.mjs",
+    "test:speech:native:state": "cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node tools/test-speech-native-state.mjs",
+    "test:vision": "npm run build:home && cargo test --locked -p limeiot-gateway vision_ && cargo build --locked -p limeiot-gateway -p limeiot-simulator -p limeiot-model-validator && node --test --test-concurrency=1 tests/vision.test.mjs tests/vision-web.test.mjs tests/vision-nas.test.mjs",
+    "test:vision:native:contract": "node --test --test-concurrency=1 tests/vision-native-contract.test.mjs",
+    "test:vision:native:state": "cargo build --locked -p limeiot-gateway -p limeiot-simulator -p limeiot-model-validator && node tools/test-vision-native-state.mjs",
+    "test:vision:native": "cargo build --locked -p limeiot-gateway -p limeiot-simulator -p limeiot-model-validator && swift build --package-path \"apps/ios\" && node --test --test-concurrency=1 tests/vision-native.test.mjs"
   },
   "workspaces": [
     "packages/cli",

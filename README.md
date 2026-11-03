@@ -4,7 +4,7 @@ AI-first 的开源智能物联与能力组合平台。连接文字、视觉、�
 
 仓库：<https://github.com/limecloud/iot>。中文名称：青柠物联。
 
-当前源码版本为 **v0.3.0**，变更与验收边界见 [版本记录](CHANGELOG.md)。版本标签不代表已发布镜像、手机安装包或完成硬件验收。
+当前源码版本为 **v0.4.0**，变更与验收边界见 [版本记录](CHANGELOG.md)。版本标签不代表已发布镜像、手机安装包或完成硬件验收。
 
 ## 当前状态
 
@@ -12,7 +12,15 @@ AI-first 的开源智能物联与能力组合平台。连接文字、视觉、�
 
 已加入 NAS 家庭 PWA、所有者会话、规则预演/启停、原操作恢复、HTTPS 和一致性备份恢复。Linux ARM64整套容器已通过HTTPS、MQTT命令、设备mTLS/ACL/撤销及恢复检查，入口为 `npm run test:nas:container`；x86_64及指定NAS型号待验收。iOS使用Swift/SwiftUI，Android使用Kotlin/Jetpack Compose；独立库已联调，Android调试APK构建通过，两端App实际运行仍待验收。ESP-IDF灯/按钮均已通过C3目标编译，入口为 `npm run build:firmware`；烧录、实机认领、OTA、正式云和生态适配仍在开发。完整状态见 [实施计划](docs/24-实施计划与进度.md)。
 
-已加入本地 Ollama 文字联动草案，CLI、家庭 PWA 和原生客户端共用生成、原键恢复、预演和明确启用流程。模型经窄接口适配，只取得设备/物模型上下文，不拥有部署或设备执行权限。合同与故障检查通过，真实模型的完整意图质量验收尚未通过。配置与检查见[本地模型](deploy/dev/README.md)。语音、视觉、通用 Agent 与组合包仍在开发。
+已加入本地 Ollama 文字联动草案，CLI、家庭 PWA 和原生客户端共用生成、原键恢复、预演和明确启用流程。模型经窄接口适配，只取得设备/物模型上下文，不拥有部署或设备执行权限。合同与故障检查通过，真实模型的完整意图质量验收尚未通过。配置与检查见[本地模型](deploy/dev/README.md)。视觉、通用 Agent 与组合包仍在开发。
+
+已加入[本地有限语音识别](contracts/transcription.md)的HTTP适配、API、CLI、家庭网页与SwiftUI/Compose页面源码：选择已上传录音并固定摘要，原任务不重发，识别文本随源录音到期/删除清除，不执行设备操作。NAS媒体快照v3支持转写结果与未知任务恢复。原生库与实际状态层只持久保存去正文观测，后台/离线/退出清文，原任务恢复由 `npm run test:transcription:native:state` 验证。[独立sherpa ASR服务](providers/sherpa-asr/README.md)提供Paraformer Small/Whisper Tiny适配，上游录音经网页、CLI和重启未知恢复的软件集成已通过，25秒分段避免静默截断。两模型在合成中文语音上的质量检查未通过；家庭环境质量、转换权重分发许可、完整原生运行和新NAS容器继续验收。
+
+已加入[本地图片观察](contracts/vision.md)：通过独立 Ollama 适配器分析单张静态 PNG/JPEG，提供API、CLI、家庭网页“视觉”入口及SwiftUI/Compose“设置 → 图片观察”页面源码。图片和问题正文不入快照，原键查询不重发，未知任务保留预算，结果可明确清除并按期限清文；后台/离线/退出清输入与正文，返回后完成正文需明确查询，观察不产生设备命令。媒体快照v4保留旧版本读取及TTS/ASR共存，`npm run test:vision`验证软件链路，原生合同、库和实际状态层分别见 `test:vision:native:contract`、`test:vision:native`、`test:vision:native:state`。真实视觉模型质量、系统图片选择与完整原生界面运行、新NAS整包仍待验收。
+
+已加入[本地有限文字转语音](contracts/speech.md)的API、CLI、家庭网页与SwiftUI/Compose页面源码：独立提供方输出有界PCM WAV，任务摘要与原键恢复、未知预算、明确放弃和NAS快照恢复共用平台合同。合成只生成媒体引用，须另行授权并播放。软件合同、390px网页和原生状态层真实网关旅程通过，真实引擎质量、完整原生界面运行与新NAS镜像另验。
+
+可选[sherpa CPU提供方](providers/sherpa-tts/README.md)已有真实中文模型经HTTP、网页生成、媒体入库、明确授权与软件音箱逐字节拉取的通过结果。服务与核心隔离，按请求启动有界进程；模型在仓库外，固定依赖与模型摘要。NAS内部网络覆盖已提供，镜像/目标运行、权重分发许可与人工音质尚未验收。
 
 已加入独立 [Go/Gin/MySQL 控制面](server/README.md)：私有凭据、标准OIDC、受众隔离会话、空间、Ed25519配对与撤销历史。Rust网关和家庭PWA已支持本地审核、明确批准、未知结果核实及NAS机器密钥备份恢复。`npm run test:pairing` 使用临时MySQL、真实Go/Rust/Broker及浏览器验证；`test:control` 可独立检查控制面。两端原生云入口源码已接入，实际运行和真实LimeCloud接入仍待验收。
 

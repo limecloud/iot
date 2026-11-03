@@ -47,6 +47,8 @@ impl IntoResponse for ApiError {
             | "media_not_found"
             | "media_operation_not_found"
             | "speech_not_found"
+            | "transcription_not_found"
+            | "vision_not_found"
             | "execution_plan_not_found"
             | "execution_plan_operation_not_found"
             | "not_found" => StatusCode::NOT_FOUND,
@@ -56,6 +58,9 @@ impl IntoResponse for ApiError {
             | "event_gap"
             | "revision_conflict"
             | "control_already_bound" => StatusCode::CONFLICT,
+            "transcription_source_mismatch" | "transcription_already_completed" => {
+                StatusCode::CONFLICT
+            }
             "ota_task_conflict" | "execution_plan_conflict" | "speech_already_completed" => {
                 StatusCode::CONFLICT
             }
@@ -64,12 +69,16 @@ impl IntoResponse for ApiError {
             | "control_not_configured"
             | "media_storage_unavailable"
             | "speech_not_configured"
+            | "transcription_not_configured"
+            | "vision_not_configured"
             | "media_not_configured" => StatusCode::SERVICE_UNAVAILABLE,
             "inference_busy"
             | "control_busy"
             | "model_operation_capacity"
             | "ota_operation_capacity" => StatusCode::TOO_MANY_REQUESTS,
             "execution_operation_capacity" => StatusCode::TOO_MANY_REQUESTS,
+            "transcription_busy" | "transcription_capacity" => StatusCode::TOO_MANY_REQUESTS,
+            "vision_busy" | "vision_capacity" => StatusCode::TOO_MANY_REQUESTS,
             "media_operation_capacity" | "media_capacity" | "speech_busy" | "speech_capacity" => {
                 StatusCode::TOO_MANY_REQUESTS
             }
@@ -152,6 +161,8 @@ pub fn router(app: App) -> Router {
         .merge(crate::execution_plan_api::routes())
         .merge(crate::media::routes())
         .merge(crate::speech::routes())
+        .merge(crate::transcription::routes())
+        .merge(crate::vision::routes())
         .route_layer(middleware::from_fn_with_state(app.clone(), auth::authorize));
     Router::new()
         .route("/healthz", axum::routing::get(health))
@@ -206,6 +217,16 @@ async fn device(
     ))
 }
 async fn capabilities(State(app): State<App>, Path(space): Path<String>) -> ApiResult<Json<Value>> {
+    let vision = app
+        .vision
+        .as_ref()
+        .map(|service| service.capabilities())
+        .unwrap_or_else(|| json!({"configured":false,"capability":"vision.understand"}));
+    let transcription = app
+        .transcription
+        .as_ref()
+        .map(|service| service.capabilities())
+        .unwrap_or_else(|| json!({"configured":false,"capability":"audio.transcribe"}));
     let speech = app
         .speech
         .as_ref()
@@ -214,7 +235,7 @@ async fn capabilities(State(app): State<App>, Path(space): Path<String>) -> ApiR
     let store = app.store.lock().await;
     check(&store.data, &space)?;
     Ok(Json(
-        json!({"space_id":space,"mode":"loopback_simulation","operations":serde_json::from_str::<Value>(include_str!("../../../../contracts/tools/catalog.json")).unwrap()["operations"],"models":store.data.models,"inference":{"configured":app.inference.is_some(),"provider":"ollama","model":app.inference.as_ref().map(|p|p.model()),"data_location":"local","concurrency":1,"max_output_tokens":1024},"speech":speech,"limits":{"devices":64,"commands":4096,"rules":64,"runs":1024,"dedup_events":4096,"rule_drafts":128,"model_trusts":limeiot_core::model_registry::MAX_TRUSTS,"model_installations":limeiot_core::model_registry::MAX_INSTALLATIONS,"model_operations":limeiot_core::model_registry::MAX_OPERATIONS}}),
+        json!({"space_id":space,"mode":"loopback_simulation","operations":serde_json::from_str::<Value>(include_str!("../../../../contracts/tools/catalog.json")).unwrap()["operations"],"models":store.data.models,"inference":{"configured":app.inference.is_some(),"provider":"ollama","model":app.inference.as_ref().map(|p|p.model()),"data_location":"local","concurrency":1,"max_output_tokens":1024},"speech":speech,"transcription":transcription,"vision":vision,"limits":{"devices":64,"commands":4096,"rules":64,"runs":1024,"dedup_events":4096,"rule_drafts":128,"model_trusts":limeiot_core::model_registry::MAX_TRUSTS,"model_installations":limeiot_core::model_registry::MAX_INSTALLATIONS,"model_operations":limeiot_core::model_registry::MAX_OPERATIONS}}),
     ))
 }
 async fn model(State(app): State<App>, Path(revision): Path<String>) -> ApiResult<Json<Value>> {

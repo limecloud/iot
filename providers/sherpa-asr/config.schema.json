@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.dev/providers/sherpa-asr/config.schema.json",
+  "title": "Local sherpa transcription provider configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "model_id",
+    "engine",
+    "threads",
+    "files"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "model_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_:./-]{1,128}$"
+    },
+    "engine": {
+      "enum": [
+        "whisper-tiny-int8",
+        "paraformer-small-int8"
+      ]
+    },
+    "threads": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "files": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "whisper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tiny-encoder.int8.onnx",
+        "tiny-decoder.int8.onnx",
+        "tiny-tokens.txt"
+      ],
+      "properties": {
+        "tiny-encoder.int8.onnx": {
+          "$ref": "#/$defs/hash"
+        },
+        "tiny-decoder.int8.onnx": {
+          "$ref": "#/$defs/hash"
+        },
+        "tiny-tokens.txt": {
+          "$ref": "#/$defs/hash"
+        }
+      }
+    },
+    "paraformer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model.int8.onnx",
+        "tokens.txt"
+      ],
+      "properties": {
+        "model.int8.onnx": {
+          "$ref": "#/$defs/hash"
+        },
+        "tokens.txt": {
+          "$ref": "#/$defs/hash"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "engine": {
+            "const": "whisper-tiny-int8"
+          }
+        },
+        "required": [
+          "engine"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "$ref": "#/$defs/whisper"
+          }
+        }
+      },
+      "else": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "$ref": "#/$defs/paraformer"
+          }
+        }
+      }
+    }
+  ]
+}

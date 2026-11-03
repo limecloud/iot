@@ -1,6 +1,5 @@
 package run.limeai.iot.device
 
-import okhttp3.OkHttpClient
 import org.eclipse.paho.mqttv5.client.*
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence
 import org.eclipse.paho.mqttv5.common.MqttException
@@ -37,7 +36,9 @@ class DeviceMqtt(
         var retry = 1000L
         try {
             while (!closed.get() && !agent.blocked && tls.current) {
-                val connection = MqttClient(uri.toASCIIString(), identity.device, MemoryPersistence())
+                // 外部配置仍只接受ssl；内部SPI避免Paho默认TLS模块调用API24的SNI类。
+                val transport = java.net.URI("limeiot-ssl", null, uri.host, uri.port, null, null, null)
+                val connection = MqttClient(transport.toASCIIString(), identity.device, MemoryPersistence())
                 connection.setTimeToWait(5000)
                 connection.setCallback(object : MqttCallback {
                     override fun disconnected(response: MqttDisconnectResponse) { online.set(false) }
@@ -56,9 +57,6 @@ class DeviceMqtt(
                         isCleanStart = true; sessionExpiryInterval = 0L; isAutomaticReconnect = false
                         connectionTimeout = 5; keepAliveInterval = 10; receiveMaximum = 16; maximumPacketSize = 16896L
                         socketFactory = tls.socketFactory
-                        // Paho默认实现调用API24的SSLParameters；API23使用OkHttp同等的主机/SAN校验。
-                        isHttpsHostnameVerificationEnabled = false
-                        sslHostnameVerifier = OkHttpClient().hostnameVerifier
                     }
                     connection.connect(options)
                     if (closed.get()) break

@@ -4,4 +4,10 @@
     <string name="notification_title">LimeIoT 电视连接运行中</string>
     <string name="notification_text">点击查看状态与授权，或停止连接</string>
     <string name="stop">停止连接</string>
+    <string name="apk_preflight_imported">预检副本已保存，请选择同次发布的 APK。</string>
+    <string name="apk_candidate_resume">请从原导入记录继续选择 APK。</string>
+    <string name="apk_system_returned">已返回更新页面。请查询原安装记录；系统页面返回不代表已授权或安装成功，也不会自动继续。</string>
+    <string name="apk_source_already_allowed">当前来源检查已通过。请重新核对并明确继续原安装。</string>
+    <string name="apk_source_settings_unavailable">无法打开系统来源设置，请保留原任务并核对系统限制。</string>
+    <string name="apk_system_confirmation_opened">已打开原系统确认，安装结果仍须以原系统回执为准。</string>
 </resources>

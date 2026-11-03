@@ -2,11 +2,9 @@ package run.limeai.iot.television
 
 import android.app.Activity
 import android.content.Intent
-import android.os.Bundle
 import android.os.Build
 import android.os.SystemClock
 import android.widget.Button
-import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
@@ -19,20 +17,6 @@ import java.net.Socket
 import java.net.URI
 import java.security.KeyStore
 import java.util.concurrent.atomic.AtomicReference
-
-/** 只在测试APK中运行；实际目标进程记录Activity启动次数，宿主独立核对。 */
-class RuntimeTargetActivity : Activity() {
-    private fun record(kind: String) {
-        File(filesDir, "runtime-launches.jsonl").appendText(JSONObject()
-            .put("delivery", kind).put("created_elapsed_ms", SystemClock.elapsedRealtime()).toString() + "\n")
-    }
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        record("create")
-        setContentView(TextView(this).apply { text = "LimeIoT TV runtime fixture"; textSize = 24f })
-    }
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); record("new_intent") }
-}
 
 private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
 private val context get() = instrumentation.targetContext
@@ -185,5 +169,57 @@ class AgentResumeRuntimeTest {
             assertTrue(journal.getLong("high_watermark") >= 3)
         }
         phase("restored")
+    }
+}
+
+/** API23允许已授权连接在后台启动应用；不能套用Android10的后台拒绝断言。 */
+@RunWith(AndroidJUnit4::class)
+class AgentApi23JourneyRuntimeTest {
+    @Test fun actual_api23_service_mtls_background_launch_and_revocation() {
+        assertEquals("this gate requires the actual API23 runtime", 23, Build.VERSION.SDK_INT)
+        val enrolled = enrollment()
+        val fixture = instrumentation.context.packageName
+        AndroidAgentStore(context).use { store ->
+            store.install(enrolled)
+            store.authorize(fixture, true)
+            assertEquals(enrolled.binding, AndroidAgentStore(context).use { it.load()!!.binding })
+            assertTrue(AndroidApplications.discover(context).any { it.packageName == fixture })
+        }
+        val runtime = (context.applicationContext as TelevisionApplication).runtime
+        instrumentation.setInTouchMode(false)
+        val activity = instrumentation.startActivitySync(Intent(context, TelevisionActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        try {
+            instrumentation.waitForIdleSync()
+            waitFor("API23 foreground window focus") {
+                val focused = AtomicReference(false)
+                instrumentation.runOnMainSync { focused.set(activity.hasWindowFocus()) }
+                focused.get()
+            }
+            instrumentation.runOnMainSync {
+                assertTrue("remote focus must be a button", activity.window.decorView.findFocus() is Button)
+                context.startService(Intent(context, AgentService::class.java).setAction(AgentService.ACTION_START))
+            }
+            waitFor("API23 actual service ready") { runtime.screen.status == "ready" }
+            phase("ready")
+            signal("revoke") // 宿主独立核对前台及后台各一次真实Activity提交。
+            AndroidAgentStore(context).use { it.authorize(fixture, false) }
+            phase("revoked")
+            signal("stop")
+            waitFor("API23 original results retired") {
+                AndroidAgentStore(context).use { store ->
+                    val journal = JSONObject(String(store.journal(enrolled.binding).read()!!))
+                    journal.getJSONObject("entries").length() == 0 && journal.getLong("high_watermark") >= 3
+                }
+            }
+            runtime.stop()
+            context.stopService(Intent(context, AgentService::class.java))
+            waitFor("API23 service stopped") { !runtime.running && runtime.screen.status == "stopped" }
+            phase("stopped")
+        } finally {
+            runtime.stop()
+            context.stopService(Intent(context, AgentService::class.java))
+            instrumentation.runOnMainSync { activity.finish() }
+        }
     }
 }
