@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.*
+import run.limeai.iot.device.DeviceModelProfile
 
 /** 平台Views保留API23与遥控器操作；只显示身份摘要，凭据不写进View或实例状态。 */
 class TelevisionActivity : Activity() {
@@ -20,6 +21,12 @@ class TelevisionActivity : Activity() {
     private lateinit var applications: LinearLayout
     private lateinit var start: Button
     private lateinit var stop: Button
+    private lateinit var audioStatus: TextView
+    private lateinit var revokeAudio: Button
+    private var audioDialog: AlertDialog? = null
+    private var modelDialog: AlertDialog? = null
+    private lateinit var modelAssignment: Button
+    private var resumed = false
     private lateinit var import: Button
     private lateinit var identityDetails: TextView
     private lateinit var identitySetup: Button
@@ -59,6 +66,7 @@ class TelevisionActivity : Activity() {
         }
         importCertificate = button("导入签发的设备证书") { choose("*/*", CERTIFICATE_REQUEST) }
         reopen = button("重新核对已保存记录") { runtime.reopenRecords() }
+        modelAssignment = button("扩展设备能力配置") { chooseModelAssignment() }
         rotationDetails = label("尚无换钥申请")
         rotate = button("申请或恢复换钥") { requestKeyChange(false) }
         recoverExpired = button("申请或恢复过期身份") { requestKeyChange(true) }
@@ -82,6 +90,8 @@ class TelevisionActivity : Activity() {
         }
         start = button("开始连接") { requestStart() }
         stop = button(getString(R.string.stop)) { runtime.stop(); stopService(Intent(this, AgentService::class.java)) }
+        audioStatus = label("尚未允许音量和静音控制")
+        revokeAudio = button("取消本次音量和静音授权并停止") { runtime.revokeAudio(); stopService(Intent(this, AgentService::class.java)) }
         button("刷新设备与应用") { runtime.refresh() }
         button("更新材料与批准") { startActivity(Intent(this, ApkUpdateActivity::class.java)) }
         label("允许启动的应用", 22f)
@@ -93,8 +103,14 @@ class TelevisionActivity : Activity() {
         identitySetup.requestFocus()
     }
     override fun onStart() { super.onStart(); runtime.observe(observer); runtime.refresh() }
-    override fun onResume() { super.onResume(); runtime.setVisible(true) }
-    override fun onPause() { runtime.setVisible(false); super.onPause() }
+    override fun onResume() { super.onResume(); resumed = true; runtime.setVisible(true) }
+    override fun onPause() {
+        resumed = false
+        runtime.setVisible(false)
+        audioDialog?.dismiss(); audioDialog = null
+        modelDialog?.dismiss(); modelDialog = null
+        super.onPause()
+    }
     override fun onStop() { runtime.remove(observer); super.onStop() }
 
     private fun choose(type: String, request: Int) {
@@ -115,14 +131,78 @@ class TelevisionActivity : Activity() {
             .setNegativeButton("取消", null).setPositiveButton("确认删除该旧密钥") { _, _ -> runtime.retirePreviousKey(preview) }.show()
     }
 
+    private fun modelLabel(profile: DeviceModelProfile): String = when (profile) {
+        DeviceModelProfile.APPLICATIONS -> "应用启动"
+        DeviceModelProfile.COMPOSED_REMOTE -> "应用启动与外部遥控"
+        DeviceModelProfile.AUDIO_APPLICATIONS -> "应用启动、音量与静音"
+        DeviceModelProfile.AUDIO_COMPOSED_REMOTE -> "应用启动、音量、静音与外部遥控"
+    }
+
+    private fun chooseModelAssignment() {
+        if (!resumed) return
+        val current = runtime.screen.summary?.let { DeviceModelProfile.parse(it.model) } ?: return
+        val choices = DeviceModelProfile.values().filter { it != current && it.acceptsHistory(current) }
+        if (choices.isEmpty()) return
+        modelDialog?.dismiss()
+        modelDialog = AlertDialog.Builder(this).setTitle("选择扩展后的设备能力")
+            .setItems(choices.map(::modelLabel).toTypedArray()) { _, index ->
+                if (!resumed) return@setItems
+                runtime.previewModelAssignment(choices[index]) { result ->
+                    result.fold({ review ->
+                        if (!resumed || isFinishing || isDestroyed || !review.foreground.active) return@fold
+                        val preview = review.preview
+                        var confirmed = false
+                        val dialog = AlertDialog.Builder(this).setTitle("确认扩展设备能力")
+                            .setMessage("空间：${preview.identity.space}\n设备：${preview.identity.device}\n当前：${modelLabel(preview.identity.profile)}\n目标：${modelLabel(preview.target)}\n证书：${preview.certificate}\n\n保留原设备身份、证书、申请、命令记录和应用授权。外部遥控还需管理者明确配置执行组合；音量与静音在每次连接前另行允许。保存后可继续扩展，不能回退移除已有能力。")
+                            .setNegativeButton("取消", null)
+                            .setPositiveButton("确认保存能力配置", null)
+                            .create()
+                        modelDialog = dialog
+                        dialog.setOnDismissListener {
+                            if (!confirmed) runtime.cancelModelAssignment(review)
+                            if (modelDialog === dialog) modelDialog = null
+                        }
+                        dialog.show()
+                        // 在系统dismiss回调前同步决定消费或取消，避免排队按钮消息越过取消。
+                        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
+                            runtime.cancelModelAssignment(review); dialog.dismiss()
+                        }
+                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                            confirmed = true; runtime.approveModelAssignment(review) {}; dialog.dismiss()
+                        }
+                    }, { runtime.notice("当前无法更改能力配置，请核对连接已完全停止、换钥与更新任务已完成。") })
+                }
+            }.setNegativeButton("取消", null).show()
+    }
+
     private fun requestStart() {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_REQUEST); return
         }
+        val summary = runtime.screen.summary
+        if (summary != null && DeviceModelProfile.parse(summary.model).hasAudio) {
+            val review = try { runtime.reviewAudioStart() } catch (_: Exception) {
+                runtime.notice("本次音量和静音确认已失效，请刷新设备状态后重新核对。"); return
+            }
+            audioDialog?.dismiss()
+            val dialog = AlertDialog.Builder(this).setTitle("允许本次连接调节音量和静音")
+                .setMessage("空间：${review.summary.space}\n设备：${review.summary.device}\n\n允许本次连接读取和调节电视的媒体音量、设置静音或取消静音。离开本页面后仍有效；停止、取消授权或应用进程结束后失效，重新连接需要再次允许。音量调节可能影响正在播放的内容。")
+                .setNegativeButton("暂不允许", null)
+                .setPositiveButton("允许并开始本次连接") { _, _ -> if (runtime.approveAudioStart(review)) startConnection() }
+                .create()
+            audioDialog = dialog
+            dialog.setOnDismissListener { if (audioDialog === dialog) audioDialog = null }
+            dialog.show()
+            return
+        }
+        startConnection()
+    }
+
+    private fun startConnection() {
         try {
             val intent = Intent(this, AgentService::class.java).setAction(AgentService.ACTION_START)
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
-        } catch (_: Exception) { runtime.notice("无法开始可见连接，请检查通知权限与系统运行限制。") }
+        } catch (_: Exception) { runtime.stop(); runtime.notice("无法开始可见连接，请检查通知权限与系统运行限制。") }
     }
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -197,7 +277,7 @@ class TelevisionActivity : Activity() {
             if (isFinishing || isDestroyed) return@readEnrollment
             val s = runtime.summary(enrollment)
             AlertDialog.Builder(this).setTitle("核对设备身份")
-                .setMessage("空间：${s.space}\n设备：${s.device}\n连接：${s.broker}\n逻辑模型：${s.model}\n模型摘要：${s.revision}\n\nCA指纹：${s.ca}\n设备证书：${s.certificate}\n有效至：${s.expires}\n\n请逐项核对。切换遥控组合模型会保留原日志与未知记录，且不支持退回旧模型。本应用仍只执行获准的应用启动，遥控按键须由网关另行绑定。保存不会自动连接或合并ADB设备。")
+                .setMessage("空间：${s.space}\n设备：${s.device}\n连接：${s.broker}\n逻辑模型：${s.model}\n模型摘要：${s.revision}\n\nCA指纹：${s.ca}\n设备证书：${s.certificate}\n有效至：${s.expires}\n\n请逐项核对。增加能力的模型切换会保留原日志与未知记录，且不支持退回旧模型。应用启动仍须单独允许；音量和静音须选择音频配置并另行允许本次连接，遥控按键须由网关另行绑定。保存不会自动连接或合并ADB设备。")
                 .setNegativeButton("取消", null)
                 .setPositiveButton("核对一致并保存") { _, _ -> runtime.install(enrollment) }.show()
         }
@@ -229,7 +309,15 @@ class TelevisionActivity : Activity() {
         details.text = s.summary?.let { "空间：${it.space}\n设备：${it.device}\n连接：${it.broker}\n逻辑模型：${it.model}\nCA指纹：${it.ca}\n证书有效至：${it.expires}" + if (it.expired) "\n证书已过期，仅可维护" else "" } ?: "尚未导入设备材料"
         start.isEnabled = s.summary != null && !s.summary.expired && !runtime.running
         stop.isEnabled = runtime.running
+        val audioModel = s.summary?.let { DeviceModelProfile.parse(it.model).hasAudio } == true
+        audioStatus.text = if (s.audioAuthorized) "本次连接已允许音量和静音。离开页面后仍有效；停止或取消授权后失效。"
+            else if (audioModel) "尚未允许音量和静音。开始连接时需在本机确认，授权仅限本次连接。"
+            else "当前配置没有开放音量和静音控制。"
+        revokeAudio.isEnabled = audioModel && runtime.running
         val request = s.identityRequest
+        modelAssignment.isEnabled = !runtime.running && request?.phase == "active" && s.summary?.expired == false &&
+            s.summary.model != DeviceModelProfile.AUDIO_COMPOSED_REMOTE.id &&
+            (s.rotation == null || s.rotation.managementCompleted) && s.retirements.none { it.phase == "deleting" }
         import.isEnabled = !runtime.running && request == null && s.rotation == null
         identitySetup.isEnabled = !runtime.running && s.summary == null && request == null
         resumeRequest.isEnabled = !runtime.running && request != null

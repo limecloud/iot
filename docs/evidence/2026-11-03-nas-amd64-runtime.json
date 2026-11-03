@@ -1,0 +1,467 @@
+{
+  "evidence_id": "EVID-NAS-AMD64-RUNTIME-20261103-01",
+  "observed_at": "2026-11-03T22:35:21.821570+08:00",
+  "status": "artifact_image_and_gateway_base_verified_multimodal_recreation_blocked",
+  "runtime_dependencies": {
+    "passed": true,
+    "image": "limeiot/verification:nas-runtime-base-amd64-ee08d021ca98",
+    "image_id": "sha256:ae275aa83e0a4a6340a5e970ce352ea0e41b5287c14ecbe0faeb0cae08c43c82",
+    "platform": "linux/amd64",
+    "runtime_prefix_sha256": "ee08d021ca985c895d92fdf3677e24f899aa8a0fd876fa4a502d1d04c6a57bcc",
+    "checks": {
+      "passed": true,
+      "machine": "x86_64",
+      "uid": 10001,
+      "python_elf_machine": 62,
+      "packages": {
+        "ca-certificates": "20250419~deb12u2",
+        "mosquitto": "2.0.11-1.2+deb12u2",
+        "python3": "3.11.2-1+b1"
+      },
+      "ca_store": {
+        "x509": 148,
+        "crl": 0,
+        "x509_ca": 148
+      },
+      "mosquitto_binary_executed": true,
+      "mosquitto_help_exit_code": 3
+    },
+    "build_memory_limit_bytes": 167772160,
+    "staged_installation": true,
+    "apt_dependency_check_passed": true,
+    "build_log": ".dev/nas-amd64-runtime-20261103/base-staged-pinned-build.log",
+    "build_log_sha256": "1e9e7e68fbe846f3d90f6f25c6ffdfd48c19420581c28d080cff75096585650c",
+    "dockerfile_sha256": "36ce2fcbb2f7501e84751edf43ba93d3237170d6f4047850d6ea7a005fb9e63e",
+    "nas_image": false,
+    "full_container_journey": false,
+    "hardware": false,
+    "published": false
+  },
+  "runtime_exports": [
+    {
+      "image_id": "sha256:ae275aa83e0a4a6340a5e970ce352ea0e41b5287c14ecbe0faeb0cae08c43c82",
+      "archive": ".build/nas-runtime-cache/runtime-amd64.tar",
+      "sha256": "8593b4e52004d2a7cec3af0a1c6fc160ac08d22d1189f9c97c82e1d8c7ed1265",
+      "bytes": 72163328,
+      "platform": "linux/amd64"
+    },
+    {
+      "image_id": "sha256:8059701048a6cc7d64e8ab2812a44be70161bfa9ecfc01d69e95b8ff2a648705",
+      "archive": ".build/nas-runtime-cache/nginx-amd64.tar",
+      "sha256": "cdf4ab0d68a1c402802e39b6538aefcaab7ec0754343b8860eab6dd8bd8ae437",
+      "bytes": 23121920,
+      "platform": "linux/amd64",
+      "origin": "verified_oci_cache",
+      "reloaded_and_inspected": true
+    }
+  ],
+  "runtime_cache_adapter": {
+    "passed": true,
+    "base_image_id": "sha256:ae275aa83e0a4a6340a5e970ce352ea0e41b5287c14ecbe0faeb0cae08c43c82",
+    "platform": "linux/amd64",
+    "canonical_prefix_sha256": "ee08d021ca985c895d92fdf3677e24f899aa8a0fd876fa4a502d1d04c6a57bcc",
+    "remaining_runtime_instructions_byte_exact": true,
+    "derived_dockerfile_sha256": "8b6603eadcd5f9747cd27712337b006d40f73e1d88119cf41d0d5d5a8abeb83c",
+    "nas_image_built": true
+  },
+  "regressions": {
+    "unit_test_groups": 8,
+    "failures": 0,
+    "log": ".dev/nas-artifacts-frozen-runtime-tests.log",
+    "python_syntax_passed": true,
+    "git_diff_check_passed": true,
+    "cli_help_includes_runtime_base": true
+  },
+  "source_freeze": {
+    "snapshot": ".dev/nas-source-a4ada4b57b0a2aea",
+    "source_digest": "a4ada4b57b0a2aeae424a3a1d3922627f4f45c0938ff0910e01bc7d63b8cb293",
+    "input_files": 349,
+    "source_copy_hashes_verified": true,
+    "workspace_before_after_matches": true,
+    "node_modules_copied": true,
+    "workspace_links_resolve_inside_snapshot": true
+  },
+  "previous_working_tree_build": {
+    "session_id": 50276,
+    "terminated": true,
+    "compiler_command_succeeded": true,
+    "compiler_elapsed": "41m 31s",
+    "home_pwa_build_succeeded": true,
+    "packaging_rejected": "source_changed_during_build",
+    "artifact_emitted": false,
+    "log": ".dev/nas-amd64-buffered-restart-build.log",
+    "source_drift_comparison": ".dev/nas-amd64-source-drift.json",
+    "comparison_reference": "此前ARM64冻结快照；不是AMD64首次受理时输入清单"
+  },
+  "dependency_attempts": [
+    {
+      "memory_mib": 96,
+      "exit_code": 137,
+      "oom_killed_observed": true,
+      "failure": "APT与包配置同时驻留时超出容器上限",
+      "evidence": ".dev/nas-amd64-runtime-20261103/first-build-failure.json",
+      "owned_container_cleaned": true
+    },
+    {
+      "memory_mib": 160,
+      "exit_code": 137,
+      "oom_killed_observed": true,
+      "failure": "Python包配置阶段超出容器上限",
+      "log": ".dev/nas-amd64-runtime-20261103/base-cached-build.log",
+      "container": "ba6e8a82de9a",
+      "container_absent_on_cleanup_check": true,
+      "cleanup_performed_by_this_turn": false
+    },
+    {
+      "memory_mib": 160,
+      "exit_code": 0,
+      "strategy": "APT验证/准备29个软件包后退出，再单独执行完整dpkg安装/配置和apt-get check",
+      "reused_download_bytes": "11.7 MB",
+      "network_package_download_bytes": 0,
+      "log": ".dev/nas-amd64-runtime-20261103/base-staged-pinned-build.log"
+    }
+  ],
+  "running": {},
+  "source_sha256": {
+    "tools/build-nas-artifacts.py": "2ab6a19ee5e39b7478a107d115923e460bea32bc12a1419c8d3ee75cc26f3d47",
+    "tests/test_nas_artifacts.py": "b9db8073f8b2da3f44a1f3a09844a4c5f43139defd0c3c84048816335db86c4d",
+    "deploy/nas/README.md": "28948a4c675c37a2682e5c4f2b241efb8c7319d3976bd26bb909789c5ba3ad87",
+    ".dev/nas-artifacts-frozen-runtime-tests.log": "b0bd5d4f92113b1ac39a0d1dce713746713d0f9dc76fd97b7494d5e61ac9b8e1",
+    ".dev/nas-amd64-runtime-20261103/base-verification.json": "90e8143c1179a6753540068a88fc9f704a8b4b16ab61760c94bec7dd5e241862",
+    ".dev/nas-amd64-runtime-20261103/runtime-base-preflight.json": "a0dc8eb612cd7a7d1b1a20ce8eba89abf5da357fdb728f267a159e0724e3b1a5",
+    ".dev/nas-amd64-frozen-source.json": "d849a21c23d6a8b889d5864cf7b522ff8661a8ca1f7efbb5c6bc056861ada1e3",
+    ".dev/zig-official-fetch-report.json": "cdceff05e75d4f922efdf9d9ca88fc56c01489be8b94553d2b56aa756de6e080",
+    ".dev/nas-amd64-toolchain-transition.json": "565358106302a602a510235235696d53d6a10411d30acedc156da950a6753c09",
+    ".dev/nas-amd64-verification-harness.json": "c1bd1ba457d695f3fe77aea5c20a8a3dcd8de1c54aaae79c5051bf3ff64e8745",
+    ".dev/nas-source-a4ada4b57b0a2aea/.dev/nas-container-8e6edcefc4d2b791/report.json": "0f3e1919adbdbfc8d6e1bacb77b8a524653fe3dca7314bb022a24d5fa0652468",
+    ".dev/nas-source-a4ada4b57b0a2aea/.dev/nas-container-f9fb61e95ba71235/report.json": "e86dc0f11de947f47fa0f1fc9bbdc93558bae5d588c21dfeb3191dc44792eeeb",
+    ".dev/nas-amd64-fixture-first-events.json": "b7695ce4dec46516b5c194988d297a4d08e902dd3680bd975a7e4b46a832718f",
+    "tools/test-nas-container.mjs": "44f7448b37f0be816132e739f7d8059af0218e7d23f1a1059276f8392933ae13",
+    "tools/nas-multimodal-journey.mjs": "1e73ff8035d872471884bf65e085dde3c15cd9efe237fd222ec4b14c201bf6dc"
+  },
+  "limits": [
+    "分阶段依赖安装与规范Dockerfile的包集合相同，安装命令不是原RUN逐字执行；实际完整dpkg配置和APT依赖检查通过。",
+    "运行切片只验证依赖层的实际AMD64执行、包状态、非root/只读及系统CA，不证明网关MQTT或完整NAS通过。",
+    "此前Rust/PWA命令虽成功，构建期间源码变化触发门禁，不能将未发出的制品标记为完整构建通过。",
+    "快照工具修复将非Markdown合同及workspace清单纳入指纹；8组测试中ELF与错误缓存元数据为显式夹具。",
+    "AMD64冻结包、镜像和基础网关容器通过；多模态组合的网关重建就绪仍失败，两轮针对性复验后保留阻塞，不放宽原业务期限或宣称完整旅程通过。",
+    "实际执行环境为ARM64 Docker中的AMD64指令模拟，不证明N100或指定NAS型号实机通过。",
+    "AMD64多模态三类协议、大图及明确授权Range播放有部分通过结果；后续多模态备份恢复、unknown预算及清文恢复未验收，真实模型质量不在协议夹具范围。",
+    "本次不包含Go/MySQL完整私有工作台的新AMD64验收，不将网关基础包通过扩展为完整私有化产品通过。",
+    "128MiB解决已观察的夹具OOM；0.5vCPU条件下启动就绪通过但重建就绪仍失败，未据此确认所有超时的根因。"
+  ],
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "production_deployed": false,
+  "published": false,
+  "full_goal_completed": false,
+  "previous_toolchain_build": {
+    "session_id": 8879,
+    "exit_code": 1,
+    "phase_on_replacement": "工具链重复下载，尚未进入Cargo编译",
+    "reason": "官方替代归档完整摘要校验通过后，停止旧下载并使用父目录缓存启动快照构建",
+    "transition_report": ".dev/nas-amd64-toolchain-transition.json"
+  },
+  "toolchain": {
+    "passed": true,
+    "cache": "../.build/nas-cross-toolchain",
+    "zig_version": "0.14.1",
+    "archives": [
+      {
+        "archive": "zig-aarch64-macos-0.14.1.tar.xz",
+        "bytes": 45903552,
+        "sha256": "39f3dc5e79c22088ce878edc821dedb4ca5a1cd9f5ef915e9b3cc3053e8faefa",
+        "verified": true
+      },
+      {
+        "archive": "rust-std-1.93.1-x86_64-unknown-linux-gnu.tar.xz",
+        "bytes": 29468724,
+        "sha256": "82c4e41268f1741e4eb68796aeb6ca5042406ae858dd56144155c4ef8d87d8b6",
+        "verified": true
+      }
+    ],
+    "official_zig_fetch": {
+      "session_id": 86313,
+      "exit_code": 0,
+      "report": ".dev/zig-official-fetch-report.json"
+    }
+  },
+  "verification_harness": {
+    "report": ".dev/nas-amd64-verification-harness.json",
+    "snapshot_files": 9,
+    "application_build_inputs_unchanged": true,
+    "source_before_after_matches": true,
+    "full_journey_executed": false,
+    "fixture_added_before_journey": true,
+    "preflight": {
+      "compose_command": "docker-compose",
+      "compose_version": "5.5.1",
+      "node_version": "24.21.0",
+      "browser_binary_present": true,
+      "application_source_digest_verified": true
+    },
+    "gateway_base_journey_passed": true,
+    "multimodal_journey_passed": false,
+    "targeted_retries_exhausted": true
+  },
+  "artifact_build": {
+    "passed": true,
+    "session_id": 53956,
+    "exit_code": 0,
+    "platform": "linux/amd64",
+    "directory": ".dev/nas-amd64-frozen-20261103",
+    "source_digest": "a4ada4b57b0a2aeae424a3a1d3922627f4f45c0938ff0910e01bc7d63b8cb293",
+    "source_files": 349,
+    "artifact_files": 91,
+    "rust_release_elapsed": "14m 19s",
+    "four_linux_elfs_verified": true,
+    "home_pwa_built": true,
+    "source_before_after_matches": true,
+    "manifest_sha256": "c3c8ee18fe430917737e131a47b78521ff40435de1e239118a7fb01d0f5c29c1",
+    "log": ".dev/nas-amd64-frozen-parent-cache-build.log",
+    "log_sha256": "0873747dc2d640b7ead7a8cd3597cfae01f72e6612155484469b6d4a2e4b2568"
+  },
+  "image_build": {
+    "passed": true,
+    "session_id": 92242,
+    "exit_code": 0,
+    "image": "limeiot/verification:nas-amd64-frozen-20261103",
+    "image_id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+    "platform": "linux/amd64",
+    "source_digest": "a4ada4b57b0a2aeae424a3a1d3922627f4f45c0938ff0910e01bc7d63b8cb293",
+    "runtime_base_id": "sha256:ae275aa83e0a4a6340a5e970ce352ea0e41b5287c14ecbe0faeb0cae08c43c82",
+    "log": ".dev/nas-amd64-frozen-image-build.log",
+    "log_sha256": "a1aa0f92fb3aa506d991295e726ceee7e668c464339e1bb176c0b5ecb11c5ce8"
+  },
+  "gateway_base_container": {
+    "passed": true,
+    "report": ".dev/nas-source-a4ada4b57b0a2aea/.dev/nas-container-8e6edcefc4d2b791/report.json",
+    "report_sha256": "0f3e1919adbdbfc8d6e1bacb77b8a524653fe3dca7314bb022a24d5fa0652468",
+    "result": {
+      "passed": true,
+      "image": "limeiot/verification:nas-amd64-frozen-20261103",
+      "real_containers": true,
+      "hardware": false,
+      "hardware_acceptance": "skipped_by_user",
+      "evidence": ".dev/nas-container-8e6edcefc4d2b791",
+      "daemon_platform": "linux/arm64",
+      "target_platform": "linux/amd64",
+      "emulated": true,
+      "image_id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+      "image_source_digest": "a4ada4b57b0a2aeae424a3a1d3922627f4f45c0938ff0910e01bc7d63b8cb293",
+      "platform": "linux/amd64",
+      "installation_scoped_to_verification_directory": true,
+      "image_platforms": {
+        "button": {
+          "id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+          "reference": "limeiot/verification:nas-amd64-frozen-20261103",
+          "platform": "linux/amd64"
+        },
+        "edge": {
+          "id": "sha256:8059701048a6cc7d64e8ab2812a44be70161bfa9ecfc01d69e95b8ff2a648705",
+          "reference": "limeiot/verification:base-amd64-nginx-8059701048a6",
+          "platform": "linux/amd64"
+        },
+        "gateway": {
+          "id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+          "reference": "limeiot/verification:nas-amd64-frozen-20261103",
+          "platform": "linux/amd64"
+        },
+        "lamp": {
+          "id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+          "reference": "limeiot/verification:nas-amd64-frozen-20261103",
+          "platform": "linux/amd64"
+        }
+      },
+      "runtime_machines": {
+        "gateway": "x86_64",
+        "edge": "x86_64"
+      },
+      "https_verified_ca": true,
+      "non_root_read_only_internal_network": true,
+      "mqtt_command_confirmed": true,
+      "browser_home_and_model_entry": true,
+      "gateway_recreation_routed": true,
+      "device_mtls_acl_revocation": true,
+      "session_reauthenticated_after_gateway_restart": true,
+      "consistent_backup_restore": true,
+      "revocation_restored": true,
+      "no_command_replay": true,
+      "containers_cleaned": true
+    }
+  },
+  "multimodal_container": {
+    "passed": false,
+    "report": ".dev/nas-source-a4ada4b57b0a2aea/.dev/nas-container-f9fb61e95ba71235/report.json",
+    "report_sha256": "e86dc0f11de947f47fa0f1fc9bbdc93558bae5d588c21dfeb3191dc44792eeeb",
+    "result": {
+      "passed": false,
+      "image": "limeiot/verification:nas-amd64-frozen-20261103",
+      "real_containers": true,
+      "hardware": false,
+      "hardware_acceptance": "skipped_by_user",
+      "evidence": ".dev/nas-container-f9fb61e95ba71235",
+      "daemon_platform": "linux/arm64",
+      "target_platform": "linux/amd64",
+      "emulated": true,
+      "image_id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+      "image_source_digest": "a4ada4b57b0a2aeae424a3a1d3922627f4f45c0938ff0910e01bc7d63b8cb293",
+      "platform": "linux/amd64",
+      "installation_scoped_to_verification_directory": true,
+      "image_platforms": {
+        "button": {
+          "id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+          "reference": "limeiot/verification:nas-amd64-frozen-20261103",
+          "platform": "linux/amd64"
+        },
+        "edge": {
+          "id": "sha256:8059701048a6cc7d64e8ab2812a44be70161bfa9ecfc01d69e95b8ff2a648705",
+          "reference": "limeiot/verification:base-amd64-nginx-8059701048a6",
+          "platform": "linux/amd64"
+        },
+        "gateway": {
+          "id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+          "reference": "limeiot/verification:nas-amd64-frozen-20261103",
+          "platform": "linux/amd64"
+        },
+        "lamp": {
+          "id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+          "reference": "limeiot/verification:nas-amd64-frozen-20261103",
+          "platform": "linux/amd64"
+        },
+        "multimodal": {
+          "id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+          "reference": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+          "platform": "linux/amd64"
+        }
+      },
+      "multimodal": {
+        "passed": false,
+        "provider_fixture": true,
+        "renderer_fixture": true,
+        "model_validated_in_image": true,
+        "fixture_memory_limit": "128m",
+        "fixture_cpu_limit": 0.5,
+        "real_model_quality": false,
+        "hardware": false,
+        "play_command": "c1-2-3ce17054-2385-4ef7-9a42-5b62ee10ea6c",
+        "grant_id": "grant-9841f84f-71f3-4fa6-8712-496779e742a3",
+        "image_bytes": 787252,
+        "image_json_bytes": 1049833,
+        "no_implicit_grant_or_play": true,
+        "explicit_play_range_bytes_verified": true,
+        "source_media_id": "media-c59dc151-4ff9-42ed-98ae-86eabcdfc0f4"
+      },
+      "runtime_machines": {
+        "gateway": "x86_64",
+        "edge": "x86_64",
+        "multimodal": "x86_64"
+      },
+      "startup_health": {
+        "status": 200,
+        "broker_connected": true
+      },
+      "https_verified_ca": true,
+      "non_root_read_only_internal_network": true,
+      "inference_container_isolated_without_device_or_owner_secrets": true,
+      "mqtt_command_confirmed": true,
+      "browser_home_and_model_entry": true,
+      "slow_requests": [
+        {
+          "method": "GET",
+          "resource": "/healthz",
+          "input_bytes": 0,
+          "elapsed_ms": 1000,
+          "status": 200
+        }
+      ],
+      "error": "readiness_timeout",
+      "container_states": [
+        {
+          "service": "button",
+          "status": "running",
+          "exit_code": 0,
+          "oom_killed": false,
+          "memory_limit_bytes": 0
+        },
+        {
+          "service": "edge",
+          "status": "running",
+          "exit_code": 0,
+          "oom_killed": false,
+          "memory_limit_bytes": 0
+        },
+        {
+          "service": "gateway",
+          "status": "running",
+          "exit_code": 0,
+          "oom_killed": false,
+          "memory_limit_bytes": 0,
+          "health": "healthy"
+        },
+        {
+          "service": "lamp",
+          "status": "running",
+          "exit_code": 0,
+          "oom_killed": false,
+          "memory_limit_bytes": 0
+        },
+        {
+          "service": "multimodal",
+          "status": "running",
+          "exit_code": 0,
+          "oom_killed": false,
+          "memory_limit_bytes": 134217728,
+          "health": "healthy"
+        }
+      ],
+      "containers_cleaned": true
+    },
+    "targeted_retries": 2,
+    "targeted_retries_exhausted": true,
+    "failure_stage": "gateway_recreation_readiness",
+    "precise_branch_and_root_cause_confirmed": false,
+    "attempts": [
+      {
+        "report": ".dev/nas-source-a4ada4b57b0a2aea/.dev/nas-container-07890bb33d9ce3e7/report.json",
+        "passed": false,
+        "failure": "multimodal_fixture_oom_at_48m",
+        "harness_source_in": ".dev/nas-amd64-verification-harness.json"
+      },
+      {
+        "report": ".dev/nas-source-a4ada4b57b0a2aea/.dev/nas-container-aeee523d7b5a2e72/report.json",
+        "passed": false,
+        "failure": "readiness_timeout",
+        "harness_source_in": ".dev/nas-amd64-verification-harness.json"
+      },
+      {
+        "report": ".dev/nas-source-a4ada4b57b0a2aea/.dev/nas-container-f9fb61e95ba71235/report.json",
+        "passed": false,
+        "failure": "readiness_timeout",
+        "harness_source_in": ".dev/nas-amd64-verification-harness.json"
+      }
+    ],
+    "original_48m_oom_confirmed": true,
+    "oom_events": ".dev/nas-amd64-fixture-first-events.json",
+    "production_limits_changed": false,
+    "business_assertions_changed": false,
+    "http_timeout_ms": 5000,
+    "play_command_expires_ms": 10000,
+    "startup_broker_ready_timeout_ms": 15000,
+    "device_ready_timeout_ms": 20000
+  },
+  "artifact_export": {
+    "archive": "../.build/nas-runtime-cache/nas-amd64-a4ada4b57b0a2aea.tar",
+    "image": "limeiot/verification:nas-amd64-frozen-20261103",
+    "image_id": "sha256:c3ec734e1eee0093ede8d46baab2e3fb3212b9b8b249cf8adf27811296ce2fd3",
+    "platform": "linux/amd64",
+    "source_digest": "a4ada4b57b0a2aeae424a3a1d3922627f4f45c0938ff0910e01bc7d63b8cb293",
+    "bytes": 87904768,
+    "sha256": "39d170cc3fa2f6cd25928e2270f32c70b8d9a7f06e72c7060226198890bc5bc3",
+    "archive_metadata_verified": true,
+    "identity_kind": "oci_manifest",
+    "config_digest": "sha256:2c78ebcb55265201064e72b12c5012e51b20ca76651c69717e77ce142150eb8f",
+    "layers_verified": 14,
+    "layer_diff_ids_verified": true
+  }
+}

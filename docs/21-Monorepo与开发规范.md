@@ -1,6 +1,6 @@
 # Monorepo 与开发规范
 
-更新日期：2026-11-02。状态：目标工程结构与已实现子集并存；已建立 Cargo workspace、网关核心/适配器、CLI、模拟器、合同及开发验收入口，具体范围见24。其余目录按实际需求建立。
+更新日期：2026-11-03。状态：目标工程结构与已实现子集并存；已建立 Cargo workspace、网关核心/适配器、CLI、模拟器、合同及开发验收入口，具体范围见24。其余目录按实际需求建立。
 
 ## 1. 目录与责任
 
@@ -69,9 +69,28 @@ GitHub可见性以仓库为单位，公开monorepo不能通过目录或分支设
 
 电视物模型、Android TV Agent、网关电视适配器及各控制端面板属于本开源仓库。新增目标路径与职责以 [34](34-电视终端与AndroidTV接入.md) 为准，尚未建立的工程不作为当前构建前提。TV Agent 是设备身份下的 Android 应用，与 `apps/android` 手机控制客户端分别构建；API 23 样本的库、TLS 和 ABI 兼容单独验证，不直接降低手机应用的最低版本。
 
-`apps/tv-agent`是独立Gradle工程，包含设备协议core和Android app，复用`apps/android/gradlew`分发及固定校验和，不依赖手机业务核心。JDK21构建Java8字节码，各模块依赖独立锁定；`npm run test:tv-agent`验证JVM故障、材料打包与真实mTLS/Broker/Rust旅程，`npm run test:tv-agent:android`检查Android宿主边界、调试APK与lint。minSdk=23、targetSdk=36，真实API23存储/Keystore/TLS和电视运行另验，入口见 [Agent说明](../apps/tv-agent/README.md)。
+`apps/tv-agent`是独立Gradle工程，包含设备协议core、Android app和自身固定版本/校验和的Gradle wrapper；构建入口为`apps/tv-agent/gradlew`，不依赖手机工程目录或手机业务核心。JDK21构建Java8字节码，各模块依赖独立锁定；`npm run test:tv-agent`验证JVM故障、材料打包与真实mTLS/Broker/Rust旅程，`npm run test:tv-agent:android`检查Android宿主边界、调试APK与lint。minSdk=23、targetSdk=36，真实API23存储/Keystore/TLS和电视运行另验，入口见 [Agent说明](../apps/tv-agent/README.md)。
 
 电视动作先补齐正式合同和消费者，再建立可执行模型与适配代码；不新增电视专用后端或第二套命令账本。源码分析和 REA 只读实机观察不能提升为产品遥控验收，型号事实见 [30](30-设备支持矩阵与证据台账.md)。
+
+### 1.4 核心、集成与独立工程
+
+本仓库管理完整IoT平台，网关是其中一个运行单元。同仓不意味着同一构建或同一制品；保留monorepo，以实际依赖、授权和制品划分边界。
+
+| 部分 | 当前入口 | 边界 |
+| --- | --- | --- |
+| 领域核心 | `gateway/crates/core` | 通用设备、模型、命令、规则、身份与更新治理；不引用电视/DLNA库或具体型号JSON |
+| 发行装配 | `runtime/src/model_bundles.rs`、`integrations/mod.rs` | 选择可信模型目录和集成，检查候选冲突、管理worker；共用核心账本 |
+| 协议集成 | `gateway/adapters/*`、`runtime/src/integrations/*` | 协议、型号和系统差异各自内聚；集成之间不直接依赖 |
+| 电视终端 | `apps/tv-agent` | 独立Gradle工程/APK，持有设备身份，执行获准的Android能力 |
+| 控制界面 | `apps/home/src/ExecutionBinding.tsx`、`capabilities/`、`integrations/` | 操作恢复、标准能力控件、接入专属面板分开；共用平台API |
+| 智能提供方与场景产品 | `providers/`及实际产品工程 | 引擎和产品业务独立；网关只持有用例及提供方窄接口 |
+
+核心`Catalog`只校验宿主提供的模型并生成内容标识。`Data::new`默认没有内置目录；Rust宿主在新建或反序列化后用`with_model_bundles`注入可信目录，再执行原注册表校验。目录不从请求或SQLite快照取得信任，不改变配置摘要或快照版本；缺少已引用条目时拒绝恢复。
+
+网关默认编译`android-tv`和`dlna`两个Cargo feature。使用`cargo build --locked -p limeiot-gateway --no-default-features`仅保留原生接入，或加`--features android-tv`/`--features dlna`选择集成。未编译集成不进入该网关的依赖或内置目录，显式配置它时拒绝启动。裁剪已有部署前须核对历史绑定与原决定引用。`npm run test:architecture`验证四种发行组合的真实MQTT命令、SQLite恢复和禁用配置拒绝，不访问电视。
+
+第一方静态集成随网关二进制交付，TV APK独立交付，网页独立构建并随NAS界面打包。`npm run test:architecture:web`检查标准动作、电视音量/静音与DLNA面板、回执和原操作恢复的浏览器行为。新增型号优先增加映射/兼容条件；新增协议在集成层注册；新增系统执行端使用独立终端工程。只有新增通用领域语义时才修改核心。独立进程用于真实的依赖、故障或权限隔离需求；动态插件宿主、热加载与插件市场仍未实现。拆Git仓库依据独立团队、许可和发布需求决定。
 
 ## 2. 合同驱动与 Agent 可读性
 

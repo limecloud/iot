@@ -11,7 +11,7 @@ services:
     volumes:
       - ./nginx.platform.conf:/etc/limeiot/nginx.conf:ro
   control:
-    image: limeiot/control:0.4.0
+    image: limeiot/control:0.5.0
     build:
       context: ../..
       dockerfile: deploy/control/Dockerfile
@@ -41,7 +41,7 @@ services:
       control-mysql: {condition: service_healthy}
     networks: [local]
   migrate:
-    image: limeiot/control:0.4.0
+    image: limeiot/control:0.5.0
     profiles: [maintenance]
     user: "${LIMEIOT_UID:?}:${LIMEIOT_GID:?}"
     entrypoint: [limeiot-migrate]

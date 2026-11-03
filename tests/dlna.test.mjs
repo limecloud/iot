@@ -84,7 +84,7 @@ test('候选DTO保留电视兼容并严格验证DLNA，不泄露或接受媒体U
   const item={kind:'dlna',device_id:'device-speaker',route,compatible:true,target:'127.0.0.1:12345',udn:'uuid:software-speaker',volume_limit:20,playback_volume:10,media:[{media_id:'chime',expires_at:'2030-01-01T00:00:00Z'}]};
   const page=items=>({items,next_cursor:null});assert.equal(verifyExecutionAdapters(page([item])).items.length,1);
   for(const mutate of [x=>x.url='http://example.org',x=>x.volume_limit=100,x=>x.media.push(x.media[0]),x=>x.media[0].expires_at='invalid',x=>x.kind='unknown']){const bad=structuredClone(item);mutate(bad);assert.throws(()=>verifyExecutionAdapters(page([bad])));}
-  assert.equal(verifyExecutionAdapters(page([{device_id:'tv',route:{...route,adapter_id:'tv'},compatible:true,target:'192.168.1.4:5555',fingerprint:'sample',device_serial:'serial',applications:[]},item])).items.length,2);
+  assert.equal(verifyExecutionAdapters(page([{device_id:'tv',route:{...route,adapter_id:'tv'},compatible:true,target:'192.168.1.4:5555',fingerprint:'sample',device_serial:'serial',applications:[],paths:['remote.press']},item])).items.length,2);
 });
 
 test('正式配置Schema与可复制示例一致，缺字段和未知参数拒绝',async()=>{

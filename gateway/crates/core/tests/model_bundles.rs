@@ -2,7 +2,7 @@ use chrono::{DateTime, Duration, Utc};
 use limeiot_core::{
     digest,
     engine::{Config, Data},
-    model_bundles::{catalog, ModelBundle},
+    model_bundles::{Catalog, ModelBundle},
     model_registry::{parse_change, Change, DeviceBinding, Request},
     protocol::{CommandRequest, Envelope},
 };
@@ -11,8 +11,21 @@ use serde_json::{json, Value};
 fn now() -> DateTime<Utc> {
     "2026-11-02T00:00:00Z".parse().unwrap()
 }
+fn catalog() -> Catalog {
+    Catalog::new([
+        serde_json::from_slice(include_bytes!(
+            "../../../../contracts/models/android-tv-agent.json"
+        ))
+        .unwrap(),
+        serde_json::from_slice(include_bytes!(
+            "../../../../contracts/models/android-tv-remote.json"
+        ))
+        .unwrap(),
+    ])
+    .unwrap()
+}
 fn bundle(remote: bool) -> ModelBundle {
-    catalog().unwrap().remove(usize::from(remote))
+    catalog().list()[usize::from(remote)].clone()
 }
 fn initial() -> Data {
     let bundle = bundle(false);
@@ -22,6 +35,7 @@ fn initial() -> Data {
         .unwrap(),
     )
     .unwrap()
+    .with_model_bundles(catalog())
 }
 fn message(data: &Data, kind: &str, body: Value) -> Envelope {
     serde_json::from_value(json!({"v":1,"kind":kind,"message_id":limeiot_core::id(),"device_id":"tv",
@@ -77,9 +91,9 @@ fn command(
 
 #[test]
 fn catalog_is_exact_and_never_accepts_caller_supplied_model_content() {
-    let all = catalog().unwrap();
-    assert_eq!(all.len(), 3);
-    for bundle in all {
+    let all = catalog();
+    assert_eq!(all.list().len(), 2);
+    for bundle in all.list() {
         assert_eq!(digest(&bundle.model).unwrap(), bundle.model_revision);
         assert_eq!(
             bundle.bundle_id,
@@ -101,6 +115,61 @@ fn catalog_is_exact_and_never_accepts_caller_supplied_model_content() {
         }
         assert!(parse_change(&serde_json::to_vec(&bad).unwrap()).is_err());
     }
+}
+
+#[test]
+fn host_can_supply_other_models_but_duplicate_or_invalid_content_is_rejected() {
+    let mut model = bundle(false).model;
+    model.model_id = "urn:limeiot:model:custom-endpoint:1".into();
+    let catalog = Catalog::new([model.clone()]).unwrap();
+    assert_eq!(catalog.list()[0].model.model_id, model.model_id);
+    assert_eq!(
+        Catalog::new([model.clone(), model.clone()])
+            .unwrap_err()
+            .code,
+        "duplicate_model_bundle"
+    );
+    model.model_version = "broken".into();
+    assert!(Catalog::new([model]).is_err());
+}
+
+#[test]
+fn snapshot_cannot_supply_trusted_bundles_and_missing_host_bundle_blocks_restore() {
+    let mut data = initial();
+    let change = request(&data, "bind", &bundle(true));
+    data.apply_model_change(change.clone(), now()).unwrap();
+    let mut saved = serde_json::to_value(&data).unwrap();
+    assert!(saved.get("model_bundles").is_none());
+    saved["model_bundles"] = json!({"bundles":catalog().list()});
+    let restored: Data = serde_json::from_value(saved).unwrap();
+    assert!(restored.model_bundles().list().is_empty());
+    assert!(restored.validate_model_registry(now()).is_err());
+    assert!(restored.check_model_authority("tv").is_err());
+    let restored = restored.with_model_bundles(catalog());
+    restored.validate_model_registry(now()).unwrap();
+    restored.check_model_authority("tv").unwrap();
+    let removed = restored
+        .clone()
+        .with_model_bundles(Catalog::new([bundle(false).model]).unwrap());
+    assert!(removed.validate_model_registry(now()).is_err());
+    assert!(removed.check_model_authority("tv").is_err());
+
+    let mut unconfigured = Data::new(
+        serde_json::from_value::<Config>(json!({
+            "space_id":"home","models":[bundle(false).model],
+            "devices":[{"device_id":"tv","model_revision":bundle(false).model_revision}]
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        unconfigured
+            .apply_model_change(change, now())
+            .unwrap()
+            .reason
+            .as_deref(),
+        Some("model_bundle_not_found")
+    );
 }
 
 #[test]
@@ -267,7 +336,9 @@ fn restored_bundle_and_original_result_cannot_be_rewritten_to_another_source_or_
                     json!(bundle(false).bundle_id)
             }
         }
-        let restored: Data = serde_json::from_value(bad).unwrap();
+        let restored: Data = serde_json::from_value::<Data>(bad)
+            .unwrap()
+            .with_model_bundles(catalog());
         assert!(restored.validate_model_registry(now()).is_err());
     }
 }

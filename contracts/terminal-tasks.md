@@ -81,4 +81,4 @@ sequenceDiagram
 
 每行最多32768字节，每进程最多1024条；拒绝重复JSON键、缺换行、非法UTF-8、过深输入及不安全整数。UTF-8逐步解码，输出遵守背压。每行返回version、从1递增的sequence和ok，错误含稳定code。正常退出0只表示任务流结束，必须检查各行ok和设备状态；致命输入、认证、外部故障、未知沿用2/3/5/6。终端控制字符及方向控制符会转义。
 
-`npm run test:tui` 包含正式Schema、故障与并发边界、真实HTTP/MQTT/SQLite及伪终端菜单旅程。当前不包含远程控制面TUI、通用自主Agent或媒体任务。实机按用户要求跳过，实际结果见 [进度](../docs/24-实施计划与进度.md)。
+`npm run test:tui` 包含正式Schema、故障与并发边界、真实HTTP/MQTT/SQLite及伪终端菜单旅程。本合同仅适用于本地网关；独立控制面入口为`control tui`，使用另行定义的[控制面终端合同](control-terminal-tasks.md)，两种机器格式不可混用。通用自主Agent和媒体终端任务仍未包含。实机按用户要求跳过，实际结果见 [进度](../docs/24-实施计划与进度.md)。

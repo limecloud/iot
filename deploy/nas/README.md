@@ -1,8 +1,10 @@
 # NAS 与 Linux 本地安装
 
-可选DLNA音箱已有[静态适配配置](../../gateway/adapters/dlna/README.md)和[正式合同](../../contracts/dlna.md)。将配置只读挂载到网关，并设置进程配置LIMEIOT_AUDIO_CONFIG的容器内绝对路径；音频由所有者准备的局域网HTTP服务提供，地址须从音箱网络可达，不能用容器localhost代替宿主地址。固定目标配置只准备候选，仍须所有者明确绑定。当前宿主回环软件通过结果不代表新NAS镜像已重建、容器网络可达或真实音箱支持；没有把SSDP扫描、媒体托管或原厂仲裁加入本套件。
+可选DLNA音箱已有[静态适配配置](../../gateway/adapters/dlna/README.md)和[正式合同](../../contracts/dlna.md)。将配置只读挂载到网关，并设置进程配置LIMEIOT_AUDIO_CONFIG的容器内绝对路径；音频使用所有者准备的局域网HTTP服务或下方的受控媒体出口，地址须从音箱网络可达，不能用容器localhost代替宿主地址。固定目标配置只准备候选，仍须所有者明确绑定。SSDP扫描与原厂仲裁尚未实现，真实音箱支持按型号验收。
 
-可选[有限音频服务](../../contracts/media.md)已接配置、媒体端口、备份恢复及家庭网页，使用方法见[下方步骤](#可选平台音频服务)。当前有真实宿主网关/SQLite/MQTT/软件音箱、快照恢复与实际Nginx入口检查；新NAS镜像和实际容器来源IPv4/路由仍单独验收，不能继承旧镜像的通过结论。
+可选[有限音频服务](../../contracts/media.md)已接配置、媒体端口、备份恢复及家庭网页，使用方法见[下方步骤](#可选平台音频服务)。2026-11-03的ARM64镜像已通过真实容器的媒体、TTS、ASR、视觉、大图、授权播放及v4备份恢复/清文旅程，见[软件验收](../../docs/evidence/2026-11-03-nas-buffered-recovery.json)。提供方与音箱为独立协议夹具；真实模型质量与实际音箱支持另行验收。
+
+AMD64冻结网关基础包已通过HTTPS、家庭网页、MQTT、mTLS/ACL/撤销、网关重建及新目录备份恢复，见[AMD64证据](../../docs/evidence/2026-11-03-nas-amd64-runtime.json)。AMD64多模态组合已完成三类推理协议、大图和授权播放，但网关重建后的就绪检查未通过，完整多模态恢复仍未验收。该结果来自ARM64宿主的跨架构模拟，不代表指定NAS型号、完整私有工作台或真实模型质量通过；未发布正式镜像。
 
 本目录提供完整本地工作台和网关基础包，均可安装在 NAS 或常开的 Linux 主机。完整本地版把控制面、数据库和网关放在同一台机器，不依赖官网、云账号或模型服务。官网与文档中心在独立的 `iotweb` 仓库。
 
@@ -48,7 +50,7 @@ docker compose --env-file "$PWD/.local/limeiot/compose.env" \
 
 ## 完整本地版安装
 
-需要 Docker Engine、Compose、Python 3 和 OpenSSL。使用拥有数据目录的非 root 用户，在 `iot` 根目录执行；替换实际 NAS 局域网地址：
+需要 Docker Engine、Compose 2.17+、Python 3 和 OpenSSL。使用拥有数据目录的非 root 用户，在 `iot` 根目录执行；替换实际 NAS 局域网地址：
 
 ```sh
 python3 "deploy/nas/manage.py" init --mode private \
@@ -144,7 +146,7 @@ docker compose --env-file ".dev/nas/compose.env" \
 
 家庭界面支持设备开关/亮度、原操作恢复、事件联动校验/预演/启用/停用、执行记录及关联运行。浏览器凭据交换为 HttpOnly 会话；写请求校验 Origin 与 CSRF。网关重启后重新登录，操作与部署记录继续保留。
 
-`simulation` Profile 启用两个独立设备进程。触发按钮事件：
+`simulation` Profile 启用两个独立设备进程，共享网关的回环网络。Compose 2.17+的依赖重启保证显式Compose网关重启后，两模拟器重新连接当前网络；Docker守护进程自身重启容器不属于此保证。触发按钮事件：
 
 ```sh
 printf '%s\n' '{"data":{"count":1}}' | \
@@ -416,7 +418,11 @@ python3 "tools/build-nas-artifacts.py" image --directory "$PWD/.dev/nas-arm64-bu
 
 输出目录须为新目录；已有完整制品仅在平台、当前源码摘要及全部文件仍匹配时复用。`build.json`记录源码输入、工具链和产物摘要，构建中源码变化会拒绝完成。校验逐项核对Linux ELF架构、动态加载器、可执行权限、文件集合和运行层来源，拒绝Mach-O、错架构、篡改与额外文件。制品清单用于本地完整性核对，不替代发布者签名。
 
-运行层从本仓库正式`Dockerfile`生成，使用相同的Debian基础、系统依赖、入口、用户、环境与健康检查，避免维护第二套运行规则。组装时只在Docker内安装运行依赖和复制制品，构建容器内存限制为96 MiB；Rust编译在宿主单任务运行。没有修改现有Docker虚拟机或已有容器资源。
+运行层从本仓库正式`Dockerfile`生成，使用相同的Debian基础、系统依赖、入口、用户、环境与健康检查，避免维护第二套运行规则。组装时只在Docker内安装运行依赖和复制制品，构建容器内存限制为96 MiB；Rust编译在宿主运行，默认并发1，资源允许时可明确追加`--jobs 2`，制品清单记录本次选择。没有修改现有Docker虚拟机或已有容器资源。
+
+已有核验过来源及系统包的同平台本地运行依赖镜像时，`image`命令可追加`--runtime-base limeiot/verification:TAG`复用该层。工具核对平台、工作目录和`run.limeiot.runtime-prefix-digest`，后者为规范运行层从FROM到首个COPY之前的原字节SHA-256；实际组装固定镜像ID，并保留源制品完整性检查。该参数复用依赖层，不改变最终应用复制、用户、环境或健康检查，也不代替完整容器验收。
+
+构建清单包含编译时嵌入的全部非Markdown合同及各workspace的package.json。构建期间任何受检输入变化都会拒绝打包；并发开发时应在独立源码快照构建，并确认node_modules中的workspace链接解析到快照内，再通过`--toolchain-cache`复用工具链和编译缓存。
 
 镜像生成后，继续运行原有容器验收：
 
@@ -425,7 +431,7 @@ npm run test:nas:container -- --platform linux/arm64 \
   --image "limeiot/verification:nas-arm64-local" --no-build
 ```
 
-`linux/amd64`使用独立输出与镜像标签，并单独执行对应架构的容器检查。当前交叉构建入口的5组门禁单测通过，ELF为明确字节夹具；真实交叉编译、镜像组装与容器运行尚未完成，进度见[24](../../docs/24-实施计划与进度.md)。不把门禁单测视为Linux制品或新NAS镜像已通过验收。
+`linux/amd64`使用独立输出与镜像标签，并单独执行对应架构的容器检查。当前交叉构建入口的8组门禁单测通过，覆盖ELF、运行层、完整性、`ring`参数兼容、嵌入合同/工作区清单指纹及缓存平台/前缀拒绝；单测ELF为明确字节夹具。2026-11-03已完成ARM64冻结源码的Release、家庭PWA、运行镜像及完整多模态容器旅程；AMD64运行依赖层的实际x86_64、非root/只读、包状态、Python/Mosquitto入口与系统CA检查通过。首次AMD64源码构建在Rust/PWA命令完成后因源码漂移拒绝打包，当前改用独立快照重建，尚无整包/容器通过结论。冻结输入、持久化与重启修复见[ARM64记录](../../docs/evidence/2026-11-03-nas-buffered-recovery.json)，AMD64的OOM、分阶段依赖安装、快照与当前任务见[AMD64记录](../../docs/evidence/2026-11-03-nas-amd64-runtime.json)及[当前进度](../../docs/24-实施计划与进度.md)。
 
 ## 验证
 

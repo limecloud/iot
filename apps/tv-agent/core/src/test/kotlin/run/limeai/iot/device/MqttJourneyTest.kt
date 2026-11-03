@@ -50,23 +50,30 @@ class MqttJourneyTest {
                 }
             }
         }
+        fun beforeEffect(path: String, input: JsonObject) {
+            val entries = DeviceDocument.parse(Files.readAllBytes(journal), 1048576, 32768).getValue("entries").obj()
+            val attempted = entries.values.filter { it.obj()["result"] == JsonNull }.maxBy { commandSequence(it.obj().getValue("command").obj().getValue("body").obj().text("command_id")) ?: 0L }.obj()
+            val command = attempted.getValue("command").obj()
+            val operation = command.getValue("body").obj().getValue("operation").obj()
+            assertEquals(path, operation.text("path")); assertEquals(input, operation.getValue("value"))
+            env["LIMEIOT_TV_AGENT_GATEWAY_DATABASE"]?.let { database ->
+                val query = "import sys,json,sqlite3\nc=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True)\nv,b=c.execute('SELECT version,body FROM snapshot').fetchone()\ns=json.loads(b);x=s['commands'][sys.argv[2]];p=s['execution_registry']['bindings'][x['request']['device_id']]\nassert v==9 and x['status']=='dispatched' and 'execution_route' not in x and p['native_paths']==json.loads(sys.argv[3])\nprint(json.dumps({'command_id':sys.argv[2],'gateway_dispatched_before_effect':True,'snapshot_version':v}))"
+                val paths = JsonArray(identity.profile.nativePaths.sorted().map(::text)).toString()
+                val check = ProcessBuilder("python3", "-c", query, database, command.getValue("body").obj().text("command_id"), paths).redirectErrorStream(true).start()
+                val proof = check.inputStream.readBytes(); assertEquals(0, check.waitFor(), "gateway durable attempt must precede native effect")
+                Files.write(directory.resolve("gateway-durable.jsonl"), proof, StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+            }
+            val effect = JsonObject(input + obj("path" to text(path), "command_id" to command.getValue("body").obj().getValue("command_id"), "attempt_durable" to JsonPrimitive(true)))
+            Files.write(directory.resolve("effects.jsonl"), (effect.toString()+"\n").toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+        }
         val applications = object : ApplicationPort {
             override fun permitted(application: String) = application == "com.example.player"
             override fun submit(application: String) {
-                val entries = DeviceDocument.parse(Files.readAllBytes(journal), 1048576, 32768).getValue("entries").obj()
-                val attempted = entries.values.filter { it.obj()["result"] == JsonNull }.maxBy { commandSequence(it.obj().getValue("command").obj().getValue("body").obj().text("command_id")) ?: 0L }.obj()
-                val command = attempted.getValue("command").obj()
-                env["LIMEIOT_TV_AGENT_GATEWAY_DATABASE"]?.let { database ->
-                    val query = "import sys,json,sqlite3\nc=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True)\nv,b=c.execute('SELECT version,body FROM snapshot').fetchone()\ns=json.loads(b);x=s['commands'][sys.argv[2]];p=s['execution_registry']['bindings'][x['request']['device_id']]\nassert v==9 and x['status']=='dispatched' and 'execution_route' not in x and p['native_paths']==['apps.launch']\nprint(json.dumps({'command_id':sys.argv[2],'gateway_dispatched_before_effect':True,'snapshot_version':v}))"
-                    val check = ProcessBuilder("python3", "-c", query, database, command.getValue("body").obj().text("command_id")).redirectErrorStream(true).start()
-                    val proof = check.inputStream.readBytes(); assertEquals(0, check.waitFor(), "gateway durable attempt must precede native effect")
-                    Files.write(directory.resolve("gateway-durable.jsonl"), proof, StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-                }
-                val effect = obj("application_id" to text(application), "command_id" to command.getValue("body").obj().getValue("command_id"), "attempt_durable" to JsonPrimitive(true))
-                Files.write(directory.resolve("effects.jsonl"), (effect.toString()+"\n").toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+                beforeEffect("apps.launch", obj("application_id" to text(application)))
                 if (env["LIMEIOT_TV_AGENT_EFFECT_UNKNOWN"] == "1") throw IllegalStateException("fixture: effect started but outcome lost")
             }
         }
+        val audio = if (identity.profile.hasAudio) FileAudioFixture(directory, ::beforeEffect) else null
         val clock = object : DeviceClock { override fun elapsedMillis() = System.nanoTime() / 1000000 }
         if (env["LIMEIOT_TV_AGENT_PROBE_HOSTNAME"] == "1") {
             // 先证明同一监听端口可达，再验证生产传输拒绝证书SAN之外的主机。
@@ -83,7 +90,7 @@ class MqttJourneyTest {
             assertFalse(probeThread.isAlive)
         }
         val lastStatus = AtomicReference("")
-        val client = DeviceMqtt(identity, env.getValue("LIMEIOT_TV_AGENT_BROKER"), tls, storage, applications, clock) { lastStatus.set(it) }
+        val client = DeviceMqtt(identity, env.getValue("LIMEIOT_TV_AGENT_BROKER"), tls, storage, applications, clock, audio) { lastStatus.set(it) }
         val thread = Thread({ client.run() }, "tv-agent-journey")
         thread.start()
         try {

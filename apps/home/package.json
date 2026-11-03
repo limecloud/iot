@@ -1,6 +1,6 @@
 {
   "name": "@limeiot/home",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "@radix-ui/colors": "3.0.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "@limeiot/control-ui": "0.4.0"
+    "@limeiot/control-ui": "0.5.0"
   },
   "devDependencies": {
     "@types/react": "19.3.0",

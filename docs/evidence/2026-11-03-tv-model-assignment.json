@@ -1,0 +1,171 @@
+{
+  "evidence_id": "EVID-TV-MODEL-ASSIGNMENT-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "passed_explicit_model_assignment_and_focused_host_checks_only",
+  "stage": "4.71",
+  "archive": ".dev/tv-model-assignment-2vkivb1p/",
+  "scope": {
+    "existing_v3_identity_model_assignment": true,
+    "actual_jvm": true,
+    "host_native_sqlite": true,
+    "host_ec_signing": true,
+    "host_platform_views": true,
+    "actual_android_os": false,
+    "actual_mqtt": false,
+    "hardware": false,
+    "device_connection": false,
+    "emulator_started": false,
+    "apk_installation": false,
+    "actual_audio_service": false,
+    "published": false,
+    "full_goal_completed": false,
+    "full_app_regression_run": false,
+    "original_apk_timeout_regressions_retried": false
+  },
+  "implementation": {
+    "original_setup_csr_request_and_key_preserved": true,
+    "same_certificate_preserved": true,
+    "current_model_selected_separately": true,
+    "identity_blob_versions": [
+      1,
+      2
+    ],
+    "sqlite_version": 3,
+    "enrollment_version": 3,
+    "rotation_outer_versions_unchanged": true,
+    "journal_migrated_atomically_with_identity_and_latest_rotation_candidate": true,
+    "all_original_envelopes_results_and_high_watermark_preserved": true,
+    "earlier_rotation_rows_and_all_original_receipts_and_proofs_preserved": true,
+    "application_grants_preserved": true,
+    "new_or_deleted_keys": false,
+    "only_forward_capability_extensions": true,
+    "preview_writes": false,
+    "complete_original_continuity_rechecked": true,
+    "foreground_bound_one_use_confirmation": true,
+    "cancel_background_recreation_start_and_stop_invalidate": true,
+    "full_worker_exit_and_apk_owner_gate": true,
+    "pending_rotation_and_key_retirement_blocked": true,
+    "partial_failure_atomic_rollback": true,
+    "unknown_readback_freezes_until_reopen": true,
+    "automatic_connection_or_audio_grant": false,
+    "gateway_model_or_binding_changed": false,
+    "new_dependencies": false
+  },
+  "test_modules": {
+    "tv_core": {
+      "tests": 74,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "passed": 71
+    },
+    "tv_identity": {
+      "tests": 66,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 64
+    },
+    "android_controller": {
+      "tests": 92,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "passed": 91
+    },
+    "tv_runtime_and_activity": {
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 21
+    }
+  },
+  "executed_test_classes": {
+    "run.limeai.iot.device.ApkInstallJournalTest": 23,
+    "run.limeai.iot.device.DeviceEnrollmentTest": 2,
+    "run.limeai.iot.device.DeviceSigningKeyTest": 8,
+    "run.limeai.iot.device.MqttJourneyTest": 1,
+    "run.limeai.iot.device.AudioStateTest": 5,
+    "run.limeai.iot.device.AudioAgentTest": 10,
+    "run.limeai.iot.device.DeviceAgentTest": 25,
+    "run.limeai.iot.television.LocalIdentityStoreTest": 66,
+    "run.limeai.iot.core.SpeechClientTest": 10,
+    "run.limeai.iot.core.ControlClientTest": 12,
+    "run.limeai.iot.core.MediaIntegrationTest": 1,
+    "run.limeai.iot.core.MediaTargetTest": 4,
+    "run.limeai.iot.core.RuleActionTest": 2,
+    "run.limeai.iot.core.VisionIntegrationTest": 1,
+    "run.limeai.iot.core.ActionTest": 1,
+    "run.limeai.iot.core.OtaIntegrationTest": 1,
+    "run.limeai.iot.core.OtaClientTest": 7,
+    "run.limeai.iot.core.VisionClientTest": 13,
+    "run.limeai.iot.core.GatewayClientTest": 4,
+    "run.limeai.iot.core.RuleTriggerTest": 7,
+    "run.limeai.iot.core.ConditionEditorTest": 5,
+    "run.limeai.iot.core.TranscriptionClientTest": 13,
+    "run.limeai.iot.core.MediaClientTest": 9,
+    "run.limeai.iot.core.EnvironmentPropertyTest": 2,
+    "run.limeai.iot.television.AgentApkQuiescenceTest": 1,
+    "run.limeai.iot.television.AndroidApkContinuityTest": 4,
+    "run.limeai.iot.television.AudioRuntimeTest": 6,
+    "run.limeai.iot.television.AudioConsentActivityTest": 2,
+    "run.limeai.iot.television.ModelAssignmentRuntimeTest": 6,
+    "run.limeai.iot.television.ModelAssignmentActivityTest": 2
+  },
+  "new_test_methods": 15,
+  "new_final_test_executions": 15,
+  "result_reuse": "TV core and identity results retained; runtime/regression results retained after only model-dialog code changed; both final model activity tests rerun. Repeated attempts are not added to independent totals.",
+  "failures_retained": [
+    "Runtime/activity attempt 1: cancellation callback ordering and fixture SQLite reopen outside Runtime queue.",
+    "Runtime/activity attempt 2: explicit-confirm dialog callback ordering; runtime and other focused checks passed.",
+    "Activity attempt 3 passed after synchronous button decision before system dismissal."
+  ],
+  "observation_deadlines_unchanged": true,
+  "debug_apk": {
+    "built": true,
+    "installed": false,
+    "sha256": "40955b671bc94c1e9c9655c94f15084dbc9c59d64518265fd28abd102d90c2ae"
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 6,
+    "issue_ids": [
+      "NewerVersionAvailable",
+      "NewerVersionAvailable",
+      "TrustAllX509TrustManager",
+      "SetTextI18n",
+      "SetTextI18n",
+      "SetTextI18n"
+    ]
+  },
+  "prior_apk_regressions": {
+    "evidence": "2026-11-03-tv-apk-recovery.json",
+    "unresolved_failures": 2,
+    "retried": false
+  },
+  "remaining": [
+    "Actual JVM audio MQTT journey",
+    "Android background and vendor behavior",
+    "Existing APK callback regressions",
+    "Hardware acceptance"
+  ],
+  "input_sha256": {
+    "apps/tv-agent/core/src/main/kotlin/run/limeai/iot/device/DeviceEnrollment.kt": "19ca65802ea817fcb32916d1eddfaa54fe94106587560e1599ffda11a769e9f1",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/LocalIdentityRecord.kt": "773c05806761e66b462f4b0337c71b508ccac4f0b5b7b62b05681f512726454c",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/LocalRotationRecord.kt": "9095e95641fbe60764b86f0555abbf8689133aec7efb9449abca43e381f4c135",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidAgentStore.kt": "fc03b59624b709f75410509862975c077c5632eac3313183db7ba019014f37a5",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AgentRuntime.kt": "d8c3d811f1fbdef80c2498d5259baf2a0e4ea72289d17a81a510254de5282ae4",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/TelevisionActivity.kt": "8212f416b1bbd67d925dc70cde7c37739b41ba8a363a1d39aaf00b9334918656",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/ModelAssignment.kt": "a12de98579667318eda9e66a556b0ddf9ad8594f9805132c20a0dbec6135502f",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/LocalIdentityStoreTest.kt": "82abb4a9fddc3080610b2bdf8010810b2fcd7865ac27d82bd02ddff18701119c",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/ModelAssignmentRuntimeTest.kt": "fc4112d8b33113df9ef667c6b52a904ef77daeb26e124707d2dd55707ef53b7d",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/ModelAssignmentActivityTest.kt": "b4d5686a410a35e5fe47c0964ef8407b81313c8cf3456e8ffbe2df359f1e4fe2"
+  },
+  "documentation_checks": {
+    "document_count": 4,
+    "checked_local_links": 554,
+    "passed": true
+  },
+  "diff_check_passed": true
+}

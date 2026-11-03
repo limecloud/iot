@@ -268,7 +268,17 @@ func controlCommandContractChecks() async throws -> Int {
     try expectControl(await rejected.submitCommand(key: denied.id).rejection == "forbidden", "definitive rejection retained")
     try await rejected.forgetCommand(key: denied.id)
     try expectControl(await rejected.commandRecords(space: "space-a").isEmpty, "terminal cleanup allowed")
-    return 3
+    let preparedFixture = ControlFixture(), preparedStore = MemoryControlStore()
+    let prepared = try ControlClient(endpoint: "https://control.example", store: preparedStore, transport: preparedFixture)
+    _ = try await prepared.beginAuthorization(); _ = try await prepared.pollAuthorization()
+    let unsent = try await prepared.prepareCommand(space: "space-a", gateway: gateway, device: device, path: "light.power", value: .bool(true))
+    try expectControl(unsent.isPrepared && unsent.canForget, "prepared record is explicitly discardable")
+    let reopened = try ControlClient(endpoint: "https://control.example", store: preparedStore, transport: preparedFixture)
+    try await reopened.forgetCommand(key: unsent.id)
+    try expectControl(await reopened.commandRecords(space: "space-a").isEmpty, "unsent record discarded after client recreation")
+    let noCreate = await preparedFixture.requests.allSatisfy { !$0.url!.path.hasSuffix("/remote-commands") }
+    try expectControl(noCreate, "discarding unsent record does not submit")
+    return 4
 }
 
 private actor FileControlStore: SessionStore {

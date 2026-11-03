@@ -6,7 +6,7 @@ use limeiot_core::{
 };
 use std::{
     fs::{File, OpenOptions},
-    io::{Read, Write},
+    io::{BufWriter, Read, Write},
     path::{Path, PathBuf},
 };
 
@@ -202,8 +202,13 @@ impl Store {
                 options.mode(0o600);
             }
             let mut file = options.open(&temp)?;
-            serde_json::to_writer(&mut file, &next)?;
-            file.write_all(b"\n")?;
+            {
+                // 合并JSON碎片写入；先检查flush，再同步文件和目录，保留原耐久顺序。
+                let mut writer = BufWriter::new(&mut file);
+                serde_json::to_writer(&mut writer, &next)?;
+                writer.write_all(b"\n")?;
+                writer.flush()?;
+            }
             file.sync_all()?;
             // 只替换本服务自己的快照；不接受符号链接或不受控目标。
             match std::fs::symlink_metadata(&self.path) {

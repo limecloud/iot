@@ -105,7 +105,7 @@ stateDiagram-v2
 | `submitCommand` | 先保存 `attempted=true`，再发送唯一一次创建请求；旧键已经尝试时只读 `by-key`，404 也不补发 |
 | `resolveCommand` | 只读取原云记录；显式指定 `reconcile=true` 才请求核实原 `remote_id`，不创建设备命令 |
 | `commandRecords` | 返回当前主体、空间下保存在本机的原操作，不能作为全量云历史 |
-| `forgetCommand` | 只允许清理明确拒绝或已有终态结果的记录，未知记录不能删除 |
+| `forgetCommand` | 允许明确放弃未尝试发送且无结果/拒绝的准备记录，或清理明确拒绝/已有终态的记录；已尝试而结果未知的记录不能删除 |
 
 每条记录绑定精确 origin、主体、云空间、本地空间和完整原请求。每个 origin 最多保存 128 条记录，达到上限时先由用户清理终态记录，不覆盖未知操作。存储失败时不发送；超时、响应丢失、408、409、5xx 和无法核实的结果保留原身份，重新创建客户端或登录同一主体后继续查询。其余明确 4xx 保存原拒绝，401 同时清理会话材料。退出和取消清理会话及授权证明，保留原操作。
 
@@ -125,4 +125,6 @@ SwiftUI `CloudStore/CloudViews`与Compose `CloudViewModel/CloudViews`已接入�
 
 Swift前台Task与Android STARTED生命周期内每3秒查询授权，后台/离开入口取消，网络和授权错误暂停并由用户继续查询；不会自动打开浏览器或批准。远程记录在网关离线时也先恢复，查询原操作不要求旧设备投影仍在线；受理状态不会显示为设备完成。
 
-`npm run test:clients:state`顺序执行Swift实际状态管理的宿主检查和Android core/3项状态测试/APK/lint；可用`-- ios`或`-- android`选择平台。检查注入内存存储和HTTP夹具，覆盖后台不轮询、取消中的授权恢复、原命令丢响应/重建/离线查询不重复创建、非终态拒绝清理及绑定/空间隔离。Swift另通过状态/Keychain源码macOS类型检查、全部App源码语法检查与Xcode工程清单检查；没有完整Xcode/iOS SDK，SwiftUI整包尚未编译。Android APK构建不证明系统浏览器、Keystore、Compose运行和手机生命周期；两端仍需独立设备验收。
+两端状态层统一拥有当前云任务；进入后台或离开云入口时取消轮询、刷新和按钮发起的任务，异步返回后再次检查取消。iOS还在scenePhase和连接模式变化时明确pause，旧前台循环不能继续刷新。暂停不承诺撤回已发出的请求：已耐久保存attempted的记录保持原键，只查询。保存准备记录期间暂停时不进入提交，恢复前台只读取原记录；它显示“未发送”，可以明确“放弃未发送操作”，释放该设备的本机阻塞。不能通过放弃清除已尝试的unknown/accepted/dispatched。isPrepared/canForget是两端SDK的计算属性，不改变持久JSON格式、后端权限或HTTP。
+
+`npm run test:clients:state`顺序执行Swift实际状态管理的宿主检查和Android core/5项状态测试/APK/lint；可用`-- ios`或`-- android`选择平台。检查注入内存存储和HTTP夹具，覆盖后台不轮询、取消中的授权恢复、原命令丢响应/重建/离线查询不重复创建、已尝试非终态拒绝清理、绑定/空间隔离，以及准备存储挂起时后台零提交、未发送记录明确放弃和迟到刷新不得恢复online。挂起夹具故意忽略取消，验证生产状态层与库的取消检查。Swift状态源码可在macOS编译运行；SwiftUI整包、系统安全存储及真实浏览器仍分别验收，不能由宿主结果推定完成。

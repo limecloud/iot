@@ -49,6 +49,8 @@
 
 CLI在0600原记录和0700目录中保存origin、主体、空间与完整请求，文件/目录同步后才提交；同键异参拒绝，旧命令创建只GET原键。响应丢失返回退出码6及原文件引用，不自动重试或换键。配对秘密仅写指定私有输出文件，stdout和错误不包含登录或配对材料。完整入口与退出码见 [CLI使用](../packages/cli/README.md)，正式目录与HTTP路径/输入一致性由Go合同检查覆盖。
 
+`control tui`提供上述工具的交互菜单；`control tui --stdio`提供独立NDJSON流程，`control tui schema`离线发现[请求Schema](../contracts/control-terminal-tasks.schema.json)。read仅接受GET和无副作用校验，prepare只建立60秒会话绑定核对；commit需精确task_id/review_digest，调用一次原CLI执行器。核对不持久化，原请求恢复共用CLI日志；空间/配对按原幂等POST恢复，命令/草稿/发布只GET。完整流程见[控制面终端任务](../contracts/control-terminal-tasks.md)。
+
 原生授权HTTP已实现，`control.native.create/poll/cancel/review/decide`只列在正式OpenAPI，不加入本地Bearer或控制面CLI目录。原生端使用独立原键与PKCE，浏览器决定使用Console Cookie/Origin/CSRF；Schema区分approved材料与无秘密状态。Swift/Kotlin独立库已消费授权、会话、空间/网关/设备/模型及远程命令合同，通过真实HTTPS/WSS、浏览器批准及MQTT模拟链路。原请求及发送标记先保存，旧键只查询，显式核实原结果，退出保留操作。云页面已接库和平台适配器，Android构建与两端宿主状态检查通过；iOS整包及两端运行验收仍缺证据。`hasPendingAuthorization`仅为本地恢复读取，不增加HTTP操作或自动创建授权。流程、错误与恢复见 [原生授权](../contracts/control-native.md)。
 
 开源Console/Admin已消费对应控制面HTTP合同，安装与范围见 [控制面](../server/README.md)。`GET /api/admin/v1/status`需要当前Admin身份，仅返回存储可用性、已认证连接数/容量与采样时间，不包含家庭/主体明细。此独立运营接口不加入本地家庭工具目录；前端页面也不扩大既有授权。

@@ -1,6 +1,6 @@
 # 电视设备 Agent
 
-本目录独立于手机控制端 `apps/android`，包含设备 JVM 核心与独立 Android 电视应用。本机能力仅有应用启动，可选择独立应用模型或显式组合所用的遥控逻辑模型；使用设备 MQTT 5/mTLS、会话/期限、耐久尝试与回执，以及当前本机授权。应用提供设备材料核对、Keystore 加密、私有 SQLite、Leanback 启动入口与可见连接服务；源码、构建、宿主沙箱和真实电视验收分别记录。
+本目录独立于手机控制端 `apps/android`，包含设备 JVM 核心与独立 Android 电视应用。本机能力按明确模型及当前授权提供应用启动，音频模型另支持音量/静音动作与只读状态；已有v3身份可在本机明确扩展模型并保留原身份与记录，见[能力配置](#扩展本机引用身份的能力配置)。可选择独立应用模型或显式组合所用的遥控逻辑模型；使用设备 MQTT 5/mTLS、会话/期限、耐久尝试与回执，以及当前本机授权。应用提供设备材料核对、Keystore 加密、私有 SQLite、Leanback 启动入口与可见连接服务；源码、构建、宿主沙箱和真实电视验收分别记录。
 
 正式边界见 [设备核心合同](../../contracts/tv-agent.md) 与 [回执确认合同](../../contracts/command-receipts.md)，角色、路径与权限见 [电视设计](../../docs/34-电视终端与AndroidTV接入.md)。0.3.0受控模型/日志迁移实现见 [24第4.15节](../../docs/24-实施计划与进度.md#415-tv-agent模型配置与日志迁移文档同步)，入口拆分见4.16，跨模型与实际JVM/假ADB组合软件结果分别见 [4.19](../../docs/24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)、[4.22](../../docs/24-实施计划与进度.md#422-adb身份预检合并与实际jvm组合软件验收)，Android端上诊断、安全组及阻塞见 [4.24](../../docs/24-实施计划与进度.md#424-独立启动诊断与android安全组端上验证)；0.2.0历史结果保留于4.13，不扩展为当前源码最终通过。
 
@@ -8,10 +8,10 @@
 
 2026-11-03真实MiTV4-ANSM0/API23验证已取得AES-GCM/错误主机名2项、P-256不可导出/CSR/重开1项和一次实际目标Activity启动的证据；完整旅程仍未通过。第二条命令为confirmed/submitted，但未得到第二条Activity生命周期记录；测试目标改为singleTask后仅构建/lint通过，尚未安装复验。用户因家人观看暂停电视调试，自有Agent测试进程已停止；后续不自动恢复实机动作。详情及前台服务限制见 [24第4.51节](../../docs/24-实施计划与进度.md#451-tv-agent-api23兼容修复与实机阶段暂停) 和 [型号台账](../../docs/30-设备支持矩阵与证据台账.md#9-dev-cand-08-tv-agent-api23阶段验证)。
 
-需要 JDK21；协议旅程另需仓库 Rust/Node24 工具、OpenSSL 和测试 Broker，Android 任务需 Android SDK 36/build-tools 36.0.0 并设置 `ANDROID_HOME`。复用手机工程现有 Gradle wrapper，两个工程分别配置和构建，不依赖手机核心库：
+需要 JDK21；协议旅程另需仓库 Rust/Node24 工具、OpenSSL 和测试 Broker，Android 任务需 Android SDK 36/build-tools 36.0.0 并设置 `ANDROID_HOME`。使用本工程自带的Gradle wrapper（固定8.13分发与SHA-256）；无需手机工程目录，正式设备模型仍来自本仓库contracts：
 
 ```sh
-sh "apps/android/gradlew" --no-daemon -p "apps/tv-agent" :core:test :core:journeyRuntime
+sh "apps/tv-agent/gradlew" --no-daemon -p "apps/tv-agent" :core:test :core:journeyRuntime
 npm run test:tv-agent
 npm run test:tv-agent:android
 npm run test:tv-agent:runtime
@@ -84,12 +84,32 @@ python3 "tools/tv-agent-enrollment.py" \
 ```sh
 LIMEIOT_TV_AGENT_IDENTITY_ROOT="$PWD" \
 LIMEIOT_TV_AGENT_IDENTITY_PYTHON="$PWD/.dev/firmware-tools/venv/bin/python" \
-sh "apps/android/gradlew" --no-daemon -p "apps/tv-agent" :core:test --tests "*DeviceSigningKeyTest"
+sh "apps/tv-agent/gradlew" --no-daemon -p "apps/tv-agent" :core:test --tests "*DeviceSigningKeyTest"
 ```
 
 可将Python路径替换为按 [签发合同](../../contracts/device-enrollment.md#准备与发现) 准备的私有环境，不需要安装全局依赖。测试只在`.dev/tv-key-csr-*`新建隔离NAS材料并留下公开结果，不访问用户NAS；临时目录中的CA及Broker私钥仍需作为测试秘密保管。默认`:core:test`在缺少明确环境时跳过该管理签发项，纯JVM持钥/CSR与TLS检查仍运行。
 
 `IdentityKeyRuntimeTest`的EC不可导出、CSR、重开及缺钥不补建方法已在真实API23通过，见4.51；另一个删除测试方法未运行，不将其编译计为端上通过。使用相同环境执行`:app:testDebugUnitTest --tests "*LocalIdentityStoreTest"`验证存储/故障与实际NAS签发→重开→同键mTLS；未配置管理环境时该集成项显式跳过。`npm run test:tv-agent:android`还运行公开配置工具与严格Schema检查。软件、构建与端上状态分别见 [24第4.29节](../../docs/24-实施计划与进度.md#429-tv双键轮换激活证明与撤旧软件闭环)，完整身份流程见 [34第5.5节](../../docs/34-电视终端与AndroidTV接入.md#55-本机身份接入与保留原记录的换钥方案)。
+
+## 扩展本机引用身份的能力配置
+
+已有v3本机身份可以在保留原密钥、证书和请求的前提下扩展能力：
+
+1. 停止连接并等待工作线程退出，先完成待处理换钥、管理撤旧、旧键清理或APK更新。
+2. 选择“扩展设备能力配置”，核对设备、证书、当前与目标能力，再明确保存。只显示增加能力的选项；不能回退或交叉移除已有能力。
+3. 保存后保持停止。网关模型换绑和外部遥控组合需另行明确配置；开始音频连接时还须单独允许本次音量和静音控制。
+
+原申请配置、CSR、证书/公钥指纹、引用、所有轮换回执与证明、应用授权和完整命令历史保留。当前选择写入内部身份BLOB v2；SQLite仍v3，材料仍v3，原轮换外层版本保持。材料、日志、当前身份及最新active候选在同一事务中更新，其他历史轮换行保持原字节。后台、页面重建、取消、开始/停止连接或记录变化后旧确认失效。未知保存结果只通过“重新核对已保存记录”重开读取实际状态，再重新审阅。
+
+定向检查（JDK21/SDK36，不启动模拟器）：
+
+```sh
+sh apps/tv-agent/gradlew -p apps/tv-agent :app:testDebugUnitTest \
+  --tests '*LocalIdentityStoreTest' --tests '*ModelAssignmentRuntimeTest' \
+  --tests '*ModelAssignmentActivityTest'
+```
+
+完整规则见[设备合同](../../contracts/tv-agent.md#本机引用身份的明确模型扩展)，软件证据与剩余验收见[24第4.71节](../../docs/24-实施计划与进度.md#471-本机引用身份的明确模型扩展与记录连续性)。
 
 ## 保留原记录的换钥
 
@@ -133,8 +153,8 @@ sh "apps/android/gradlew" --no-daemon -p "apps/tv-agent" :core:test --tests "*De
 | --- | --- |
 | `Document.kt` | 有界严格JSON、当前整数/字符串子集JCS与时间 |
 | `DeviceAgent.kt` | 单设备会话、精确模型、命令消费和耐久回执 |
-| `DeviceModelProfile.kt` | 两种内置逻辑模型、规范摘要及固定本机执行路径 |
-| `DeviceJournal.kt` | 原报文/结果校验、日志v1/v2/v3及保留记录的单向迁移 |
+| `DeviceModelProfile.kt` | 四种固定逻辑模型、规范摘要及本机执行路径；音频产品连接尚未开放 |
+| `DeviceJournal.kt` | 原报文/结果校验、日志v1–v4及保留记录的单向迁移 |
 | `DeviceTls.kt` | 独立设备CA、证书用途/身份和密钥匹配 |
 | `DeviceSigningKey.kt` | EC持钥验证、P-256公开CSR、限定轮换证明与客户端KeyManager，不读取私钥编码 |
 | `DeviceRotationReceipt.kt` / `LocalRotationRecord.kt` | 严格原管理回执、独立轮换历史与耐久激活证明，保留原请求并校验当前身份 |
@@ -180,7 +200,7 @@ npm run test:tv-agent:apk
 验证沿用已有`npm run test:tv-agent:android`入口，或在已配置JDK21/SDK36环境执行下列完整Gradle任务；命令不连接ADB、电视或模拟器：
 
 ```sh
-sh "apps/android/gradlew" --no-daemon -p "apps/tv-agent" \
+sh "apps/tv-agent/gradlew" --no-daemon -p "apps/tv-agent" \
   :core:test :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
 ```
 
@@ -257,3 +277,35 @@ AgentRuntime的内部更新入口已组合原提供方与独立更新库，要�
 系统成功后重新打开更新后的Agent，在原更新记录选择“核对更新后状态”，审阅后明确“接受本机健康”。核对实际候选整包、编译版本/加载路径、原身份/授权/命令/键及当前有效凭据；接受时完整重验。接受后仅允许手动连接，没有自动重连或命令重放。原提交未知仍阻断，不能借重新安装补取成功。
 
 APK账本写v2、读v1/v2，SQLite与身份库结构不变；旧程序拒绝v2。核心50过/3跳、App201过/2跳，合计251过/5跳，新增13方法/21次执行通过，Debug APK与lint通过（0错误/4既有警告）。系统包/加载路径为宿主夹具，宿主EC持钥不等于AndroidKeyStore；实际安装和跨更新完整控制旅程仍待验，未访问电视。详见[合同](../../contracts/tv-agent.md#安装后本机健康核对与明确接受)、[阶段4.62](../../docs/24-实施计划与进度.md#462-安装后本机健康核对与明确接受)及[证据](../../docs/evidence/2026-11-03-tv-apk-health.json)。
+
+## 提交结果未知时的本机独立恢复
+
+当前为部分交付：新增15方法/24次执行通过，最后完整回归为核心56过/3跳、App217过/2跳，合计273过/5跳，2项失败。两轮针对性修复仍未解除既有API23安装流程超时，第三轮重复失败后中止，阶段验收阻塞；APK构建与lint通过（0错误/4既有警告）。详细失败与范围见本阶段证据。
+
+原提交/待系统确认缺最终回执时，可在更新后的Agent选择“核对已运行候选包”，审阅后明确“接受本机恢复”。必须已运行完整原候选、新代码/加载路径一致、原身份/授权/记录/持钥有效且未过滤的自有安装会话为空；接受前完整重验。任一核对失败继续阻断，创建未知或尚未提交的计划不走此路径。LOCAL_PACKAGE_RECOVERED保留原未知来源和迟到系统终态，不表示原系统已报告成功；仅允许手动连接。
+
+当前BLOB写v3、读v1/v2/v3，SQLite和身份库结构不变，旧程序拒绝v3；此格式取代上阶段v2写入。核心56过/3跳、App217过/2跳，合计273过/5跳，2项失败，新增15方法/24次执行通过，APK构建与lint通过（0错误/4既有警告）。没有安装或访问电视。实际包替换、厂商会话/AndroidKeyStore跨更新与完整控制仍待验。详见[合同](../../contracts/tv-agent.md#提交结果未知时的本机独立恢复)、[4.63](../../docs/24-实施计划与进度.md#463-提交结果未知时的本机独立恢复)及[证据](../../docs/evidence/2026-11-03-tv-apk-recovery.json)。
+
+## Android媒体音频接口基础
+
+> 下述音频基础与协议段落记录4.64/4.65冻结快照，其未接线与lint范围仅适用于对应阶段。当前本机授权及Runtime接线见[本次运行授权](../../contracts/tv-agent.md#本次运行音频授权与电视端接线)。
+
+新增AudioState/AudioPort与AndroidAudio，处理真实媒体流刻度、百分比量化和独立静音。MODIFY_AUDIO_SETTINGS为普通系统权限；本机所有者授权和有效运行许可仍须独立核对。原许可停止后不可复活，范围变化、权限/凭据失效或固定音量设备均拒绝。明确设置静音/取消静音，flags=0，不主动请求音量面板；真实厂商表现待验。setter不生成实际状态。
+
+当前没有运行接线、音频模型、本机授权页面或网页调音量入口。新增12方法/19次宿主执行通过、Debug APK构建通过，音频源码未另跑lint；既有两项APK回调超时仍未解决。未访问电视、启动模拟器或安装APK。见[合同](../../contracts/tv-agent.md#android媒体音频接口基础)、[4.64](../../docs/24-实施计划与进度.md#464-android媒体音频接口与量化基础)及[证据](../../docs/evidence/2026-11-03-tv-audio-port.json)。
+
+## 音频协议与命令日志基础
+
+> 本节记录4.65冻结范围；当前v3身份的模型扩展见[能力配置](#扩展本机引用身份的能力配置)。
+
+核心新增android-tv-audio-agent/android-tv-audio-remote精确配置：只读音量/静音、明确设置动作及独立真实快照；提交成功不会回显为已生效。材料准备工具和Schema可选择四个配置，原默认不变。音频配置命令日志写v4、只允许增加能力的迁移，原日志条目与授权保留，SQLite仍v3；现有v3本机引用身份没有改模入口。
+
+核心71过/3跳，应用定向28次通过；新增11方法/11次执行通过，另有1项公开配置工具旅程、19组Schema检查及2份共享Rust模型校验通过，Debug APK构建通过。音频源码未另跑lint，完整应用回归未运行，4.63两项APK回调超时保留。 Android产品连接仍以本机音频授权功能尚未开放为由拒绝启动新音频模型；网关内置模型目录、音频MQTT旅程、本机运行授权与网页控制未接通。没有电视探测、连接、操作、安装或模拟器，实际音频与完整平台未验收。 见[合同](../../contracts/tv-agent.md#音频精确模型命令与完整状态)、[4.65](../../docs/24-实施计划与进度.md#465-音频精确模型命令日志与完整状态)及[证据](../../docs/evidence/2026-11-03-tv-audio-protocol.json)。
+
+## 本次连接的音量和静音授权
+
+> 本节验证数字与待办为4.66快照；当前网关/网页组合见[4.68](../../docs/24-实施计划与进度.md#468-音频原生路径与adb的明确组合及网页入口)，本机身份改模见[能力配置](#扩展本机引用身份的能力配置)。
+
+音频配置在电视页面选择“开始连接”后，需要核对空间、设备并明确“允许并开始本次连接”。离开页面后本次已启动连接仍可运行；停止、取消授权或进程结束后失效，再次连接需要重新允许。页面可查看作用期，并用“取消本次音量和静音授权并停止”立即撤权。材料、普通系统权限和Service启动均不代授；原两个非音频模型保持原入口。
+
+本机授权与实际AndroidAudio端口已接Runtime，取代4.65临时拒绝门禁；实际加载凭据、一次批准及旧许可失效分别校验，不持久化授权。核心71过/3跳，应用定向32次通过，其中新增16方法/16次执行全过；Debug APK构建和当前全部音频源码lint通过（0错误/4项警告）。完整应用回归未运行，4.63两项APK回调超时保留且未重试。 连接/online/音频/权限为明确宿主夹具，实际Runtime线程、设备核心、AndroidAudio调用与宿主原生SQLite运行；未执行DeviceMqtt.run、Socket或真实系统Service调度。没有电视探测、连接、操作、APK安装或模拟器。网关内置目录、音频MQTT旅程、属性与动作组合、网页控制及已有v3本机身份改模仍待交付。 详见[合同](../../contracts/tv-agent.md#本次运行音频授权与电视端接线)、[4.66](../../docs/24-实施计划与进度.md#466-本次运行音频授权与电视端接线)及[证据](../../docs/evidence/2026-11-03-tv-audio-consent.json)。

@@ -127,6 +127,8 @@ export function commandSummary(command: Command) {
   if (type === 'action.invoke' && path === 'playback.play') return `播放音频：${String(input.media_id ?? '')}`;
   if (type === 'action.invoke' && path === 'playback.stop') return '停止播放';
   if (type === 'action.invoke' && path === 'playback.set_volume') return `设置音量：${String(input.volume ?? '')}`;
+  if (type === 'action.invoke' && path === 'audio.set_volume') return `设置音量：${String(input.percent ?? '')} %`;
+  if (type === 'action.invoke' && path === 'audio.set_muted') return input.muted === true ? '静音' : '取消静音';
   if (path === 'light.power') return value ? '打开' : '关闭';
   const label = ({ 'light.brightness': '亮度', 'audio.volume': '音量', 'audio.muted': '静音' } as Record<string, string>)[path] ?? path;
   return `${label} ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`;

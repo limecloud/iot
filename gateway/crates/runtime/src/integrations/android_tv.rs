@@ -1,4 +1,4 @@
-//! 电视执行路由只消费核心已耐久标记的命令，不建立第二套操作账本。
+//! Android TV集成只消费核心已耐久标记的命令，不建立第二套操作账本。
 use crate::application::App;
 use limeiot_android_tv::{Adapter, Config, Discovery, Stage};
 use limeiot_core::{
@@ -48,8 +48,12 @@ impl Entry {
                     .map(|action| format!("{}.{}", service.id, action.id))
             })
             .collect();
+        let supported = limeiot_android_tv::supported_paths(model);
         binding.device_id == self.device_id
-            && limeiot_android_tv::supports_model(model)
+            && match &binding.native_paths {
+                Some(_) => !supported.is_empty(),
+                None => limeiot_android_tv::supports_model(model),
+            }
             && !paths.is_empty()
             && binding.routes.keys().cloned().collect::<BTreeSet<_>>()
                 == match &binding.native_paths {
@@ -57,6 +61,7 @@ impl Entry {
                     None => paths,
                 }
             && !binding.routes.is_empty()
+            && binding.routes.keys().all(|path| supported.contains(path))
             && binding.routes.values().all(|route| *route == self.route)
     }
 }
@@ -138,29 +143,22 @@ impl Adapters {
             .find(|entry| entry.device_id == device_id && entry.route == *route)?;
         let device = data.devices.get(device_id)?;
         let model = data.models.get(&device.model_revision)?;
-        if !limeiot_android_tv::supports_model(model) {
+        let paths = limeiot_android_tv::supported_paths(model);
+        if paths.is_empty() {
             return None;
         }
         Some(limeiot_core::execution_binding::Offer {
             device_id: device_id.into(),
             route: route.clone(),
             model_revision: device.model_revision.clone(),
-            paths: model
-                .services
-                .iter()
-                .flat_map(|service| {
-                    service
-                        .actions
-                        .iter()
-                        .map(|action| format!("{}.{}", service.id, action.id))
-                })
-                .collect(),
+            paths,
         })
     }
     pub fn list(&self, data: &Data) -> serde_json::Value {
         serde_json::json!({"items":self.entries.iter().map(|entry| serde_json::json!({
             "device_id":entry.device_id,"route":entry.route,"compatible":self.offer(data,&entry.device_id,&entry.route).is_some(),
             "target":entry.config.target.to_string(),"fingerprint":entry.config.fingerprint,"device_serial":entry.config.device_serial,
+            "paths":self.offer(data,&entry.device_id,&entry.route).map(|offer|offer.paths).unwrap_or_default(),
             "applications":entry.config.applications
         })).collect::<Vec<_>>(),"next_cursor":null})
     }
@@ -322,9 +320,9 @@ mod tests {
             revision: digest(&config).unwrap(),
         };
         let model: limeiot_core::model::Model = serde_json::from_slice(if full_model {
-            include_bytes!("../../../../contracts/models/android-tv.json").as_slice()
+            include_bytes!("../../../../../contracts/models/android-tv.json").as_slice()
         } else {
-            include_bytes!("../../../../contracts/models/android-tv-remote.json").as_slice()
+            include_bytes!("../../../../../contracts/models/android-tv-remote.json").as_slice()
         })
         .unwrap();
         let data=Data::new(serde_json::from_value(json!({"space_id":"home","models":[model],"devices":[{
@@ -469,5 +467,120 @@ mod tests {
             .unwrap()
             .offer(&data, "tv", &route)
             .is_none());
+    }
+
+    #[test]
+    fn audio_composition_reserves_audio_and_observations_for_native_execution() {
+        use limeiot_core::execution_binding::{Change, Request};
+        let (_, file) = fixture(false);
+        let adapters = build_configuration(file).unwrap();
+        let entry = &adapters.entries[0];
+        let model: limeiot_core::model::Model = serde_json::from_slice(include_bytes!(
+            "../../../../../contracts/models/android-tv-audio-remote.json"
+        ))
+        .unwrap();
+        let mut data = Data::new(
+            serde_json::from_value(json!({
+                "space_id":"home","models":[model],"devices":[{
+                    "device_id":"tv","model_revision":digest(&model).unwrap()
+                }]
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let offer = adapters.offer(&data, "tv", &entry.route).unwrap();
+        assert_eq!(
+            offer.paths,
+            ["apps.launch".into(), "remote.press".into()].into()
+        );
+        let now = chrono::Utc::now();
+        let request = |key: &str, change| Request {
+            space_id: "home".into(),
+            idempotency_key: key.into(),
+            change,
+        };
+        let result = data
+            .apply_execution_change(
+                request(
+                    "bind",
+                    Change::Bind {
+                        device_id: "tv".into(),
+                        route: entry.route.clone(),
+                        expected_binding_revision: data.execution_binding("tv").unwrap().revision,
+                        expected_model_revision: digest(&model).unwrap(),
+                    },
+                ),
+                Some(&offer),
+                now,
+            )
+            .unwrap();
+        assert_eq!(
+            result.reason.as_deref(),
+            Some("execution_model_incompatible")
+        );
+        let device = data.devices.get_mut("tv").unwrap();
+        device.ready = true;
+        device.last_seen = Some(now);
+        device.session_id = Some("native-session".into());
+        device.native_actions = Some(
+            [
+                "apps.launch".into(),
+                "audio.set_muted".into(),
+                "audio.set_volume".into(),
+            ]
+            .into(),
+        );
+        for (key, native, expected) in [
+            ("unsafe", ["apps.launch".into()].into(), "rejected"),
+            (
+                "compose",
+                [
+                    "apps.launch".into(),
+                    "audio.set_muted".into(),
+                    "audio.set_volume".into(),
+                ]
+                .into(),
+                "applied",
+            ),
+        ] {
+            let result = data
+                .apply_execution_change(
+                    request(
+                        key,
+                        Change::Compose {
+                            device_id: "tv".into(),
+                            route: entry.route.clone(),
+                            native_paths: native,
+                            expected_native_session: "native-session".into(),
+                            expected_binding_revision: data
+                                .execution_binding("tv")
+                                .unwrap()
+                                .revision,
+                            expected_model_revision: digest(&model).unwrap(),
+                        },
+                    ),
+                    Some(&offer),
+                    now,
+                )
+                .unwrap();
+            assert_eq!(result.status, expected);
+        }
+        let binding = data.execution_binding("tv").unwrap();
+        assert_eq!(
+            binding.routes.keys().cloned().collect::<Vec<_>>(),
+            ["remote.press"]
+        );
+        assert!(entry.matches(&binding, &model));
+        let mut corrupted = binding;
+        corrupted
+            .routes
+            .insert("audio.set_volume".into(), entry.route.clone());
+        corrupted
+            .native_paths
+            .as_mut()
+            .unwrap()
+            .remove("audio.set_volume");
+        assert!(!entry.matches(&corrupted, &model));
+        data.validate_execution_registry().unwrap();
     }
 }

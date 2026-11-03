@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-11-03T14:13:02.172873+00:00",
+  "scope": "platform_core_integrations_terminal_and_control_ui_boundaries",
+  "archive": ".dev/model-boundary-_2ngnxz6",
+  "hardware": false,
+  "android_emulator": false,
+  "full_goal_completed": false,
+  "changes": {
+    "core_has_no_concrete_device_catalog": true,
+    "host_injects_trusted_catalog_on_creation_and_restore": true,
+    "catalog_not_trusted_from_snapshot": true,
+    "optional_compiled_integrations": [
+      "android-tv",
+      "dlna"
+    ],
+    "integrations_do_not_depend_on_each_other": true,
+    "media_has_no_dlna_type_dependency": true,
+    "shared_execution_ledger_preserved": true,
+    "ui_recovery_capabilities_and_integrations_separated": true,
+    "tv_audio_not_misclassified_as_dlna": true,
+    "submitted_not_reported": true,
+    "tv_owns_gradle_wrapper": true,
+    "api_and_snapshot_format_unchanged": true,
+    "dynamic_plugin_host_implemented": false
+  },
+  "verification": {
+    "fmt": true,
+    "clippy_workspace_all_targets": true,
+    "rust_serial": {
+      "passed": 291,
+      "failed": 0,
+      "ignored": 0
+    },
+    "rust_initial_parallel": {
+      "passed_before_abort": 9,
+      "failed": 2,
+      "failed_tests": [
+        "identity_and_inventory_share_the_original_operation_deadline",
+        "incomplete_extra_or_mismatched_identity_never_authorizes_an_action"
+      ],
+      "parallel_reliability_resolved": false,
+      "test_source_or_deadline_changed": false
+    },
+    "distribution_matrix": {
+      "report": ".dev/integration-distribution-i6jJHi/result.json",
+      "variants": [
+        {
+          "name": "native",
+          "features": [],
+          "models": 0,
+          "passed": true,
+          "native_command": true,
+          "restart_original_only": true,
+          "disabled_configuration_rejected": true
+        },
+        {
+          "name": "android-tv",
+          "features": [
+            "android-tv"
+          ],
+          "models": 4,
+          "passed": true,
+          "native_command": true,
+          "restart_original_only": true,
+          "disabled_configuration_rejected": true
+        },
+        {
+          "name": "dlna",
+          "features": [
+            "dlna"
+          ],
+          "models": 1,
+          "passed": true,
+          "native_command": true,
+          "restart_original_only": true,
+          "disabled_configuration_rejected": true
+        },
+        {
+          "name": "standard",
+          "features": [
+            "android-tv",
+            "dlna"
+          ],
+          "models": 5,
+          "passed": true,
+          "native_command": true,
+          "restart_original_only": true,
+          "disabled_configuration_rejected": true
+        }
+      ]
+    },
+    "integration_and_web_checks": {
+      "passed": 18,
+      "log": "integration-web-verification.log"
+    },
+    "final_capability_web_checks": {
+      "passed": 5,
+      "log": "capability-web-verification.log",
+      "report": ".dev/actions-UYO2gI/capability-panels-result.json",
+      "screenshot": ".dev/actions-UYO2gI/capability-panels-mobile.png",
+      "visually_reviewed": true
+    },
+    "home_typecheck_and_build": true,
+    "workspace_build": true,
+    "tv_wrapper": {
+      "gradle": "8.13",
+      "launcher_jdk": 17,
+      "offline_version_command_passed": true,
+      "project_compiled": false
+    },
+    "tv_kotlin_jvm_apk_lint_reverified": false,
+    "documentation": {
+      "documents": 13,
+      "local_links_and_anchors": 803,
+      "errors": 0,
+      "passed": true,
+      "report": ".dev/model-boundary-_2ngnxz6/document-links.json"
+    },
+    "final_boundary_review": ".dev/model-boundary-_2ngnxz6/boundary-review.json",
+    "git_diff_check": true
+  },
+  "limitations": [
+    "Current JDK21 and Android SDK36 directories are unavailable; local JDK download did not complete",
+    "Existing two APK callback timeout regressions were not retried",
+    "Existing v3 identity model assignment, real JVM audio, combined audio routes and hardware acceptance remain incomplete"
+  ],
+  "finalized_at": "2026-11-03T14:20:43.149146+00:00",
+  "status": "core_gateway_and_web_verified_tv_project_build_not_reverified",
+  "manifest": ".dev/model-boundary-_2ngnxz6/manifest.json"
+}

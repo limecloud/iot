@@ -1,0 +1,232 @@
+{
+  "evidence_id": "EVID-NAS-BUFFERED-RECOVERY-20261103-01",
+  "observed_at": "2026-11-03T20:40:09.651722+08:00",
+  "status": "arm64_multimodal_container_journey_passed",
+  "image": "limeiot/verification:nas-arm64-buffered-restart-20261103",
+  "image_id": "sha256:eb6fd977acb1a8ac5bbd23fc00cde6e46d90b2a71edb32919b70259d1381ac9b",
+  "source_digest": "133ce62075841bee8002f74488aa308f46e995c5350e549b85f8b29e4a646a18",
+  "artifact_manifest": ".dev/nas-arm64-buffered-restart-20261103/build.json",
+  "artifact_manifest_sha256": "5895f51877a32b59b2c1b227ba67f46ea218589f7f7c335c5959d54d314be922",
+  "artifact_files": 91,
+  "current_workspace_source_matches": true,
+  "current_workspace_differences": [],
+  "container_report": ".dev/nas-container-5d34b23b61876aa8/report.json",
+  "container_report_sha256": "d6a8a0462741e37d4346156a60848a22f7da11617860a969aaddd0a8f8225b63",
+  "checks": {
+    "passed": true,
+    "real_containers": true,
+    "hardware": false,
+    "installation_scoped_to_verification_directory": true,
+    "https_verified_ca": true,
+    "non_root_read_only_internal_network": true,
+    "inference_container_isolated_without_device_or_owner_secrets": true,
+    "mqtt_command_confirmed": true,
+    "browser_home_and_model_entry": true,
+    "gateway_recreation_routed": true,
+    "device_mtls_acl_revocation": true,
+    "session_reauthenticated_after_gateway_restart": true,
+    "simulators_rejoined_gateway_network_after_restart": true,
+    "consistent_backup_restore": true,
+    "revocation_restored": true,
+    "no_command_replay": true,
+    "containers_cleaned": true
+  },
+  "multimodal": {
+    "passed": true,
+    "provider_fixture": true,
+    "renderer_fixture": true,
+    "model_validated_in_image": true,
+    "real_model_quality": false,
+    "hardware": false,
+    "play_command": "c1-2-9c809644-397c-4265-9132-922020c3f251",
+    "grant_id": "grant-9ac2cde0-901f-4382-a7cc-f84a0a265926",
+    "image_bytes": 787252,
+    "image_json_bytes": 1049833,
+    "no_implicit_grant_or_play": true,
+    "explicit_play_range_bytes_verified": true,
+    "source_media_id": "media-17619ff1-65fd-4965-a8c6-27cc1a4b3c1f",
+    "recreation_no_inference_or_play": true,
+    "backup_snapshot_bytes": 94056,
+    "snapshot_v4_backup_and_restore_byte_exact": true,
+    "old_grant_url_denied_after_restore": true,
+    "restored_play_command": "c1-4-b331cfb4-a74f-462a-a095-dfe00777e8ae",
+    "pending_restored_unknown_without_resubmit": true,
+    "unknown_retains_budget": true,
+    "provider_calls_before_backup": [
+      {
+        "kind": "speech",
+        "digest": "adfaa25266247eae36aca6c98584650c08dc96639303a3c6560a4d7d1acbf8ce"
+      },
+      {
+        "kind": "asr",
+        "bytes": 32044,
+        "digest": "5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b"
+      },
+      {
+        "kind": "vision",
+        "bytes": 787252,
+        "digest": "c380a4fffe9577d1571bc18be676b13122101835fdece169f36185ddc6ff19ff"
+      },
+      {
+        "kind": "speech",
+        "digest": "eacc9de0e59c6eecd94fb9c0482ee33039a6e2ebd700bf841041f4824493f3dd"
+      },
+      {
+        "kind": "asr",
+        "bytes": 32044,
+        "digest": "5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b"
+      },
+      {
+        "kind": "vision",
+        "bytes": 787252,
+        "digest": "c380a4fffe9577d1571bc18be676b13122101835fdece169f36185ddc6ff19ff"
+      }
+    ],
+    "provider_calls_after_restore": 0,
+    "restored_audio_range_bytes_verified": true,
+    "clear_and_delete_survive_restart": true,
+    "snapshot_private": true
+  },
+  "runtime_machines": {
+    "gateway": "aarch64",
+    "edge": "aarch64",
+    "multimodal": "aarch64"
+  },
+  "storage_diagnostic": {
+    "report": ".dev/nas-media-write-probe-iojz5k4p/report.json",
+    "sha256": "c04999a0c56aad46d4216cb8358563ac04bfe92b8f17caa21d779bf694fa7931",
+    "diagnostic_only": true,
+    "file_and_directory_synced": true,
+    "results": [
+      {
+        "buffered": false,
+        "bytes": 93188,
+        "elapsed_ms": 718,
+        "writes": 1546
+      },
+      {
+        "buffered": true,
+        "bytes": 93188,
+        "elapsed_ms": 4,
+        "writes": 5
+      }
+    ],
+    "same_output": true
+  },
+  "network_namespace_diagnostic": {
+    "report": ".dev/nas-network-namespace-probe.json",
+    "sha256": "733f0fe23fa3b91317acd9da899126be60753e1f2ca80cfc900b4bdaf3dcf9c9",
+    "before": {
+      "limeiot-nas-netns-a56fb9dfed-gateway": "net:[4026533134]",
+      "limeiot-nas-netns-a56fb9dfed-peer": "net:[4026533134]"
+    },
+    "after": {
+      "limeiot-nas-netns-a56fb9dfed-gateway": "net:[4026533192]",
+      "limeiot-nas-netns-a56fb9dfed-peer": "net:[4026533134]"
+    },
+    "shared_before_restart": true,
+    "shared_after_restart": false,
+    "primary_namespace_changed": true,
+    "hardware": false,
+    "owned_probe_containers_cleaned": true
+  },
+  "regressions": {
+    "media_store_tests": 8,
+    "media_store_failures": 0,
+    "log": ".dev/nas-media-buffered-store-tests.log",
+    "log_sha256": "dcbf708436a6d0a68c72ef66e6048cf376c3cf1da6d0c6b37fae52ed683730c5",
+    "format_check_passed": true,
+    "node_syntax_check_passed": true,
+    "request_timeout_ms": 5000,
+    "play_deadline_seconds": 10
+  },
+  "attempts": [
+    {
+      "report": ".dev/nas-container-6eaeb50678cc6510/report.json",
+      "sha256": "15ebc91dbb85984da0d93a46609f3a21a81bf54766ffcc9f6ee16bf005eea786",
+      "image_source_digest": "9293b4172b6def97b39374b650b1768227a52068ce8c07a1ea07a202c135e837",
+      "passed": false,
+      "error": "https_timeout",
+      "failed_request": {
+        "method": "POST",
+        "resource": "/api/v1/spaces/space-demo/audio-transcriptions",
+        "input_bytes": 204,
+        "elapsed_ms": 5046
+      },
+      "containers_cleaned": true
+    },
+    {
+      "report": ".dev/nas-container-f40fbc90a2d759a1/report.json",
+      "sha256": "8f93e5b23247485d4d863160866d537b6747c23bf68843e03588110aead99610",
+      "image_source_digest": "ede7bd78a54c4befdaa851184be30238364fe22052ebae3a098bdd3c0c229ec0",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n409 !== 200\n",
+      "failed_request": null,
+      "containers_cleaned": true
+    },
+    {
+      "report": ".dev/nas-container-cbd20a332cf858fb/report.json",
+      "sha256": "ada794be08405c773f8e81a016ad1a2fa08273027ce70ab1eaf5b1bdd4bd1960",
+      "image_source_digest": "ede7bd78a54c4befdaa851184be30238364fe22052ebae3a098bdd3c0c229ec0",
+      "passed": false,
+      "error": "readiness_timeout",
+      "failed_request": null,
+      "containers_cleaned": true
+    },
+    {
+      "report": ".dev/nas-container-218be2b6a1aa4cdc/report.json",
+      "sha256": "c6bc9529ba1bfb792b0f9bb329cb341af2fc058110eaf2bcf4c8f8ad44a76c3e",
+      "image_source_digest": "133ce62075841bee8002f74488aa308f46e995c5350e549b85f8b29e4a646a18",
+      "passed": false,
+      "error": "accepted_observed_before_confirmation",
+      "failed_request": null,
+      "containers_cleaned": true
+    },
+    {
+      "report": ".dev/nas-container-5d34b23b61876aa8/report.json",
+      "sha256": "d6a8a0462741e37d4346156a60848a22f7da11617860a969aaddd0a8f8225b63",
+      "image_source_digest": "133ce62075841bee8002f74488aa308f46e995c5350e549b85f8b29e4a646a18",
+      "passed": true,
+      "error": null,
+      "failed_request": null,
+      "containers_cleaned": true
+    }
+  ],
+  "prior_evidence": "docs/evidence/2026-11-03-nas-arm64-multimodal.json",
+  "source_sha256": {
+    "gateway/crates/runtime/src/media_store.rs": "81b33aa8b5c3bfd28c0b5fe766fe353d98c83a8ffac58fbf00cb421319ba915f",
+    "deploy/nas/compose.yaml": "7e85e5e468f6ce973ef00e952c09d867055129f2e201816eb3fb945f8b2eed9b",
+    "tools/test-nas-container.mjs": "f6f3f3aa6914a698d5c3aed4be244c927bc17e4bd61436061cc1a9278d7f8b98",
+    "tools/nas-multimodal-journey.mjs": "1bf462b9a3e5867ec7e7835dabe5623410832f7724398d6d8dfb5a421d57119a"
+  },
+  "implementation": [
+    "媒体快照使用BufWriter合并JSON碎片写入；显式flush成功后仍执行文件sync_all、原子rename及父目录sync_all，失败仍不发布并毒化实例。",
+    "simulation服务的Compose依赖增加restart:true；显式Compose网关重启后，两模拟器重启并经实际网络命名空间与ready状态核对。",
+    "验收脚本补重启后的会话失效断言与重新登录，按ASR/视觉各自清文合同执行，accepted/dispatched阶段只查询原命令直到原有终态要求。"
+  ],
+  "scope": {
+    "arm64_workspace_release_build": true,
+    "home_pwa_build": true,
+    "arm64_real_container_multimodal_journey": true,
+    "real_model_quality": false,
+    "hardware": false,
+    "hardware_acceptance": "skipped_by_user",
+    "published": false,
+    "full_goal_completed": false
+  },
+  "remaining": {
+    "amd64_workspace_build": "running",
+    "amd64_build_session": 50276,
+    "amd64_build_log": ".dev/nas-amd64-buffered-restart-build.log",
+    "amd64_registry_preflight": ".dev/nas-amd64-registry-preflight.json",
+    "amd64_container_acceptance": false,
+    "native_app_full_runtime": false,
+    "full_platform": false
+  },
+  "limits": [
+    "TTS/ASR/视觉提供方及DLNA渲染器是独立协议夹具，不证明模型质量、音质或实际音箱播放。",
+    "ARM64软件通过不代表AMD64、指定NAS型号或正式云版本已更新。",
+    "Docker守护进程自行重启容器不属于Compose依赖重启保证；本轮直接验证的是显式Compose重启。",
+    "早期失败及其冻结输入继续保留；本轮只清理本次创建的容器和网络，没有访问或升级实机。"
+  ]
+}

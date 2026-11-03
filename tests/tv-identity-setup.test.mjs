@@ -35,6 +35,15 @@ test('TV公开配置只读取CA且不覆盖已有请求，机器格式区分PEM�
   const validateSetup = ajv.compile(JSON.parse(await readFile(path.join(root,'contracts/tv-agent-identity.schema.json'),'utf8')));
   const validateEnrollment = ajv.compile(JSON.parse(await readFile(path.join(root,'contracts/tv-agent-enrollment.schema.json'),'utf8')));
   assert.equal(validateSetup(setup),true,JSON.stringify(validateSetup.errors));
+  for (const profile of ['android-tv-audio-agent','android-tv-audio-remote']) {
+    const audioOutput = path.join(directory, profile + '.json');
+    const audioArgs = [...args]; audioArgs[audioArgs.indexOf(output)] = audioOutput;
+    await exec('python3', [...audioArgs, '--model-profile', profile], {timeout:10000});
+    const audioSetup = JSON.parse(await readFile(audioOutput, 'utf8'));
+    assert.equal(audioSetup.model_profile, profile);
+    assert.equal(validateSetup(audioSetup), true, JSON.stringify(validateSetup.errors));
+    assert.equal((await stat(audioOutput)).mode & 0o777, 0o600);
+  }
   for (const changed of [{...setup,private_key_pem:'forbidden'},{...setup,key_reference:'foreign'},{...setup,request_id:''},{...setup,schema_version:2}]) assert.equal(validateSetup(changed),false);
   const base = {space_id:setup.space_id,device_id:setup.device_id,broker:setup.broker,ca_pem:setup.ca_pem,certificate_pem:'PUBLIC CERTIFICATE'};
   const one = {...base,schema_version:1,private_key_pem:'PRIVATE KEY'};

@@ -35,7 +35,7 @@ internal data class LocalRotationRecord(
     }).toByteArray(Charsets.UTF_8)
 
     fun verify(current: DeviceIdentityMetadata, keys: IdentityKeys) {
-        if (current.binding != candidate.setup.binding || current.broker != candidate.setup.broker || current.identity.profile != candidate.setup.identity.profile)
+        if (current.binding != candidate.setup.binding || current.broker != candidate.setup.broker || current.identity.profile != candidate.activeProfile)
             throw AgentStoreFault("identity_mismatch")
         if (candidate.publicKeyFingerprint == previousPublicKey) throw AgentStoreFault("rotation_new_key_required")
         if (candidate.phase == "active") {

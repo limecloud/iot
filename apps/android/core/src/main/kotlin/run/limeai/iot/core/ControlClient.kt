@@ -233,7 +233,7 @@ class ControlClient(val origin: String, private val store: SessionStore, private
     }
     suspend fun forgetCommand(key: String) = mutex.withLock {
         val (_, record) = commandContext(key)
-        if (record.rejection == null && record.result?.status?.terminal != true) throw ControlException("operation_not_terminal", 409)
+        if (!record.canForget) throw ControlException("operation_not_terminal", 409)
         val next = load(); persist(next.copy(operations = next.operations.filterNot { it.id == key }))
     }
 }

@@ -23,3 +23,15 @@ __pycache__/
 **/managed_components/
 firmware/products/**/sdkconfig
 firmware/products/**/sdkconfig.old
+
+# Local build and editor caches
+.cache/
+.pytest_cache/
+.ruff_cache/
+**/.cxx/
+**/.externalNativeBuild/
+*.xcresult/
+*.xcarchive/
+*.tmp
+*.bak
+*~

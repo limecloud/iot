@@ -15,9 +15,20 @@ internal data class LocalIdentityRecord(
     val csrSha256: String? = null,
     val publicKeyFingerprint: String? = null,
     val certificateFingerprint: String? = null,
+    val assignedProfile: DeviceModelProfile? = null,
 ) {
+    val activeProfile: DeviceModelProfile get() = assignedProfile ?: setup.identity.profile
+
+    fun assign(profile: DeviceModelProfile): LocalIdentityRecord {
+        if (phase != "active") throw AgentStoreFault("identity_request_not_ready")
+        if (profile == activeProfile) throw AgentStoreFault("model_assignment_unchanged")
+        if (!profile.acceptsHistory(activeProfile)) throw AgentStoreFault("model_rollback_refused")
+        return copy(assignedProfile = profile)
+    }
+
     fun encoded(): ByteArray = DeviceDocument.canonical(buildJsonObject {
-        put("schema_version", 1); put("setup", DeviceDocument.parse(setup.encoded()))
+        put("schema_version", if (assignedProfile == null) 1 else 2); put("setup", DeviceDocument.parse(setup.encoded()))
+        if (assignedProfile != null) put("model_profile", assignedProfile.id)
         put("key_reference", reference); put("phase", phase)
         put("csr_pem", csr?.let(::JsonPrimitive) ?: JsonNull)
         put("csr_sha256", csrSha256?.let(::JsonPrimitive) ?: JsonNull)
@@ -36,14 +47,15 @@ internal data class LocalIdentityRecord(
 
     fun enrollment(certificate: ByteArray, keys: IdentityKeys): DeviceEnrollment {
         if (view(keys).request == null) throw AgentStoreFault("identity_request_not_ready")
-        return DeviceEnrollment.deviceLocal(setup, certificate, reference, publicKeyFingerprint!!, keys).also {
+        val original = DeviceEnrollment.deviceLocal(setup, certificate, reference, publicKeyFingerprint!!, keys)
+        return (assignedProfile?.let(original::withModelProfile) ?: original).also {
             if (phase == "active" && it.certificateFingerprint != certificateFingerprint) throw AgentStoreFault("identity_rotation_required")
         }
     }
 
     fun verify(enrollment: DeviceIdentityMetadata, keys: IdentityKeys) {
         if (phase != "active" || enrollment.keyReference != reference || enrollment.identityRequestId != setup.requestId ||
-            enrollment.binding != setup.binding || enrollment.broker != setup.broker || enrollment.identity.profile != setup.identity.profile ||
+            enrollment.binding != setup.binding || enrollment.broker != setup.broker || enrollment.identity.profile != activeProfile ||
             enrollment.certificateFingerprint != certificateFingerprint) throw AgentStoreFault("identity_mismatch")
         view(keys)
     }
@@ -52,13 +64,17 @@ internal data class LocalIdentityRecord(
         fun parse(bytes: ByteArray): LocalIdentityRecord {
             try {
                 val value = DeviceDocument.parse(bytes, 16384)
-                if (value.keys != setOf("schema_version", "setup", "key_reference", "phase", "csr_pem", "csr_sha256", "public_key_fingerprint", "certificate_fingerprint") ||
-                    value["schema_version"] != JsonPrimitive(1)) throw AgentStoreFault("storage_corrupt")
+                val version = when (value["schema_version"]) { JsonPrimitive(1) -> 1; JsonPrimitive(2) -> 2; else -> throw AgentStoreFault("storage_corrupt") }
+                if (value.keys != setOf("schema_version", "setup", "key_reference", "phase", "csr_pem", "csr_sha256", "public_key_fingerprint", "certificate_fingerprint") +
+                    (if (version == 2) setOf("model_profile") else emptySet())) throw AgentStoreFault("storage_corrupt")
                 fun string(name: String): String = (value[name] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: throw AgentStoreFault("storage_corrupt")
                 fun optional(name: String): String? = if (value[name] === JsonNull) null else string(name)
                 val setup = DeviceIdentitySetup.parse(DeviceDocument.canonical(value["setup"] as? JsonObject ?: throw AgentStoreFault("storage_corrupt")).toByteArray(Charsets.UTF_8))
-                val result = LocalIdentityRecord(setup, string("key_reference"), string("phase"), optional("csr_pem"), optional("csr_sha256"), optional("public_key_fingerprint"), optional("certificate_fingerprint"))
+                val result = LocalIdentityRecord(setup, string("key_reference"), string("phase"), optional("csr_pem"), optional("csr_sha256"), optional("public_key_fingerprint"), optional("certificate_fingerprint"),
+                    if (version == 2) DeviceModelProfile.parse(string("model_profile")) else null)
                 if (!DeviceKeyReference.valid(result.reference) || result.phase !in setOf("prepared", "creating", "pending", "active")) throw AgentStoreFault("storage_corrupt")
+                if (result.assignedProfile != null && (result.phase != "active" || result.activeProfile == setup.identity.profile || !result.activeProfile.acceptsHistory(setup.identity.profile)))
+                    throw AgentStoreFault("storage_corrupt")
                 val ready = result.phase in setOf("pending", "active")
                 if (ready != (result.csr != null) || ready != (result.csrSha256 != null) || ready != (result.publicKeyFingerprint != null) ||
                     (result.phase == "active") != (result.certificateFingerprint != null)) throw AgentStoreFault("storage_corrupt")

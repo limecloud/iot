@@ -65,6 +65,8 @@ flowchart LR
 
 CLI 输出稳定 JSON/NDJSON 和退出码，TUI 使用同义文本和差异，GUI 支持媒体、表单与组合图。宿主类型不决定业务角色；不同端分别认证、共用授权与用例。仅显示一个链接或 JSON 不证明需要交互的任务已经完整适配。
 
+已实现本地`tui`与独立`control tui`两类终端。控制面终端复用25项正式工具和原CLI执行器，提供菜单及Agent的catalog/state/read/prepare/commit/cancel；读取与无副作用校验直接调用，写操作核对后单次提交，绑定准备时会话，原请求由私有日志恢复。它不执行自主工具循环；两种终端身份与机器格式独立，分别见[本地任务](../contracts/terminal-tasks.md)与[控制面任务](../contracts/control-terminal-tasks.md)。
+
 ## 7. 预算与终止
 
 每任务设置最大工具调用、步骤、并发、token/媒体/费用和总时间预算；耗尽后保留进度，不能持续自我重试。模型请求取消、应用会话结束、任务取消和设备安全停止分别处理。

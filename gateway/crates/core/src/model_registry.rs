@@ -430,7 +430,7 @@ impl Data {
                     expected_model_revision,
                     expected_binding_revision,
                 )?;
-                let bundle = crate::model_bundles::get(bundle_id)?;
+                let bundle = self.model_bundles.get(bundle_id)?.clone();
                 self.bind_device_model(
                     DeviceBinding::Bundle {
                         device_id: device_id.clone(),
@@ -474,22 +474,28 @@ impl Data {
         let current = self.devices.get(device_id);
         if let Some(device) = current {
             if !device.routes.is_empty() {
+                let native = self
+                    .execution_registry
+                    .bindings
+                    .get(device_id)
+                    .and_then(|binding| binding.native_paths.as_ref());
                 ensure(
-                    model.services.iter().all(|service| {
-                        service.properties.is_empty()
-                            && service.events.is_empty()
-                            && self.models[&device.model_revision]
-                                .services
-                                .iter()
-                                .any(|old| {
-                                    old.id == service.id && old.semantic_id == service.semantic_id
+                    crate::execution::supports_native_state(&model)
+                        && model.services.iter().all(|service| {
+                            (service.properties.is_empty() || native.is_some())
+                                && self.models[&device.model_revision]
+                                    .services
+                                    .iter()
+                                    .any(|old| {
+                                        old.id == service.id
+                                            && old.semantic_id == service.semantic_id
+                                    })
+                                && service.actions.iter().all(|action| {
+                                    let path = format!("{}.{}", service.id, action.id);
+                                    device.routes.contains_key(&path)
+                                        || native.is_some_and(|paths| paths.contains(&path))
                                 })
-                            && service.actions.iter().all(|action| {
-                                device
-                                    .routes
-                                    .contains_key(&format!("{}.{}", service.id, action.id))
-                            })
-                    }),
+                        }),
                     "bound_routes_incompatible",
                 )?;
             }
@@ -621,7 +627,9 @@ impl Data {
                 .statement
                 .model
                 .clone(),
-            DeviceBinding::Bundle { bundle_id, .. } => crate::model_bundles::get(bundle_id)?.model,
+            DeviceBinding::Bundle { bundle_id, .. } => {
+                self.model_bundles.get(bundle_id)?.model.clone()
+            }
         };
         ensure(
             identifier(binding.device_id())

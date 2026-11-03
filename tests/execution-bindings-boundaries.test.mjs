@@ -10,9 +10,35 @@ import Ajv from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { root } from '../tools/dev-stack.mjs';
 import { documentDigest } from '../packages/protocol/model-validation.mjs';
-import { parseExecutionChange, verifyExecutionOperation, verifyExecutionBinding } from '../packages/protocol/execution-bindings.mjs';
+import { parseExecutionChange, verifyExecutionOperation, verifyExecutionBinding, verifyExecutionAdapters, verifyNativeExecution } from '../packages/protocol/execution-bindings.mjs';
 const exec=promisify(execFile),revision='sha256:'+'a'.repeat(64),route={adapter_id:'tv-adb',revision};
 const change={type:'bindings.bind',device_id:'tv',route,expected_binding_revision:revision,expected_model_revision:revision};
+test('组合读取严格区分原生证明与适配器能力子集',async()=>{
+  const schema=JSON.parse(await readFile(path.join(root,'contracts/execution-bindings.schema.json'),'utf8'));
+  const ajv=new Ajv({strict:true,allErrors:true});addFormats(ajv);
+  const proofSchema=ajv.compile({$defs:schema.$defs,$ref:'#/$defs/nativeExecution'});
+  const adapterSchema=ajv.compile({$defs:schema.$defs,$ref:'#/$defs/televisionAdapter'});
+  const proof={session_id:'current-session',ready:true,paths:['apps.launch','audio.set_volume']};
+  assert.equal(proofSchema(proof),true,JSON.stringify(proofSchema.errors));
+  const device={device_id:'tv',model_revision:revision,ready:true,native_execution:proof};
+  assert.deepEqual(verifyNativeExecution(device,'tv',revision),proof);
+  assert.equal(verifyNativeExecution({...device,native_execution:{...proof,ready:false}},'tv',revision).ready,false);
+  const legacy={...device};delete legacy.native_execution;
+  assert.equal(verifyNativeExecution(legacy,'tv',revision),null);
+  for(const mutate of [v=>v.device_id='other',v=>v.model_revision='sha256:'+'b'.repeat(64),v=>v.native_execution.paths.push('apps.launch'),v=>v.native_execution.ready='true',v=>v.native_execution.session_id='invalid\n',v=>v.native_execution.paths=[]]) {
+    const bad=structuredClone(device);mutate(bad);assert.throws(()=>verifyNativeExecution(bad,'tv',revision));
+  }
+  const item={device_id:'tv',route,compatible:true,target:'fixture:5555',fingerprint:'fixture',device_serial:'fixture',applications:[],paths:['apps.launch','remote.press']};
+  assert.equal(adapterSchema(item),true,JSON.stringify(adapterSchema.errors));
+  const page=item=>({items:[item],next_cursor:null});
+  assert.deepEqual(verifyExecutionAdapters(page(item)).items[0].paths,item.paths);
+  for(const paths of [[],['remote.press','apps.launch'],['remote.press','remote.press'],['shell.command\n']])assert.throws(()=>verifyExecutionAdapters(page({...item,paths})));
+  assert.equal(verifyExecutionAdapters(page({...item,paths:[],compatible:false})).items[0].compatible,false);
+  assert.equal(adapterSchema({...item,paths:[]}),false);
+  assert.equal(adapterSchema({...item,paths:[],compatible:false}),true,JSON.stringify(adapterSchema.errors));
+  assert.equal(proofSchema({...proof,session_id:'invalid\n'}),false);
+  assert.equal(proofSchema({...proof,paths:[]}),false);
+});
 async function operation(key='original') {
   const request={space_id:'space',idempotency_key:key,change};
   return {operation_id:'executionop-original',request,request_digest:await documentDigest(request),status:'applied',reason:null,result:{device_id:'tv',model_revision:revision,revision:'sha256:'+'b'.repeat(64),state:'bound',routes:{'remote.press':route,'apps.launch':route}},created_at:'2026-11-02T00:00:00Z'};

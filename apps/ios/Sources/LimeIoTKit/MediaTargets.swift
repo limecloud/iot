@@ -15,8 +15,8 @@ enum MediaTargets {
         let v = try MediaJSON.fields(value, "adapter_id,revision"); try MediaJSON.id(v["adapter_id"]); try MediaJSON.hash(v["revision"])
     }
     private static func path(_ value: String) -> Bool { value.range(of: #"^[a-z][a-z0-9_-]{0,63}\.[a-z][a-z0-9_-]{0,63}$"#, options: .regularExpression) != nil }
-    private static func paths(_ value: JSONValue?) throws -> [String] {
-        guard case .array(let items) = value, !items.isEmpty, items.count <= 64 else { throw MediaJSON.fail() }
+    private static func paths(_ value: JSONValue?, allowEmpty: Bool = false) throws -> [String] {
+        guard case .array(let items) = value, (allowEmpty || !items.isEmpty), items.count <= 64 else { throw MediaJSON.fail() }
         let names = try items.map(MediaJSON.text); try MediaJSON.require(names.allSatisfy(path) && names == names.sorted() && Set(names).count == names.count); return names
     }
     static func candidates(_ value: JSONValue) throws -> [JSONValue] {
@@ -41,7 +41,8 @@ enum MediaTargets {
                 }
                 if managed && compatible { result.append(item) }
             } else {
-                _ = try MediaJSON.fields(item, "device_id,route,compatible,target,fingerprint,device_serial,applications")
+                _ = try MediaJSON.fields(item, "device_id,route,compatible,target,fingerprint,device_serial,applications,paths")
+                try MediaJSON.require(compatible == !paths(v["paths"], allowEmpty: true).isEmpty)
                 for key in ["fingerprint", "device_serial"] { let s = try MediaJSON.text(v[key]); try MediaJSON.require(!s.isEmpty && s.utf16.count <= 512) }
                 guard case .array(let applications) = v["applications"], applications.count <= 32 else { throw MediaJSON.fail() }
                 for value in applications {

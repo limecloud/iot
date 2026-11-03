@@ -17,8 +17,13 @@ class DeviceMqtt(
     storage: DeviceStorage,
     applications: ApplicationPort,
     private val clock: DeviceClock,
+    audio: AudioPort?,
     private val status: (String) -> Unit = {},
 ) : AutoCloseable {
+    constructor(identity: DeviceIdentity, broker: String, tls: DeviceTls, storage: DeviceStorage,
+        applications: ApplicationPort, clock: DeviceClock, status: (String) -> Unit = {}) :
+        this(identity, broker, tls, storage, applications, clock, null, status)
+
     private val uri = DeviceBroker.parse(broker)
     private data class Incoming(val topic: String, val bytes: ByteArray, val retained: Boolean)
     private val messages = ArrayBlockingQueue<Incoming>(16)
@@ -28,7 +33,7 @@ class DeviceMqtt(
     private val overflow = AtomicBoolean(false)
     private val wake = Object()
     private var lastStatus: String? = null
-    private val agent = DeviceAgent(identity, storage, applications, clock) { online.get() && !closed.get() && !overflow.get() && tls.current }
+    private val agent = DeviceAgent(identity, storage, applications, clock, audio) { online.get() && !closed.get() && !overflow.get() && tls.current }
     private fun report(value: String) { if (lastStatus != value) { lastStatus = value; status(value) } }
 
     fun run() {

@@ -10,8 +10,31 @@ private struct CheckFailure: Error { let name: String }
 }
 private actor CloudMemoryStore: SessionStore {
     var values: [String: Data] = [:]
+    var preparedGate: CloudGate?
+    func holdPrepared(_ gate: CloudGate) { preparedGate = gate }
     func load(origin: String) -> Data? { values[origin] }
-    func save(origin: String, data: Data?) { values[origin] = data }
+    func save(origin: String, data: Data?) async {
+        values[origin] = data
+        if let data, let gate = preparedGate,
+           let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let operations = object["operations"] as? [[String: Any]], !operations.isEmpty {
+            preparedGate = nil
+            await gate.wait()
+        }
+    }
+}
+private actor CloudGate {
+    private(set) var entered = false
+    private var continuation: CheckedContinuation<Void, Never>?
+    func wait() async {
+        entered = true
+        await withCheckedContinuation { continuation = $0 }
+    }
+    func release() { continuation?.resume(); continuation = nil }
+    func awaitEntry() async throws {
+        for _ in 0..<500 { if entered { return }; try await Task.sleep(for: .milliseconds(10)) }
+        throw CheckFailure(name: "gate was not reached")
+    }
 }
 private actor CloudTransport: HTTPTransport {
     let origin = "https://control.example"
@@ -24,9 +47,11 @@ private actor CloudTransport: HTTPTransport {
     var offline = false
     var badRevision = false
     var delayPoll = false
+    var devicesGate: CloudGate?
     func setOffline(_ value: Bool) { offline = value }
     func setBadRevision(_ value: Bool) { badRevision = value }
     func setDelayPoll(_ value: Bool) { delayPoll = value }
+    func holdDevices(_ gate: CloudGate) { devicesGate = gate }
     func pollCount() -> Int { requests.filter { $0.url!.path.hasSuffix("/authorizations/poll") }.count }
     func createCount() -> Int { requests.filter { $0.url!.path.hasSuffix("/remote-commands") && $0.httpMethod == "POST" }.count }
     private func remote(_ status: String) throws -> [String: Any] {
@@ -51,6 +76,7 @@ private actor CloudTransport: HTTPTransport {
         else if path.hasSuffix("/space-b/gateways") { body = ["gateways": []] }
         else if path.hasSuffix("/gateways") { body = ["gateways": [["gateway_id": "gateway-a", "space_id": "space-a", "local_space_id": "local-a", "principal_id": "owner", "scopes": ["devices.read", "commands.write"], "revision": "revision-a", "active": true]]] }
         else if path.hasSuffix("/devices") {
+            if let gate = devicesGate { devicesGate = nil; await gate.wait() }
             if offline { status = 503; body = ["error": ["code": "gateway_offline"]] }
             else { body = ["items": [["device_id": "lamp", "model_revision": revision, "ready": true, "reported": ["light.power": ["value": false, "observed_at": "2026-11-02T00:00:00Z", "quality": "current", "source": "device"]]]], "next": NSNull(), "binding_revision": badRevision ? "other" : "revision-a"] }
         } else if path.contains("/model-releases/") { body = ["revision": revision, "model": ["model_id": "light", "services": [["id": "light", "properties": [["id": "power", "schema": ["type": "boolean"], "access": ["read", "write"]]], "events": []]]]] }
@@ -106,6 +132,52 @@ private actor CloudTransport: HTTPTransport {
         let saved = await vault.values.values.first!
         let state = try JSONSerialization.jsonObject(with: saved) as! [String: Any]
         try expect((state["operations"] as? [Any])?.count == 1 && state["material"] == nil, "logout retains original command without material")
-        print("{\"cloud_state_checks\":3,\"platform\":\"swift_host\",\"native_app\":false,\"hardware\":false}")
+        try await backgroundDuringPrepare()
+        try await lateRefreshAfterBackground()
+        print("{\"cloud_state_checks\":5,\"platform\":\"swift_host\",\"native_app\":false,\"hardware\":false}")
+    }
+
+    @MainActor static func backgroundDuringPrepare() async throws {
+        let suite = "run.limeai.iot.cloud-prepare-" + UUID().uuidString
+        let preferences = UserDefaults(suiteName: suite)!
+        defer { preferences.removePersistentDomain(forName: suite) }
+        let vault = CloudMemoryStore(), transport = CloudTransport(), gate = CloudGate()
+        let cloud = CloudStore(store: vault, preferences: preferences, transport: transport)
+        cloud.endpoint = "https://control.example"; await cloud.begin()
+        let foreground = Task { await cloud.runForeground() }
+        try await until { cloud.online && !cloud.busy }
+        let device = cloud.devices[0]
+        await vault.holdPrepared(gate)
+        let command = Task { await cloud.control(device, path: "light.power", value: .bool(true)) }
+        try await gate.awaitEntry()
+        foreground.cancel(); await foreground.value
+        await gate.release(); await command.value
+        try expect(await transport.createCount() == 0, "background during prepare must not submit a command")
+        try expect(!cloud.foreground && !cloud.online && !cloud.busy, "background leaves control disabled")
+        let resumed = Task { await cloud.runForeground() }
+        try await until { cloud.online && !cloud.busy }
+        try expect(cloud.records.count == 1 && !cloud.records[0].attempted, "prepared original survives foreground restoration without submission")
+        try expect(await transport.createCount() == 0, "foreground restoration must not submit prepared originals")
+        await cloud.forget(cloud.records[0])
+        try expect(cloud.records.isEmpty && !cloud.blocked(device), "explicit discard releases an unsent prepared original")
+        resumed.cancel(); await resumed.value
+    }
+
+    @MainActor static func lateRefreshAfterBackground() async throws {
+        let suite = "run.limeai.iot.cloud-refresh-" + UUID().uuidString
+        let preferences = UserDefaults(suiteName: suite)!
+        defer { preferences.removePersistentDomain(forName: suite) }
+        let transport = CloudTransport(), gate = CloudGate()
+        let cloud = CloudStore(store: CloudMemoryStore(), preferences: preferences, transport: transport)
+        cloud.endpoint = "https://control.example"; await cloud.begin()
+        let foreground = Task { await cloud.runForeground() }
+        try await until { cloud.online && !cloud.busy }
+        await transport.holdDevices(gate)
+        let refresh = Task { await cloud.refresh() }
+        try await gate.awaitEntry()
+        foreground.cancel(); await foreground.value
+        await gate.release(); await refresh.value
+        try expect(!cloud.online && !cloud.foreground && !cloud.busy, "late refresh must not restore background control")
+        try expect(await transport.createCount() == 0, "background refresh has no device effects")
     }
 }

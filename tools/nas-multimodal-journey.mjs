@@ -28,7 +28,10 @@ function unusedSubnet(cidrs) {
   throw new Error('nas_verification_private_subnet_unavailable');
 }
 
-export async function prepareNasMultimodal({ state, image, manager, run }) {
+export async function prepareNasMultimodal({ state, image, manager, run, emulated = false }) {
+  // 跨架构时主进程和健康检查均包含指令模拟开销，单独限制测试夹具内存。
+  const fixtureMemoryLimit = emulated ? '128m' : '48m';
+  const fixtureCPULimit = emulated ? 0.5 : undefined;
   const ids = (await run('docker', ['network', 'ls', '--quiet'], null)).split(/\s+/).filter(Boolean);
   const networks = ids.length ? JSON.parse(await run('docker', ['network', 'inspect', ...ids], null)) : [];
   const prefix = unusedSubnet(networks.flatMap(network => (network.IPAM?.Config ?? []).map(config => config.Subnet ?? '')));
@@ -49,7 +52,7 @@ export async function prepareNasMultimodal({ state, image, manager, run }) {
     },
   }] }), { mode: 0o600 });
   return {
-    modelRevision, mediaPort, mediaOrigin, modelValidatedInImage: true,
+    modelRevision, mediaPort, mediaOrigin, modelValidatedInImage: true, fixtureMemoryLimit, fixtureCPULimit,
     environment: {
       LIMEIOT_MEDIA_BIND_HOST: '127.0.0.1',
       LIMEIOT_TTS_URL: 'http://multimodal:17883', LIMEIOT_TTS_MODEL: 'fixture/local-model', LIMEIOT_TTS_VOICES: 'local', LIMEIOT_TTS_CA_FILE: '',
@@ -61,7 +64,8 @@ export async function prepareNasMultimodal({ state, image, manager, run }) {
         gateway: { networks: { local: { ipv4_address: prefix + '.2' }, media: {} } },
         multimodal: {
           image, pull_policy: 'never', user: '${LIMEIOT_UID:?}:${LIMEIOT_GID:?}', entrypoint: ['python3', '/fixture/multimodal.py'], command: [],
-          read_only: true, cap_drop: ['ALL'], security_opt: ['no-new-privileges:true'], mem_limit: '48m', memswap_limit: '48m',
+          read_only: true, cap_drop: ['ALL'], security_opt: ['no-new-privileges:true'], mem_limit: fixtureMemoryLimit, memswap_limit: fixtureMemoryLimit,
+          ...(fixtureCPULimit ? { cpus: fixtureCPULimit } : {}),
           volumes: [{ type: 'bind', source: path.join(root, 'tests/fixtures/nas/multimodal.py'), target: '/fixture/multimodal.py', read_only: true }],
           networks: { local: { ipv4_address: prefix + '.3' } },
           healthcheck: { test: ['CMD', 'python3', '-c', 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:17883/state",timeout=2).read()'], interval: '2s', timeout: '3s', retries: 20 },
@@ -74,7 +78,7 @@ export async function prepareNasMultimodal({ state, image, manager, run }) {
 
 export function nasMultimodalJourney({ configuration, call, compose, directory, getState }) {
   const bytes = pcmWav(), image = png(512, 512, true), prompt = '请检查容器旅程中的图片颜色。';
-  const report = { passed: false, provider_fixture: true, renderer_fixture: true, model_validated_in_image: configuration.modelValidatedInImage, real_model_quality: false, hardware: false };
+  const report = { passed: false, provider_fixture: true, renderer_fixture: true, model_validated_in_image: configuration.modelValidatedInImage, fixture_memory_limit: configuration.fixtureMemoryLimit, fixture_cpu_limit: configuration.fixtureCPULimit, real_model_quality: false, hardware: false };
   let completed, original, binding, pending, beforeBackupCalls, originalMediaURL;
   const provider = async (resource = '/state', input) => {
     const script = 'import json,sys,urllib.request\nbody=None if len(sys.argv)==2 else sys.argv[2].encode()\nreq=urllib.request.Request("http://127.0.0.1:17883"+sys.argv[1],data=body,headers={"Content-Type":"application/json"})\nprint(urllib.request.urlopen(req,timeout=5).read().decode())';
@@ -97,7 +101,7 @@ export function nasMultimodalJourney({ configuration, call, compose, directory, 
       operation: { type: 'action.invoke', path: 'playback.play', value: { media_id: media } },
     } });
     assert.equal(response.status, 202, JSON.stringify(response.value));
-    const result = await until(async () => { const value = (await call(base + '/commands/' + response.value.command_id)).value; return value.status !== 'queued' && value.status !== 'dispatched' && value; });
+    const result = await until(async () => { const value = (await call(base + '/commands/' + response.value.command_id)).value; return !['accepted', 'queued', 'dispatched'].includes(value.status) && value; });
     assert.equal(result.status, 'confirmed', JSON.stringify(result));
     return result.command_id;
   }
@@ -195,7 +199,12 @@ export function nasMultimodalJourney({ configuration, call, compose, directory, 
       report.restored_play_command = await play(completed.speech.media_id, 'nas-restored-play');
       state = await provider(); assert.equal(state.calls.length, 0); assert.equal(state.pulls[0].bytes, bytes.length); assert.equal(state.effects.length, 3);
       for (const kind of Object.keys(routes)) assert.equal((await call(`${base}/${routes[kind]}/by-key/nas-pending-${kind}/discard`, { input: {} })).value.status, 'discarded');
-      for (const kind of ['asr', 'vision']) assert.equal((await call(`${base}/${routes[kind]}/by-key/nas-${kind}/discard`, { input: {} })).status, 200);
+      // ASR成功文本随源录音删除清除；discard只放弃未完成任务，视觉另有直接清文合同。
+      const completedDiscard = await call(`${base}/${routes.asr}/by-key/nas-asr/discard`, { input: {} });
+      assert.equal(completedDiscard.status, 409);
+      assert.equal(completedDiscard.value.error.code, 'transcription_already_completed');
+      assert.deepEqual((await finish('asr', 'nas-asr')).output, completed.asr.output);
+      assert.equal((await call(`${base}/${routes.vision}/by-key/nas-vision/discard`, { input: {} })).status, 200);
       for (const media of [report.source_media_id, completed.speech.media_id]) assert.equal((await mediaOperation({ type: 'media.delete', media_id: media }, 'nas-delete-' + media)).status, 200);
       report.pending_restored_unknown_without_resubmit = true; report.unknown_retains_budget = true;
       report.provider_calls_before_backup = beforeBackupCalls; report.provider_calls_after_restore = state.calls.length;

@@ -10,10 +10,10 @@ internal object MediaTargets {
         val v = MediaJSON.obj(value); MediaJSON.fields(v, "adapter_id,revision"); MediaJSON.id(v["adapter_id"]); MediaJSON.hash(v["revision"])
     }
     private fun path(value: String) = value.matches(Regex("[a-z][a-z0-9_-]{0,63}\\.[a-z][a-z0-9_-]{0,63}"))
-    private fun paths(value: JsonElement?): List<String> {
+    private fun paths(value: JsonElement?, allowEmpty: Boolean = false): List<String> {
         val array = value as? JsonArray ?: throw MediaException("invalid_media_document")
         val names = array.map(MediaJSON::str)
-        MediaJSON.require(names.isNotEmpty() && names.size <= 64 && names.all(::path) && names == names.sorted() && names.distinct().size == names.size); return names
+        MediaJSON.require((allowEmpty || names.isNotEmpty()) && names.size <= 64 && names.all(::path) && names == names.sorted() && names.distinct().size == names.size); return names
     }
     fun candidates(page: JsonObject): List<JsonObject> {
         MediaJSON.fields(page, "items,next_cursor"); val items = page["items"] as? JsonArray ?: throw MediaException("invalid_media_document")
@@ -34,7 +34,8 @@ internal object MediaTargets {
                 }
                 if (managed && compatible) result += v
             } else {
-                MediaJSON.fields(v, "device_id,route,compatible,target,fingerprint,device_serial,applications")
+                MediaJSON.fields(v, "device_id,route,compatible,target,fingerprint,device_serial,applications,paths")
+                MediaJSON.require(compatible == paths(v["paths"], allowEmpty = true).isNotEmpty())
                 for (key in listOf("fingerprint", "device_serial")) MediaJSON.require(MediaJSON.text(v, key).length in 1..512)
                 val applications = v["applications"] as? JsonArray ?: throw MediaException("invalid_media_document"); MediaJSON.require(applications.size <= 32)
                 for (value in applications) {

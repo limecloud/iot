@@ -50,7 +50,7 @@ async fn bundles(State(app): State<App>, Path(space): Path<String>) -> Output<Js
     let store = app.store.lock().await;
     check(&store.data, &space)?;
     Ok(Json(
-        json!({"items":limeiot_core::model_bundles::catalog()?,"next_cursor":null}),
+        json!({"items":store.data.model_bundles().list(),"next_cursor":null}),
     ))
 }
 async fn bundle(
@@ -59,7 +59,7 @@ async fn bundle(
 ) -> Output<Json<Value>> {
     let store = app.store.lock().await;
     check(&store.data, &space)?;
-    Ok(Json(json!(limeiot_core::model_bundles::get(&id)?)))
+    Ok(Json(json!(store.data.model_bundles().get(&id)?)))
 }
 async fn trusts(State(app): State<App>, Path(space): Path<String>) -> Output<Json<Value>> {
     let store = app.store.lock().await;

@@ -3,7 +3,12 @@ mod config;
 mod process;
 
 pub use config::{application_id, ApplicationGrant, Config, LaunchCategory};
-use limeiot_core::{ensure, err, model::Model, protocol::Operation, Result};
+use limeiot_core::{
+    ensure, err,
+    model::{Model, Service},
+    protocol::Operation,
+    Result,
+};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeSet, time::Duration};
 use tokio::{
@@ -115,36 +120,73 @@ pub struct Adapter {
     config: Config,
     serial: Mutex<()>,
 }
-/// 只允许模型声明执行端确实支持的动作和输入子集；应用仍另查当前授权。
-pub fn supports_model(model: &Model) -> bool {
-    let supported: Model = serde_json::from_slice(include_bytes!(
+fn reference_model() -> Model {
+    serde_json::from_slice(include_bytes!(
         "../../../../contracts/models/android-tv-remote.json"
     ))
-    .expect("android tv model");
-    model.validate().is_ok()
-        && model.services.iter().all(|service| {
-            service.properties.is_empty()
-                && service.events.is_empty()
-                && supported
-                    .services
-                    .iter()
-                    .find(|expected| expected.id == service.id)
-                    .is_some_and(|expected| expected.semantic_id == service.semantic_id)
-                && service.actions.iter().all(|action| {
-                    supported
-                        .action(&format!("{}.{}", service.id, action.id))
-                        .is_ok_and(|expected| {
-                            action.semantic_id == expected.semantic_id
-                                && action.idempotent == expected.idempotent
-                                && action.risk == expected.risk
-                                && limeiot_core::execution::supports_action(action)
-                                && limeiot_core::compatibility::schema_subset(
-                                    &action.input,
-                                    &expected.input,
-                                )
-                        })
+    .expect("android tv model")
+}
+
+fn supports_service(service: &Service, supported: &Model) -> bool {
+    service.properties.is_empty()
+        && service.events.is_empty()
+        && supported
+            .services
+            .iter()
+            .find(|expected| expected.id == service.id)
+            .is_some_and(|expected| expected.semantic_id == service.semantic_id)
+        && service.actions.iter().all(|action| {
+            supported
+                .action(&format!("{}.{}", service.id, action.id))
+                .is_ok_and(|expected| {
+                    action.semantic_id == expected.semantic_id
+                        && action.idempotent == expected.idempotent
+                        && action.risk == expected.risk
+                        && limeiot_core::execution::supports_action(action)
+                        && limeiot_core::compatibility::schema_subset(
+                            &action.input,
+                            &expected.input,
+                        )
                 })
         })
+}
+
+/// 整个模型可由ADB承担；含原生状态或其他动作的模型必须明确组合。
+pub fn supports_model(model: &Model) -> bool {
+    let supported = reference_model();
+    model.validate().is_ok()
+        && model
+            .services
+            .iter()
+            .all(|service| supports_service(service, &supported))
+}
+
+/// 仅声明受限按键/应用路径；其他服务的只读状态和动作留给获准原生端。
+pub fn supported_paths(model: &Model) -> BTreeSet<String> {
+    if model.validate().is_err() || !limeiot_core::execution::supports_native_state(model) {
+        return BTreeSet::new();
+    }
+    let supported = reference_model();
+    let mut paths = BTreeSet::new();
+    for service in &model.services {
+        if supported
+            .services
+            .iter()
+            .any(|expected| expected.id == service.id)
+        {
+            // 已知服务不能通过改语义、放宽输入或加入未实现动作获得部分授权。
+            if !supports_service(service, &supported) {
+                return BTreeSet::new();
+            }
+            paths.extend(
+                service
+                    .actions
+                    .iter()
+                    .map(|action| format!("{}.{}", service.id, action.id)),
+            );
+        }
+    }
+    paths
 }
 impl Adapter {
     pub fn new(config: Config) -> Result<Self> {

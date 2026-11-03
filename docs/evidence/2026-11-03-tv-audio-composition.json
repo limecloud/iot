@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-11-03T14:49:46.670051+00:00",
+  "scope": "native_audio_and_adb_path_composition_with_explicit_web_approval",
+  "status": "gateway_protocol_web_and_ios_verified_android_consumer_not_compiled",
+  "archive": ".dev/tv-audio-composition-th60j65z",
+  "hardware": false,
+  "device_connection": false,
+  "android_emulator": false,
+  "published": false,
+  "full_goal_completed": false,
+  "changes": {
+    "adb_offers_only_supported_paths": true,
+    "known_action_semantics_and_input_constraints_preserved": true,
+    "audio_or_observation_not_owned_by_adb": true,
+    "native_proof_independent_of_adapter_ready": true,
+    "native_proof_not_in_snapshot": true,
+    "explicit_web_composition": true,
+    "durable_original_request_before_post": true,
+    "response_loss_or_reload_queries_original_only": true,
+    "shared_schema_and_js_swift_kotlin_consumers_updated": true,
+    "database_or_model_digest_changed": false,
+    "new_dependency": false
+  },
+  "verification": {
+    "rust_targeted": {
+      "adapter_models": 3,
+      "core_composition": 7,
+      "gateway_integrations": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    "clippy_workspace_all_targets_warnings_denied": true,
+    "clippy_native_gateway_all_targets_warnings_denied": true,
+    "workspace_build": true,
+    "home_typecheck_and_build": true,
+    "browser_and_integration_regressions": {
+      "passed": 8,
+      "failed": 0,
+      "log": "browser-regressions.log"
+    },
+    "formal_protocol_cli_and_shared_vectors": {
+      "passed": 5,
+      "failed": 0,
+      "log": "final-protocol-tests-attempt-2.log"
+    },
+    "groups_may_overlap_not_an_independent_total": true,
+    "ios_client_checks": {
+      "passed": true,
+      "media_target_groups": 4,
+      "invalid_candidate_vectors": 12,
+      "invalid_binding_vectors": 8,
+      "log": "ios-client-tests.log",
+      "other_native_integration_skips_preserved": true
+    },
+    "android_consumer_compiled": false,
+    "journey": ".dev/tv-audio-composition-web-AJxFAr/result.json",
+    "screenshot": {
+      "path": ".dev/tv-audio-composition-web-AJxFAr/audio-composition-mobile.png",
+      "width": 390,
+      "visually_reviewed": true
+    },
+    "native_protocol_fixture": true,
+    "fake_adb": true,
+    "real_tv_agent": false,
+    "actual_audio_service": false,
+    "fmt": true,
+    "git_diff_check": true,
+    "documentation": {
+      "documents": 8,
+      "local_links_and_anchors": 626,
+      "passed": true,
+      "report": ".dev/tv-audio-composition-th60j65z/document-links.json"
+    }
+  },
+  "failed_attempts_preserved": [
+    {
+      "log": "audio-web-tests-attempt-1.log",
+      "reason": "new journey missing NAS config/gateway.json before identity issuance",
+      "fix": "prepare validated gateway config before identity issuance",
+      "resolved": true
+    },
+    {
+      "log": "final-protocol-tests.log",
+      "reason": "strict JSON Schema compilation required array type in paths conditional branches",
+      "fix": "declare explicit array type in both branches",
+      "resolved": true
+    }
+  ],
+  "limitations": [
+    "Android strict candidate consumer is updated in source but not compiled or tested in this stage: required JDK21 toolchain is unavailable",
+    "Existing v3 local-key identity model reassignment and identity/rotation history continuity remain incomplete",
+    "Actual JVM audio Agent, Android audio/service/background behavior and hardware coexistence acceptance remain unverified",
+    "The existing two API23 APK callback timeout regressions were not retried",
+    "Previously observed default-parallel ADB deadline test instability remains unresolved; not rerun in this stage"
+  ],
+  "finalized_at": "2026-11-03T14:52:24.366679+00:00",
+  "manifest": ".dev/tv-audio-composition-th60j65z/manifest.json"
+}

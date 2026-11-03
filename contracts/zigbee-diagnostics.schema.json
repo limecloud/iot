@@ -1,0 +1,391 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iot.limeai.run/contracts/zigbee-diagnostics.schema.json",
+  "title": "ZNP诊断与ZDO候选访谈回执",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/probeReport"
+    },
+    {
+      "$ref": "#/$defs/interviewReport"
+    }
+  ],
+  "$defs": {
+    "request": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "command": {
+              "const": "probe"
+            },
+            "serial": {
+              "type": "string",
+              "pattern": "^/",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 30000
+            }
+          },
+          "required": [
+            "command",
+            "serial"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "command": {
+              "const": "interview"
+            },
+            "serial": {
+              "type": "string",
+              "pattern": "^/",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 30000
+            },
+            "address": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{4}$",
+              "description": "0x0000至0xfff7，保留与广播地址拒绝",
+              "not": {
+                "pattern": "^0x[fF]{3}[89a-fA-F]$"
+              }
+            }
+          },
+          "required": [
+            "command",
+            "serial",
+            "address"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "probe": {
+      "type": "object",
+      "properties": {
+        "capabilities": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "transport_revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "product_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "major": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "minor": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "maintenance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "version_extension": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "maxItems": 11
+        }
+      },
+      "required": [
+        "capabilities",
+        "transport_revision",
+        "product_id",
+        "major",
+        "minor",
+        "maintenance",
+        "version_extension"
+      ],
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "properties": {
+        "logical_type": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "flags": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "frequency_band_flags": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "mac_capabilities": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "manufacturer_code": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "max_buffer_size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "max_incoming_transfer_size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "server_mask": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "max_outgoing_transfer_size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "descriptor_capability": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      },
+      "required": [
+        "logical_type",
+        "flags",
+        "frequency_band_flags",
+        "mac_capabilities",
+        "manufacturer_code",
+        "max_buffer_size",
+        "max_incoming_transfer_size",
+        "server_mask",
+        "max_outgoing_transfer_size",
+        "descriptor_capability"
+      ],
+      "additionalProperties": false
+    },
+    "endpoint": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240
+        },
+        "profile_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "device_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "device_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 15
+        },
+        "input_clusters": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          },
+          "maxItems": 32,
+          "uniqueItems": true
+        },
+        "output_clusters": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          },
+          "maxItems": 32,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "endpoint",
+        "profile_id",
+        "device_id",
+        "device_version",
+        "input_clusters",
+        "output_clusters"
+      ],
+      "additionalProperties": false
+    },
+    "interview": {
+      "type": "object",
+      "properties": {
+        "ncp": {
+          "$ref": "#/$defs/probe"
+        },
+        "network_address": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65527
+        },
+        "ieee_address": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "node": {
+          "$ref": "#/$defs/node"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/endpoint"
+          },
+          "maxItems": 16,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "ncp",
+        "network_address",
+        "ieee_address",
+        "node",
+        "endpoints"
+      ],
+      "additionalProperties": false
+    },
+    "probeReport": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "probe"
+        },
+        "protocol": {
+          "const": "znp"
+        },
+        "evidence": {
+          "const": "unauthenticated_protocol"
+        },
+        "device_binding_created": {
+          "const": false
+        },
+        "observed_at_unix_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "result": {
+          "$ref": "#/$defs/probe"
+        }
+      },
+      "required": [
+        "schema_version",
+        "operation",
+        "protocol",
+        "evidence",
+        "device_binding_created",
+        "observed_at_unix_ms",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    "interviewReport": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "interview"
+        },
+        "protocol": {
+          "const": "znp"
+        },
+        "evidence": {
+          "const": "unauthenticated_protocol"
+        },
+        "device_binding_created": {
+          "const": false
+        },
+        "observed_at_unix_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "result": {
+          "$ref": "#/$defs/interview"
+        }
+      },
+      "required": [
+        "schema_version",
+        "operation",
+        "protocol",
+        "evidence",
+        "device_binding_created",
+        "observed_at_unix_ms",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "pattern": "^[a-z_]+$"
+            },
+            "status": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -11,6 +11,7 @@ import shutil
 import struct
 import subprocess
 import tarfile
+import tempfile
 import urllib.request
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -61,7 +62,15 @@ def download(url, destination, expected):
     pending.replace(destination)
 
 
-def prepare_toolchain(cache, target):
+def cc_wrapper(zig, triple, zig_target):
+    # cc-rs/ring可追加Rust目标名；保留显式Zig目标及glibc版本，其他参数原样传递。
+    return ("#!/bin/bash\narguments=()\nfor argument in \"$@\"; do\n"
+            f"  case \"$argument\" in --target={shlex.quote(triple)}) ;;\n"
+            "    *) arguments+=(\"$argument\") ;;\n  esac\ndone\n"
+            f"exec {shlex.quote(str(zig))} cc -target {shlex.quote(zig_target)} \"${{arguments[@]}}\"\n")
+
+
+def prepare_toolchain(cache, target, jobs=1):
     require(platform.system() == "Darwin" and platform.machine() == "arm64", "cross_builder_requires_macos_arm64")
     version = subprocess.check_output(["rustc", "--version"], text=True).split()[1]
     require(version == RUST, "rust_version_mismatch")
@@ -90,11 +99,11 @@ def prepare_toolchain(cache, target):
     wrappers.mkdir(exist_ok=True)
     for name, command in [("cc", f"cc -target {zig_target}"), ("ar", "ar")]:
         file = wrappers / name
-        file.write_text(f"#!/bin/sh\nexec {shlex.quote(str(zig))} {command} \"$@\"\n")
+        file.write_text(cc_wrapper(zig, triple, zig_target) if name == "cc" else f"#!/bin/sh\nexec {shlex.quote(str(zig))} {command} \"$@\"\n")
         file.chmod(0o755)
     environment = os.environ.copy()
     environment.update({
-        "CARGO_TARGET_DIR": str(cache / "target"), "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": str(cache / "target"), "CARGO_BUILD_JOBS": str(jobs),
         "CARGO_ENCODED_RUSTFLAGS": "--sysroot\x1f" + str(sysroot),
         "CARGO_TARGET_" + triple.upper().replace("-", "_") + "_LINKER": str(wrappers / "cc"),
         "CC_" + triple.replace("-", "_"): str(wrappers / "cc"),
@@ -108,7 +117,9 @@ def prepare_toolchain(cache, target):
 
 def source_inputs():
     files = {"Cargo.toml", "Cargo.lock", "package.json", "package-lock.json", "LICENSE", "deploy/dev/config.json", "tools/build-nas-artifacts.py"}
-    for name in ["gateway", "tools/simulator", "tools/model-validator", "contracts/models", "deploy/nas", "apps/home", "packages/control-ui", "packages/protocol"]:
+    for workspace in json.loads((ROOT / "package.json").read_text())["workspaces"]:
+        files.add(workspace + "/package.json")
+    for name in ["gateway", "tools/simulator", "tools/model-validator", "contracts", "deploy/nas", "apps/home", "packages/control-ui", "packages/protocol"]:
         for path in (ROOT / name).rglob("*"):
             relative = path.relative_to(ROOT)
             if any(part in {"node_modules", "dist", "target", "build", "__pycache__", ".git"} for part in relative.parts):
@@ -154,6 +165,21 @@ def runtime_dockerfile(source):
     return result
 
 
+def cached_runtime_dockerfile(source, platform_name, base):
+    marker = "COPY bin/limeiot-gateway /usr/local/bin/limeiot-gateway"
+    require(source.count(marker) == 1, "nas_runtime_stage_changed")
+    prefix, remainder = source.split(marker)
+    require(prefix.startswith("FROM debian:bookworm-slim AS runtime\n"), "nas_runtime_stage_changed")
+    require(base.get("Os", "") + "/" + base.get("Architecture", "") == platform_name, "runtime_base_platform_mismatch")
+    identity = base.get("Id", "")
+    require(re.fullmatch(r"sha256:[a-f0-9]{64}", identity), "runtime_base_identity_invalid")
+    config = base.get("Config") or {}
+    require(config.get("WorkingDir") == "/opt/limeiot", "runtime_base_workdir_mismatch")
+    labels = config.get("Labels") or {}
+    require(labels.get("run.limeiot.runtime-prefix-digest") == hashlib.sha256(prefix.encode()).hexdigest(), "runtime_base_prefix_mismatch")
+    return f"FROM {identity} AS runtime\n" + marker + remainder
+
+
 def tree_files(directory):
     files = {}
     for path in sorted(directory.rglob("*")):
@@ -185,7 +211,7 @@ def verify(directory):
     return manifest
 
 
-def build(target, output, cache):
+def build(target, output, cache, jobs=1):
     inputs = source_inputs()
     source_digest = canonical_digest(inputs)
     output = output or ROOT / ".dev/nas-artifacts" / (target.replace("/", "-") + "-" + source_digest[:16])
@@ -193,7 +219,7 @@ def build(target, output, cache):
         manifest = verify(output)
         require(manifest["platform"] == target and manifest["source_files"] == inputs, "existing_artifact_source_mismatch")
         return output
-    environment, toolchain = prepare_toolchain(cache, target)
+    environment, toolchain = prepare_toolchain(cache, target, jobs)
     triple = TARGETS[target][0]
     run(["cargo", "build", "--locked", "--release", "--workspace", "--target", triple], env=environment)
     for binary in BINARIES:
@@ -216,7 +242,7 @@ def build(target, output, cache):
     require(source_inputs() == inputs, "source_changed_during_packaging")
     manifest = {"schema": "limeiot.nas-artifacts", "version": 1, "platform": target,
                 "source_digest": source_digest, "source_files": inputs, "toolchain": toolchain,
-                "node": node, "files": tree_files(output), "hardware": False, "published": False}
+                "node": node, "build_jobs": jobs, "files": tree_files(output), "hardware": False, "published": False}
     (output / "build.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     verify(output)
     return output
@@ -229,11 +255,13 @@ def main():
     create.add_argument("--platform", required=True, choices=TARGETS)
     create.add_argument("--output", type=Path)
     create.add_argument("--toolchain-cache", type=Path, default=ROOT / ".dev/nas-cross-toolchain")
+    create.add_argument("--jobs", type=int, choices=(1, 2), default=1, help="宿主编译并发；默认1，资源允许时可明确选择2")
     for name in ["verify", "image"]:
         command = commands.add_parser(name)
         command.add_argument("--directory", type=Path, required=True)
         if name == "image":
             command.add_argument("--tag", required=True)
+            command.add_argument("--runtime-base", help="已核验的同平台本地运行依赖镜像，仅接受limeiot/verification标签")
     args = parser.parse_args()
     if args.command == "build":
         import fcntl
@@ -241,15 +269,29 @@ def main():
         cache.mkdir(parents=True, exist_ok=True)
         with (cache / "build.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            directory = build(args.platform, args.output.resolve() if args.output else None, cache)
+            directory = build(args.platform, args.output.resolve() if args.output else None, cache, args.jobs)
     else:
         directory = args.directory.resolve()
     manifest = verify(directory)
     if args.command == "image":
         require(re.fullmatch(r"limeiot/verification:[A-Za-z0-9_.-]+", args.tag), "local_verification_image_required")
-        run(["docker", "build", "--platform", manifest["platform"], "--pull=false", "--memory", "96m", "--memory-swap", "96m", "--tag", args.tag,
-             "--label", "run.limeiot.source-digest=" + manifest["source_digest"],
-             "--file", directory / "Dockerfile", directory], env={**os.environ, "DOCKER_BUILDKIT": "0"})
+        base = None
+        source = (directory / "Dockerfile").read_text()
+        if args.runtime_base:
+            require(re.fullmatch(r"limeiot/verification:[A-Za-z0-9_.-]+", args.runtime_base), "local_runtime_base_required")
+            inspected = json.loads(subprocess.check_output(["docker", "image", "inspect", args.runtime_base], text=True))
+            require(isinstance(inspected, list) and len(inspected) == 1, "runtime_base_inspection_invalid")
+            base = inspected[0]
+            source = cached_runtime_dockerfile(source, manifest["platform"], base)
+        temporary = ROOT / ".dev"
+        temporary.mkdir(exist_ok=True)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".Dockerfile", dir=temporary) as dockerfile:
+            dockerfile.write(source)
+            dockerfile.flush()
+            labels = ["--label", "run.limeiot.runtime-base-id=" + base["Id"]] if base else []
+            run(["docker", "build", "--platform", manifest["platform"], "--pull=false", "--memory", "96m", "--memory-swap", "96m", "--tag", args.tag,
+                 "--label", "run.limeiot.source-digest=" + manifest["source_digest"], *labels,
+                 "--file", dockerfile.name, directory], env={**os.environ, "DOCKER_BUILDKIT": "0"})
         require(verify(directory) == manifest, "artifacts_changed_during_image_build")
     print(json.dumps({"verified": True, "directory": str(directory), "platform": manifest["platform"],
                       "source_digest": manifest["source_digest"], "hardware": False, "published": False}), flush=True)

@@ -39,7 +39,7 @@ async function run(command, args, logName, options = {}) {
 }
 async function compose(args, log = 'compose.log') {
   const files = ['compose.yaml', ...(values.multimodal ? ['compose.media.yaml', 'compose.speech.yaml', 'compose.transcription.yaml', 'compose.vision.yaml'] : [])];
-  return run(composeCommand, [...composePrefix, '--project-name', project, '--env-file', path.join(currentState, 'compose.env'), ...files.flatMap(file => ['-f', path.join(root, 'deploy/nas', file)]), '-f', composeFile, '--profile', 'simulation', ...args], log, { env: { ...process.env, ...multimodalConfiguration?.environment, LIMEIOT_BIND_HOST: '127.0.0.1', LIMEIOT_MQTT_TLS_PORT: String(mqttPort) } });
+  return run(composeCommand, [...composePrefix, '--project-name', project, '--env-file', path.join(currentState, 'compose.env'), ...files.flatMap(file => ['-f', path.join(root, 'deploy/nas', file)]), '-f', composeFile, '--profile', 'simulation', ...args], log, { env: { ...process.env, ...multimodalConfiguration?.environment, LIMEIOT_STATE_DIR: currentState, LIMEIOT_BIND_HOST: '127.0.0.1', LIMEIOT_MQTT_TLS_PORT: String(mqttPort) } });
 }
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 try {
@@ -48,6 +48,7 @@ try {
   report.daemon_platform = (await exec('docker', ['version', '--format', '{{.Server.Os}}/{{.Server.Arch}}'])).stdout.trim();
   const platform = nasVerificationPlatform(values.platform, report.daemon_platform);
   report.target_platform = platform;
+  report.emulated = platform !== report.daemon_platform;
   if (!values['no-build']) {
     console.log('构建NAS镜像，日志位于本次证据目录。');
     let env = process.env;
@@ -67,7 +68,7 @@ try {
     lamp: { image, pull_policy: 'never' }, button: { image, pull_policy: 'never' },
   } };
   if (values.multimodal) {
-    multimodalConfiguration = await prepareNasMultimodal({ state, image: report.image_id, manager, run });
+    multimodalConfiguration = await prepareNasMultimodal({ state, image: report.image_id, manager, run, emulated: report.emulated });
     overrides.networks = multimodalConfiguration.overrides.networks;
     for (const [service, config] of Object.entries(multimodalConfiguration.overrides.services)) overrides.services[service] = { ...overrides.services[service], ...config };
   }
@@ -77,6 +78,8 @@ try {
   }
   await writeFile(composeFile, JSON.stringify(overrides), { mode: 0o600 });
   const configuration = JSON.parse(await compose(['config', '--format', 'json'], null));
+  assert.ok(configuration.services.gateway.volumes.every(volume => volume.type === 'bind' && volume.source.startsWith(state + path.sep)), 'verification_state_directory_mismatch');
+  report.installation_scoped_to_verification_directory = true;
   const images = await inspectNasImages(Object.fromEntries(Object.entries(configuration.services).map(([service, config]) => [service, config.image])), platform);
   report.image_platforms = images;
   for (const [service, pinned] of Object.entries(nasImageOverrides(images, platform))) overrides.services[service] = { ...overrides.services[service], ...pinned };
@@ -86,6 +89,9 @@ try {
   let session;
   function call(resource, { input, key, authenticated = true, headers = {}, method } = {}) {
     return new Promise((resolve, reject) => {
+      const startedAt = performance.now(), body = input === undefined ? undefined : JSON.stringify(input);
+      const request = { method: method ?? (input === undefined ? 'GET' : 'POST'), resource, input_bytes: body === undefined ? 0 : Buffer.byteLength(body) };
+      const observation = () => ({ ...request, elapsed_ms: Math.round(performance.now() - startedAt) });
       const req = httpsRequest(origin + resource, { agent, method: method ?? (input === undefined ? 'GET' : 'POST'), headers: {
         ...(authenticated && session ? { Cookie: session.cookie, 'X-CSRF-Token': session.csrf, Origin: origin } : {}),
         ...(input === undefined ? {} : { 'Content-Type': 'application/json' }), ...(key ? { 'Idempotency-Key': key } : {}), ...headers,
@@ -95,11 +101,14 @@ try {
         response.on('end', () => {
           const raw = Buffer.concat(chunks).toString();
           let value; try { value = JSON.parse(raw); } catch { value = raw; }
+          const timing = observation();
+          if (timing.elapsed_ms >= 1000) (report.slow_requests ??= []).push({ ...timing, status: response.statusCode });
           resolve({ status: response.statusCode, headers: response.headers, value });
         });
       });
-      req.setTimeout(5000, () => req.destroy(new Error('https_timeout'))); req.on('error', reject);
-      req.end(input === undefined ? undefined : JSON.stringify(input));
+      req.setTimeout(5000, () => req.destroy(new Error('https_timeout')));
+      req.on('error', error => { error.request_observation = observation(); reject(error); });
+      req.end(body);
     });
   }
   async function login() {
@@ -125,7 +134,11 @@ try {
   for (const service of ['gateway', 'edge', ...(values.multimodal ? ['multimodal'] : [])]) {
     report.runtime_machines[service] = verifyNasMachine(await compose(['exec', '-T', service, 'uname', '-m'], null), platform, service);
   }
-  await until(async () => (await call('/healthz', { authenticated: false })).value.broker_connected, 15000);
+  await until(async () => {
+    const response = await call('/healthz', { authenticated: false });
+    report.startup_health = { status: response.status, broker_connected: response.value?.broker_connected };
+    return response.value.broker_connected;
+  }, 15000);
   report.https_verified_ca = true;
   assert.equal((await call(base + '/devices', { authenticated: false })).status, 401);
   assert.equal((await call('/api/v1/auth/session', { authenticated: false, input: { token: owner }, headers: { Origin: 'https://other.example.test' } })).status, 403);
@@ -209,6 +222,9 @@ try {
   await compose(['restart', 'gateway']);
   await until(async () => (await call('/healthz', { authenticated: false })).value.broker_connected, 15000);
   await assert.rejects(mqttProbe(mqtt)); report.device_mtls_acl_revocation = true;
+  assert.equal((await call(base + '/devices')).status, 401);
+  session = undefined; await login();
+  report.session_reauthenticated_after_gateway_restart = true;
   const originalKey = hash(await readFile(path.join(state, 'secrets/gateway-identity.pk8')));
   const backup = path.join(directory, 'backup'), restored = path.join(directory, 'restored');
   multimodalSnapshot = await multimodal?.beforeBackup();
@@ -229,6 +245,12 @@ try {
     await until(async () => (await call('/healthz', { authenticated: false })).value.broker_connected, 15000);
     session = undefined; await login();
     await until(simulationReady, 20000);
+    const netns = ['exec', '-T', 'gateway', 'python3', '-c', 'import os;print(os.readlink("/proc/self/ns/net"))'];
+    const gatewayNamespace = await compose(netns, null);
+    for (const service of ['lamp', 'button']) {
+      assert.equal(await compose(['exec', '-T', service, ...netns.slice(3)], null), gatewayNamespace);
+    }
+    report.simulators_rejoined_gateway_network_after_restart = true;
     await multimodal.afterClearRestart();
   }
   assert.equal((await call(base + '/commands/' + confirmed.command_id)).value.status, 'confirmed');
@@ -243,7 +265,18 @@ try {
   console.log('NAS容器：HTTPS、家庭页面、MQTT控制、mTLS/撤销和新目录备份恢复通过。' + (values.multimodal ? ' 多模态容器、显式播放与清文恢复通过。' : ''));
 } catch (error) {
   report.error = error instanceof Error ? error.message : 'nas_verification_failed';
-  if (started) await compose(['ps', '--all', '--quiet'], null).then(ids => { report.real_containers ||= Boolean(ids.trim()); }).catch(() => {});
+  if (error?.request_observation) report.failed_request = error.request_observation;
+  if (started) {
+    try {
+      const ids = (await compose(['ps', '--all', '--quiet'], null)).split(/\s+/).filter(Boolean);
+      report.real_containers ||= ids.length > 0;
+      if (ids.length) report.container_states = JSON.parse((await exec('docker', ['inspect', ...ids])).stdout).map(container => ({
+        service: container.Config.Labels['com.docker.compose.service'], status: container.State.Status,
+        exit_code: container.State.ExitCode, oom_killed: container.State.OOMKilled,
+        memory_limit_bytes: container.HostConfig.Memory, health: container.State.Health?.Status,
+      }));
+    } catch { /* 诊断失败不替代原始验收错误。 */ }
+  }
   console.error('NAS检查未通过，详见本次证据目录。'); process.exitCode = 1;
 } finally {
   await browser?.close(); agent?.destroy();

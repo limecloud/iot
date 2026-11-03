@@ -1,5 +1,7 @@
 # DLNA 播放适配器
 
+宿主装配在`gateway/crates/runtime/src/integrations/dlna.rs`，由统一Registry管理；本库与其宿主模块均不依赖电视接入模块。媒体应用通过平台凭证接口提供短时播放授权，由集成层转换成DLNA类型。独立选择可用`cargo build --locked -p limeiot-gateway --no-default-features --features dlna`；默认发行版包含它，静态集成随网关二进制升级，不支持热安装。工程边界见 [21第1.4节](../../../docs/21-Monorepo与开发规范.md#14-核心集成与独立工程)。
+
 固定局域网目标的 Rust UPnP AV 执行端，复用核心设备、绑定与命令账本。配置、证据与失败语义以[正式合同](../../../contracts/dlna.md)为准，参考模型为[音箱模型](../../../contracts/models/dlna-speaker.json)。
 
 准备现有音频HTTP服务、音箱实际描述地址/控制路径和经过所有者核对的UDN。音频必须是音箱可读取的有限文件；本适配器不托管、转码或验证音频内容/格式。下面是需替换地址、UDN和有效期的配置示意：

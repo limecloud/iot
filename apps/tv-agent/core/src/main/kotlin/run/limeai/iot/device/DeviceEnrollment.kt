@@ -29,6 +29,13 @@ class DeviceEnrollment private constructor(
         "broker" to text(broker), "model_profile" to text(identity.profile.id), "ca_pem" to document.getValue("ca_pem"),
     )).toByteArray(Charsets.UTF_8))
     fun encoded(): ByteArray = DeviceDocument.canonical(document).toByteArray(Charsets.UTF_8)
+    /** 仅本机引用身份的明确模型扩展；原请求、证书和持钥引用全部保留。 */
+    fun withModelProfile(profile: DeviceModelProfile): DeviceEnrollment {
+        checkDevice(keyReference != null, "identity_request_required")
+        checkDevice(profile.acceptsHistory(identity.profile), "model_rollback_refused")
+        return parse(DeviceDocument.canonical(JsonObject(document + ("model_profile" to text(profile.id))))
+            .toByteArray(Charsets.UTF_8), keys)
+    }
     override fun publicCertificate(): ByteArray = pem("certificate_pem")
     fun tls(): DeviceTls {
         val reference = keyReference

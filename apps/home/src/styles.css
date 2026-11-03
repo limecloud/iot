@@ -79,12 +79,12 @@ body { margin: 0; }
 .home-app .command-status.unknown, .home-app .command-status.expired { color: var(--amber-11); }
 .home-app .command-status.failed, .home-app .command-status.rejected { color: var(--red-11); }
 .home-app .device details { margin-top: 12px; border-top: .5px solid var(--slate-6); padding-top: 4px; }
-.home-app .television-binding p, .home-app .television-binding span { overflow-wrap: anywhere; }
-.home-app .television-binding label { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; }
-.home-app .television-binding .property-form label { display: grid; min-width: 0; margin: 0; }
-.home-app .television-binding input[type="checkbox"] { width: 18px; flex: 0 0 18px; margin-top: 2px; }
-.home-app .television-binding button { margin: 4px 0; }
-.home-app .television-binding .property-row { flex-wrap: wrap; align-items: flex-start; }
+.home-app .execution-binding p, .home-app .execution-binding span { overflow-wrap: anywhere; }
+.home-app .execution-binding label { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; }
+.home-app .execution-binding .property-form label { display: grid; min-width: 0; margin: 0; }
+.home-app .execution-binding input[type="checkbox"] { width: 18px; flex: 0 0 18px; margin-top: 2px; }
+.home-app .execution-binding button { margin: 4px 0; }
+.home-app .execution-binding .property-row { flex-wrap: wrap; align-items: flex-start; }
 .home-app .rule-editor { padding-bottom: 32px; border-bottom: .5px solid var(--slate-6); }
 .home-app .rule-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; max-width: 960px; }
 .home-app .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

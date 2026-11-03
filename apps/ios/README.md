@@ -42,7 +42,9 @@ Keychain适配器供NAS与云库复用，云记录使用独立的`limeiot.contro
 
 界面先明确调用`beginAuthorization()`取得仅供用户查看的授权码和同站`verificationUri`，由系统浏览器批准后调用`pollAuthorization()`。库先核对当前Console主体、CSRF与期限，再保存材料；界面只取得状态和主体，不持有Token。原请求保存失败不发送，响应丢失沿用原证明，503保留会话，401清理；`restoreSession()`核实原身份，`logout()`仅结束子会话。库不自动打开浏览器、后台轮询或写重试，同一实例并发动作返回busy。
 
-远程控制按`prepareCommand`保存完整原请求，再由`submitCommand`先保存发送标记后单次提交。响应丢失、进程重启或同键再次提交均只查原操作，404也不补发；`resolveCommand(reconcile: true)`显式核实原设备结果。记录绑定当前主体/空间，最多128条，退出后保留；`forgetCommand`只清理明确拒绝或终态。结果区分unknown、accepted、dispatched和设备终态，confirmed须有匹配原请求的设备证据。SDK只验证摘要格式和连续性，Go/Rust负责正式规范化摘要。
+远程控制按`prepareCommand`保存完整原请求，再由`submitCommand`先保存发送标记后单次提交。响应丢失、进程重启或同键再次提交均只查原操作，404也不补发；`resolveCommand(reconcile: true)`显式核实原设备结果。记录绑定当前主体/空间，最多128条，退出后保留；`forgetCommand`允许明确放弃未尝试且无结果/拒绝的准备记录，或清理明确拒绝/终态。已尝试而结果未知的记录不能清除。结果区分unknown、accepted、dispatched和设备终态，confirmed须有匹配原请求的设备证据。SDK只验证摘要格式和连续性，Go/Rust负责正式规范化摘要。
+
+CloudStore持有当前云任务，scenePhase转为非active或切离云入口时明确pause，取消按钮任务与轮询，迟到读取不恢复在线状态。准备存储期间暂停不会继续提交；前台恢复只读取已保存的原记录，未发送记录可明确放弃，已尝试记录继续查询。取消不能撤回已发出的网络请求。
 
 `npm run test:control:native`已通过真实HTTPS/WSS、Go/MySQL、Rust网关、MQTT模拟设备、Chromium批准和私有文件存储夹具。两端分别验证未受信CA拒绝、会话恢复、远程响应丢失/Go重启后查询原操作、只创建一条设备命令及独立退出。报告标记`native_remote=true`、`transport=https`、`native_app=false`、`hardware=false`；测试专用CA适配器不改变生产信任。此证据属于库，新增SwiftUI云页面、系统浏览器按钮、Keychain与前后台行为仍须在完整App中验收。
 
@@ -59,9 +61,9 @@ Keychain适配器供NAS与云库复用，云记录使用独立的`limeiot.contro
 | `App/Views.swift` | 原生设备、规则、运行和设置界面 |
 | `Tests/LimeIoTKitTests` | 可独立运行的合同与真实网关检查 |
 
-在本目录执行 `swift run ClientChecks` 检查4组本地、4组控制面授权、3组远程、3组动作及7组OTA合同，覆盖整数编码、HTTPS、凭据/CSRF、原证明保存与恢复、S256、非法材料/主体拒绝、取消/退出，以及远程存储失败不发送、旧键只读、拒绝/未知/终态清理和设备证据验证。无完整Xcode的Swift命令行环境也能运行；它不是iOS界面编译。真实控制面库检查在仓库根目录执行`npm run test:control:native`，需要Go、Docker/MySQL8.4、Swift、JDK21和Chromium。
+在本目录执行 `swift run ClientChecks` 检查4组本地、4组控制面授权、4组远程、3组动作及7组OTA合同，覆盖整数编码、HTTPS、凭据/CSRF、原证明保存与恢复、S256、非法材料/主体拒绝、取消/退出，以及远程存储失败不发送、旧键只读、未发送明确放弃、拒绝/未知/终态清理和设备证据验证。无完整Xcode的Swift命令行环境也能运行；它不是iOS界面编译。真实控制面库检查在仓库根目录执行`npm run test:control:native`，需要Go、Docker/MySQL8.4、Swift、JDK21和Chromium。
 
-在仓库根目录执行`npm run test:clients:state -- ios`，以macOS宿主编译实际`CloudStore`与Keychain适配源码，使用内存存储/HTTP夹具检查3组状态：后台不轮询及取消后恢复原授权、丢响应/重建客户端后未知操作不重复创建、绑定修订及空间切换隔离。它不调用真实Keychain或系统浏览器，不编译SwiftUI界面。报告为`.dev/native-state-checks/ios.json`；Xcode工程已包含两个云源码文件。
+在仓库根目录执行`npm run test:clients:state -- ios`，以macOS宿主编译实际`CloudStore`与Keychain适配源码，使用内存存储/HTTP夹具检查5组状态：后台不轮询及取消后恢复原授权、丢响应/重建客户端后未知操作不重复创建、绑定修订及空间切换隔离、准备存储期间暂停零提交与明确放弃、迟到刷新不恢复online。它不调用真实Keychain或系统浏览器，不编译SwiftUI界面。报告为`.dev/native-state-checks/ios.json`；Xcode工程已包含两个云源码文件。
 
 在仓库根目录执行 `npm run test:ios`，会启动独立 Broker、网关、模拟设备与假 Ollama 提供方，验证会话、亮度回执、原操作查询、草案幂等/无自动部署/预演/明确启用、规则生命周期和退出。提供方仅验证 HTTP 合同，不代表模型质量。本机已通过库编译、4项合同检查及真实网关联调、状态管理与Keychain适配的macOS类型检查，以及全部Swift语法检查；没有完整Xcode/iOS SDK，尚未编译iOS整包。模拟器/实机布局、Keychain行为、局域网授权与前后台切换仍须通过 Xcode 和设备验证。
 

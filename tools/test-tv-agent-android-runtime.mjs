@@ -175,7 +175,7 @@ try {
       port: tlsPort, ca: path.join(directory, 'broker-tls/ca.crt'), certificate: path.join(directory, 'broker-tls/server.crt'), key: path.join(directory, 'broker-tls/server.key') } });
     await stop(stack.lamp);
     report.stage = 'android_apk_build';
-    await run('sh', ['apps/android/gradlew', '--no-daemon', '-p', 'apps/tv-agent', `-Plimeiot.runtimeAssets=${assets}`,
+    await run('sh', ['apps/tv-agent/gradlew', '--no-daemon', '-p', 'apps/tv-agent', `-Plimeiot.runtimeAssets=${assets}`,
       ':app:assembleDebug', ':app:assembleDebugAndroidTest'], 'build.log', { timeout: 900000 });
     const app = path.join(root, 'apps/tv-agent/app/build/outputs/apk/debug/app-debug.apk');
     const tests = path.join(root, 'apps/tv-agent/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk');

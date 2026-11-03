@@ -3,6 +3,10 @@ package run.limeai.iot
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +36,7 @@ class CloudViewModel(
     private var client: ControlClient? = null
     private var restoredOrigin: String? = null
     private var visiblePages = 1
+    private var activeAction: Job? = null
     private fun current(origin: String = mutable.value.origin): ControlClient {
         val exact = origin.trim()
         client?.takeIf { it.origin == exact }?.let { return it }
@@ -50,15 +55,23 @@ class CloudViewModel(
             mutable.update { it.copy(principal = null, login = null, polling = false) }; clearWorkspace()
         }
     }
-    private suspend fun execute(action: suspend () -> Unit) {
-        if (mutable.value.busy) return
+    private suspend fun execute(action: suspend () -> Unit) = coroutineScope {
+        if (mutable.value.busy) return@coroutineScope
+        currentCoroutineContext().ensureActive()
         mutable.update { it.copy(busy = true, message = "") }
-        try { action() } catch (error: Exception) { failure(error) }
-        finally { mutable.update { it.copy(busy = false) } }
+        val operation = async(start = CoroutineStart.LAZY) {
+            try { action() } catch (error: Exception) { failure(error) }
+        }
+        activeAction = operation
+        try { operation.await() }
+        finally { activeAction = null; mutable.update { it.copy(busy = false) } }
     }
     private fun task(action: suspend () -> Unit) { viewModelScope.launch { execute(action) } }
     fun enterForeground() { mutable.update { it.copy(foreground = true) } }
-    fun leaveForeground() { mutable.update { it.copy(foreground = false, online = false) } }
+    fun leaveForeground() {
+        mutable.update { it.copy(foreground = false, online = false) }
+        activeAction?.cancel()
+    }
     suspend fun tick() {
         if (!mutable.value.foreground || mutable.value.busy) return
         if (mutable.value.origin.isNotEmpty() && restoredOrigin != mutable.value.origin) { execute { restoreCurrent(current()) }; return }
@@ -69,15 +82,18 @@ class CloudViewModel(
     private suspend fun restoreCurrent(current: ControlClient) {
         restoredOrigin = current.origin
         val pending = current.hasPendingAuthorization()
+        currentCoroutineContext().ensureActive()
         mutable.update { it.copy(pendingAuthorization = pending) }
         try {
             val session = current.restoreSession()
+            currentCoroutineContext().ensureActive()
             mutable.update { it.copy(principal = session.principal, login = null, polling = false) }
         } catch (error: ControlException) {
             if (error.status != 401) throw error
             mutable.update { it.copy(principal = null) }; clearWorkspace()
             if (mutable.value.pendingAuthorization) {
                 val login = current.beginAuthorization()
+                currentCoroutineContext().ensureActive()
                 mutable.update { it.copy(login = login, polling = login.status in listOf(NativeAuthorizationStatus.PENDING, NativeAuthorizationStatus.APPROVED)) }
             }
             return
@@ -88,15 +104,18 @@ class CloudViewModel(
         val current = current(origin); restoredOrigin = current.origin
         try {
             val login = current.beginAuthorization()
+            currentCoroutineContext().ensureActive()
             mutable.update { it.copy(login = login, pendingAuthorization = true, polling = login.status in listOf(NativeAuthorizationStatus.PENDING, NativeAuthorizationStatus.APPROVED)) }
         } catch (error: Exception) {
             if (error is CancellationException) throw error
             val pending = runCatching { current.hasPendingAuthorization() }.getOrDefault(true)
+            currentCoroutineContext().ensureActive()
             mutable.update { it.copy(pendingAuthorization = pending) }; throw error
         }
     }
     fun cancel() = task {
         current().cancelAuthorization()
+        currentCoroutineContext().ensureActive()
         mutable.update { it.copy(principal = null, login = null, polling = false, pendingAuthorization = false) }; clearWorkspace()
     }
     fun resumePolling() { if (mutable.value.login != null && mutable.value.principal == null) mutable.update { it.copy(polling = true, message = "") } }
@@ -104,6 +123,7 @@ class CloudViewModel(
         if (!mutable.value.foreground) return
         try {
             val current = current(); val result = current.pollAuthorization()
+            currentCoroutineContext().ensureActive()
             when (result.status) {
                 NativeAuthorizationStatus.APPROVED -> {
                     val session = result.session ?: throw ControlException("invalid_response")
@@ -134,8 +154,9 @@ class CloudViewModel(
         mutable.update { it.copy(spaces = available) }
         val space = mutable.value.space
         if (space.isEmpty()) { mutable.update { it.copy(online = true) }; return }
-        val records = current.commandRecords(space); mutable.update { it.copy(records = records) }
+        val records = current.commandRecords(space); currentCoroutineContext().ensureActive(); mutable.update { it.copy(records = records) }
         val bindings = current.gateways(space).filter { it.active }
+        currentCoroutineContext().ensureActive()
         if (bindings.size > 1) throw ControlException("invalid_response")
         val binding = bindings.singleOrNull()
         if (binding == null) { mutable.update { it.copy(gateway = null, devices = emptyList(), models = emptyMap(), hasMore = false, online = true) }; return }
@@ -157,26 +178,30 @@ class CloudViewModel(
         val state = mutable.value; val binding = state.gateway ?: return@task
         if (!state.foreground || !state.online || state.blocked(device)) return@task
         val current = current(); val record = current.prepareCommand(state.space, binding, device, path, value, type)
+        currentCoroutineContext().ensureActive()
         mutable.update { it.copy(records = it.records + record) }
         try { current.submitCommand(record.id) }
         catch (error: Exception) {
             if (error is CancellationException) throw error
             val saved = runCatching { current.commandRecords(state.space) }.getOrNull()
+            currentCoroutineContext().ensureActive()
             if (saved != null) mutable.update { it.copy(records = saved) }
             if (error !is ControlException) { mutable.update { it.copy(online = false, message = "操作结果尚未确认，请查询原操作") }; return@task }
             throw error
         }
-        val records = current.commandRecords(state.space); mutable.update { it.copy(records = records) }
+        val records = current.commandRecords(state.space); currentCoroutineContext().ensureActive(); mutable.update { it.copy(records = records) }
     }
     fun resolve(record: ControlCommandRecord) = task {
         val updated = current().resolveCommand(record.id, reconcile = true)
+        currentCoroutineContext().ensureActive()
         mutable.update { it.copy(records = it.records.map { old -> if (old.id == updated.id) updated else old }) }
     }
     fun forget(record: ControlCommandRecord) = task {
-        current().forgetCommand(record.id); mutable.update { it.copy(records = it.records.filter { old -> old.id != record.id }) }
+        current().forgetCommand(record.id); currentCoroutineContext().ensureActive(); mutable.update { it.copy(records = it.records.filter { old -> old.id != record.id }) }
     }
     fun logout() = task {
         current().logout()
+        currentCoroutineContext().ensureActive()
         mutable.update { it.copy(principal = null, login = null, polling = false, pendingAuthorization = false) }; clearWorkspace()
     }
     fun browserFailed() { mutable.update { it.copy(message = "无法打开浏览器，请检查系统设置后重试") } }

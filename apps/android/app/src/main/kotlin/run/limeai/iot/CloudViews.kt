@@ -126,7 +126,8 @@ import run.limeai.iot.core.*
                 }
                 state.records.filter { it.reference.request.deviceId == device.deviceId && it.rejection == null && it.result?.status?.terminal != true }.forEach { record ->
                     Text(record.cloudStatus, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    TextButton(onClick = { vm.resolve(record) }, enabled = !state.busy) { Text("查询原操作", fontSize = 14.sp) }
+                    if (record.isPrepared) TextButton(onClick = { vm.forget(record) }, enabled = !state.busy) { Text("放弃未发送操作", fontSize = 14.sp) }
+                    else TextButton(onClick = { vm.resolve(record) }, enabled = !state.busy) { Text("查询原操作", fontSize = 14.sp) }
                 }
             }
         }
@@ -168,13 +169,13 @@ import run.limeai.iot.core.*
             Text(record.reference.request.deviceId, fontSize = 16.sp)
             Text(record.reference.request.operation.summary, fontSize = 14.sp)
             Text(record.cloudStatus, fontSize = 14.sp)
-            if (record.rejection != null || record.result?.status?.terminal == true) TextButton(onClick = { vm.forget(record) }, enabled = !state.busy) { Text("清理记录", fontSize = 14.sp) }
+            if (record.canForget) TextButton(onClick = { vm.forget(record) }, enabled = !state.busy) { Text(if (record.isPrepared) "放弃未发送操作" else "清理记录", fontSize = 14.sp) }
             else TextButton(onClick = { vm.resolve(record) }, enabled = !state.busy) { Text("查询原操作", fontSize = 14.sp) }
         }
         HorizontalDivider(thickness = 0.5.dp)
     }
 }
-private val ControlCommandRecord.cloudStatus: String get() = if (rejection != null) "已拒绝" else when (result?.status ?: ControlCommandStatus.UNKNOWN) {
+private val ControlCommandRecord.cloudStatus: String get() = if (isPrepared) "未发送" else if (rejection != null) "已拒绝" else when (result?.status ?: ControlCommandStatus.UNKNOWN) {
     ControlCommandStatus.UNKNOWN -> "结果待查询"
     ControlCommandStatus.ACCEPTED -> "已受理"
     ControlCommandStatus.DISPATCHED -> "已发送，等待设备结果"

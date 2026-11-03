@@ -55,13 +55,32 @@ async function request(endpoint,resource,{session,csrf,input}={}){
 }
 async function current(value){const {body}=await request(value.origin,'/api/console/v1/auth/session',{session:value.session});if(body.audience!=='console'||body.principal?.principal_id!==value.principal_id||!/^[a-f0-9]{64}$/.test(body.csrf_token??''))throw error('session_identity_changed',3);return body}
 
-export async function runControl(args){
+export const controlCatalog=()=>structuredClone(catalog);
+export function controlInput(id,raw){
+  const op=catalog.operations.find(item=>item.operation_id===id);if(!op)throw error('unsupported_operation');
+  if(!op.input_schema){if(raw!==undefined)throw error('invalid_input');return op.method==='POST'?{}:undefined;}
+  if(typeof raw!=='string'||raw.length>(id==='models.compare'?16416:16384))throw error('invalid_input');
+  let input;try{input=id==='releases.create'?parsePublishInput(raw):id==='models.compare'?parseComparisonJSON(raw):(id.startsWith('products.')||id==='models.validate')?parseDraftJSON(raw,true):JSON.parse(raw)}catch{throw error('invalid_input')}
+  check(input,catalog.schemas[op.input_schema]);return input;
+}
+
+export async function controlContext({sessionFile,endpoint}={}){
+  if(!sessionFile)throw error('session_file_required');
+  const value=material(await readPrivate(path.resolve(sessionFile)));
+  if(endpoint&&origin(endpoint)!==value.origin)throw error('session_origin_mismatch');
+  await current(value);
+  return {origin:value.origin,principal_id:value.principal_id,session_digest:hash(value.session),expires_at:value.expires_at};
+}
+
+// CLI与终端任务共用同一执行器；调用方只负责展示及明确提交。
+export async function executeControl(args,{document,context}={}){
+  const finish=(value,exit_code=0)=>({value,exit_code});
   let original;
   try{
     const {values:flags,positionals:p}=parseArgs({args,allowPositionals:true,options:{endpoint:{type:'string'},'session-file':{type:'string'},'token-file':{type:'string'},input:{type:'string'},output:{type:'string'},'space-id':{type:'string'},id:{type:'string'},after:{type:'string'},json:{type:'boolean'}}});
     const id=p[0]==='invoke'?p[1]:`${p[0]}.${p[1]}`;
     if(p[0]==='schema'){
-      const op=p[1]&&catalog.operations.find(v=>v.operation_id===p[1]);if(p[1]&&!op)throw error('unsupported_operation');console.log(JSON.stringify(op?{...op,schemas:catalog.schemas}:catalog));return;
+      const op=p[1]&&catalog.operations.find(v=>v.operation_id===p[1]);if(p[1]&&!op)throw error('unsupported_operation');return finish(op?{...op,schemas:catalog.schemas}:catalog);
     }
     const sessionFile=path.resolve(flags['session-file']??process.env.LIMEIOT_CONTROL_SESSION_FILE??'');if(!flags['session-file']&&!process.env.LIMEIOT_CONTROL_SESSION_FILE)throw error('session_file_required');
     if(id==='auth.login'||id==='auth.import'){
@@ -79,16 +98,18 @@ export async function runControl(args){
         const {body}=await request(endpoint,'/api/console/v1/auth/session',{session:raw});
         value=material({version:1,origin:endpoint,audience:'console',session:raw,principal_id:body.principal?.principal_id,expires_at:body.expires_at});
       }
-      await writePrivate(sessionFile,value);console.log(JSON.stringify({authenticated:true,origin:value.origin,audience:'console',principal_id:value.principal_id,expires_at:value.expires_at}));return;
+      await writePrivate(sessionFile,value);return finish({authenticated:true,origin:value.origin,audience:'console',principal_id:value.principal_id,expires_at:value.expires_at});
     }
     const value=material(await readPrivate(sessionFile));if(flags.endpoint&&origin(flags.endpoint)!==value.origin)throw error('session_origin_mismatch');
+    if(context&&(context.origin!==value.origin||context.principal_id!==value.principal_id||context.session_digest!==hash(value.session)))throw error('session_identity_changed',3);
     const auth=await current(value),call=(resource,input)=>request(value.origin,resource,{session:value.session,csrf:auth.csrf_token,input}).then(v=>v.body);
-    if(id==='auth.status'){console.log(JSON.stringify({principal:auth.principal,audience:auth.audience,expires_at:auth.expires_at}));return}
-    if(id==='auth.logout'){await call('/api/console/v1/auth/logout',{});await clearSession(sessionFile);console.log(JSON.stringify({logged_out:true}));return}
+    if(id==='auth.status')return finish({principal:auth.principal,audience:auth.audience,expires_at:auth.expires_at});
+    if(id==='auth.logout'){await call('/api/console/v1/auth/logout',{});await clearSession(sessionFile);return finish({logged_out:true})}
     const op=catalog.operations.find(item=>item.operation_id===id);if(!op)throw error('unsupported_operation');
     const space=flags['space-id'],resource=flags.id??p[2];if(op.space_required&&!/^[A-Za-z0-9_-]{1,128}$/.test(space??''))throw error('space_id_required');
     if(op.path.includes('{id}')&&(!resource||resource.length>128))throw error('resource_id_required');
-    let input;if(op.input_schema){if(!flags.input)throw error('input_required');const raw=await readFile(flags.input,'utf8');if(raw.length>(id==='models.compare'?16416:16384))throw error('invalid_input');try{input=id==='releases.create'?parsePublishInput(raw):id==='models.compare'?parseComparisonJSON(raw):(id.startsWith('products.')||id==='models.validate')?parseDraftJSON(raw,true):JSON.parse(raw)}catch{throw error('invalid_input')}check(input,catalog.schemas[op.input_schema])}else if(op.method==='POST')input={};
+    if(op.input_schema&&!flags.input&&document===undefined)throw error('input_required');
+    const input=controlInput(id,op.input_schema?(document??await readFile(flags.input,'utf8')):undefined);
     let url=op.path.replace('{space_id}',encodeURIComponent(space??'')).replace('{id}',encodeURIComponent(resource??''));if(flags.after!==undefined){if(!op.pagination)throw error('unsupported_pagination');url+='?after='+encodeURIComponent(flags.after)}
     if(op.sensitive_output&&!flags.output)throw error('private_output_required');
     let existing=false;
@@ -132,8 +153,15 @@ export async function runControl(args){
     if(id==='products.list'&&(!Array.isArray(result.items)||result.items.length>16||!result.items.every(item=>validProduct(item,value.principal_id))||result.next!==null&&!/^product-[a-f0-9]{64}$/.test(result.next??'')))throw error('operation_unknown',6);
     if(['products.create','products.save','products.resolve'].includes(id)&&(!validProductOperation(result,value.principal_id,id==='products.resolve'?undefined:{kind:id,product_id:resource??null,request:input})||id==='products.resolve'&&result.request.request_key!==resource))throw error('operation_unknown',6);
     if(op.sensitive_output){await writePrivate(path.resolve(flags.output),result);result={pairing:result.pairing,control_origin:result.control_origin,output_file:path.resolve(flags.output)}}
-    if(id==='models.validate'){try{await verifyModelReport(result,input.model)}catch{throw error('invalid_response',5)}console.log(JSON.stringify(result));process.exitCode=result.valid?0:2;return}
-    if(id==='models.compare'){try{await verifyComparisonReport(result,input)}catch{throw error('invalid_response',5)}console.log(JSON.stringify(result));process.exitCode=result.compatible===true?0:2;return}
-    console.log(JSON.stringify({...result,...(original?{cli:original}:{})}));if(result.status==='conflict')process.exitCode=4;else if(result.status==='unknown')process.exitCode=6;else if(terminal.has(result.status)&&result.status!=='confirmed')process.exitCode=7;
-  }catch(e){const code=e.safeCode??(e.code==='EEXIST'?'private_file_exists':['private_directory_required','private_file_required'].includes(e.code)?e.code:'local_file_unavailable');console.error(JSON.stringify({error:{code},...(original?{original}:{})}));process.exitCode=e.exit??5}
+    if(id==='models.validate'){try{await verifyModelReport(result,input.model)}catch{throw error('invalid_response',5)}return finish(result,result.valid?0:2)}
+    if(id==='models.compare'){try{await verifyComparisonReport(result,input)}catch{throw error('invalid_response',5)}return finish(result,result.compatible===true?0:2)}
+    return finish({...result,...(original?{cli:original}:{})},result.status==='conflict'?4:result.status==='unknown'?6:terminal.has(result.status)&&result.status!=='confirmed'?7:0);
+  }catch(e){const code=e.safeCode??(e.code==='EEXIST'?'private_file_exists':['private_directory_required','private_file_required'].includes(e.code)?e.code:'local_file_unavailable');return {error:{code},...(original?{original}:{}),exit_code:e.exit??5}}
+}
+
+export async function runControl(args){
+  const result=await executeControl(args);
+  if(result.error){const {exit_code,...failure}=result;console.error(JSON.stringify(failure));}
+  else console.log(JSON.stringify(result.value));
+  process.exitCode=result.exit_code;
 }

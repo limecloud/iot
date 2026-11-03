@@ -11,15 +11,26 @@ internal object AgentCommandFormat {
         checkDevice(identifier.matches(message.text("session_id")), "session_mismatch")
     }
 
-    fun commandBody(body: JsonObject) {
+    fun commandBody(body: JsonObject, profile: DeviceModelProfile) {
         body.fields("command_id", "issued_at", "expires_at", "operation")
         checkDevice(identifier.matches(body.text("command_id")))
         DeviceTime.parse(body.text("issued_at")); DeviceTime.parse(body.text("expires_at"))
         val op = body.getValue("operation").obj(); op.fields("type", "path", "value")
-        checkDevice(op.text("type") == "action.invoke" && op.text("path") == "apps.launch", "unsupported_capability")
-        val input = op.getValue("value").obj(); input.fields("application_id")
-        val app = input.text("application_id")
-        checkDevice(app.length <= 255 && applicationId.matches(app), "invalid_application")
+        checkDevice(op.text("type") == "action.invoke" && op.text("path") in profile.nativePaths, "unsupported_capability")
+        val input = op.getValue("value").obj()
+        when (op.text("path")) {
+            "apps.launch" -> {
+                input.fields("application_id")
+                val app = input.text("application_id")
+                checkDevice(app.length <= 255 && applicationId.matches(app), "invalid_application")
+            }
+            "audio.set_volume" -> { input.fields("percent"); checkDevice(input.integer("percent") in 0L..100L, "invalid_audio_volume") }
+            "audio.set_muted" -> {
+                input.fields("muted")
+                val muted = input["muted"] as? JsonPrimitive
+                checkDevice(muted != null && !muted.isString && muted.booleanOrNull != null, "invalid_audio_mute")
+            }
+        }
     }
 
     fun validateResult(value: JsonObject, command: JsonObject) {
@@ -29,14 +40,15 @@ internal object AgentCommandFormat {
         if (status == "confirmed") {
             value.fields("command_id", "status", "evidence")
             evidence.fields("type", "path", "input_digest", "output", "completion", "observed_at")
-            checkDevice(evidence.text("type") == "action_result" && evidence.text("path") == "apps.launch" && evidence.text("completion") == "submitted" && evidence["output"] == JsonObject(emptyMap()))
+            checkDevice(evidence.text("type") == "action_result" && evidence.text("path") == command.getValue("operation").obj().text("path") && evidence.text("completion") == "submitted" && evidence["output"] == JsonObject(emptyMap()))
             checkDevice(evidence.text("input_digest") == DeviceDocument.digest(command.getValue("operation").obj().getValue("value")))
             val time = DeviceTime.parse(evidence.text("observed_at"))
             checkDevice(time >= DeviceTime.parse(command.text("issued_at")) - 2000)
         } else {
             value.fields("command_id", "status", "evidence", "error"); evidence.fields("type")
             checkDevice(evidence.text("type") == "device_result")
-            checkDevice((status == "unknown" && value.text("error") == "execution_unknown") || (status == "failed" && value.text("error") in setOf("command_expired", "application_not_authorized", "authorization_changed")))
+            val denied = if (command.getValue("operation").obj().text("path") == "apps.launch") "application_not_authorized" else "audio_not_authorized"
+            checkDevice((status == "unknown" && value.text("error") == "execution_unknown") || (status == "failed" && value.text("error") in setOf("command_expired", denied, "authorization_changed")))
         }
     }
 
@@ -50,16 +62,21 @@ internal data class DeviceJournal(
     companion object {
         fun read(identity: DeviceIdentity, bytes: ByteArray?): DeviceJournal {
             try {
-                if (bytes == null) return DeviceJournal(linkedMapOf(), 0L, identity.profile == DeviceModelProfile.COMPOSED_REMOTE)
+                if (bytes == null) return DeviceJournal(linkedMapOf(), 0L, identity.profile != DeviceModelProfile.APPLICATIONS)
                 val doc = DeviceDocument.parse(bytes, 1048576, 32768)
                 val version = doc.integer("version")
-                checkDevice(version in 1L..3L)
+                checkDevice(version in 1L..4L)
                 if (version == 1L) doc.fields("version", "space_id", "device_id", "model_revision", "entries")
                 else doc.fields("version", "space_id", "device_id", "model_revision", "entries", "high_watermark")
                 checkDevice(doc.text("space_id") == identity.space && doc.text("device_id") == identity.device)
-                val storedProfile = if (version == 3L) DeviceModelProfile.COMPOSED_REMOTE else DeviceModelProfile.APPLICATIONS
+                val storedProfile = when (version) {
+                    1L, 2L -> DeviceModelProfile.APPLICATIONS
+                    3L -> DeviceModelProfile.COMPOSED_REMOTE
+                    else -> DeviceModelProfile.values().singleOrNull { it.hasAudio && it.revision == doc.text("model_revision") }
+                        ?: throw DeviceFault("storage_corrupt")
+                }
                 checkDevice(doc.text("model_revision") == storedProfile.revision)
-                checkDevice(storedProfile == identity.profile || storedProfile == DeviceModelProfile.APPLICATIONS && identity.profile == DeviceModelProfile.COMPOSED_REMOTE)
+                checkDevice(identity.profile.acceptsHistory(storedProfile))
                 var head = if (version == 1L) 0L else doc.integer("high_watermark").also { checkDevice(it in 0L..9007199254740991L) }
                 val stored = doc.getValue("entries").obj(); checkDevice(stored.size <= 128)
                 val entries = linkedMapOf<String, JsonObject>(); val messages = mutableSetOf<String>()
@@ -67,9 +84,11 @@ internal data class DeviceJournal(
                     val entry = raw.obj(); entry.fields("command", "result")
                     val command = entry.getValue("command").obj()
                     val revision = command.text("model_revision")
-                    checkDevice(revision == storedProfile.revision || storedProfile == DeviceModelProfile.COMPOSED_REMOTE && revision == DeviceModelProfile.APPLICATIONS.revision)
+                    val commandProfile = DeviceModelProfile.values().singleOrNull { it.revision == revision }
+                        ?: throw DeviceFault("storage_corrupt")
+                    checkDevice(storedProfile.acceptsHistory(commandProfile))
                     AgentCommandFormat.envelope(command, "command", identity, revision)
-                    val body = command.getValue("body").obj(); AgentCommandFormat.commandBody(body)
+                    val body = command.getValue("body").obj(); AgentCommandFormat.commandBody(body, commandProfile)
                     checkDevice(id == body.text("command_id") && messages.add(command.text("message_id")))
                     commandSequence(id)?.let { seq ->
                         checkDevice(command.text("message_id") == id)
@@ -83,7 +102,7 @@ internal data class DeviceJournal(
         }
 
         fun encode(identity: DeviceIdentity, entries: Map<String, JsonObject>, head: Long): JsonObject = obj(
-            "version" to JsonPrimitive(if (identity.profile == DeviceModelProfile.COMPOSED_REMOTE) 3 else 2),
+            "version" to JsonPrimitive(if (identity.profile.hasAudio) 4 else if (identity.profile == DeviceModelProfile.COMPOSED_REMOTE) 3 else 2),
             "space_id" to text(identity.space), "device_id" to text(identity.device),
             "model_revision" to text(identity.profile.revision), "high_watermark" to JsonPrimitive(head), "entries" to JsonObject(entries),
         )

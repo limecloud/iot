@@ -118,6 +118,9 @@ pub struct Run {
 pub struct Data {
     pub space_id: String,
     pub models: BTreeMap<String, Model>,
+    // 可信目录由宿主在初始化与恢复时注入，快照和调用方请求不能扩充它。
+    #[serde(skip)]
+    pub(crate) model_bundles: crate::model_bundles::Catalog,
     pub devices: BTreeMap<String, Device>,
     pub commands: BTreeMap<String, Command>,
     pub keys: BTreeMap<String, String>,
@@ -173,6 +176,7 @@ impl Data {
         let data = Self {
             space_id: config.space_id,
             models,
+            model_bundles: crate::model_bundles::Catalog::default(),
             devices,
             commands: BTreeMap::new(),
             keys: BTreeMap::new(),
@@ -190,6 +194,13 @@ impl Data {
         };
         data.validate_execution_routes()?;
         Ok(data)
+    }
+    pub fn with_model_bundles(mut self, catalog: crate::model_bundles::Catalog) -> Self {
+        self.model_bundles = catalog;
+        self
+    }
+    pub fn model_bundles(&self) -> &crate::model_bundles::Catalog {
+        &self.model_bundles
     }
     pub fn recover(&mut self) {
         self.recover_execution_plans();
@@ -260,6 +271,14 @@ impl Data {
                     view.as_object_mut().unwrap().remove(field);
                 }
                 let model = &self.models[&device.model_revision];
+                if let Some(paths) = &device.native_actions {
+                    view["native_execution"] = json!({
+                        "session_id":device.session_id,
+                        "ready":native_ready && !self.execution_blocked(&device.device_id)
+                            && !self.ota_reserves_device(&device.device_id, now),
+                        "paths":paths
+                    });
+                }
                 if device.native_actions.is_some()
                     || self
                         .execution_registry

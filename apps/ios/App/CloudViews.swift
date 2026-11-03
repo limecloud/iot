@@ -74,7 +74,9 @@ struct CloudRootView: View {
                     }
                     ForEach(cloud.records.filter { $0.reference.request.deviceId == device.id && $0.rejection == nil && $0.result?.status.terminal != true }) { record in
                         Text(record.cloudStatus).font(.system(size: 12)).foregroundStyle(Palette.amber11)
-                        Button("查询原操作") { Task { await cloud.resolve(record) } }.disabled(cloud.busy)
+                        if record.isPrepared {
+                            Button("放弃未发送操作", role: .destructive) { Task { await cloud.forget(record) } }.disabled(cloud.busy)
+                        } else { Button("查询原操作") { Task { await cloud.resolve(record) } }.disabled(cloud.busy) }
                     }
                 }
             }
@@ -89,8 +91,8 @@ struct CloudRootView: View {
                 Section(record.reference.request.deviceId) {
                     LabeledContent("操作", value: record.reference.request.operation.summary)
                     LabeledContent("状态", value: record.cloudStatus)
-                    if record.rejection != nil || record.result?.status.terminal == true {
-                        Button("清理记录", role: .destructive) { Task { await cloud.forget(record) } }.disabled(cloud.busy)
+                    if record.canForget {
+                        Button(record.isPrepared ? "放弃未发送操作" : "清理记录", role: .destructive) { Task { await cloud.forget(record) } }.disabled(cloud.busy)
                     } else { Button("查询原操作") { Task { await cloud.resolve(record) } }.disabled(cloud.busy) }
                 }
             }
@@ -129,6 +131,7 @@ private struct CloudPropertyView: View {
 }
 extension ControlCommandRecord {
     var cloudStatus: String {
+        if isPrepared { return "未发送" }
         if rejection != nil { return "已拒绝" }
         switch result?.status ?? .unknown {
         case .unknown: return "结果待查询"

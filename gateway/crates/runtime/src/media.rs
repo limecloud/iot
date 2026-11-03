@@ -10,9 +10,11 @@ use axum::{
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
 use chrono::{DateTime, Utc};
+#[cfg(feature = "dlna")]
+use limeiot_core::media::Grant;
 use limeiot_core::{
     ensure, err, identifier,
-    media::{Change, Grant, Operation, Receipt, Request, MAX_OBJECT_BYTES},
+    media::{Change, Operation, Receipt, Request, MAX_OBJECT_BYTES},
     Result,
 };
 use serde::Serialize;
@@ -36,10 +38,18 @@ pub struct Media {
     space_id: String,
     store: Arc<Mutex<Store>>,
     epoch: String,
+    #[cfg(feature = "dlna")]
     origin: String,
     authority: String,
     pub listen: SocketAddr,
     pulls: Mutex<BTreeMap<String, Vec<Pull>>>,
+}
+// 应用层的短时播放凭证；具体协议在集成层转换，媒体服务不依赖DLNA类型。
+#[cfg(feature = "dlna")]
+pub struct PlaybackGrant {
+    pub media_id: String,
+    pub url: String,
+    pub expires_at: DateTime<Utc>,
 }
 impl Media {
     pub(crate) async fn work<T: Send + 'static>(
@@ -54,6 +64,7 @@ impl Media {
         .await
         .map_err(|_| err("media_storage_unavailable"))?
     }
+    #[cfg(feature = "dlna")]
     fn url(&self, grant: &Grant) -> String {
         format!(
             "{}/media/v1/{}/{}.wav",
@@ -69,12 +80,13 @@ impl Media {
         };
         json!({"space_id":self.space_id,"operation_id":operation.operation_id,"idempotency_key":operation.idempotency_key,"request_digest":operation.request_digest,"kind":operation.kind,"created_at":operation.created_at,"result":result})
     }
+    #[cfg(feature = "dlna")]
     pub async fn playback(
         &self,
         media_id: &str,
         device_id: &str,
         revision: &str,
-    ) -> Result<limeiot_dlna::MediaGrant> {
+    ) -> Result<PlaybackGrant> {
         let id = media_id.to_owned();
         let device = device_id.to_owned();
         let revision = revision.to_owned();
@@ -98,12 +110,13 @@ impl Media {
                     .ok_or_else(|| err("audio_media_forbidden"))
             })
             .await?;
-        Ok(limeiot_dlna::MediaGrant {
+        Ok(PlaybackGrant {
             media_id: grant.media_id.clone(),
             url: self.url(&grant),
             expires_at: grant.expires_at,
         })
     }
+    #[cfg(feature = "dlna")]
     pub async fn choices(&self, device: &str, revision: &str) -> Result<Vec<Value>> {
         let device = device.to_owned();
         let revision = revision.to_owned();
@@ -200,6 +213,7 @@ pub fn configured(space_id: &str) -> Result<Option<Arc<Media>>> {
         store: Arc::new(Mutex::new(store)),
         epoch: limeiot_core::id(),
         authority: uri.authority().to_owned(),
+        #[cfg(feature = "dlna")]
         origin,
         listen: SocketAddr::V4(listen),
         pulls: Mutex::new(BTreeMap::new()),
@@ -243,8 +257,8 @@ async fn list(
     }).await?;
     for grant in value["grants"].as_array_mut().expect("grants") {
         let current = app
-            .audio
-            .grant_target(
+            .integrations
+            .media_target(
                 &app.store.lock().await.data,
                 grant["device_id"].as_str().unwrap_or_default(),
                 grant["binding_revision"].as_str().unwrap_or_default(),
@@ -319,7 +333,7 @@ async fn apply(
         ..
     } = &request.change
     {
-        Some(app.audio.grant_target(
+        Some(app.integrations.media_target(
             &app.store.lock().await.data,
             device_id,
             expected_binding_revision,
@@ -423,8 +437,8 @@ async fn download(
         return fail();
     };
     if app
-        .audio
-        .grant_target(
+        .integrations
+        .media_target(
             &app.store.lock().await.data,
             &grant.device_id,
             &grant.binding_revision,

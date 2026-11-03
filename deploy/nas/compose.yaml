@@ -1,7 +1,7 @@
 name: limeiot
 services:
   gateway:
-    image: limeiot/local:0.4.0
+    image: limeiot/local:0.5.0
     build:
       context: ../..
       dockerfile: deploy/nas/Dockerfile
@@ -41,13 +41,13 @@ services:
       - ${LIMEIOT_STATE_DIR:?}/firmware:/firmware:ro
     networks: [local, ingress]
   lamp:
-    image: limeiot/local:0.4.0
+    image: limeiot/local:0.5.0
     profiles: [simulation]
     user: "${LIMEIOT_UID:?}:${LIMEIOT_GID:?}"
     command: [simulator, device-lamp]
     network_mode: service:gateway
     depends_on:
-      gateway: {condition: service_healthy}
+      gateway: {condition: service_healthy, restart: true}
     environment:
       LIMEIOT_PUBLIC_ORIGIN: ${LIMEIOT_PUBLIC_ORIGIN:?}
     volumes:

@@ -1,6 +1,7 @@
-//! 随网关交付的只读模型目录；目录可用不代表设备已绑定或获准执行。
-use crate::{digest, err, model::Model, Result};
+//! 宿主装配的只读模型目录；领域核心不选择品牌、协议或具体型号。
+use crate::{digest, ensure, err, model::Model, Result};
 use serde::Serialize;
+use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct ModelBundle {
@@ -9,30 +10,39 @@ pub struct ModelBundle {
     pub model: Model,
 }
 
-pub fn catalog() -> Result<Vec<ModelBundle>> {
-    [
-        include_bytes!("../../../../contracts/models/android-tv-agent.json").as_slice(),
-        include_bytes!("../../../../contracts/models/android-tv-remote.json").as_slice(),
-        include_bytes!("../../../../contracts/models/dlna-speaker.json").as_slice(),
-    ]
-    .into_iter()
-    .map(|bytes| {
-        let model: Model =
-            serde_json::from_slice(bytes).map_err(|_| err("invalid_model_bundle"))?;
-        model.validate()?;
-        let model_revision = digest(&model)?;
-        Ok(ModelBundle {
-            bundle_id: format!("bundle-{}", &model_revision[7..]),
-            model_revision,
-            model,
-        })
-    })
-    .collect()
+#[derive(Clone, Debug, Default)]
+pub struct Catalog {
+    bundles: Vec<ModelBundle>,
 }
 
-pub fn get(bundle_id: &str) -> Result<ModelBundle> {
-    catalog()?
-        .into_iter()
-        .find(|bundle| bundle.bundle_id == bundle_id)
-        .ok_or_else(|| err("model_bundle_not_found"))
+impl Catalog {
+    pub fn new(models: impl IntoIterator<Item = Model>) -> Result<Self> {
+        let mut bundles = Vec::new();
+        let mut revisions = BTreeSet::new();
+        for model in models {
+            model.validate()?;
+            let model_revision = digest(&model)?;
+            ensure(
+                revisions.insert(model_revision.clone()),
+                "duplicate_model_bundle",
+            )?;
+            bundles.push(ModelBundle {
+                bundle_id: format!("bundle-{}", &model_revision[7..]),
+                model_revision,
+                model,
+            });
+        }
+        Ok(Self { bundles })
+    }
+
+    pub fn list(&self) -> &[ModelBundle] {
+        &self.bundles
+    }
+
+    pub fn get(&self, bundle_id: &str) -> Result<&ModelBundle> {
+        self.bundles
+            .iter()
+            .find(|bundle| bundle.bundle_id == bundle_id)
+            .ok_or_else(|| err("model_bundle_not_found"))
+    }
 }

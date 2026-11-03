@@ -214,6 +214,15 @@ class ControlClientTest {
         assertEquals(1, fixture.requests.count { it.method == "POST" && it.url.endsWith("/remote-commands") })
         client.forgetCommand(record.id); assertTrue(client.commandRecords("space-a").isEmpty())
     }
+    @Test fun preparedOriginalCanBeExplicitlyDiscardedAfterRecreationWithoutSubmission() = runBlocking {
+        val store = MemoryControlStore(); val fixture = ControlFixture(); val client = ControlClient(fixture.origin, store, fixture)
+        client.beginAuthorization(); client.pollAuthorization()
+        val record = client.prepareCommand("space-a", gateway, device, "light.power", JsonPrimitive(true))
+        assertTrue(record.isPrepared); assertTrue(record.canForget)
+        val restored = ControlClient(fixture.origin, store, fixture)
+        restored.forgetCommand(record.id); assertTrue(restored.commandRecords("space-a").isEmpty())
+        assertTrue(fixture.requests.none { it.method == "POST" && it.url.endsWith("/remote-commands") })
+    }
     @Test fun actionScopeAndOriginalKeySurviveLostResponse() = runBlocking {
         for (scope in listOf("submitted", "observed")) {
             val store = MemoryControlStore(); val fixture = ControlFixture(); val client = ControlClient(fixture.origin, store, fixture)

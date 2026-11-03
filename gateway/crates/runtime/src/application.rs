@@ -17,8 +17,7 @@ pub struct App {
     pub inference_slots: Arc<Semaphore>,
     pub control: Option<Arc<crate::control_client::ControlAccess>>,
     pub connection: Arc<RwLock<crate::relay::ConnectionStatus>>,
-    pub tv: Arc<crate::tv::Adapters>,
-    pub audio: Arc<crate::audio::Adapters>,
+    pub integrations: Arc<crate::integrations::Registry>,
     pub media: Option<Arc<crate::media::Media>>,
     pub speech: Option<Arc<crate::speech::Speech>>,
     pub transcription: Option<Arc<crate::transcription::Transcription>>,
@@ -69,9 +68,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
-    let tv_adapters = crate::tv::configured()?;
-    let audio_adapters = crate::audio::configured()?;
-    audio_adapters.validate_with_tv(&tv_adapters)?;
+    let integrations = Arc::new(crate::integrations::Registry::configured()?);
     let store = Store::open(&setting("LIMEIOT_DB", ".dev/gateway.sqlite"), config)?;
     let (bus, _) = broadcast::channel(64);
     let app = App {
@@ -85,8 +82,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         inference_slots: Arc::new(Semaphore::new(1)),
         control: crate::control_client::configured()?,
         connection: Arc::new(RwLock::new(crate::relay::ConnectionStatus::default())),
-        tv: Arc::new(tv_adapters.clone()),
-        audio: Arc::new(audio_adapters.clone()),
+        integrations: integrations.clone(),
         media,
         speech,
         transcription,
@@ -96,8 +92,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let relay = relay_tls.map(|tls| tokio::spawn(crate::relay::run(app.clone(), tls)));
     let mqtt = tokio::spawn(crate::mqtt::run(app.clone()));
     let execution_plans = tokio::spawn(crate::execution_plan_api::run(app.clone()));
-    let tv = tokio::spawn(crate::tv::run(app.clone(), tv_adapters));
-    let audio = tokio::spawn(crate::audio::run(app.clone(), audio_adapters));
+    let integration_tasks = integrations.start(&app);
     let media_server =
         media_listener.map(|listener| tokio::spawn(crate::media::serve(app.clone(), listener)));
     let media_maintenance = app
@@ -116,8 +111,9 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     mqtt.abort();
     execution_plans.abort();
-    tv.abort();
-    audio.abort();
+    for task in integration_tasks {
+        task.abort();
+    }
     if let Some(task) = media_server {
         task.abort();
     }

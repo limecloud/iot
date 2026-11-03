@@ -53,6 +53,170 @@ class LocalIdentityStoreTest {
         return enrollment
     }
 
+    @Test fun local_assignment_matrix_keeps_original_request_and_credential_fields_and_rejects_downgrades() {
+        for (from in DeviceModelProfile.values()) {
+            val setup = DeviceIdentitySetup.parse(JsonObject(DeviceDocument.parse(setup().encoded()) +
+                ("model_profile" to JsonPrimitive(from.id))).toString().toByteArray())
+            val reference = "limeiot-tv-identity-" + java.util.UUID.randomUUID().toString().replace("-", "")
+            val key = keys.create(reference)
+            val request = key.certificateRequest(setup.identity)
+            val certificate = IdentityFixtures.sign(request.pem)
+            val original = LocalIdentityRecord(setup, reference, "pending", request.pem, request.csrSha256, request.publicKeyFingerprint)
+            val enrollment = original.enrollment(certificate, keys)
+            val active = original.copy(phase = "active", certificateFingerprint = enrollment.certificateFingerprint)
+            assertContentEquals(active.encoded(), LocalIdentityRecord.parse(active.encoded()).encoded())
+            for (to in DeviceModelProfile.values()) {
+                if (to == from || !to.acceptsHistory(from)) {
+                    assertFailsWith<AgentStoreFault> { active.assign(to) }
+                    if (!to.acceptsHistory(from)) assertEquals("model_rollback_refused", assertFailsWith<DeviceFault> { enrollment.withModelProfile(to) }.code)
+                    continue
+                }
+                val assigned = LocalIdentityRecord.parse(active.assign(to).encoded())
+                val next = assigned.enrollment(certificate, keys)
+                assigned.verify(next, keys)
+                assertEquals(request.pem, assigned.view(keys).request!!.pem)
+                assertContentEquals(setup.encoded(), assigned.setup.encoded())
+                assertEquals(to, next.identity.profile)
+                assertEquals(DeviceDocument.parse(enrollment.encoded()) - "model_profile", DeviceDocument.parse(next.encoded()) - "model_profile")
+                assertEquals(to, next.setupForRequest("later-request").identity.profile)
+                assertEquals("identity_mismatch", assertFailsWith<AgentStoreFault> { assigned.verify(enrollment, keys) }.code)
+                val altered = JsonObject(DeviceDocument.parse(assigned.encoded()) + ("model_profile" to JsonPrimitive(from.id)))
+                assertEquals("storage_corrupt", assertFailsWith<AgentStoreFault> { LocalIdentityRecord.parse(altered.toString().toByteArray()) }.code)
+            }
+        }
+    }
+
+    @Test fun assignment_preserves_original_csr_identity_all_journal_decisions_and_authorizations_across_reopen() {
+        lateinit var old: DeviceEnrollment
+        lateinit var originalRequest: IdentityRequestView
+        lateinit var originalJournal: ByteArray
+        store().use { storage ->
+            old = activate(storage); originalRequest = storage.identityRequest()!!
+            originalJournal = ApkJournalFixture.bytes(old.identity)
+            storage.journal(old.binding).commit(originalJournal); storage.authorize("com.example.player", true)
+            for (target in listOf(DeviceModelProfile.COMPOSED_REMOTE, DeviceModelProfile.AUDIO_COMPOSED_REMOTE)) {
+                val next = storage.assignModel(storage.previewModelAssignment(target))
+                assertEquals(target, next.identity.profile)
+                assertEquals(old.keyReference, next.keyReference); assertEquals(old.identityRequestId, next.identityRequestId)
+                assertEquals(old.certificateFingerprint, next.certificateFingerprint); assertContentEquals(old.publicCertificate(), next.publicCertificate())
+                val journal = DeviceDocument.parse(storage.journal(old.binding).read()!!, 1048576, 32768)
+                val before = DeviceDocument.parse(originalJournal, 1048576, 32768)
+                assertEquals(before["entries"], journal["entries"]); assertEquals(before["high_watermark"], journal["high_watermark"])
+                assertEquals(setOf("com.example.player"), storage.allowed())
+                assertContentEquals(originalRequest.setup.encoded(), storage.identityRequest()!!.setup.encoded())
+                assertEquals(originalRequest.request!!.pem, storage.identityRequest()!!.request!!.pem)
+                val saved = storage.apkContinuity()
+                storage.activateIdentity(storage.previewCertificate(old.publicCertificate()))
+                assertEquals(saved, storage.apkContinuity()) // 重复原证书仅查询，不能回退当前模型。
+            }
+        }
+        store().use {
+            assertEquals(DeviceModelProfile.AUDIO_COMPOSED_REMOTE, it.load()!!.identity.profile)
+            assertEquals(DeviceJournalInspection(9, 1, 1, 1, 1, false), it.apkContinuity().journal)
+            assertEquals("model_rollback_refused", assertFailsWith<AgentStoreFault> { it.previewModelAssignment(DeviceModelProfile.AUDIO_APPLICATIONS) }.code)
+            assertEquals("model_assignment_unchanged", assertFailsWith<AgentStoreFault> { it.previewModelAssignment(DeviceModelProfile.AUDIO_COMPOSED_REMOTE) }.code)
+        }
+        assertEquals(1, keys.creates); assertEquals(0, keys.retirements)
+    }
+
+    @Test fun changed_authorization_journal_or_exact_ciphertext_invalidates_assignment_without_writing() {
+        store().use { storage ->
+            val old = activate(storage)
+            storage.journal(old.binding).commit(ApkJournalFixture.bytes(old.identity))
+            fun refused(preview: ModelAssignmentPreview) {
+                val before = storage.apkContinuity()
+                assertEquals("model_assignment_changed", assertFailsWith<AgentStoreFault> { storage.assignModel(preview) }.code)
+                assertEquals(before, storage.apkContinuity()); assertEquals(DeviceModelProfile.APPLICATIONS, storage.load()!!.identity.profile)
+            }
+            val authorization = storage.previewModelAssignment(DeviceModelProfile.AUDIO_APPLICATIONS)
+            storage.authorize("com.example.player", true); refused(authorization)
+            val journal = storage.previewModelAssignment(DeviceModelProfile.AUDIO_APPLICATIONS)
+            storage.journal(old.binding).commit(" ".toByteArray() + storage.journal(old.binding).read()!!); refused(journal)
+            val ciphertext = storage.previewModelAssignment(DeviceModelProfile.AUDIO_APPLICATIONS)
+            database().use { db ->
+                val original = document()
+                val plain = vault.open(original, "tv-identity-v1/${old.binding}")
+                db.execSQL("UPDATE identity SET document=? WHERE slot=1", arrayOf(vault.seal(plain, "tv-identity-v1/${old.binding}")))
+            }
+            refused(ciphertext)
+        }
+    }
+
+    @Test fun assignment_sql_failure_rolls_back_credentials_identity_and_log_then_requires_reopen() {
+        lateinit var before: ApkContinuitySnapshot
+        store().use { storage ->
+            val old = activate(storage); storage.journal(old.binding).commit(ApkJournalFixture.bytes(old.identity))
+            storage.authorize("com.example.player", true)
+            val preview = storage.previewModelAssignment(DeviceModelProfile.AUDIO_APPLICATIONS); before = storage.apkContinuity()
+            database().use { it.execSQL("CREATE TRIGGER fail_model BEFORE UPDATE ON identity BEGIN SELECT RAISE(ABORT,'injected'); END") }
+            assertFails { storage.assignModel(preview) }; frozen(storage)
+        }
+        store().use { assertEquals(before, it.apkContinuity()); assertEquals(DeviceModelProfile.APPLICATIONS, it.load()!!.identity.profile) }
+    }
+
+    @Test fun committed_assignment_readback_failure_freezes_then_reopen_observes_saved_profile() {
+        store().use { storage ->
+            activate(storage)
+            val preview = storage.previewModelAssignment(DeviceModelProfile.AUDIO_APPLICATIONS)
+            vault.failAssignmentReadback = true
+            assertFails { storage.assignModel(preview) }; frozen(storage)
+        }
+        store().use { storage ->
+            assertEquals(DeviceModelProfile.AUDIO_APPLICATIONS, storage.load()!!.identity.profile)
+            assertNotNull(storage.identityRequest()!!.request)
+            assertEquals("model_assignment_unchanged", assertFailsWith<AgentStoreFault> { storage.previewModelAssignment(DeviceModelProfile.AUDIO_APPLICATIONS) }.code)
+        }
+        assertEquals(1, keys.creates)
+    }
+
+    @Test fun pending_identity_and_incomplete_rotation_refuse_assignment_without_replacing_original_requests() {
+        store().use { storage ->
+            val pending = storage.requestIdentity(setup())
+            assertFails { storage.previewModelAssignment(DeviceModelProfile.AUDIO_APPLICATIONS) }
+            val old = storage.previewCertificate(IdentityFixtures.sign(pending.request!!.pem)); storage.activateIdentity(old)
+            val rotation = storage.requestRotation("rotate-assignment")
+            assertEquals("rotation_in_progress", assertFailsWith<AgentStoreFault> { storage.previewModelAssignment(DeviceModelProfile.AUDIO_APPLICATIONS) }.code)
+            val certificate = IdentityFixtures.sign(rotation.candidate.request!!.pem)
+            storage.activateRotation(storage.previewRotation(certificate, rotationReceipt(rotation, certificate)))
+            storage.activationProof(rotation.candidate.setup.requestId)
+            val before = storage.apkContinuity()
+            assertEquals("rotation_in_progress", assertFailsWith<AgentStoreFault> { storage.previewModelAssignment(DeviceModelProfile.AUDIO_APPLICATIONS) }.code)
+            assertEquals(before, storage.apkContinuity())
+        }
+    }
+
+    @Test fun completed_rotation_assignment_preserves_original_receipt_proof_and_earlier_rows_then_rotates_new_profile() {
+        store().use { storage ->
+            activate(storage)
+            fun rotate(request: String): Pair<RotationRequestView, ByteArray> {
+                val view = storage.requestRotation(request); val certificate = IdentityFixtures.sign(view.candidate.request!!.pem)
+                storage.activateRotation(storage.previewRotation(certificate, rotationReceipt(view, certificate)))
+                storage.activationProof(request)
+                storage.confirmRotationManagement(rotationReceipt(view, certificate, true))
+                return view to certificate
+            }
+            rotate("rotation-earlier")
+            val (view, certificate) = rotate("rotation-current")
+            fun row(id: String) = database().use { db -> db.rawQuery("SELECT document FROM rotations WHERE request_id=?", arrayOf(id)).use { assertTrue(it.moveToFirst()); it.getBlob(0) } }
+            val earlier = row("rotation-earlier")
+            val before = DeviceDocument.parse(vault.open(row("rotation-current"), "tv-rotation-v1/${view.candidate.setup.binding}"), 32768)
+            val proof = storage.activationProof("rotation-current")
+            storage.assignModel(storage.previewModelAssignment(DeviceModelProfile.AUDIO_COMPOSED_REMOTE))
+            assertContentEquals(earlier, row("rotation-earlier"))
+            val after = DeviceDocument.parse(vault.open(row("rotation-current"), "tv-rotation-v1/${view.candidate.setup.binding}"), 32768)
+            assertEquals(before - "candidate", after - "candidate")
+            assertEquals(before.getValue("candidate").jsonObject - setOf("schema_version", "model_profile"), after.getValue("candidate").jsonObject - setOf("schema_version", "model_profile"))
+            assertEquals(proof, storage.activationProof("rotation-current"))
+            storage.confirmRotationManagement(rotationReceipt(view, certificate, true))
+            storage.activateRotation(storage.previewRotation(certificate, rotationReceipt(view, certificate, true)))
+            val (next, _) = rotate("rotation-after-assignment")
+            assertEquals(DeviceModelProfile.AUDIO_COMPOSED_REMOTE, next.candidate.setup.identity.profile)
+            assertEquals(DeviceModelProfile.AUDIO_COMPOSED_REMOTE, storage.load()!!.identity.profile)
+            assertContentEquals(earlier, row("rotation-earlier")); assertEquals(4, keys.creates); assertEquals(0, keys.retirements)
+            assertNotNull(storage.apkContinuity())
+        }
+    }
+
     @Test fun pending_request_reopens_with_identical_csr_and_rejects_conflicts_or_legacy_override() {
         val first = store().use { storage ->
             val view = storage.requestIdentity(setup())
@@ -1181,7 +1345,7 @@ class LocalIdentityStoreTest {
         }.toString().toByteArray())
     }
 
-    private class TestKeys : IdentityKeys, IdentityKeyRetirement {
+    internal class TestKeys : IdentityKeys, IdentityKeyRetirement {
         val pairs = linkedMapOf<String, KeyPair>(); var creates = 0
         var failBeforeCreate = false; var failAfterCreate = false
         var failBeforeRetire = false; var failAfterRetire = false; var retirements = 0
@@ -1205,17 +1369,21 @@ class LocalIdentityStoreTest {
             check(!failAfterRetire)
         }
     }
-    private class TestVault : EnrollmentVault {
+    internal class TestVault : EnrollmentVault {
         private val key = KeyGenerator.getInstance("AES").apply { init(128) }.generateKey()
         var failSealPhase: String? = null; var failPendingReadback = false; var lastPendingCsr: String? = null
         var failRotationActive = false; var failProofSeal = false
         var failRetirementPhase: String? = null; var failRetiredReadback = false
+        var failAssignmentReadback = false
         private var failOpen = false
         override fun seal(bytes: ByteArray, binding: String): ByteArray {
             if (binding.startsWith("tv-identity-v1/") || binding.startsWith("tv-rotation-v1/")) {
                 val document = DeviceDocument.parse(bytes, 32768)
                 val record = if (binding.startsWith("tv-rotation-v1/")) document["candidate"]!!.jsonObject else document
                 val phase = record["phase"]!!.jsonPrimitive.content
+                if (binding.startsWith("tv-identity-v1/") && record["schema_version"] == JsonPrimitive(2) && failAssignmentReadback) {
+                    failAssignmentReadback = false; failOpen = true
+                }
                 val retirement = (document["retirement"] as? JsonObject)?.get("phase")?.jsonPrimitive?.content
                 if (retirement != null && retirement == failRetirementPhase) error("injected retirement write failure")
                 if (retirement == "retired" && failRetiredReadback) { failRetiredReadback = false; failOpen = true }
@@ -1235,7 +1403,7 @@ class LocalIdentityStoreTest {
     }
 }
 
-private object IdentityFixtures {
+internal object IdentityFixtures {
     private val directory = Files.createTempDirectory("limeiot-tv-local-identity-")
     private var sequence = 0
     private fun openssl(vararg args: String) {

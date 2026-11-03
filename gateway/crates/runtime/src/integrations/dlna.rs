@@ -116,24 +116,10 @@ impl Adapters {
             source_ip: *entry.config.target.ip(),
         })
     }
-    pub fn validate_with_tv(&self, tv: &crate::tv::Adapters) -> Result<()> {
-        let mut ids = BTreeSet::new();
-        let mut devices = BTreeSet::new();
-        let all: Vec<_> = tv
-            .identifiers()
-            .chain(
-                self.entries
-                    .iter()
-                    .map(|e| (e.device_id.as_str(), e.route.adapter_id.as_str())),
-            )
-            .collect();
-        ensure(
-            all.len() <= 16
-                && all
-                    .into_iter()
-                    .all(|(device, id)| ids.insert(id) && devices.insert(device)),
-            "conflicting_adapter_config",
-        )
+    pub fn identifiers(&self) -> impl Iterator<Item = (&str, &str)> {
+        self.entries
+            .iter()
+            .map(|entry| (entry.device_id.as_str(), entry.route.adapter_id.as_str()))
     }
     pub fn offer(
         &self,
@@ -223,7 +209,9 @@ async fn run_entry(app: App, entry: Arc<Entry>) {
                 .execution_binding(&entry.device_id)
                 .ok()
                 .filter(|binding| {
-                    let Some(offer) = app.audio.offer(&store.data, &entry.device_id, &entry.route)
+                    let Some(offer) =
+                        app.integrations
+                            .offer(&store.data, &entry.device_id, &entry.route)
                     else {
                         return false;
                     };
@@ -307,7 +295,13 @@ async fn run_entry(app: App, entry: Arc<Entry>) {
                                     &binding.revision,
                                 )
                                 .await
-                                .map(Some),
+                                .map(|grant| {
+                                    Some(limeiot_dlna::MediaGrant {
+                                        media_id: grant.media_id,
+                                        url: grant.url,
+                                        expires_at: grant.expires_at,
+                                    })
+                                }),
                             Err(error) => Err(error),
                         }
                     }
@@ -391,7 +385,7 @@ mod tests {
     #[test]
     fn audio_candidates_never_bind_or_expose_media_urls() {
         let model: limeiot_core::model::Model = serde_json::from_slice(include_bytes!(
-            "../../../../contracts/models/dlna-speaker.json"
+            "../../../../../contracts/models/dlna-speaker.json"
         ))
         .unwrap();
         let data=Data::new(serde_json::from_value(json!({"space_id":"home","models":[model],"devices":[{"device_id":"speaker","model_revision":digest(&model).unwrap()}]})).unwrap()).unwrap();

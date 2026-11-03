@@ -150,6 +150,55 @@ class AndroidAgentStore(context: Context, private val vault: EnrollmentVault = A
         }
     }
 
+    /** 原申请不改写；改模仅在已激活且无未完成身份维护的本机引用身份上进行。 */
+    private fun modelAssignment(db: SQLiteDatabase, profile: DeviceModelProfile): Pair<DeviceEnrollment, LocalIdentityRecord> {
+        val current = load() ?: throw AgentStoreFault("credentials_unavailable")
+        val record = readIdentity(db) ?: throw AgentStoreFault("identity_request_required")
+        if (current.keyReference == null) throw AgentStoreFault("identity_request_required")
+        record.verify(current, keys)
+        val latest = readRotation(db)
+        if (latest != null && (latest.candidate.phase != "active" || latest.receipt?.managementCompleted != true || latest.proof == null))
+            throw AgentStoreFault("rotation_in_progress")
+        if (keyRetirements().any { it.phase == "deleting" }) throw AgentStoreFault("key_retirement_conflict")
+        return current to record.assign(profile)
+    }
+
+    @Synchronized internal fun previewModelAssignment(profile: DeviceModelProfile): ModelAssignmentPreview {
+        usable()
+        val db = helper.writableDatabase
+        db.beginTransaction()
+        try {
+            val (current, _) = modelAssignment(db, profile)
+            val preview = ModelAssignmentPreview(current.identity, profile, current.certificateFingerprint, apkContinuity())
+            db.setTransactionSuccessful()
+            return preview
+        } finally { db.endTransaction() }
+    }
+
+    /** 凭据、当前模型选择和完整日志同事务提交；轮换原申请/回执/证明及其他历史行保持。 */
+    @Synchronized internal fun assignModel(preview: ModelAssignmentPreview): DeviceEnrollment {
+        val expected = identityTransaction { db, writing ->
+            val (current, record) = modelAssignment(db, preview.target)
+            if (current.identity != preview.identity || current.certificateFingerprint != preview.certificate || apkContinuity() != preview.continuity)
+                throw AgentStoreFault("model_assignment_changed")
+            val next = current.withModelProfile(preview.target)
+            val migrated = DeviceJournalMigration.prepare(next.identity, readJournal(next.binding))
+            val plain = next.encoded()
+            writing()
+            val encrypted = try { vault.seal(plain, next.binding) } finally { plain.fill(0) }
+            val values = ContentValues().apply { put("credentials", encrypted); put("journal", migrated) }
+            if (db.update("agent", values, "slot=1 AND binding=?", arrayOf(next.binding)) != 1) throw AgentStoreFault("identity_mismatch")
+            saveIdentity(db, record, false, writing)
+            readRotation(db)?.let { saveRotation(db, it.copy(candidate = record), false, writing) }
+            next
+        }
+        try {
+            return (load() ?: throw AgentStoreFault("identity_mismatch")).also {
+                if (!it.encoded().contentEquals(expected.encoded())) throw AgentStoreFault("identity_mismatch")
+            }
+        } catch (error: Exception) { frozen = true; throw error }
+    }
+
     /** 仅在本机确认且连接已停止后调用；同身份换证不触碰回执和应用授权。 */
     @Synchronized fun install(enrollment: DeviceEnrollment) {
         usable()
@@ -161,8 +210,8 @@ class AndroidAgentStore(context: Context, private val vault: EnrollmentVault = A
             if (old != null && old != enrollment.binding) throw AgentStoreFault("identity_change_refused")
             val previous = if (old == null) null else load() ?: throw AgentStoreFault("credentials_unavailable")
             val transition = previous?.identity?.profile != enrollment.identity.profile
-            if (previous != null && transition && previous.identity.profile != DeviceModelProfile.APPLICATIONS) throw AgentStoreFault("model_rollback_refused")
-            val migrated = if (transition && enrollment.identity.profile == DeviceModelProfile.COMPOSED_REMOTE)
+            if (previous != null && !enrollment.identity.profile.acceptsHistory(previous.identity.profile)) throw AgentStoreFault("model_rollback_refused")
+            val migrated = if (transition && enrollment.identity.profile != DeviceModelProfile.APPLICATIONS)
                 DeviceJournalMigration.prepare(enrollment.identity, if (old == null) null else readJournal(old)) else null
             val plain = enrollment.encoded()
             val encrypted = try { vault.seal(plain, enrollment.binding) } finally { plain.fill(0) }

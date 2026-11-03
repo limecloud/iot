@@ -1,4 +1,4 @@
-use limeiot_android_tv::supports_model;
+use limeiot_android_tv::{supported_paths, supports_model};
 use limeiot_core::model::Model;
 use serde_json::{json, Value};
 
@@ -48,5 +48,29 @@ fn model_does_not_grant_unimplemented_inputs_or_change_action_meaning() {
         let model: Model = serde_json::from_value(value).unwrap();
         model.validate().unwrap();
         assert!(!supports_model(&model), "variant {variant}");
+        assert!(supported_paths(&model).is_empty(), "variant {variant}");
     }
+}
+
+#[test]
+fn audio_model_only_offers_remote_and_application_actions_to_adb() {
+    let model: Model = serde_json::from_slice(include_bytes!(
+        "../../../../contracts/models/android-tv-audio-remote.json"
+    ))
+    .unwrap();
+    assert!(!supports_model(&model));
+    assert_eq!(
+        supported_paths(&model),
+        ["apps.launch".into(), "remote.press".into()].into()
+    );
+    let mut writable = model.clone();
+    writable
+        .services
+        .iter_mut()
+        .find(|service| service.id == "audio")
+        .unwrap()
+        .properties[0]
+        .access
+        .push("write".into());
+    assert!(supported_paths(&writable).is_empty());
 }

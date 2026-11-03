@@ -1,5 +1,7 @@
 # 当前工具与模型合同
 
+[ZNP诊断与访谈](zigbee-diagnostics.md)及[严格Schema](zigbee-diagnostics.schema.json)定义本地`zigbee schema/probe/interview`、固定SYS/ZDO读取、有界串口会话和未经认证的候选证据。当前没有网关绑定、入网、ZCL映射或控制；不加入网关HTTP工具目录。
+
 [本地图片观察](vision.md)及[视觉Schema](vision.schema.json)定义 `vision.understand` 的有界 PNG/JPEG、问题摘要、独立 Ollama 适配、耐久任务、到期清文和原键恢复。API、CLI与家庭网页共用合同，图片和问题正文不入任务快照，视觉结果不执行设备操作；真实模型质量、原生视觉页面和新NAS整包分别验收。
 
 [本地有限语音识别](transcription.md)及[转写Schema](transcription.schema.json)定义`audio.transcribe`的已有录音/摘要输入、本地HTTP适配、耐久任务、文本保留与原键恢复。Swift/Kotlin库与原生页面状态层复用同一合同，本机observation明确去正文，网络仍校验完整文本和摘要。转写不执行设备操作；可选[独立sherpa ASR](../providers/sherpa-asr/README.md)已有真实引擎软件集成，合成中文语音质量未通过，完整原生界面运行及NAS容器另验。
@@ -32,7 +34,7 @@
 
 [电视本机材料](tv-agent-enrollment.schema.json)区分v1/v2旧私钥材料与仅由本机产生的v3密钥引用；另有[初次公开配置](tv-agent-identity.schema.json)冻结原请求和信任，电视导出CSR、导入公开证书并耐久恢复。v1隐含应用模型，v2/v3必须填写model_profile；[离线打包工具](../tools/tv-agent-enrollment.py)通过--model-profile选择，--identity-directory打包已签发旧材料，--ca-file只准备公开配置，两者互斥且不签发。Android明确确认后事务保存凭据与相应状态，旧材料模型迁移保留日志/授权；它不变更网关模型绑定、不批准compose，也不代替物理认领或ADB归属证明。
 
-[执行路由与明确绑定](execution-routes.md)定义第一方路由、候选、bind/compose/revoke、会话能力证明、跨端FIFO及应用缓存；[机器Schema](execution-bindings.schema.json)与目录中的五项execution/device-applications工具为入口。当前快照v10读取v1–10，保留完整分区、generation、撤销与原决定，旧绑定不自动组合。[仅动作电视模型](models/android-tv-remote.json)的协议夹具/假ADB组合旅程通过，范围见 [进度4.14](../docs/24-实施计划与进度.md#414-显式能力组合与文档同步)。实际JVM Agent/假ADB组合软件结果见[4.22](../docs/24-实施计划与进度.md#422-adb身份预检合并与实际jvm组合软件验收)，4.16失败保留为历史；已有网关设备跨内置模型的软件路线见 [4.19](../docs/24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)，Android端上与实机另验。网页当前显示/撤销组合，创建使用通用CLI。
+[执行路由与明确绑定](execution-routes.md)定义第一方路由、候选、bind/compose/revoke、会话能力证明、跨端FIFO及应用缓存；[机器Schema](execution-bindings.schema.json)与目录中的五项execution/device-applications工具为入口。当前读取快照v1–11，基础路径写v10、含定时记录写v11，保留完整分区、generation、撤销与原决定，旧绑定不自动组合。[仅动作电视模型](models/android-tv-remote.json)的协议夹具/假ADB组合旅程通过，范围见 [进度4.14](../docs/24-实施计划与进度.md#414-显式能力组合与文档同步)。实际JVM Agent/假ADB组合软件结果见[4.22](../docs/24-实施计划与进度.md#422-adb身份预检合并与实际jvm组合软件验收)，4.16失败保留为历史；已有网关设备跨内置模型的软件路线见 [4.19](../docs/24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)，Android端上与实机另验。网页与通用CLI均可显式创建组合；网页读取原生会话证明并展示两端职责，协议夹具音频组合结果见[4.68](../docs/24-实施计划与进度.md#468-音频原生路径与adb的明确组合及网页入口)。电视候选的实际动作路径与原生证明输出定义在机器Schema的televisionAdapter/nativeExecution中。
 
 当前只实现模型和 DSL 的明确子集，未知字段、未支持动作与非空条件被拒绝。完整产品规划仍在工程规范，未实现的目标不进入可执行工具目录。运行与验证见 [本地开发](../deploy/dev/README.md)。
 
@@ -41,6 +43,8 @@
 `control-pairing-request.schema.json` 与 `control-pairings.*` 定义本地所有者的网关配对工具；[证明与恢复合同](control-pairing.md) 说明审核、批准、未知结果只读恢复和独立机器密钥。独立Go控制面接口见 [OpenAPI](control.openapi.yaml)，不共享本地会话或空间身份。[机器连接](control-relay.md) 及 `control-relay.schema.json` 定义可选出站WSS、受限设备/模型读取、命令创建和原操作查询。
 
 `tools/control.json`为独立控制面CLI/Agent目录，通过 `npm run cli -- control schema`发现；不混入本地Bearer目录。Go合同检查核对目录路径、方法及输入约束与OpenAPI一致。CLI使用独立Console会话；空间/配对/命令创建前耐久保存原请求，命令恢复只查询旧记录。私有凭据登录、Console短期子会话导入、秘密输出文件与错误恢复见 [CLI](../packages/cli/README.md)。
+
+[控制面终端任务](control-terminal-tasks.md)和[请求Schema](control-terminal-tasks.schema.json)定义`control tui`菜单及Agent逐行JSON。25项工具共用原CLI执行器；写操作先核对，再以精确任务ID/摘要单次提交，核对绑定原会话且仅存内存。原请求恢复沿用各工具合同，不扩大授权。
 
 [原生控制面授权](control-native.md) 定义系统浏览器明确批准、PKCE轮询、独立子会话、取消及远程原操作恢复。后端、Console确认页和Swift/Kotlin独立库已通过HTTPS/WSS及MQTT模拟链路；原生云界面已接入源码，Android APK构建通过，iOS整包及两端运行待验收。原生证明与浏览器Cookie隔离，不向手机导出外部Token。
 

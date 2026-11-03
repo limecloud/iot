@@ -7,7 +7,7 @@
   "required": ["schema_version", "space_id", "device_id", "broker", "ca_pem", "certificate_pem"],
   "properties": {
     "schema_version": { "enum": [1, 2, 3] },
-    "model_profile": { "enum": ["android-tv-agent", "android-tv-remote"] },
+    "model_profile": { "enum": ["android-tv-agent", "android-tv-remote", "android-tv-audio-agent", "android-tv-audio-remote"] },
     "space_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" },
     "device_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$" },
     "broker": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^ssl://[^/?#@]+:[1-9][0-9]{0,4}$" },
@@ -20,7 +20,7 @@
   },
   "allOf": [{
     "if": { "properties": { "schema_version": { "enum": [2, 3] } }, "required": ["schema_version"] },
-    "then": { "properties": { "model_profile": { "enum": ["android-tv-agent", "android-tv-remote"] } }, "required": ["model_profile"] },
+    "then": { "properties": { "model_profile": { "enum": ["android-tv-agent", "android-tv-remote", "android-tv-audio-agent", "android-tv-audio-remote"] } }, "required": ["model_profile"] },
     "else": { "properties": { "model_profile": false } }
   }, {
     "if": { "properties": { "schema_version": { "const": 3 } }, "required": ["schema_version"] },

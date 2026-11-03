@@ -3,8 +3,11 @@ import importlib.util
 import json
 from pathlib import Path
 import struct
+import subprocess
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = importlib.util.spec_from_file_location("nas_artifacts", ROOT / "tools/build-nas-artifacts.py")
@@ -25,6 +28,63 @@ def elf(target):
 
 
 class NasArtifactTests(unittest.TestCase):
+    def test_embedded_contracts_and_workspace_manifests_are_build_inputs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            fixtures = {
+                "Cargo.toml": "fixture", "Cargo.lock": "fixture", "LICENSE": "fixture",
+                "package.json": json.dumps({"workspaces": ["packages/cli"]}),
+                "package-lock.json": "{}", "packages/cli/package.json": "{}",
+                "deploy/dev/config.json": "{}", "tools/build-nas-artifacts.py": "fixture",
+                "contracts/tools/catalog.json": '{"operations":[]}',
+                "contracts/rule.schema.json": '{"type":"object"}',
+            }
+            for name, content in fixtures.items():
+                path = directory / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content)
+            with patch.object(nas, "ROOT", directory):
+                original = nas.source_inputs()
+                self.assertTrue(fixtures.keys() <= original.keys())
+                for name in ["contracts/tools/catalog.json", "contracts/rule.schema.json", "packages/cli/package.json"]:
+                    path = directory / name
+                    content = path.read_text()
+                    path.write_text(content + "\n")
+                    self.assertNotEqual(nas.source_inputs(), original)
+                    path.write_text(content)
+
+    def test_cached_runtime_rejects_wrong_platform_identity_or_dependency_prefix(self):
+        source = nas.runtime_dockerfile((ROOT / "deploy/nas/Dockerfile").read_text())
+        marker = "COPY bin/limeiot-gateway /usr/local/bin/limeiot-gateway"
+        prefix, remainder = source.split(marker)
+        identity = "sha256:" + "a" * 64
+        base = {"Id": identity, "Os": "linux", "Architecture": "arm64", "Config": {
+            "WorkingDir": "/opt/limeiot", "Labels": {"run.limeiot.runtime-prefix-digest": nas.hashlib.sha256(prefix.encode()).hexdigest()}}}
+        self.assertEqual(nas.cached_runtime_dockerfile(source, "linux/arm64", base), f"FROM {identity} AS runtime\n" + marker + remainder)
+        for field, value, error in [("Architecture", "amd64", "runtime_base_platform_mismatch"),
+                                    ("Os", "windows", "runtime_base_platform_mismatch"),
+                                    ("Id", "mutable:tag", "runtime_base_identity_invalid"),
+                                    ("Config", {**base["Config"], "WorkingDir": "/tmp"}, "runtime_base_workdir_mismatch"),
+                                    ("Config", {**base["Config"], "Labels": {}}, "runtime_base_prefix_mismatch")]:
+            with self.assertRaisesRegex(ValueError, error):
+                nas.cached_runtime_dockerfile(source, "linux/arm64", {**base, field: value})
+        with self.assertRaisesRegex(ValueError, "runtime_base_prefix_mismatch"):
+            nas.cached_runtime_dockerfile(source.replace("mosquitto python3", "mosquitto curl python3"), "linux/arm64", base)
+
+    def test_ring_rust_target_translation_preserves_other_arguments(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            compiler = directory / "zig fixture"
+            compiler.write_text(f"#!{sys.executable}\nimport json,sys\nprint(json.dumps(sys.argv[1:]))\n")
+            compiler.chmod(0o755)
+            wrapper = directory / "cc"
+            for triple, zig_target, *_ in nas.TARGETS.values():
+                wrapper.write_text(nas.cc_wrapper(compiler, triple, zig_target))
+                wrapper.chmod(0o755)
+                flags = ["-O3", "-fPIC", f"--target={triple}", "-I/path with spaces", "-c", "source file.c"]
+                actual = json.loads(subprocess.check_output([wrapper, *flags], text=True))
+                self.assertEqual(actual, ["cc", "-target", zig_target, "-O3", "-fPIC", "-I/path with spaces", "-c", "source file.c"])
+
     def test_linux_architecture_interpreter_and_truncation(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "binary"

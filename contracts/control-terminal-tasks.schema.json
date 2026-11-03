@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iot.limeai.run/contracts/control-terminal-tasks.schema.json",
+  "title": "独立控制面终端请求",
+  "oneOf": [
+    {"type":"object","properties":{"op":{"enum":["catalog","state"]}},"required":["op"],"additionalProperties":false},
+    {"type":"object","properties":{"op":{"const":"read"},"operation_id":{"type":"string","minLength":1,"maxLength":128},"space_id":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,128}$"},"id":{"type":"string","minLength":1,"maxLength":128},"after":{"type":"string","maxLength":128},"input":{"type":"object"}},"required":["op","operation_id"],"additionalProperties":false},
+    {"type":"object","properties":{"op":{"const":"prepare"},"operation_id":{"type":"string","minLength":1,"maxLength":128},"space_id":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,128}$"},"id":{"type":"string","minLength":1,"maxLength":128},"input":{"type":"object"},"output_file":{"type":"string","minLength":1}},"required":["op","operation_id"],"additionalProperties":false},
+    {"type":"object","properties":{"op":{"const":"commit"},"task_id":{"type":"string","pattern":"^ctask-[a-f0-9-]{36}$"},"review_digest":{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"}},"required":["op","task_id","review_digest"],"additionalProperties":false},
+    {"type":"object","properties":{"op":{"const":"cancel"},"task_id":{"type":"string","pattern":"^ctask-[a-f0-9-]{36}$"}},"required":["op","task_id"],"additionalProperties":false}
+  ]
+}

@@ -100,6 +100,9 @@
         "target": "192.168.50.21:5555",
         "fingerprint": "fixture",
         "device_serial": "TV-FIXTURE",
+        "paths": [
+          "remote.press"
+        ],
         "applications": [
           {
             "application_id": "example.player",
@@ -376,6 +379,118 @@
           }
         ],
         "next_cursor": "next"
+      }
+    },
+    {
+      "name": "television-compatible-empty-paths",
+      "page": {
+        "items": [
+          {
+            "device_id": "television",
+            "route": {
+              "adapter_id": "adapter-television",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.21:5555",
+            "fingerprint": "fixture",
+            "device_serial": "TV-FIXTURE",
+            "paths": [],
+            "applications": [
+              {
+                "application_id": "example.player",
+                "category": "leanback"
+              }
+            ]
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "television-duplicate-paths",
+      "page": {
+        "items": [
+          {
+            "device_id": "television",
+            "route": {
+              "adapter_id": "adapter-television",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.21:5555",
+            "fingerprint": "fixture",
+            "device_serial": "TV-FIXTURE",
+            "paths": [
+              "remote.press",
+              "remote.press"
+            ],
+            "applications": [
+              {
+                "application_id": "example.player",
+                "category": "leanback"
+              }
+            ]
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "television-unsorted-paths",
+      "page": {
+        "items": [
+          {
+            "device_id": "television",
+            "route": {
+              "adapter_id": "adapter-television",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.21:5555",
+            "fingerprint": "fixture",
+            "device_serial": "TV-FIXTURE",
+            "paths": [
+              "remote.press",
+              "apps.launch"
+            ],
+            "applications": [
+              {
+                "application_id": "example.player",
+                "category": "leanback"
+              }
+            ]
+          }
+        ],
+        "next_cursor": null
+      }
+    },
+    {
+      "name": "television-invalid-path",
+      "page": {
+        "items": [
+          {
+            "device_id": "television",
+            "route": {
+              "adapter_id": "adapter-television",
+              "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            },
+            "compatible": true,
+            "target": "192.168.50.21:5555",
+            "fingerprint": "fixture",
+            "device_serial": "TV-FIXTURE",
+            "paths": [
+              "shell.command\n"
+            ],
+            "applications": [
+              {
+                "application_id": "example.player",
+                "category": "leanback"
+              }
+            ]
+          }
+        ],
+        "next_cursor": null
       }
     }
   ],

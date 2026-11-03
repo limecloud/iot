@@ -90,7 +90,9 @@ Keystore适配器供NAS与云库复用，云记录使用独立的`limeiot.contro
 
 界面先明确调用`beginAuthorization()`取得仅供用户查看的授权码和同站`verificationUri`，由系统浏览器批准后调用`pollAuthorization()`。库先核对当前Console主体、CSRF与期限，再保存材料；界面只取得状态和主体，不持有Token。原请求保存失败不发送，响应丢失沿用原证明，503保留会话，401清理；`restoreSession()`核实原身份，`logout()`仅结束子会话。库不自动打开浏览器、后台轮询或写重试，同一实例操作由Mutex串行化。
 
-远程控制按`prepareCommand`保存完整原请求，再由`submitCommand`先保存发送标记后单次提交。响应丢失、进程重启或同键再次提交均只查原操作，404也不补发；`resolveCommand(reconcile = true)`显式核实原设备结果。记录绑定当前主体/空间，最多128条，退出后保留；`forgetCommand`只清理明确拒绝或终态。confirmed须有匹配原请求的设备证据；SDK检查摘要格式和连续性，Go/Rust负责正式规范化摘要。
+远程控制按`prepareCommand`保存完整原请求，再由`submitCommand`先保存发送标记后单次提交。响应丢失、进程重启或同键再次提交均只查原操作，404也不补发；`resolveCommand(reconcile = true)`显式核实原设备结果。记录绑定当前主体/空间，最多128条，退出后保留；`forgetCommand`允许明确放弃未尝试且无结果/拒绝的准备记录，或清理明确拒绝/终态。已尝试而结果未知的记录不能清除。confirmed须有匹配原请求的设备证据；SDK检查摘要格式和连续性，Go/Rust负责正式规范化摘要。
+
+CloudViewModel持有当前云任务，离开STARTED生命周期或云入口时同时取消按钮任务与轮询，异步返回后复查取消，迟到读取不恢复在线。准备存储期间暂停不会继续提交；恢复前台只读取原记录，未发送记录可明确放弃，已尝试记录继续查询。取消不能撤回已发出的网络请求。
 
 `npm run test:control:native`已通过真实HTTPS/WSS、Go/MySQL、Rust网关、MQTT模拟设备、Chromium批准和私有文件存储夹具。两端分别验证未受信CA拒绝、会话恢复、远程响应丢失/Go重启后查询原操作、只创建一条设备命令及独立退出。报告标记`native_remote=true`、`transport=https`、`native_app=false`、`hardware=false`；测试专用CA适配器不改变生产信任。此证据属于库，新增Compose页面的系统浏览器打开、Keystore与前后台行为仍需在模拟器或手机验收。
 
@@ -112,9 +114,9 @@ sh "gradlew" --configure-on-demand :core:test
 
 纯 JVM 检查覆盖 HTTPS 地址、原幂等键、CSRF、所有者凭据隔离、控制/草案超时不重发与原草案查询。仓库根目录的 `npm run test:android` 额外启动独立网关、真实 Broker、模拟设备与假 Ollama 提供方，验证控制回执、草案幂等/无自动部署/预演/明确启用、规则生命周期、原操作查询及撤销。提供方检查不代表模型质量。
 
-控制面包含4组授权、3组远程与3组动作JVM合同检查，覆盖原证明保存失败不发送、S256与响应丢失后原键恢复、非法材料/跨origin/主体拒绝、会话503保留/401清理及取消/独立退出，以及远程存储失败不发送、旧键只读、拒绝/未知/终态清理和设备证据验证。另1项真实控制面检查由仓库根目录`npm run test:control:native`设置专用环境后运行，需要Go、Docker/MySQL8.4、Swift、JDK21与Chromium；普通`:core:test`不会据缺少该环境宣称真实联调已运行。
+控制面包含4组授权、4组远程与3组动作JVM合同检查，覆盖原证明保存失败不发送、S256与响应丢失后原键恢复、非法材料/跨origin/主体拒绝、会话503保留/401清理及取消/独立退出，以及远程存储失败不发送、旧键只读、未发送明确放弃、拒绝/未知/终态清理和设备证据验证。另1项真实控制面检查由仓库根目录`npm run test:control:native`设置专用环境后运行，需要Go、Docker/MySQL8.4、Swift、JDK21与Chromium；普通`:core:test`不会据缺少该环境宣称真实联调已运行。
 
-配置Android SDK与JDK21后，在仓库根目录执行`npm run test:clients:state -- android`，顺序运行core测试、3项`CloudViewModelTest`、调试APK构建与lint。状态测试注入内存存储/HTTP夹具，验证后台不轮询/取消恢复、未知操作重建与离线只读、绑定修订/空间隔离；它不是Compose运行、Keystore或手机生命周期证据。未指定平台时该命令还执行Swift宿主状态检查，需要macOS与Swift工具链。
+配置Android SDK与JDK21后，在仓库根目录执行`npm run test:clients:state -- android`，顺序运行core测试、5项`CloudViewModelTest`、调试APK构建与lint。状态测试注入内存存储/HTTP夹具，验证后台不轮询/取消恢复、未知操作重建与离线只读、绑定修订/空间隔离、准备存储期间暂停零提交与明确放弃、迟到刷新不恢复online；它不是Compose运行、Keystore或手机生命周期证据。未指定平台时该命令还执行Swift宿主状态检查，需要macOS与Swift工具链。
 
 当前API36常规Debug、Release/R8构建与lint通过（0错误、17警告），两包不包含运行检查的测试CA或debug-overrides，Release未签名发布。请顺序执行同一Gradle工程的构建、lint与JVM检查，避免多个编译进程共写缓存。历史API36 ARM64的四项NAS运行通过，当前源码最新复验启动ANR未通过，见下节；用户安装CA、云系统浏览器、其他API和字体缩放仍待验收，手机真机按用户要求跳过。
 

@@ -1,0 +1,123 @@
+{
+  "evidence_id": "EVID-NAS-ARM64-MULTIMODAL-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "build_passed_container_acceptance_incomplete",
+  "platform": "linux/arm64",
+  "image": "limeiot/verification:nas-arm64-multimodal-20261103",
+  "image_id": "sha256:17f27d6178de9d1bf619cfab2c37d922cb465dea1d36d128ff59ebabe1d3ca0b",
+  "source_digest": "9293b4172b6def97b39374b650b1768227a52068ce8c07a1ea07a202c135e837",
+  "artifact_manifest": ".dev/nas-arm64-multimodal/build.json",
+  "artifact_manifest_sha256": "fbe7b8aa878a07dd9f4ba4e0f7bbbc47c819addaa66e8851c8e9569f1871b686",
+  "artifact_files": 89,
+  "binaries": {
+    "bin/limeiot-gateway": "065d2fafa6cefc3746f2b1d3203c8198aa70027dc4af0cbd6b42cecb3388ab51",
+    "bin/limeiot-model-validator": "6d08d004fa8c4c8134c860c3171e2f6f8e57bd85714a03d8c1324c138b9a5e3d",
+    "bin/limeiot-ota": "1616de2f5d20c8b4c1b13c8afb9c53f0b219f6c5d533b498fcfb1a8e4cc0c7e0",
+    "bin/limeiot-simulator": "c5f404aab11c4ad310b7e7574fa0fa6508d9a1cee5136c76fa2afa55e0942cae"
+  },
+  "toolchain": {
+    "rust": "1.93.1",
+    "zig": "0.14.1",
+    "zig_archive_sha256": "39f3dc5e79c22088ce878edc821dedb4ca5a1cd9f5ef915e9b3cc3053e8faefa",
+    "rust_std_sha256": "56f2cd66ad7167dd6924ff095063ffddfe731812a1909b9200bb0ee21982fc47",
+    "rust_target": "aarch64-unknown-linux-gnu",
+    "c_target": "aarch64-linux-gnu.2.36"
+  },
+  "build_jobs": 2,
+  "build_and_packaging_source_consistency": true,
+  "artifact_verification_passed": true,
+  "current_workspace_source_digest": "64066dc09b54ab0e811f81f2bfe72d0c71bd4bdabac58177596194d31787625a",
+  "current_workspace_differences": [
+    "contracts/models/android-tv-audio-agent.json",
+    "contracts/models/android-tv-audio-remote.json"
+  ],
+  "attempts": [
+    {
+      "report": ".dev/nas-container-0ded9cc2cc3e942d/report.json",
+      "report_sha256": "bff46ce3f42178fcffb91978feb4b9221776d04449c0fbed0122ce5fa952dbec",
+      "passed": false,
+      "error": "readiness_timeout",
+      "containers_cleaned": true,
+      "passed_checks": [
+        "real_containers",
+        "installation_scoped_to_verification_directory",
+        "https_verified_ca",
+        "non_root_read_only_internal_network",
+        "inference_container_isolated_without_device_or_owner_secrets",
+        "mqtt_command_confirmed",
+        "browser_home_and_model_entry",
+        "gateway_recreation_routed",
+        "device_mtls_acl_revocation",
+        "containers_cleaned"
+      ],
+      "multimodal": {
+        "passed": false,
+        "provider_fixture": true,
+        "renderer_fixture": true,
+        "model_validated_in_image": true,
+        "real_model_quality": false,
+        "hardware": false,
+        "play_command": "c1-2-fb4546a7-ea20-4b1b-8763-946ecccc55e1",
+        "grant_id": "grant-8dfe0515-1b45-4e1f-88c6-c5a73813b90c",
+        "image_bytes": 787252,
+        "image_json_bytes": 1049833,
+        "no_implicit_grant_or_play": true,
+        "explicit_play_range_bytes_verified": true,
+        "source_media_id": "media-cdc0f418-1825-4438-b121-a2e6e7a4d76c",
+        "recreation_no_inference_or_play": true
+      }
+    },
+    {
+      "report": ".dev/nas-container-e7b38d2e08166e8c/report.json",
+      "report_sha256": "db90774f13f0179009f1a77febf0db2dc54b5a8c4f7a592abdfee74dd8fdb8b1",
+      "passed": false,
+      "error": "https_timeout",
+      "containers_cleaned": true,
+      "passed_checks": [
+        "real_containers",
+        "installation_scoped_to_verification_directory",
+        "https_verified_ca",
+        "non_root_read_only_internal_network",
+        "inference_container_isolated_without_device_or_owner_secrets",
+        "mqtt_command_confirmed",
+        "containers_cleaned"
+      ],
+      "multimodal": {
+        "passed": false,
+        "provider_fixture": true,
+        "renderer_fixture": true,
+        "model_validated_in_image": true,
+        "real_model_quality": false,
+        "hardware": false
+      }
+    }
+  ],
+  "harness_change": {
+    "file": "tools/test-nas-container.mjs",
+    "sha256": "23f64c549b0c12e8c59ed03181f58b96fb14f74e8f06cff6ef7ba9ccc3491765",
+    "syntax_check_passed": true,
+    "description": "撤销证书后的网关重启会使所有者会话失效；新增旧会话401断言，并重新登录后再进行备份前查询。",
+    "new_step_reached_in_retry": false,
+    "existing_timeouts_or_assertions_relaxed": false
+  },
+  "scope": {
+    "arm64_workspace_release_build": true,
+    "home_pwa_build": true,
+    "runtime_image_assembled": true,
+    "real_containers_started": true,
+    "full_multimodal_container_acceptance": false,
+    "amd64_workspace_build": false,
+    "real_model_quality": false,
+    "hardware": false,
+    "hardware_acceptance": "skipped_by_user",
+    "published": false,
+    "full_goal_completed": false
+  },
+  "limits": [
+    "首轮在证书撤销后的网关重启通过后，备份前查询因仍持有失效会话而readiness_timeout；未进行完整备份恢复。",
+    "复验在首次多模态调用阶段触发既有5秒HTTPS预算超时；保留失败，不据此认定模型、网关或资源为已确认根因。复验尚未执行到新增重新登录步骤。",
+    "推理提供方与DLNA渲染器是独立协议夹具；不证明真实模型质量、音质或物理播放。",
+    "镜像对应其冻结源码摘要；后续新增的电视音频模型未纳入本镜像。",
+    "仅清理本次验收创建的容器与网络；测试目录含私钥，保留在被忽略的.dev中。"
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-03",
+  "scope": "native_cloud_action_lifecycle_and_explicit_discard_of_unsent_originals",
+  "status": "host_software_and_android_build_passed",
+  "archive": ".dev/cloud-lifecycle-20261103",
+  "hardware": false,
+  "emulator_started": false,
+  "native_app_runtime": false,
+  "official_cloud_updated": false,
+  "published": false,
+  "full_goal_completed": false,
+  "changes": {
+    "swift_ui_state_owns_cancellable_action": true,
+    "swift_scene_and_connection_mode_explicit_pause": true,
+    "old_swift_foreground_loop_cannot_resume": true,
+    "android_state_owns_structured_action": true,
+    "background_cancels_buttons_and_polling": true,
+    "cancelled_result_cannot_restore_online": true,
+    "prepare_storage_paused_zero_command_posts": true,
+    "foreground_restores_original_without_submission": true,
+    "explicit_unsent_original_discard": true,
+    "discard_eligibility_shared_by_sdk_and_ui": true,
+    "attempted_unknown_original_not_discardable": true,
+    "persistent_json_format_changed": false,
+    "http_permissions_or_database_changed": false,
+    "new_dependency": false
+  },
+  "verification": {
+    "swift_baseline": {
+      "exit_code": 1,
+      "expected_failure": "background during prepare must not submit a command",
+      "log": "swift-baseline.log",
+      "original_state_source": "CloudStore.before.swift"
+    },
+    "swift_fixed_state": {
+      "groups": 5,
+      "passed": true,
+      "log": "swift-final.log",
+      "in_memory_store_and_http_fixture": true,
+      "delayed_storage_and_transport_ignore_cancellation": true
+    },
+    "swift_client_checks": {
+      "passed": true,
+      "control_authorization_groups": 4,
+      "remote_groups": 4,
+      "action_groups": 3,
+      "other_contract_regressions": true,
+      "integration_branches_without_environment_not_executed": true,
+      "log": "swift-client.log"
+    },
+    "swift_changed_app_sources_parse": true,
+    "ios_complete_app_build": false,
+    "android_core": {
+      "junit_reported_tests": 12,
+      "reported_failures": 0,
+      "reported_errors": 0,
+      "reported_skips": 0,
+      "ordinary_contract_methods_exercised": 11,
+      "conditional_real_control_method_returned_early": true,
+      "real_control_integration_branch_executed": false
+    },
+    "android_cloud_state": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "new_lifecycle_methods": 2
+    },
+    "android_build": {
+      "jdk": "Corretto 21.0.13+11-LTS",
+      "compile_sdk": 36,
+      "build_tools": "36.0.0",
+      "debug_apk": true,
+      "apk_sha256": "53dc5d8d374a05853a00b90eb08381916e348ce4efc2f55766f841acef08054b",
+      "apk_installed": false,
+      "lint_errors": 0,
+      "lint_warnings": 12,
+      "full_app_unit_suite_executed": false,
+      "log": "android-fixed.log",
+      "initial_command_option_failure_retained": "android-core.log"
+    },
+    "website": {
+      "typecheck_files": 48,
+      "errors": 0,
+      "warnings": 0,
+      "hints": 0,
+      "build": true,
+      "html_pages": 52,
+      "local_references": 1997,
+      "new_lifecycle_guide_present_in_built_markdown": true,
+      "log": "website-build.log"
+    },
+    "final_source_archive": {
+      "files": 50,
+      "manifest": "source-sha256.json",
+      "captured_after_tests": true
+    }
+  },
+  "limits": [
+    "Host lifecycle fixtures do not establish complete-app, system browser or Keychain/Keystore runtime behavior.",
+    "Cancellation does not recall a network request that may already have been sent; attempted originals remain query-only.",
+    "The conditional Android real-control method returned early and is not counted as integration evidence.",
+    "Existing emulator ANR, missing iOS SDK, AMD64 multimodal recovery and TV update timeout failures were not retried.",
+    "Additional protocols/ecosystems, real model quality, toy/robot samples and full-platform acceptance remain independent work."
+  ]
+}

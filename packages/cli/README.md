@@ -1,5 +1,11 @@
 # LimeIoT CLI
 
+## Zigbee诊断
+
+`zigbee schema`离线返回正式合同；先执行`cargo build --locked -p limeiot-zigbee-znp`，再用`zigbee probe --serial "/dev/ttyUSB0"`读取NCP，或`zigbee interview --serial "/dev/ttyUSB0" --address 0x1234`访谈已入网设备。默认整个操作5000ms，可用`--timeout-ms`设100–30000ms。组件路径可由当前进程的`LIMEIOT_ZNP_TOOL`绝对路径指定。
+
+该入口是本地串口工具，不使用网关Token；只发固定SYS/ZDO读取，超时关闭且不重试，不创建设备身份或绑定。完整机器输出、资源边界和错误见[正式合同](../../contracts/zigbee-diagnostics.md)，软件验证入口为`npm run test:zigbee`。
+
 ## 多设备分阶段计划
 
 使用当前本地所有者身份。先读取参与设备的精确模型、会话与可用能力，按[正式合同](../../contracts/execution-plans.md)准备创建正文：
@@ -178,7 +184,7 @@ compose复用上面的invoke命令，输入增加native_paths与expected_native_
 }
 ```
 
-native_paths按字典序排列且唯一，须为仅动作模型的非空真子集；其余动作全部交给指定候选。当前一个原生端加一个外部候选，不支持属性/事件组合或离线切换。TV Agent材料v2可显式选择android-tv-remote逻辑模型，仍只执行并声明apps.launch；本机日志迁移不改变网关模型绑定、不批准compose。须先准备精确相同模型的网关设备，已有应用模型设备可先按devices.bind-bundle明确换绑，跨模型软件证据见 [24第4.19节](../../docs/24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)，实际电视另验。CLI可创建组合；网页当前只显示/控制/撤销组合，无创建组合的专用表单。
+native_paths按字典序排列且唯一，须为模型全部动作的非空真子集；其余动作须全部属于指定候选公开的paths。当前一个原生端加一个外部候选，允许原生端上报只读属性；可写属性、事件与离线切换仍不支持。普通bind继续要求仅动作且候选覆盖全部动作。TV Agent材料v2可显式选择android-tv-remote逻辑模型，仍只执行并声明apps.launch；本机日志迁移不改变网关模型绑定、不批准compose。须先准备精确相同模型的网关设备，已有应用模型设备可先按devices.bind-bundle明确换绑，跨模型软件证据见 [24第4.19节](../../docs/24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)，实际电视另验。CLI和网页均可明确创建组合；网页先读取当前native_execution证明、绑定与候选，再审阅两端职责，保存完整原请求后发送，未知结果只查询原操作。音频模型的网关/网页协议夹具范围与实际Agent缺口见[4.68](../../docs/24-实施计划与进度.md#468-音频原生路径与adb的明确组合及网页入口)。
 
 完整原请求默认先保存到 `~/.local/state/limeiot/gateway/execution-operations`；`--state-dir` 指定其父目录。落盘失败零 POST，同键同参再次 create 只 GET 原操作；404、丢响应或不能验证回执退出6，异参/修订冲突退出4，rejected退出7，applied退出0。恢复旧 applied 只读，不重新激活已撤销路径；另读 execution-bindings.get 核对当前状态。CLI 校验完整请求 JCS 摘要及结果与原输入的对应关系。
 
@@ -228,6 +234,21 @@ npm run cli -- control auth import \
 导入时再次验证精确origin和当前主体；不读取浏览器Cookie，不导出LimeCloud令牌。CLI会话每次使用都检查父网页登录及当前提供方身份，父会话退出、过期或被撤销后失效；不能再次创建子会话。它拥有当前Console主体的空间管理权，网关操作仍需本地批准和当前scope。该通用流程已使用OIDC夹具验证，真实LimeCloud应用仍需登记和联调。
 
 后续命令指定同一 `--session-file`，或在当前进程环境设置 `LIMEIOT_CONTROL_SESSION_FILE`。控制面命令不读取本地网关的 `LIMEIOT_TOKEN` 和 `LIMEIOT_ENDPOINT`。
+
+### 使用控制面终端
+
+登录或导入会话后，可通过菜单使用现有 25 项控制面工具：
+
+```sh
+node packages/cli/src/main.mjs control tui --session-file "/absolute/private/session.json"
+node packages/cli/src/main.mjs control tui schema
+node packages/cli/src/main.mjs control tui --stdio --session-file "/absolute/private/session.json"
+node packages/cli/src/main.mjs control tui --snapshot --session-file "/absolute/private/session.json"
+```
+
+菜单读取和模型校验直接执行，其他操作先展示核对，输入“确认”才提交。正文从 JSON 文件读取；配对输出仍须指定新的私有绝对路径。它共用原 CLI 执行器、身份与原请求日志。
+
+Agent逐行发送 `catalog/state/read/prepare/commit/cancel`，检查各行 `exit_code`。先prepare，再按已授权任务提交返回的精确task_id和review_digest；核对60秒有效、仅存本进程，切换会话后失效，提交只消费一次。命令/草稿/发布同键恢复只查原记录；空间/配对沿用原幂等POST合同。`commands.reconcile`须单独核对，不产生第二条设备命令。关闭终端不删除原请求。完整机器格式和限额见[控制面终端合同](../../contracts/control-terminal-tasks.md)。
 
 ### 空间与配对
 

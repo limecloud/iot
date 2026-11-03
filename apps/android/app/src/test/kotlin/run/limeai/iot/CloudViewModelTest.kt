@@ -16,8 +16,17 @@ import kotlin.test.*
 
 private class CloudMemoryStore : SessionStore {
     val records = mutableMapOf<String, String>()
+    var preparedGate: CompletableDeferred<Unit>? = null
+    var preparedWaiting = false
     override suspend fun load(origin: String) = records[origin]
-    override suspend fun save(origin: String, value: String?) { if (value == null) records.remove(origin) else records[origin] = value }
+    override suspend fun save(origin: String, value: String?) {
+        if (value == null) records.remove(origin) else records[origin] = value
+        val gate = preparedGate
+        if (gate != null && value != null && Json.parseToJsonElement(value).jsonObject["operations"]?.jsonArray?.isNotEmpty() == true) {
+            preparedGate = null; preparedWaiting = true
+            withContext(NonCancellable) { gate.await() }
+        }
+    }
 }
 private class CloudTransport : GatewayTransport {
     val origin = "https://control.example"
@@ -27,6 +36,8 @@ private class CloudTransport : GatewayTransport {
     val expiry = Instant.now().plusSeconds(300).toString()
     val sessionExpiry = Instant.now().plusSeconds(3500).toString()
     var blockPoll: CompletableDeferred<Unit>? = null
+    var devicesGate: CompletableDeferred<Unit>? = null
+    var devicesWaiting = false
     var loseCommand = true
     var offline = false
     var badRevision = false
@@ -49,6 +60,7 @@ private class CloudTransport : GatewayTransport {
             path.endsWith("/space-b/gateways") -> """{"gateways":[]}"""
             path.endsWith("/gateways") -> """{"gateways":[{"gateway_id":"gateway-a","space_id":"space-a","local_space_id":"local-a","principal_id":"owner","scopes":["devices.read","commands.write"],"revision":"revision-a","active":true}]}"""
             path.endsWith("/devices") -> {
+                devicesGate?.let { gate -> devicesGate = null; devicesWaiting = true; withContext(NonCancellable) { gate.await() } }
                 if (offline) return GatewayResponse(503, """{"error":{"code":"gateway_offline"}}""")
                 """{"items":[{"device_id":"lamp","model_revision":"$model","ready":true,"reported":{"light.power":{"value":false,"observed_at":"2026-11-02T00:00:00Z","quality":"current","source":"device"}}}],"next":null,"binding_revision":"${if (badRevision) "other" else "revision-a"}"}"""
             }
@@ -121,6 +133,34 @@ class CloudViewModelTest {
             vm.selectSpace("space-b"); advanceUntilIdle()
             assertEquals("space-b", vm.state.value.space); assertTrue(vm.state.value.devices.isEmpty())
             assertTrue(vm.state.value.models.isEmpty()); assertTrue(vm.state.value.records.isEmpty()); assertNull(vm.state.value.gateway)
+            assertEquals(0, transport.creates())
+        } finally { vm.viewModelScope.cancel() }
+    }
+
+    @Test fun backgroundDuringPreparedStorageNeverSubmitsAndRestoresOriginalOnly() = runTest(dispatcher) {
+        val transport = CloudTransport(); val store = CloudMemoryStore(); val vm = CloudViewModel(store, transport = transport)
+        try {
+            vm.begin(transport.origin); vm.enterForeground(); vm.tick()
+            val device = vm.state.value.devices.single(); val gate = CompletableDeferred<Unit>(); store.preparedGate = gate
+            vm.control(device, "light.power", JsonPrimitive(true)); runCurrent(); assertTrue(store.preparedWaiting)
+            vm.leaveForeground(); gate.complete(Unit); advanceUntilIdle()
+            assertEquals(0, transport.creates()); assertFalse(vm.state.value.online); assertFalse(vm.state.value.busy)
+            vm.enterForeground(); vm.tick()
+            assertEquals(1, vm.state.value.records.size); assertFalse(vm.state.value.records.single().attempted)
+            assertEquals(0, transport.creates())
+            vm.forget(vm.state.value.records.single()); advanceUntilIdle()
+            assertTrue(vm.state.value.records.isEmpty()); assertFalse(vm.state.value.blocked(device)); assertEquals(0, transport.creates())
+        } finally { vm.viewModelScope.cancel() }
+    }
+
+    @Test fun lateRefreshCannotRestoreOnlineStateAfterBackground() = runTest(dispatcher) {
+        val transport = CloudTransport(); val vm = CloudViewModel(CloudMemoryStore(), transport = transport)
+        try {
+            vm.begin(transport.origin); vm.enterForeground(); vm.tick()
+            val gate = CompletableDeferred<Unit>(); transport.devicesGate = gate
+            vm.refresh(); runCurrent(); assertTrue(transport.devicesWaiting)
+            vm.leaveForeground(); gate.complete(Unit); advanceUntilIdle()
+            assertFalse(vm.state.value.foreground); assertFalse(vm.state.value.online); assertFalse(vm.state.value.busy)
             assertEquals(0, transport.creates())
         } finally { vm.viewModelScope.cancel() }
     }

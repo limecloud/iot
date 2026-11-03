@@ -86,6 +86,8 @@ public struct ControlCommandRecord: Codable, Sendable, Identifiable {
     public var result: ControlRemoteCommand?
     public var rejection: String?
     public var id: String { reference.request.requestKey }
+    public var isPrepared: Bool { !attempted && result == nil && rejection == nil }
+    public var canForget: Bool { isPrepared || rejection != nil || result?.status.terminal == true }
 }
 
 // 原生证明和会话材料只在客户端库与安全存储间流转。

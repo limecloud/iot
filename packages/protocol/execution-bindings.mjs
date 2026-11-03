@@ -28,7 +28,8 @@ export function verifyExecutionBinding(value, deviceID) {
   return value;
 }
 export function verifyExecutionAdapters(value) {
-  const television = item => fields(item, 'device_id,route,compatible,target,fingerprint,device_serial,applications') &&
+  const television = item => fields(item, 'device_id,route,compatible,target,fingerprint,device_serial,applications,paths') &&
+    Array.isArray(item.paths) && item.paths.length <= 64 && (item.paths.length === 0 || nativePaths(item.paths)) && item.compatible === (item.paths.length > 0) &&
     ['fingerprint', 'device_serial'].every(key => typeof item[key] === 'string' && item[key].length > 0 && item[key].length <= 512) &&
     Array.isArray(item.applications) && item.applications.length <= 32 && item.applications.every(app => fields(app, 'application_id,category') && typeof app.application_id === 'string' && app.application_id.length <= 255 && ['leanback', 'launcher'].includes(app.category));
   const audio = item => fields(item, item.managed_media === true ? 'kind,device_id,route,compatible,target,udn,volume_limit,playback_volume,media,managed_media' : 'kind,device_id,route,compatible,target,udn,volume_limit,playback_volume,media') && item.kind === 'dlna' &&
@@ -41,6 +42,14 @@ export function verifyExecutionAdapters(value) {
       typeof item.target !== 'string' || item.target.length === 0 || item.target.length > 512) ||
     new Set(value.items.map(item => item.route.adapter_id)).size !== value.items.length || new Set(value.items.map(item => item.device_id)).size !== value.items.length) fail();
   return value;
+}
+// 原生证明只来自本次读取的设备投影；不能拿外部执行端的总ready充当原生在线。
+export function verifyNativeExecution(value, deviceID, modelRevision) {
+  if (!object(value) || value.device_id !== deviceID || value.model_revision !== modelRevision) fail();
+  if (!Object.hasOwn(value, 'native_execution')) return null;
+  const proof = value.native_execution;
+  if (!fields(proof, 'session_id,ready,paths') || !id(proof.session_id) || typeof proof.ready !== 'boolean' || !nativePaths(proof.paths)) fail();
+  return proof;
 }
 export function verifyApplications(value, deviceID) {
   if (!fields(value, 'device_id,binding_revision,fresh,observed_at,items,next_cursor') || value.device_id !== deviceID || !id(value.device_id) || !digest(value.binding_revision) || typeof value.fresh !== 'boolean' || value.next_cursor !== null ||

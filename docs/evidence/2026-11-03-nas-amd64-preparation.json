@@ -1,0 +1,108 @@
+{
+  "evidence_id": "EVID-NAS-AMD64-PREPARATION-20261103-01",
+  "observed_at": "2026-11-03T21:06:25.614213+08:00",
+  "status": "verified_amd64_base_images_ready_builds_running",
+  "base_images": [
+    {
+      "passed": true,
+      "registry": "mirror.gcr.io",
+      "repository": "library/debian",
+      "index_digest": "sha256:99c0b25c46d0214d5a2091092e7908907dcaecd6a962cde0ac700acee222b6f3",
+      "manifest_digest": "sha256:a3bba7dc7dbcc1f37c2856c51fc9a7fac96608f50cb87b1b4e4d8b8c85ae988e",
+      "config_digest": "sha256:354cdc53abb843ea02e9a72c153b000c290014d8a90aba62897c143710a5667f",
+      "compressed_layers": [
+        "sha256:3c5439d0ae62993af4cc4e21b8c777297e81bc40e200d4633c85a3e0f977a3bc"
+      ],
+      "diff_ids": [
+        "sha256:44a87794b739d471ec360bec56cc0ceac640d06bbf579ee7d9061a0b88d09818"
+      ],
+      "image": "limeiot/verification:base-amd64-debian-a3bba7dc7dbc",
+      "image_id": "sha256:a3bba7dc7dbcc1f37c2856c51fc9a7fac96608f50cb87b1b4e4d8b8c85ae988e",
+      "platform": "linux/amd64",
+      "published": false,
+      "local_report": ".dev/nas-amd64-mirror-preflight/debian/report.json",
+      "local_report_sha256": "b84e7bd3c14d603f2efc9add3493887167c8abd684d00899496a4dde13d1a70f"
+    },
+    {
+      "passed": true,
+      "registry": "mirror.gcr.io",
+      "repository": "nginxinc/nginx-unprivileged",
+      "index_digest": "sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6",
+      "manifest_digest": "sha256:8059701048a6cc7d64e8ab2812a44be70161bfa9ecfc01d69e95b8ff2a648705",
+      "config_digest": "sha256:7312fa98595737958df41e20f21a2880dd9775f455c6bf76e638024dc755d201",
+      "compressed_layers": [
+        "sha256:6a0ac1617861a677b045b7ff88545213ec31c0ff08763195a70a4a5adda577bb",
+        "sha256:a59fda7b685c4ebb8ce32a651bb8a658cf3deef70ab1a1c48949f4044e7adb6f",
+        "sha256:21179318df10e9e55989e27603c211d6175028e90b7a88f09f7b8cd005c15884",
+        "sha256:d27683448c0c6746887b39bb7c17ee483c3aee1f2d742396f83931a26293ecee",
+        "sha256:d9bbd50eb93d816d954d71d20a0f4321392d6d1094ebd07373c898d4c96bddd9",
+        "sha256:a6149ef9330e099be60f1c5c087197a29f8e549c796f2c4e830e5821b4a7219c",
+        "sha256:7afb425babf4f65da5fbc6dec68235c24bdff24b6d97625387ef5a2df5361e7d",
+        "sha256:7d12c185557730cd127ae6641f2a971889c80ef273fc98c76812eaf288dc8559",
+        "sha256:80e1316c58deb5457520401af597207c6e9f1b306a83822d8911f5435f7e8181"
+      ],
+      "diff_ids": [
+        "sha256:29df493baa13de438d6d2ece3a8333032e0b7b9b9d8cce4ee82194da255f61e1",
+        "sha256:bbf693738c794a4386c1af391ec902a78015d5825e72e178ede92f9167cd8d6c",
+        "sha256:26018f2b5e3688ec8e1fe2062c3aa617eb7bc7d06c82b9c7f85dc628ead8904e",
+        "sha256:70c5236ec63b66f7465d624b6ad7ff99d90f121d88ec9e024c41d4098ebdbf64",
+        "sha256:b9918233dc72b1314444ce47b646d7f7b5f1957413881008a3bc86ec4b0e0680",
+        "sha256:6ef4bb34c7eb9b9f26c30d14a9a776f774c99e523fb34b8db728c5aae1ed9b3d",
+        "sha256:76abe25906cc9a94206ad71cf40e1f5e153b1ddfdfe2599d2d66369e64dc12fd",
+        "sha256:0acfc468e23bd166fceb090cada070ec920dcf95f3ab99c5849fb0095e12c63d",
+        "sha256:f8efa76e4546e3c9227ec0c9cbc5c5e90ceecf4d885b48a71c7a579f30e6c9ba"
+      ],
+      "image": "limeiot/verification:base-amd64-nginx-8059701048a6",
+      "image_id": "sha256:8059701048a6cc7d64e8ab2812a44be70161bfa9ecfc01d69e95b8ff2a648705",
+      "platform": "linux/amd64",
+      "published": false,
+      "local_report": ".dev/nas-amd64-mirror-preflight/nginx/report.json",
+      "local_report_sha256": "6b257f87ac31cd604be30336dec298834bfd1a653097220deef5a6b474d6bb12"
+    }
+  ],
+  "verification": {
+    "base_image_download_and_hash_chain": true,
+    "oci_manifests_preserved_on_load": true,
+    "loaded_platform_and_rootfs_verified": true,
+    "nas_workspace_release_build": false,
+    "nas_image_assembled": false,
+    "full_amd64_container_journey": false
+  },
+  "running": {
+    "workspace_build": {
+      "session_id": 50276,
+      "log": ".dev/nas-amd64-buffered-restart-build.log",
+      "output": ".dev/nas-amd64-buffered-restart-20261103"
+    },
+    "runtime_dependency_build": {
+      "session_id": 8343,
+      "log": ".dev/nas-amd64-runtime-20261103/base-build.log",
+      "expected_image": "limeiot/verification:nas-runtime-base-amd64-ee08d021ca98",
+      "original_runtime_prefix_sha256": "ee08d021ca985c895d92fdf3677e24f899aa8a0fd876fa4a502d1d04c6a57bcc"
+    }
+  },
+  "source_sha256": {
+    ".dev/nas-amd64-mirror-preflight/load_verified_images.py": "b327c2fd71e756cb24975b9f8b626503058013135e1cb83d1ae99c86d28efbbb",
+    ".dev/nas-amd64-mirror-preflight/report.json": "ac44210056d2098b145dcb8ee35d8a74c903fa191b2dff7ca6b572ef175e42b0",
+    ".dev/nas-amd64-mirror-preflight/docker-pull-report.json": "c278968444aef1a5c10a9c786956ece64521fc38c512d5209cc6f07b769e08be",
+    ".dev/nas-amd64-runtime-20261103/Dockerfile.base": "146b20bd81a68d0d3a1a3d67ee72a0fee43ae8d70b8ee54b6cb88a1f33ae3f2c",
+    ".dev/nas-amd64-runtime-20261103/preparation.json": "bc7f79806c6dc8d906896f17fe2d38f659fc9997152d52f609b30118426f527f"
+  },
+  "diagnostics": {
+    "docker_registry_dns": "镜像拉取日志确认Docker虚拟机通过[::1]:53解析失败；宿主通过HTTPS访问Google公共缓存成功。",
+    "first_load": "Docker保存格式导入后，脚本错误地将镜像ID当作配置摘要；实际导出核对表明配置与根层字节一致、ID为重封装清单。随后改用OCI原始清单导入，核对原清单ID及全部根层通过。",
+    "first_load_log": ".dev/nas-amd64-mirror-preflight/host-image-load.log",
+    "oci_load_log": ".dev/nas-amd64-mirror-preflight/host-image-load-oci.log"
+  },
+  "limits": [
+    "两个运行任务以本轮最后一次session查询为准，不能从本记录推断后续完成。",
+    "依赖构建仅对临时构建容器提供域名映射，未修改宿主或Docker全局DNS。",
+    "正式NAS Dockerfile运行层的安装命令与工作目录保持原字节，基础镜像改从已校验公共缓存导入。",
+    "仍需核对完整交付清单、四个AMD64 ELF、组装镜像及执行完整容器旅程。"
+  ],
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "production_deployed": false,
+  "published": false,
+  "full_goal_completed": false
+}

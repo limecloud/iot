@@ -262,6 +262,45 @@ class AndroidBoundaryTest {
         }
     }
 
+    @Test fun audio_model_expansion_is_atomic_and_preserves_original_unknown_and_grants() {
+        installPlayer(); val vault = TestVault(); val legacy = Fixtures.enrollment
+        fun enrollment(profile: DeviceModelProfile) = DeviceEnrollment.parse(JsonObject(
+            DeviceDocument.parse(legacy.encoded()) + mapOf("schema_version" to JsonPrimitive(2), "model_profile" to JsonPrimitive(profile.id)),
+        ).toString().toByteArray())
+        val audio = enrollment(DeviceModelProfile.AUDIO_APPLICATIONS)
+        val composed = enrollment(DeviceModelProfile.AUDIO_COMPOSED_REMOTE)
+        val target = object : ContextWrapper(context) { override fun startActivity(intent: Intent) { throw IllegalStateException("ambiguous launch") } }
+        store(vault).use { storage ->
+            storage.install(legacy); storage.authorize(PLAYER, true)
+            assertEquals("unknown", result(command(agent(storage, RunPermit(), target))))
+            val original = storage.journal(legacy.binding).read()!!
+            database().use { it.execSQL("CREATE TRIGGER fail_audio_model BEFORE UPDATE OF journal ON agent BEGIN SELECT RAISE(ABORT,'injected'); END") }
+            assertFails { storage.install(audio) }
+            assertEquals(DeviceModelProfile.APPLICATIONS, storage.load()!!.identity.profile)
+            assertContentEquals(original, storage.journal(legacy.binding).read())
+            database().use { it.execSQL("DROP TRIGGER fail_audio_model") }
+            storage.install(audio)
+            val migrated = storage.journal(legacy.binding).read()!!
+            val doc = DeviceDocument.parse(migrated, 1048576, 32768)
+            assertEquals(4L, doc.getValue("version").jsonPrimitive.long)
+            assertEquals(DeviceDocument.parse(original, 1048576, 32768)["entries"], doc["entries"])
+            assertEquals(DeviceJournalInspection(1, 0, 0, 1, 0, false), DeviceJournalInspection.inspect(audio.identity, migrated))
+            storage.install(composed)
+            val current = storage.journal(legacy.binding).read()!!
+            for (old in listOf(legacy, audio, composedEnrollment())) {
+                assertEquals("model_rollback_refused", assertFailsWith<AgentStoreFault> { storage.install(old) }.code)
+                assertContentEquals(current, storage.journal(legacy.binding).read())
+            }
+            assertEquals(setOf(PLAYER), storage.allowed())
+            database().use { db -> db.rawQuery("PRAGMA user_version", null).use { assertTrue(it.moveToFirst()); assertEquals(3, it.getInt(0)) } }
+        }
+        store(vault).use { storage ->
+            assertEquals(DeviceModelProfile.AUDIO_COMPOSED_REMOTE, storage.load()!!.identity.profile)
+            assertEquals(setOf(PLAYER), storage.allowed())
+            assertEquals(1, DeviceJournalInspection.inspect(composed.identity, storage.journal(legacy.binding).read()).unknown)
+        }
+    }
+
     private fun composedEnrollment(): DeviceEnrollment = DeviceEnrollment.parse(JsonObject(
         DeviceDocument.parse(Fixtures.enrollment.encoded()) + mapOf("schema_version" to JsonPrimitive(2), "model_profile" to JsonPrimitive("android-tv-remote")),
     ).toString().toByteArray())

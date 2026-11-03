@@ -4,10 +4,15 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[features]
+default = ["android-tv", "dlna"]
+android-tv = ["dep:limeiot-android-tv"]
+dlna = ["dep:limeiot-dlna"]
+
 [dependencies]
 limeiot-core.workspace = true
-limeiot-android-tv = { path = "../../adapters/android-tv" }
-limeiot-dlna = { path = "../../adapters/dlna" }
+limeiot-android-tv = { path = "../../adapters/android-tv", optional = true }
+limeiot-dlna = { path = "../../adapters/dlna", optional = true }
 serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true

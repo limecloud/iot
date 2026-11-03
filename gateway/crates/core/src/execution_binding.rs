@@ -140,13 +140,12 @@ fn routed_actions(model: &Model) -> Result<BTreeSet<String>> {
         .collect();
     ensure(
         !paths.is_empty()
+            && crate::execution::supports_native_state(model)
             && model.services.iter().all(|service| {
-                service.properties.is_empty()
-                    && service.events.is_empty()
-                    && service
-                        .actions
-                        .iter()
-                        .all(crate::execution::supports_action)
+                service
+                    .actions
+                    .iter()
+                    .all(crate::execution::supports_action)
             }),
         "execution_model_incompatible",
     )?;
@@ -155,6 +154,14 @@ fn routed_actions(model: &Model) -> Result<BTreeSet<String>> {
 
 fn external_paths(model: &Model, native: Option<&BTreeSet<String>>) -> Result<BTreeSet<String>> {
     let all = routed_actions(model)?;
+    ensure(
+        native.is_some()
+            || model
+                .services
+                .iter()
+                .all(|service| service.properties.is_empty()),
+        "execution_model_incompatible",
+    )?;
     if let Some(native) = native {
         ensure(
             !native.is_empty() && native.len() <= 64 && native.is_subset(&all) && *native != all,

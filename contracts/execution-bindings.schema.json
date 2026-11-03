@@ -280,6 +280,128 @@
         "expected_native_session"
       ],
       "additionalProperties": false
+    },
+    "nativeExecution": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "ready": {
+          "type": "boolean"
+        },
+        "paths": {
+          "$ref": "#/$defs/nativePaths"
+        }
+      },
+      "required": [
+        "session_id",
+        "ready",
+        "paths"
+      ],
+      "additionalProperties": false,
+      "description": "当前认证原生会话的易失声明；ready独立于适配器在线，不授予执行权，不进入快照。"
+    },
+    "televisionAdapter": {
+      "type": "object",
+      "properties": {
+        "device_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "route": {
+          "$ref": "#/$defs/route"
+        },
+        "compatible": {
+          "type": "boolean"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "fingerprint": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "device_serial": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "paths": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,63}\\.[a-z][a-z0-9_-]{0,63}$"
+          },
+          "description": "按字典序排列的唯一适配动作路径；compatible=false时为空，排序由消费者验证。"
+        },
+        "applications": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "properties": {
+              "application_id": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "category": {
+                "enum": [
+                  "leanback",
+                  "launcher"
+                ]
+              }
+            },
+            "required": [
+              "application_id",
+              "category"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "device_id",
+        "route",
+        "compatible",
+        "target",
+        "fingerprint",
+        "device_serial",
+        "applications",
+        "paths"
+      ],
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "compatible": {
+            "const": true
+          }
+        },
+        "required": [
+          "compatible"
+        ]
+      },
+      "then": {
+        "properties": {
+          "paths": {
+            "minItems": 1,
+            "type": "array"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "paths": {
+            "maxItems": 0,
+            "type": "array"
+          }
+        }
+      }
     }
   },
   "$ref": "#/$defs/change"

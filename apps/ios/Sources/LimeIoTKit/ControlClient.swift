@@ -290,7 +290,7 @@ public actor ControlClient {
     public func forgetCommand(key: String) async throws {
         try acquire(); defer { busy = false }
         let (_, record) = try await commandContext(key)
-        guard record.rejection != nil || record.result?.status.terminal == true else { throw ControlError.server("operation_not_terminal", 409) }
+        guard record.canForget else { throw ControlError.server("operation_not_terminal", 409) }
         var next = try await load(); next.operations?.removeAll { $0.id == key }; try await persist(next)
     }
 }

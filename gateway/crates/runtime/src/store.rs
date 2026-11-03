@@ -180,6 +180,7 @@ impl Store {
             Err(rusqlite::Error::QueryReturnedNoRows) => Data::new(config)?,
             Err(_) => return Err(err("storage_unavailable")),
         };
+        let data = data.with_model_bundles(crate::model_bundles::catalog()?);
         data.validate_model_registry(chrono::Utc::now())
             .map_err(|_| err("storage_corrupt"))?;
         data.validate_ota_registry()
@@ -293,7 +294,7 @@ impl Store {
 mod tests {
     use super::*;
     fn bundle_config() -> Config {
-        let bundle = limeiot_core::model_bundles::catalog().unwrap().remove(0);
+        let bundle = crate::model_bundles::catalog().unwrap().list()[0].clone();
         serde_json::from_value(json!({"space_id":"home","models":[bundle.model],
             "devices":[{"device_id":"tv","model_revision":bundle.model_revision}]}))
         .unwrap()
@@ -304,7 +305,7 @@ mod tests {
             idempotency_key: "original-bundle".into(),
             change: limeiot_core::model_registry::Change::BindBundle {
                 device_id: "tv".into(),
-                bundle_id: limeiot_core::model_bundles::catalog().unwrap()[1]
+                bundle_id: crate::model_bundles::catalog().unwrap().list()[1]
                     .bundle_id
                     .clone(),
                 expected_model_revision: Some(data.devices["tv"].model_revision.clone()),
@@ -480,7 +481,9 @@ mod tests {
     #[test]
     fn hidden_bundle_sources_and_corrupt_or_future_snapshots_fail_without_rewriting() {
         let config = bundle_config();
-        let mut fixture = Data::new(config.clone()).unwrap();
+        let mut fixture = Data::new(config.clone())
+            .unwrap()
+            .with_model_bundles(crate::model_bundles::catalog().unwrap());
         fixture
             .apply_model_change(bind_bundle_request(&fixture), chrono::Utc::now())
             .unwrap();

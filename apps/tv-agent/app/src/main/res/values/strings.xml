@@ -2,7 +2,7 @@
     <string name="app_name">LimeIoT 电视终端</string>
     <string name="notification_channel">电视连接</string>
     <string name="notification_title">LimeIoT 电视连接运行中</string>
-    <string name="notification_text">点击查看状态与授权，或停止连接</string>
+    <string name="notification_text">查看授权或停止连接；停止会清除本次音量和静音授权</string>
     <string name="stop">停止连接</string>
     <string name="apk_preflight_imported">预检副本已保存，请选择同次发布的 APK。</string>
     <string name="apk_candidate_resume">请从原导入记录继续选择 APK。</string>

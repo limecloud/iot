@@ -1,0 +1,193 @@
+{
+  "evidence_id": "EVID-TV-AUDIO-PORT-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "passed_system_audio_port_foundation_source_and_host_checks_only",
+  "scope": {
+    "host_system_audio_boundary": true,
+    "host_quantization": true,
+    "source_audio_port": true,
+    "debug_apk_build": true,
+    "hardware": false,
+    "device_connection": false,
+    "emulator_started": false,
+    "apk_installation": false,
+    "actual_audio_service": false,
+    "mqtt_audio_wired": false,
+    "audio_model_advertised": false,
+    "local_audio_consent_ui": false,
+    "web_audio_control": false,
+    "published": false,
+    "full_goal_completed": false
+  },
+  "implementation": {
+    "stream": "STREAM_MUSIC",
+    "system_ui_flags": 0,
+    "mute_directions": [
+      "ADJUST_MUTE",
+      "ADJUST_UNMUTE"
+    ],
+    "toggle_mute_used": false,
+    "percent_rounding": "nearest native index, half up",
+    "arithmetic": "Long intermediates prevent Int overflow",
+    "api23_27_minimum_index": 0,
+    "api28_minimum_read_from_system": true,
+    "state_uses_native_reads": true,
+    "desired_echo_or_state_cache": false,
+    "mute_inferred_from_zero_volume": false,
+    "same_lock_run_permit_grant_and_current_credentials_rechecked": true,
+    "fixed_volume_bad_range_or_permission_denied_refused": true,
+    "range_change_during_sampling_refused": true,
+    "native_call_exception_retried": false,
+    "manifest_permission_added": "android.permission.MODIFY_AUDIO_SETTINGS",
+    "new_dependencies": false,
+    "sqlite_schema_migration": false,
+    "existing_model_changed": false
+  },
+  "test_environment": {
+    "core": "JVM Kotlin tests",
+    "app": "Robolectric API23/28 with explicit AudioManager and permission facts; only the newly added test classes execute",
+    "live_system_audio": false,
+    "original_apk_timeout_tests_retried": false
+  },
+  "frozen_input_count": 89,
+  "test_modules": {
+    "core": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 5
+    },
+    "app": {
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 14
+    }
+  },
+  "new_test_methods": 12,
+  "new_test_executions": 19,
+  "cases": [
+    {
+      "class": "run.limeai.iot.device.AudioStateTest",
+      "name": "all_percent_inputs_preserve_endpoints_bounds_and_monotonicity()"
+    },
+    {
+      "class": "run.limeai.iot.device.AudioStateTest",
+      "name": "offsets_and_large_system_ranges_do_not_overflow()"
+    },
+    {
+      "class": "run.limeai.iot.device.AudioStateTest",
+      "name": "percentages_follow_actual_discrete_indices_and_round_half_up()"
+    },
+    {
+      "class": "run.limeai.iot.device.AudioStateTest",
+      "name": "invalid_ranges_indices_and_percentages_are_refused()"
+    },
+    {
+      "class": "run.limeai.iot.device.AudioStateTest",
+      "name": "zero_volume_and_mute_are_independent_system_observations()"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "read_uses_actual_music_range_volume_and_independent_mute_without_effects[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "revocation_during_native_sampling_prevents_control_and_reuses_no_old_authority[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "native_call_failure_propagates_without_retry_fallback_or_invented_observation[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "mute_and_unmute_use_explicit_directions_and_do_not_rewrite_volume_or_state[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "missing_grant_permission_credentials_fixed_volume_and_stopped_permit_refuse_effects[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "volume_quantizes_to_native_index_without_ui_or_fabricated_readback[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "invalid_or_changing_system_ranges_and_invalid_percentages_refuse_effects[23]"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "read_uses_actual_music_range_volume_and_independent_mute_without_effects"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "revocation_during_native_sampling_prevents_control_and_reuses_no_old_authority"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "native_call_failure_propagates_without_retry_fallback_or_invented_observation"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "mute_and_unmute_use_explicit_directions_and_do_not_rewrite_volume_or_state"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "missing_grant_permission_credentials_fixed_volume_and_stopped_permit_refuse_effects"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "volume_quantizes_to_native_index_without_ui_or_fabricated_readback"
+    },
+    {
+      "class": "run.limeai.iot.television.AndroidAudioTest",
+      "name": "invalid_or_changing_system_ranges_and_invalid_percentages_refuse_effects"
+    }
+  ],
+  "package_build_passed": true,
+  "full_regression_run": false,
+  "prior_apk_regressions": {
+    "evidence": "2026-11-03-tv-apk-recovery.json",
+    "unresolved_failures": 2,
+    "retried_in_this_phase": false
+  },
+  "lint": {
+    "executed_for_audio_foundation": false,
+    "prior_recovery_snapshot_passed": true,
+    "prior_lint_does_not_include_audio_source": true
+  },
+  "artifact": {
+    "sha256": "57ea3063a6f994ca9ed1b121e96c45ba15f58b6bdc313f32d8e4d3f0562a121b",
+    "debug": true,
+    "installed": false
+  },
+  "input_sha256": {
+    "apps/tv-agent/core/src/main/kotlin/run/limeai/iot/device/AudioState.kt": "0cb60ec113889ffbb7a9b19717a1a6aaac0233806200a5b518e73354bef0f0a8",
+    "apps/tv-agent/core/src/test/kotlin/run/limeai/iot/device/AudioStateTest.kt": "53399f950a07fd50743440c211bff55a097b775a5ac2727641d452c690600b90",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AndroidAudio.kt": "47d0f303e230625d99314addbd009338cefb9f7342fbc06b7da84b270098523c",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AndroidAudioTest.kt": "12f146af453de3e43ca26bdea2417ee5044535221b2635d2cb07119f35dcecc4",
+    "apps/tv-agent/app/src/main/AndroidManifest.xml": "95525ef2928d4d2d1bd6d735fd510ff0d6c613f874a334f54e6458af59737e5a"
+  },
+  "raw_evidence_sha256": {
+    "bounded-host.init.gradle": "01447fe572552519ae378a66d6dec573aab1089b1228d11960277788211f308d",
+    "exit-code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "integration-plan.md": "4240e2a7c64824ccc4757a8f57921b208fbae3ad1ad190a83d10d35b27823be3",
+    "previous-evidence-sha256.json": "e0b4ebf9b54e60d6578de660834f95619047ee0f0c5ab53d06a1e0734faf4f81",
+    "run-build.py": "5e217920cec8e005c5e7e2b83d8e17436404f6dc217bca3b848ca1c14ff627b4",
+    "scope.json": "3bf52d6ccdcd78d13335537e8b81b856362692468e68650ef55de99607437972",
+    "source-manifest.json": "90091c36249060040e43bc91cec39933639ef3c71934b108198d64fe44e1365d",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidAudioTest.xml": "cd57e9e6e9faeb952625b928c9fc22c7daf53830e0e64aeec9023c120fa9ecb5",
+    "test-results/core/TEST-run.limeai.iot.device.AudioStateTest.xml": "cb0d0896d9f1a48894526a0c09a530856428bff3b9be2851bfe11e5fe0675cd1",
+    "tv-agent-audio-foundation-debug.apk": "57ea3063a6f994ca9ed1b121e96c45ba15f58b6bdc313f32d8e4d3f0562a121b",
+    "verification.log": "028ed1b0bbe7a206c3629066354123edfffd734c848b281d1360833b7e9b034a"
+  },
+  "limits": [
+    "This is the system audio port foundation. Device command parsing/ledger, exact audio models, full native state, local run consent and web control remain to be integrated and verified.",
+    "API23-27 uses the public music index zero lower bound; API28+ reads the system minimum. Range/index/mute and permissions are explicit host fixtures, not vendor or actual Android audio observations.",
+    "A native setter return only means submission. Actual volume and mute are read independently; state freshness and command completion are not yet wired for audio.",
+    "The previous two APK callback timeout regressions remain unresolved. New focused checks and an APK build do not establish a full regression or full platform pass.",
+    "No TV, emulator, actual audio service, system volume, user database or global environment was accessed or changed."
+  ]
+}

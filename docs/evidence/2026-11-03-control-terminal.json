@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-03",
+  "scope": "independent_control_terminal_cli_shared_execution_and_original_request_recovery",
+  "status": "software_stage_passed",
+  "archive": ".dev/control-tui-verification-2026-11-03T14-53-53-037Z",
+  "journey": ".dev/control-tui-journey-66912cfdf06663a5/result.json",
+  "hardware": false,
+  "android_emulator": false,
+  "official_cloud_updated": false,
+  "published": false,
+  "full_goal_completed": false,
+  "changes": {
+    "existing_control_tools": 25,
+    "shared_cli_executor": true,
+    "new_backend_permission_or_api": false,
+    "new_dependency": false,
+    "interactive_menu": true,
+    "agent_ndjson": true,
+    "offline_request_schema": true,
+    "write_prepare_has_no_business_post": true,
+    "review_ttl_seconds": 60,
+    "review_bound_to_original_session": true,
+    "review_in_memory_only": true,
+    "single_consumption_of_commit": true,
+    "private_original_request_journal_reused": true,
+    "pairing_secrets_only_in_private_output": true,
+    "commands_products_releases_recover_with_get": true,
+    "spaces_pairings_keep_existing_idempotent_post_contract": true
+  },
+  "verification": {
+    "control_terminal_and_cli_boundaries": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "strict_schema_compilation": true,
+      "duplicate_keys_invalid_utf8_and_oversize_rejected": true,
+      "log": "boundaries.log"
+    },
+    "go_race_and_vet": true,
+    "independent_mysql": "8.4",
+    "combined_control_journeys": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "real_go_rust_mysql_tls_wss_mqtt": true,
+      "simulated_device": true,
+      "log": "integration.log"
+    },
+    "new_terminal_journey": {
+      "explicit_local_pairing_approval": true,
+      "prepare_zero_command_posts": true,
+      "remote_command_posts": 1,
+      "local_commands": 1,
+      "lost_response_recovered": true,
+      "control_api_process_restart": true,
+      "new_terminal_queries_original_key": true,
+      "explicit_reconcile_preserved": true
+    },
+    "integration_inputs": {
+      "count": 167,
+      "unchanged_during_run": true,
+      "before": "inputs.before.json",
+      "after": "inputs.after.json",
+      "after_integration_changes": [
+        "tests/control-tui.test.mjs: schema and malformed encoding assertions",
+        "package.json: include terminal boundaries in existing test:control:cli"
+      ],
+      "production_execution_unchanged_after_integration": true,
+      "final_inputs": "final-inputs.json"
+    },
+    "documentation": {
+      "core_documents_checked": 6,
+      "core_file_links_checked": 152,
+      "broken_core_file_links": 0,
+      "website_typecheck_files": 48,
+      "website_errors": 0,
+      "website_warnings": 0,
+      "website_hints": 0,
+      "website_build": true,
+      "website_html_pages": 52,
+      "website_local_references": 1997,
+      "terminal_guides_in_built_html_and_raw_markdown": true,
+      "report": "documentation.json"
+    }
+  },
+  "limits": [
+    "Software-device verification does not establish hardware or production-cloud acceptance.",
+    "Terminal review is in memory; durable recovery uses the existing CLI journal and each operation's contract.",
+    "Native complete-app runtime, AMD64 multimodal recovery, additional protocols/ecosystems, real model quality and toy/robot examples remain independent work.",
+    "The full repository build was not repeated for this isolated terminal stage."
+  ]
+}

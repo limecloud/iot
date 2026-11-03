@@ -31,6 +31,7 @@ data class AgentScreen(
     val identityRequest: IdentityRequestView? = null,
     val rotation: RotationRequestView? = null,
     val retirements: List<KeyRetirementView> = emptyList(),
+    val audioAuthorized: Boolean = false,
 )
 
 /** 单进程、单运行实例；Activity不是连接Owner，旧许可从不复活。 */
@@ -49,16 +50,26 @@ class AgentRuntime internal constructor(
     private val io = Executors.newSingleThreadExecutor { Thread(it, "tv-agent-storage") }
     private var store = stores()
     private val lock = Any()
+    private val audioConsent = AudioRunConsent(lock)
     private val observers = CopyOnWriteArraySet<() -> Unit>()
     private var permit: RunPermit? = null
     private var mqtt: AgentConnection? = null
     private var visible = false
+    private var modelForeground: RunPermit? = null
+    private var modelReview: ModelAssignmentReview? = null
     @Volatile var screen = AgentScreen(); private set
     val running: Boolean get() = synchronized(lock) { permit != null }
     fun observe(observer: () -> Unit) { observers += observer; observer() }
     fun remove(observer: () -> Unit) { observers -= observer }
-    fun setVisible(value: Boolean) { synchronized(lock) { visible = value } }
-    private fun update(change: (AgentScreen) -> AgentScreen) { main.post { screen = change(screen); observers.forEach { it() } } }
+    fun setVisible(value: Boolean) { synchronized(lock) {
+        visible = value; audioConsent.visible(value)
+        if (!value) { modelForeground?.stop(); modelForeground = null; modelReview = null }
+        else if (modelForeground == null) modelForeground = RunPermit()
+    } }
+    private fun update(change: (AgentScreen) -> AgentScreen) { main.post {
+        screen = synchronized(lock) { change(screen).copy(audioAuthorized = audioConsent.authorized) }
+        observers.forEach { it() }
+    } }
     fun notice(value: String) { update { it.copy(notice = value) } }
     private fun failure(error: Exception): String {
         val code = when (error) {
@@ -84,6 +95,12 @@ class AgentRuntime internal constructor(
             "revocation_proof_required" -> "请提供固定CA签署的原撤销列表；管理完成JSON不能代替CRL。"
             "apk_install_in_progress" -> "原更新任务尚未完成核对，连接继续停用。请保留应用数据并核对原更新；系统安装成功仍须验证原身份、记录和健康。"
             "apk_install_stop_required" -> "请先停止连接并等待工作线程完全退出，再继续原更新任务。已请求停止不代表在途命令已结束。"
+            "audio_consent_required" -> "本次连接尚未允许音量和静音控制，请在电视页面重新核对并明确允许。"
+            "audio_review_expired", "audio_consent_unavailable" -> "本次音量和静音确认已失效，请返回电视页面重新核对。"
+            "audio_unavailable" -> "当前系统音频不可用，连接已停止。请核对音量策略和系统权限后重新允许。"
+            "model_assignment_changed", "model_review_expired" -> "本次能力配置确认已失效。请留在电视页面，重新核对当前配置与原记录。"
+            "model_rollback_refused" -> "能力配置只能明确扩展，不能回退或移除已有能力；原命令历史必须保留。"
+            "model_assignment_unchanged" -> "当前已使用此能力配置，无需再次保存。"
             else -> code
         }
     }
@@ -172,6 +189,7 @@ class AgentRuntime internal constructor(
         try {
             synchronized(lock) {
                 if (permit != null) throw AgentStoreFault("stop_before_import")
+                clearModelReview()
                 store.close(); store = stores()
             }
             update { it.copy(summary = null, identityRequest = null, notice = "已重新打开记录。未完成的申请请使用恢复原申请继续核对。") }
@@ -287,10 +305,32 @@ class AgentRuntime internal constructor(
         } catch (error: Exception) { notice(failure(error)); refresh() }
     } }
 
+    internal fun reviewAudioStart(): AudioStartReview = synchronized(lock) {
+        if (permit != null) throw DeviceFault("audio_consent_unavailable")
+        audioConsent.review(screen.summary ?: throw DeviceFault("audio_consent_unavailable"))
+    }
+
+    internal fun approveAudioStart(review: AudioStartReview): Boolean = try {
+        synchronized(lock) {
+            if (permit != null) throw DeviceFault("audio_consent_unavailable")
+            audioConsent.approve(review, screen.summary ?: throw DeviceFault("audio_consent_unavailable"))
+        }
+        true
+    } catch (error: Exception) { notice(failure(error)); false }
+
+    fun revokeAudio() {
+        synchronized(lock) {
+            audioConsent.clear()
+            permit?.stop(); mqtt?.close()
+        }
+        update { it.copy(status = if (running) "stopping" else "stopped", notice = "本次音量和静音授权已取消。重新连接时需要再次明确允许。") }
+    }
+
     fun start(finished: () -> Unit) {
         synchronized(lock) { if (permit != null) return }
         // 与安装/回执统一Owner→运行锁顺序；主线程不等待长时间的APK读写。
         if (ApkInstallOwner.lock.isHeldByCurrentThread || !ApkInstallOwner.lock.tryLock()) {
+            synchronized(lock) { if (permit == null) audioConsent.clear() }
             notice(failure(DeviceFault("apk_install_in_progress"))); finished(); return
         }
         val current = try {
@@ -299,40 +339,54 @@ class AgentRuntime internal constructor(
                 AndroidApkInstallStore(context).use { updates ->
                     if (ApkInstallJournal(updates).snapshot().any { it.blocksAnotherInstall }) throw DeviceFault("apk_install_in_progress")
                 }
-                RunPermit().also { permit = it }
+                val run = RunPermit()
+                val approval = audioConsent.consume(run)
+                clearModelReview()
+                permit = run
+                run to approval
             }
         } catch (error: Exception) {
+            synchronized(lock) { if (permit == null) audioConsent.clear() }
             notice(failure(error)); finished(); return
         } finally { ApkInstallOwner.lock.unlock() }
+        val (run, approval) = current
         update { it.copy(status = "connecting", notice = "") }
         Thread({
             var failed: String? = null
             try {
                 val enrollment = store.load() ?: throw AgentStoreFault("credentials_unavailable")
+                if (approval != null && approval.review.summary != summary(enrollment)) throw DeviceFault("audio_consent_required")
                 val backend = store.journal(enrollment.binding)
                 val storage = object : DeviceStorage {
                     override fun read() = backend.read()
                     override fun commit(bytes: ByteArray) = synchronized(lock) {
-                        if (!current.active) throw AgentStoreFault("connection_stopped")
+                        if (!run.active) throw AgentStoreFault("connection_stopped")
                         backend.commit(bytes)
                     }
                 }
                 val tls = enrollment.tls()
-                val applications = AndroidApplications(context, { it in store.allowed() }, lock, current, { tls.current }) { visible }
+                val audio = if (enrollment.identity.profile.hasAudio) {
+                    synchronized(lock) { audioConsent.bind(run, summary(enrollment), approval) }
+                    AndroidAudio(context, { audioConsent.allowed(run) }, lock, run, { tls.current }).also {
+                        if (!it.permitted()) throw DeviceFault("audio_unavailable")
+                    }
+                } else null
+                val applications = AndroidApplications(context, { it in store.allowed() }, lock, run, { tls.current }) { visible }
                 val client = connections(DeviceMqtt(enrollment.identity, enrollment.broker, tls, storage, applications,
-                    object : DeviceClock { override fun elapsedMillis() = SystemClock.elapsedRealtime() }) { state ->
-                    if (current.active) update {
-                        if (!current.active) return@update it
+                    object : DeviceClock { override fun elapsedMillis() = SystemClock.elapsedRealtime() }, audio) { state ->
+                    if (run.active) update {
+                        if (!run.active) return@update it
                         if (state == "invalid_credentials" && !tls.current) return@update it.copy(status = "stopped", notice = "设备证书已到期，连接已停止。请使用过期身份维护。")
                         if (state in setOf("connecting", "handshaking", "ready", "stopped", "connection_unavailable")) it.copy(status = state)
                         else it.copy(status = state, notice = state)
                     }
                 })
-                synchronized(lock) { mqtt = client; if (!current.active) client.close() }
+                synchronized(lock) { mqtt = client; if (!run.active) client.close() }
+                update { it }
                 client.run()
             } catch (error: Exception) { failed = failure(error) }
             finally {
-                synchronized(lock) { current.stop(); mqtt?.close(); mqtt = null; if (permit === current) permit = null }
+                synchronized(lock) { run.stop(); audioConsent.clear(); mqtt?.close(); mqtt = null; if (permit === run) permit = null }
                 val lastFailure = failed
                 update { if (lastFailure == null) it.copy(status = "stopped") else it.copy(status = "stopped", notice = lastFailure) }
                 main.post { if (!running) finished() }
@@ -342,9 +396,66 @@ class AgentRuntime internal constructor(
     }
 
     fun stop() {
-        synchronized(lock) { permit?.stop(); mqtt?.close() }
+        synchronized(lock) { audioConsent.clear(); clearModelReview(); permit?.stop(); mqtt?.close() }
         update { it.copy(status = if (running) "stopping" else "stopped") }
     }
+
+    private fun requireModelForeground(foreground: RunPermit) {
+        if (!visible || modelForeground !== foreground || !foreground.active) throw DeviceFault("model_review_expired")
+        requireApkStopped()
+    }
+
+    private fun clearModelReview() {
+        modelReview = null; modelForeground?.stop()
+        modelForeground = if (visible) RunPermit() else null
+    }
+
+    private fun requireNoApkUpdate() {
+        AndroidApkInstallStore(context).use { updates ->
+            if (ApkInstallJournal(updates).snapshot().any { it.blocksAnotherInstall }) throw DeviceFault("apk_install_in_progress")
+        }
+    }
+
+    internal fun previewModelAssignment(profile: DeviceModelProfile, completed: (Result<ModelAssignmentReview>) -> Unit) {
+        val foreground = synchronized(lock) { modelForeground }
+        io.execute {
+            val result = runCatching {
+                ApkInstallOwner.lock.withLock {
+                    synchronized(lock) {
+                        requireModelForeground(foreground ?: throw DeviceFault("model_review_expired"))
+                        requireNoApkUpdate()
+                        modelReview = null
+                        ModelAssignmentReview(store.previewModelAssignment(profile), foreground).also { modelReview = it }
+                    }
+                }
+            }
+            main.post { completed(result) }
+        }
+    }
+
+    internal fun cancelModelAssignment(review: ModelAssignmentReview) = synchronized(lock) {
+        if (modelReview === review) modelReview = null
+    }
+
+    internal fun approveModelAssignment(review: ModelAssignmentReview, completed: (Result<Unit>) -> Unit) { io.execute {
+        val result = runCatching {
+            ApkInstallOwner.lock.withLock {
+                synchronized(lock) {
+                    requireModelForeground(review.foreground)
+                    if (modelReview !== review) throw DeviceFault("model_review_expired")
+                    modelReview = null // 一次确认只消费一次；未知结果只重开读取，不重放旧审阅。
+                    requireNoApkUpdate()
+                    store.assignModel(review.preview)
+                    audioConsent.clear()
+                }
+            }
+        }
+        main.post {
+            notice(result.fold({ "能力配置已保存。连接保持停止，音量和静音需在开始连接时另行允许。" }, { failure(it as? Exception ?: Exception(it)) }))
+            completed(result)
+            refresh()
+        }
+    } }
 
     private fun requireApkStopped() = synchronized(lock) {
         // permit直到run返回且连接清理完成后才清除；stop()置inactive不足以通过此门禁。

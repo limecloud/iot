@@ -6,7 +6,9 @@ const catalog=JSON.parse(await readFile(new URL('../../../contracts/tools/catalo
 const exits={unauthenticated:3,forbidden:3,idempotency_conflict:4,unsupported_capability:4,device_offline:4};
 const fail=(code,status=2)=>{console.error(JSON.stringify({error:{code}}));process.exitCode=status;};
 const registryOperation=process.argv[2]==='invoke'?process.argv[3]:`${process.argv[2]}.${process.argv[3]}`;
-if(process.argv[2]==='tui') {
+if(process.argv[2]==='zigbee') {
+  await (await import('./zigbee.mjs')).runZigbee(process.argv.slice(3));
+} else if(process.argv[2]==='tui') {
   await (await import('./tui.mjs')).runTui(process.argv.slice(3));
 } else if(['execution-plans.list','execution-plans.get','execution-plan-changes.create','execution-plan-changes.resolve'].includes(registryOperation)) {
   await (await import('./execution-plans.mjs')).runExecutionPlans(process.argv.slice(2));
@@ -23,7 +25,8 @@ if(process.argv[2]==='tui') {
 } else if(process.argv[2]==='model') {
   await (await import('./model.mjs')).runModel(process.argv.slice(3));
 } else if(process.argv[2]==='control') {
-  await (await import('./control.mjs')).runControl(process.argv.slice(3));
+  if(process.argv[3]==='tui')await (await import('./control-tui.mjs')).runControlTui(process.argv.slice(4));
+  else await (await import('./control.mjs')).runControl(process.argv.slice(3));
 } else if(['model-bundles.list','model-bundles.get','model-trusts.list','model-trusts.get','model-installations.list','model-installations.get','device-models.get','model-changes.create','model-changes.resolve','firmware-trusts.list','firmware-trusts.get','ota-tasks.list','ota-tasks.get','ota-changes.create','ota-changes.resolve','execution-adapters.list','execution-bindings.get','device-applications.list','execution-changes.create','execution-changes.resolve'].includes(registryOperation)) {
   await (await import('./registry.mjs')).runRegistry(process.argv.slice(2));
 } else try {

@@ -90,6 +90,26 @@ fn composed() -> Data {
         .unwrap();
     data
 }
+
+#[test]
+fn native_projection_does_not_reuse_adapter_ready_or_restore_session_proof() {
+    let mut data = composed();
+    let view = &data.devices_view(now())[0];
+    assert_eq!(view["native_execution"]["ready"], true);
+    assert_eq!(view["native_execution"]["paths"], json!(["apps.launch"]));
+    let later = now() + Duration::seconds(16);
+    data.adapter_seen("tv", &route(), "fresh-adb", later)
+        .unwrap();
+    let view = &data.devices_view(later)[0];
+    assert_eq!(view["ready"], true);
+    assert_eq!(view["native_execution"]["ready"], false);
+    let snapshot = serde_json::to_value(&data).unwrap();
+    assert!(snapshot["devices"]["tv"].get("native_execution").is_none());
+    let reopened: Data = serde_json::from_value(snapshot).unwrap();
+    assert!(reopened.devices_view(later)[0]
+        .get("native_execution")
+        .is_none());
+}
 fn command(data: &Data, key: &str, path: &str) -> CommandRequest {
     serde_json::from_value(json!({"space_id":"home","device_id":"tv","model_revision":data.devices["tv"].model_revision,
         "idempotency_key":key,"expires_at":now()+Duration::seconds(10),"operation":{"type":"action.invoke","path":path,

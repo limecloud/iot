@@ -1,5 +1,7 @@
 # Android TV 受限 ADB 适配器
 
+宿主装配在`gateway/crates/runtime/src/integrations/android_tv.rs`，由统一集成Registry管理候选和worker；本库不依赖DLNA或TV Agent工程。默认网关包含本集成，单独选择可用`cargo build --locked -p limeiot-gateway --no-default-features --features android-tv`。这是随网关二进制交付的静态集成，不是可热安装插件；TV Agent APK另行构建。目录与恢复约束见 [工程规范](../../../docs/21-Monorepo与开发规范.md#14-核心集成与独立工程)。
+
 `limeiot-android-tv` 是第一方 Rust 适配库，由网关消费已经耐久标记的命令；不建立第二套命令账本。当前支持固定电视上的九种按键及白名单应用启动，结果最多为 submitted。小米MiTV4-ANSM0单样本已通过本机网关/网页正式绑定及右、返回、主页的有限控制实验；NAS出口、其余按键、应用启动和完整套件另验，证据见[实施进度](../../../docs/24-实施计划与进度.md#450-小米电视网页与网关adb实机联调)与[型号台账](../../../docs/30-设备支持矩阵与证据台账.md#8-dev-cand-08-网页与网关adb控制)。
 
 ## 运行前提与配置
@@ -33,6 +35,8 @@
 
 设备须已绑定与执行端兼容的精确模型，首轮使用[仅动作模型](../../../contracts/models/android-tv-remote.json)。每个 route.revision 为上述 config 对象规范化后的完整 JCS 摘要；模型动作的路径、语义、risk、idempotent、输入范围及输出证据由 supports_model 核对。宿主配置及资源在打开数据库前验证，当前设备与模型是否匹配在候选查询、明确绑定及调度时检查。
 
+含原生只读状态或其他服务动作的模型通过`supported_paths`只声明受支持的按键/应用路径；已知服务仍须满足原语义、输入及空输出约束，不因部分接管而放宽校验。候选公开`paths`，compatible只表示有支持路径。普通bind须覆盖仅动作模型；音频遥控模型必须明确compose，让Agent执行音量/静音并上报实际状态，ADB只承担所选外部路径。调度再次核对完整分区及外部路径子集，缺口、未实现音频路径、错模型或伪造路由均不激活提供方。网页可审阅两端职责并创建组合，具体见[执行合同](../../../contracts/execution-routes.md#显式能力组合与原生证明)。
+
 ### 已有空间的明确接入与配置迁移
 
 1. 保持核心初始配置与已有数据库的摘要一致，按原模型安装/绑定用例准备逻辑设备；不要通过修改核心 routes 或删除数据库接入。
@@ -60,5 +64,7 @@ HTTP、机器合同、在途/OTA互斥和恢复规则见[执行路由与绑定](
 ## 验证
 
 运行 `npm run test:tv`；套件构建workspace，新增已有空间旅程固定定位离线模型校验器并尊重显式LIMEIOT_MODEL_VALIDATOR，详见CLI。单适配器故障与模型准入入口为 `cargo test --locked -p limeiot-android-tv`。Rust与浏览器旅程共用[假ADB](../../../tests/fixtures/android-tv/adb.py)，只记录本地模拟副作用，不访问电视。API23命令选择依据AOSP android-6.0.1_r81的 [Pm.java](https://android.googlesource.com/platform/frameworks/base/+/android-6.0.1_r81/cmds/pm/src/com/android/commands/pm/Pm.java)；固定身份查询的命令传递与远端 `sh -c` 依据同版本的 [commandline.cpp](https://android.googlesource.com/platform/system/core/+/android-6.0.1_r81/adb/commandline.cpp) 和 [services.cpp](https://android.googlesource.com/platform/system/core/+/android-6.0.1_r81/adb/services.cpp)。源码依据不替代指定电视的实际命令、权限和厂商差异验收。
+
+`npm run test:tv:audio-composition`检查真实网关、mTLS/MQTT、SQLite与浏览器的音频组合、原请求恢复和撤销。原生音频端是明确协议夹具，ADB是本地假进程；这不证明实际TV Agent、Android系统音频或电视共存通过。
 
 TV Agent、音量/静音回读、宿主配置热加载、跨执行端切换及通用进程插件合同仍有独立实现工作。现有 NAS 内部网络不能直接推导可达电视；本适配器尚未随 NAS 镜像构建/验证。

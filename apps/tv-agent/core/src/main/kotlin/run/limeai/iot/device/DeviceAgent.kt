@@ -23,8 +23,12 @@ class DeviceAgent(
     private val storage: DeviceStorage,
     private val applications: ApplicationPort,
     private val clock: DeviceClock,
+    private val audio: AudioPort?,
     private val currentConnection: () -> Boolean,
 ) {
+    constructor(identity: DeviceIdentity, storage: DeviceStorage, applications: ApplicationPort, clock: DeviceClock,
+        currentConnection: () -> Boolean) : this(identity, storage, applications, clock, null, currentConnection)
+
     private val boot = UUID.randomUUID().toString()
     private var sequence = 0L
     private var snapshot = 0L
@@ -36,9 +40,11 @@ class DeviceAgent(
     private var entries = linkedMapOf<String, JsonObject>()
     private var highWatermark = 0L
     private var migrationPending = false
+    private var audioReady = false
     private val digestPattern = Regex("sha256:[0-9a-f]{64}")
     var blocked: Boolean = false; private set
-    val ready: Boolean get() = !blocked && session != null && currentConnection()
+    private val activeSession: Boolean get() = !blocked && session != null && currentConnection()
+    val ready: Boolean get() = activeSession && (!identity.profile.hasAudio || audioReady)
     private val base = "limeiot/v1/${identity.space}/${identity.device}"
 
     init {
@@ -49,13 +55,15 @@ class DeviceAgent(
 
     fun connected(): DevicePublication {
         checkDevice(!blocked, "storage_unavailable")
+        disconnected()
+        if (identity.profile.hasAudio) sampleAudio()
         if (migrationPending) persist(LinkedHashMap(entries), highWatermark)
         session = null; snapshot = 0
         challenge = UUID.randomUUID().toString()
         return publication("hello", obj("challenge" to text(challenge!!), "firmware" to text("tv-agent-0.3.0"), "hardware" to text("android-application"), "receipt_ledger" to JsonPrimitive(1), "execution_paths" to JsonArray(identity.profile.nativePaths.map(::text))))
     }
 
-    fun disconnected() { session = null; challenge = null }
+    fun disconnected() { session = null; challenge = null; audioReady = false }
 
     fun receive(topic: String, bytes: ByteArray, retained: Boolean = false): List<DevicePublication> {
         checkDevice(!blocked, "storage_unavailable")
@@ -92,7 +100,7 @@ class DeviceAgent(
             persist(next, highWatermark)
             return emptyList()
         }
-        AgentCommandFormat.commandBody(body)
+        AgentCommandFormat.commandBody(body, identity.profile)
         val id = body.text("command_id")
         val existing = entries[id]
         if (existing != null) {
@@ -106,12 +114,12 @@ class DeviceAgent(
         checkDevice(commandSequence!! > highWatermark, "command_retired")
         checkDevice(entries.size < 128, "capacity_exceeded")
         val operation = body.getValue("operation").obj()
-        val application = operation.getValue("value").obj().text("application_id")
+        val isApplication = operation.text("path") == "apps.launch"
         val now = now()
         val issued = DeviceTime.parse(body.text("issued_at")); val expires = DeviceTime.parse(body.text("expires_at"))
         val rejection = when {
             expires <= now || issued > now + 2000 || expires <= issued || expires - issued > 30000 -> "command_expired"
-            !applications.permitted(application) -> "application_not_authorized"
+            !permitted(operation) -> if (isApplication) "application_not_authorized" else "audio_not_authorized"
             else -> null
         }
         if (rejection != null) {
@@ -122,9 +130,9 @@ class DeviceAgent(
         // 先保存尝试；进程中断或提交结果不明时绝不再次调用外部端口。
         put(id, message, JsonNull)
         val result = when {
-            !currentConnection() || !applications.permitted(application) -> result(body, "failed", "authorization_changed")
+            !currentConnection() || !permitted(operation) -> result(body, "failed", "authorization_changed")
             now() >= expires -> result(body, "failed", "command_expired")
-            else -> try { applications.submit(application); result(body, "confirmed") }
+            else -> try { submit(operation); result(body, "confirmed") }
                 catch (_: Exception) { result(body, "unknown", "execution_unknown") }
         }
         put(id, message, result)
@@ -132,10 +140,39 @@ class DeviceAgent(
     }
 
     fun heartbeat(): DevicePublication? {
-        if (!ready) return null
+        if (!activeSession) return null
         now() // 单调时钟回退时停止本会话。
         checkDevice(snapshot < 9007199254740991L, "capacity_exceeded")
-        return publication("state", obj("type" to text("snapshot"), "revision" to JsonPrimitive(++snapshot), "properties" to JsonArray(emptyList())))
+        val properties = if (identity.profile.hasAudio) {
+            val state = try { sampleAudio() } catch (error: Exception) { disconnected(); throw error }
+            // 采样可能跨越停止/撤权；不能发布来自旧连接的读数或空的假完整快照。
+            if (!currentConnection()) { disconnected(); throw DeviceFault("session_mismatch") }
+            val observed = DeviceTime.format(now())
+            audioReady = true
+            fun observation(path: String, value: JsonPrimitive) = obj("path" to text(path), "value" to value,
+                "observed_at" to text(observed), "quality" to text("confirmed"), "source" to text("tv-agent.audio"))
+            listOf(observation("audio.volume", JsonPrimitive(state.percent)), observation("audio.muted", JsonPrimitive(state.muted)))
+        } else emptyList()
+        return publication("state", obj("type" to text("snapshot"), "revision" to JsonPrimitive(++snapshot), "properties" to JsonArray(properties)))
+    }
+
+    private fun sampleAudio(): AudioState {
+        val port = audio ?: throw DeviceFault("audio_not_authorized")
+        checkDevice(port.permitted(), "audio_not_authorized")
+        return port.read()
+    }
+
+    private fun permitted(operation: JsonObject): Boolean = if (operation.text("path") == "apps.launch")
+        applications.permitted(operation.getValue("value").obj().text("application_id"))
+        else audio?.permitted() == true
+
+    private fun submit(operation: JsonObject) {
+        val input = operation.getValue("value").obj()
+        when (operation.text("path")) {
+            "apps.launch" -> applications.submit(input.text("application_id"))
+            "audio.set_volume" -> (audio ?: throw DeviceFault("audio_not_authorized")).setVolume(input.integer("percent").toInt())
+            "audio.set_muted" -> (audio ?: throw DeviceFault("audio_not_authorized")).setMuted(input.getValue("muted").jsonPrimitive.boolean)
+        }
     }
 
     /** 重连只核对原结果；绝不再次调用应用端口。每次最多一条，丢确认时继续有界查询。 */
@@ -156,7 +193,7 @@ class DeviceAgent(
 
     private fun result(command: JsonObject, status: String, error: String? = null): JsonObject {
         val evidence = if (status == "confirmed") obj(
-            "type" to text("action_result"), "path" to text("apps.launch"),
+            "type" to text("action_result"), "path" to text(command.getValue("operation").obj().text("path")),
             "input_digest" to text(DeviceDocument.digest(command.getValue("operation").obj().getValue("value"))),
             "output" to JsonObject(emptyMap()), "completion" to text("submitted"), "observed_at" to text(DeviceTime.format(now())),
         ) else obj("type" to text("device_result"))

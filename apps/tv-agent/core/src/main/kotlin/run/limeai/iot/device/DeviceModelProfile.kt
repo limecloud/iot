@@ -3,9 +3,11 @@ package run.limeai.iot.device
 import kotlinx.serialization.json.*
 
 /** 内置、固定摘要的逻辑模型；声明逻辑模型不授予本机额外执行能力。 */
-enum class DeviceModelProfile(val id: String) {
+enum class DeviceModelProfile(val id: String, val hasAudio: Boolean = false, val composedRemote: Boolean = false) {
     APPLICATIONS("android-tv-agent"),
-    COMPOSED_REMOTE("android-tv-remote");
+    COMPOSED_REMOTE("android-tv-remote", composedRemote = true),
+    AUDIO_APPLICATIONS("android-tv-audio-agent", hasAudio = true),
+    AUDIO_COMPOSED_REMOTE("android-tv-audio-remote", hasAudio = true, composedRemote = true);
 
     val definition: JsonObject by lazy {
         val source = DeviceModelProfile::class.java.getResourceAsStream("/$id.json")
@@ -25,7 +27,11 @@ enum class DeviceModelProfile(val id: String) {
         JsonObject(source + ("services" to JsonArray(services)))
     }
     val revision: String by lazy { DeviceDocument.digest(definition) }
-    val nativePaths: List<String> get() = listOf("apps.launch")
+    val nativePaths: List<String> get() = if (hasAudio) listOf("apps.launch", "audio.set_volume", "audio.set_muted") else listOf("apps.launch")
+
+    /** 明确批准的模型扩展可保留较小模型原记录；能力回退不能冒读新日志。 */
+    fun acceptsHistory(previous: DeviceModelProfile): Boolean =
+        (!previous.hasAudio || hasAudio) && (!previous.composedRemote || composedRemote)
 
     companion object {
         fun parse(id: String): DeviceModelProfile = values().singleOrNull { it.id == id }

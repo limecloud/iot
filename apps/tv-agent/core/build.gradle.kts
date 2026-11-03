@@ -19,6 +19,8 @@ dependencyLocking { lockAllConfigurations() }
 tasks.processResources {
     from("../../../contracts/models/android-tv-agent.json")
     from("../../../contracts/models/android-tv-remote.json")
+    from("../../../contracts/models/android-tv-audio-agent.json")
+    from("../../../contracts/models/android-tv-audio-remote.json")
 }
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()

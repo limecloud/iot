@@ -19,6 +19,17 @@ pub fn supports_action(action: &ActionDefinition) -> bool {
         && action.output.additional == Some(false)
 }
 
+/// 组合模型的状态仍由原生会话上报；外部动作路由不取得写属性或事件所有权。
+pub fn supports_native_state(model: &crate::model::Model) -> bool {
+    model.services.iter().all(|service| {
+        service.events.is_empty()
+            && service.properties.iter().all(|property| {
+                property.access.iter().any(|access| access == "read")
+                    && !property.access.iter().any(|access| access == "write")
+            })
+    })
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Route {

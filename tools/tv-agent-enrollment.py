@@ -9,6 +9,8 @@ import stat
 import subprocess
 from urllib.parse import urlsplit
 
+MODEL_PROFILES = ("android-tv-agent", "android-tv-remote", "android-tv-audio-agent", "android-tv-audio-remote")
+
 
 def read_private(path):
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
@@ -58,6 +60,8 @@ def write_new(value, output, maximum):
 
 
 def public_setup(ca_file, space_id, device_id, request_id, broker, output, model_profile):
+    if model_profile not in MODEL_PROFILES:
+        raise ValueError("unsupported_model_profile")
     checked_broker(broker)
     identifier = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}")
     if any(not isinstance(value, str) or not identifier.fullmatch(value) for value in (space_id, device_id, request_id)):
@@ -80,7 +84,7 @@ def public_setup(ca_file, space_id, device_id, request_id, broker, output, model
 
 
 def package(identity_directory, broker, output, model_profile="android-tv-agent"):
-    if model_profile not in ("android-tv-agent", "android-tv-remote"):
+    if model_profile not in MODEL_PROFILES:
         raise ValueError("unsupported_model_profile")
     checked_broker(broker)
     identifier = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}")
@@ -117,7 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("--request-id")
     parser.add_argument("--broker", required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--model-profile", choices=("android-tv-agent", "android-tv-remote"), default="android-tv-agent")
+    parser.add_argument("--model-profile", choices=MODEL_PROFILES, default="android-tv-agent")
     args = parser.parse_args()
     try:
         if args.ca_file:

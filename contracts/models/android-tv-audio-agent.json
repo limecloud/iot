@@ -1,0 +1,124 @@
+{
+  "schema_version": 2,
+  "model_id": "urn:limeiot:model:android-tv-audio-agent:1",
+  "model_version": "1.0.0",
+  "services": [
+    {
+      "id": "apps",
+      "semantic_id": "urn:limeiot:service:applications:1",
+      "properties": [],
+      "actions": [
+        {
+          "id": "launch",
+          "semantic_id": "urn:limeiot:action:application-launch:1",
+          "input": {
+            "type": "object",
+            "properties": {
+              "application_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              }
+            },
+            "required": [
+              "application_id"
+            ],
+            "additionalProperties": false
+          },
+          "output": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "idempotent": false,
+          "risk": "low",
+          "completion": "submitted"
+        }
+      ],
+      "events": []
+    },
+    {
+      "id": "audio",
+      "semantic_id": "urn:limeiot:service:audio:1",
+      "properties": [
+        {
+          "id": "volume",
+          "semantic_id": "urn:limeiot:property:volume:1",
+          "schema": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "access": [
+            "read",
+            "notify"
+          ],
+          "unit": "percent",
+          "max_age_ms": 15000
+        },
+        {
+          "id": "muted",
+          "semantic_id": "urn:limeiot:property:muted:1",
+          "schema": {
+            "type": "boolean"
+          },
+          "access": [
+            "read",
+            "notify"
+          ],
+          "max_age_ms": 15000
+        }
+      ],
+      "actions": [
+        {
+          "id": "set_volume",
+          "semantic_id": "urn:limeiot:action:audio-set-volume:1",
+          "input": {
+            "type": "object",
+            "properties": {
+              "percent": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "percent"
+            ],
+            "additionalProperties": false
+          },
+          "output": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "idempotent": false,
+          "risk": "low",
+          "completion": "submitted"
+        },
+        {
+          "id": "set_muted",
+          "semantic_id": "urn:limeiot:action:audio-set-muted:1",
+          "input": {
+            "type": "object",
+            "properties": {
+              "muted": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "muted"
+            ],
+            "additionalProperties": false
+          },
+          "output": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "idempotent": false,
+          "risk": "low",
+          "completion": "submitted"
+        }
+      ],
+      "events": []
+    }
+  ]
+}

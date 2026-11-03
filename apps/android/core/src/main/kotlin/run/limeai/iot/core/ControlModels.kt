@@ -54,4 +54,8 @@ data class NativeLoginResult(val status: NativeAuthorizationStatus, val session:
     @SerialName("request_digest") val requestDigest: String, val request: ControlRemoteInput,
     val status: ControlCommandStatus, @SerialName("local_result") val localResult: kotlinx.serialization.json.JsonElement? = null
 )
-@Serializable data class ControlCommandRecord(val reference: ControlCommandReference, val attempted: Boolean = false, val result: ControlRemoteCommand? = null, val rejection: String? = null) { val id: String get() = reference.request.requestKey }
+@Serializable data class ControlCommandRecord(val reference: ControlCommandReference, val attempted: Boolean = false, val result: ControlRemoteCommand? = null, val rejection: String? = null) {
+    val id: String get() = reference.request.requestKey
+    val isPrepared: Boolean get() = !attempted && result == null && rejection == null
+    val canForget: Boolean get() = isPrepared || rejection != null || result?.status?.terminal == true
+}

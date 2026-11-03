@@ -8,6 +8,8 @@ import SwiftUI
     var body: some Scene {
         WindowGroup {
             RootView().environmentObject(home).environmentObject(cloud).tint(Palette.grass9)
+                .onChange(of: scenePhase) { _, phase in if phase != .active { cloud.pause() } }
+                .onChange(of: connection) { _, mode in if mode != "cloud" { cloud.pause() } }
                 .task(id: connection + (scenePhase == .active ? ":active" : ":paused")) {
                     guard scenePhase == .active else { home.media?.pause(); home.speech?.pause(); home.transcription?.pause(); home.vision?.pause(); return }
                     if connection == "cloud" { home.media?.pause(); home.speech?.pause(); home.transcription?.pause(); home.vision?.pause(); await cloud.runForeground(); return }

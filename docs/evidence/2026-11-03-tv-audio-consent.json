@@ -1,0 +1,298 @@
+{
+  "evidence_id": "EVID-TV-AUDIO-CONSENT-20261103-01",
+  "observed_on": "2026-11-03",
+  "status": "passed_run_audio_consent_and_focused_host_checks_only",
+  "scope": {
+    "source_run_consent_and_activity": true,
+    "host_run_consent": true,
+    "host_runtime_audio_wiring": true,
+    "host_platform_views": true,
+    "actual_mqtt": false,
+    "hardware": false,
+    "device_connection": false,
+    "emulator_started": false,
+    "apk_installation": false,
+    "actual_audio_service": false,
+    "gateway_bundle_catalog_updated": false,
+    "web_audio_control": false,
+    "existing_v3_identity_model_change": false,
+    "sqlite_schema_migration": false,
+    "full_goal_completed": false,
+    "original_apk_timeout_regressions_retried": false,
+    "host_fixtures": "native host SQLite and actual Runtime/core/AndroidAudio APIs; control-only connection and explicit online/audio/permission facts",
+    "debug_apk_build": true,
+    "current_audio_lint": true,
+    "published": false
+  },
+  "implementation": {
+    "local_audio_consent_ui_source": true,
+    "runtime_audio_port_wired": true,
+    "approval_scope": "one process-local run, bound to current device/model/trust/broker/certificate review",
+    "persisted": false,
+    "intent_or_bundle_authority": false,
+    "one_use_approval": true,
+    "stop_revoke_or_worker_exit_clears": true,
+    "revoke_between_consume_and_bind_blocks": true,
+    "old_review_or_run_revives": false,
+    "approved_run_may_continue_after_page_exit": true,
+    "unconsumed_review_invalidated_on_page_exit": true,
+    "actual_loaded_credentials_rechecked": true,
+    "original_apps_foreground_policy_preserved": true,
+    "original_apk_owner_and_worker_exit_gate_preserved": true,
+    "audio_models_initial_runtime_gate_replaced_by_explicit_run_consent": true,
+    "identity_and_rotation_formats_changed": false,
+    "sqlite_schema_migration": false,
+    "new_dependencies": false
+  },
+  "frozen_input_count": 99,
+  "test_modules": {
+    "core": {
+      "tests": 74,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "passed": 71
+    },
+    "app": {
+      "tests": 32,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 32
+    }
+  },
+  "executed_test_classes": {
+    "run.limeai.iot.device.ApkInstallJournalTest": 23,
+    "run.limeai.iot.device.DeviceEnrollmentTest": 2,
+    "run.limeai.iot.device.DeviceSigningKeyTest": 8,
+    "run.limeai.iot.device.MqttJourneyTest": 1,
+    "run.limeai.iot.device.AudioStateTest": 5,
+    "run.limeai.iot.device.AudioAgentTest": 10,
+    "run.limeai.iot.device.DeviceAgentTest": 25,
+    "run.limeai.iot.television.AudioRunConsentTest": 8,
+    "run.limeai.iot.television.AgentApkQuiescenceTest": 2,
+    "run.limeai.iot.television.AndroidAudioTest": 14,
+    "run.limeai.iot.television.AudioRuntimeTest": 6,
+    "run.limeai.iot.television.AudioConsentActivityTest": 2
+  },
+  "new_test_methods": 16,
+  "new_test_executions": 16,
+  "new_cases": [
+    {
+      "classname": "run.limeai.iot.television.AudioRunConsentTest",
+      "name": "default_authority_requires_visible_review_an_audio_profile_and_current_credentials"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRunConsentTest",
+      "name": "approval_is_single_use_and_bound_to_the_original_run_and_actual_review"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRunConsentTest",
+      "name": "changed_device_model_broker_certificate_or_trust_requires_another_review"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRunConsentTest",
+      "name": "a_stopped_run_cannot_consume_or_activate_an_approval"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRunConsentTest",
+      "name": "a_new_authorization_or_runtime_cannot_reactivate_old_ports_or_old_reviews"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRunConsentTest",
+      "name": "withdrawal_between_start_and_bind_cancels_the_issued_approval_even_before_run_stop"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRunConsentTest",
+      "name": "consumed_authority_may_outlive_page_visibility_within_the_same_running_session"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRunConsentTest",
+      "name": "leaving_or_stopping_invalidates_unconsumed_review_and_does_not_revive_on_return"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRuntimeTest",
+      "name": "explicit_run_connects_real_audio_port_to_consumer_and_native_observations_stay_independent"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRuntimeTest",
+      "name": "stop_or_revoke_invalidates_old_port_and_new_approval_never_reactivates_it"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRuntimeTest",
+      "name": "approved_background_run_keeps_scope_but_system_permission_or_fixed_volume_blocks_effects"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRuntimeTest",
+      "name": "normal_worker_exit_clears_scope_without_persisting_it_or_authorizing_another_start"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRuntimeTest",
+      "name": "revoke_during_original_credential_load_prevents_later_bind_or_connection"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioRuntimeTest",
+      "name": "no_explicit_approval_refuses_connection_creation_and_keeps_audio_untouched"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioConsentActivityTest",
+      "name": "recreated_page_rejects_old_confirm_then_new_explicit_confirm_and_revoke_control_one_run"
+    },
+    {
+      "classname": "run.limeai.iot.television.AudioConsentActivityTest",
+      "name": "cancel_leaves_audio_unapproved_and_starting_service_is_not_implicit_consent"
+    }
+  ],
+  "full_core_suite_results_verified": true,
+  "core_results_reused_with_identical_inputs_and_xml": true,
+  "full_app_regression_run": false,
+  "package_build_passed": true,
+  "lint": {
+    "executed_for_current_audio_sources": true,
+    "errors": 0,
+    "warnings": 4,
+    "issue_ids": [
+      "TrustAllX509TrustManager",
+      "SetTextI18n",
+      "SetTextI18n",
+      "SetTextI18n"
+    ]
+  },
+  "prior_apk_regressions": {
+    "evidence": "2026-11-03-tv-apk-recovery.json",
+    "unresolved_failures": 2,
+    "retried_in_this_phase": false
+  },
+  "artifact": {
+    "sha256": "7c99756fb6499cb7e812e65008cea25f13b267be48188dad60341df49c0a95c0",
+    "debug": true,
+    "installed": false
+  },
+  "input_sha256": {
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AgentRuntime.kt": "7352c4edd7b049acaf9b21b84de04d902a12321ae1d7ae2eaa223a7f968123e1",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/AudioRunConsent.kt": "156bcff2f5d694ef8451869f5675b146362b750a15fa7417f2eabc6994bb8236",
+    "apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/TelevisionActivity.kt": "87fa3e9870acac3b4501fc77b1e77469bcc09db0fe1104721bf5e28fec46ffc6",
+    "apps/tv-agent/app/src/main/res/values/strings.xml": "590829eb59fd1c17439f506ec03c47b4a5f72353b2992a16ce65825e62e97cb1",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AudioConsentActivityTest.kt": "07a6a434583990decf04463e719034e568c431064924ad98d702b214ed58db8d",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AudioRunConsentTest.kt": "f280254688becdbeb07c48ba140b972a9802aea0366d72d4af058201320cacd5",
+    "apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AudioRuntimeTest.kt": "bfe1e9deeac5ddc818848b4ca63509c002411a709467ef9dd2e9e7b0d7730e46"
+  },
+  "raw_evidence_sha256": {
+    "attempt-1/AudioConsentActivityTest.kt": "e1b23dfaf19a3ad7eea56aa9e7f1116ecc94332fd45213efbc692f06c61d079d",
+    "attempt-1/core/test-results/test/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "9274b455df4b7f26d6286685894f23b88fada6e7dd16653b82844fac469dc533",
+    "attempt-1/core/test-results/test/TEST-run.limeai.iot.device.AudioAgentTest.xml": "3efbdbd609cd57171f6364ffcb1233e4fce20b9df3be3d734cc09f198115d4db",
+    "attempt-1/core/test-results/test/TEST-run.limeai.iot.device.AudioStateTest.xml": "c403205fd1e99beb36612fc114b55d772e6aa4c13a07b10fa6dff04c373853e0",
+    "attempt-1/core/test-results/test/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "c0c75f7fc7110637a029bf53c69a8e8e064ca2b398b96ef369cddd3a544b4e3b",
+    "attempt-1/core/test-results/test/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "a17612c7fcac7ca47c70b2e1e73dffeaa19ce9deab51152b992c29e113734067",
+    "attempt-1/core/test-results/test/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "01d36819fa18438d9a0f03cde5c744d897b2f378d105380842c65a677946a4bd",
+    "attempt-1/core/test-results/test/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "49485dbfb1cef3721304cb24f7454d8fc27c3273452d4c38c031ef33526e9ba3",
+    "attempt-1/core/test-results/test/binary/output.bin": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "attempt-1/core/test-results/test/binary/output.bin.idx": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+    "attempt-1/core/test-results/test/binary/results.bin": "1e6af07af0fd75bf8211ffeb278b012daaca44f9b08393685a95991481422855",
+    "attempt-1/exit-code.txt": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "attempt-1/frozen-differing-inputs/apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/TelevisionActivity.kt": "179012fe63be203ace5206bedd0a03a48ef57abfa5f81b9b7f0e20af9fce1c7e",
+    "attempt-1/frozen-differing-inputs/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AudioConsentActivityTest.kt": "e1b23dfaf19a3ad7eea56aa9e7f1116ecc94332fd45213efbc692f06c61d079d",
+    "attempt-1/frozen-differing-inputs/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AudioRuntimeTest.kt": "b2a44166e05f8bcaf8fc2aced154ba26ce457314cf01f6f4f47eda07614ae226",
+    "attempt-1/source-manifest.json": "3e0fdf48ffa5c2a28d1901a9afd62de5071443b4007da807ccafa6657a1734cb",
+    "attempt-1/verification.log": "1e055b5dfaa8f12d0002b4fc973d56f529872692bb5dc83cc5c4074aa4a57f05",
+    "attempt-2/AudioConsentActivityTest.kt": "6a0810dd8de6ee0ab6492e8d09555755413b986a871abb86c1a9e7d2f04206ce",
+    "attempt-2/AudioRuntimeTest.kt": "b2a44166e05f8bcaf8fc2aced154ba26ce457314cf01f6f4f47eda07614ae226",
+    "attempt-2/app/test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "8e32e7f64b18d411b28cb50eb1712b1fcc4be590582c6bc830e8dbe342df928b",
+    "attempt-2/app/test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidAudioTest.xml": "7af8f0fb0a1fb604604fa48eae32eb76c89a5d7fab8d4c954ed5ed301f78c572",
+    "attempt-2/app/test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AudioConsentActivityTest.xml": "a5e7a9c1b21df03be0943ec3332c063e821e95f4acbf71617cbbd95347c87e9d",
+    "attempt-2/app/test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AudioRunConsentTest.xml": "6b96e1d0a3efa279c743b6ed6f9140e77eff6ea61b13c1abddccd38498e7bcb9",
+    "attempt-2/app/test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AudioRuntimeTest.xml": "b4f5a08fa2444cc99dbbbae571013580f84b1b56a66c4169f3e471599baf8e8d",
+    "attempt-2/app/test-results/testDebugUnitTest/binary/output.bin": "bde9c1370443fc55f33046b16cd4cbb83b5f274a269cd0cd115b53a2676482a1",
+    "attempt-2/app/test-results/testDebugUnitTest/binary/output.bin.idx": "619fcc2b4879e21d444381842def78a38fdf6aaf79400ff08829873602dde80d",
+    "attempt-2/app/test-results/testDebugUnitTest/binary/results.bin": "56ff46403ee9a7f18bae7fb48c1480cf39d31f50254e4caeebf7cc7729723302",
+    "attempt-2/exit-code.txt": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "attempt-2/frozen-differing-inputs/apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/TelevisionActivity.kt": "179012fe63be203ace5206bedd0a03a48ef57abfa5f81b9b7f0e20af9fce1c7e",
+    "attempt-2/frozen-differing-inputs/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AudioConsentActivityTest.kt": "6a0810dd8de6ee0ab6492e8d09555755413b986a871abb86c1a9e7d2f04206ce",
+    "attempt-2/frozen-differing-inputs/apps/tv-agent/app/src/test/kotlin/run/limeai/iot/television/AudioRuntimeTest.kt": "b2a44166e05f8bcaf8fc2aced154ba26ce457314cf01f6f4f47eda07614ae226",
+    "attempt-2/source-manifest.json": "c7f1c4ef5b1ed484bead176a587a5466fd548ee9a471bb3c866f52491f040480",
+    "attempt-2/verification.log": "36885aa749f93368f844b7629e2253181eccc932d5ddf6c955e0c42abacc71f2",
+    "attempt-3/app-debug.apk": "5634a82281b1ef68729dc36cb6ede2838aef9e1d2a7923ca384592cfb239f888",
+    "attempt-3/app/test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "9e12613897f8bb70fa9ce43ad3850f80279dac59bae85bb583d543d28f569e6a",
+    "attempt-3/app/test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AndroidAudioTest.xml": "8e92703cfd64a09e87769fe5e4033ba8bf010340c43a6c4d20b67617b5c80a2b",
+    "attempt-3/app/test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AudioConsentActivityTest.xml": "67e1941c6afe05b1c3b47cdaedd440b0d662e1d9da659f1b610d6539f84a8cc6",
+    "attempt-3/app/test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AudioRunConsentTest.xml": "503f394bb81f42513ff098d9942e5a7a3a9f4cbca94f35ece5d79f84800515ea",
+    "attempt-3/app/test-results/testDebugUnitTest/TEST-run.limeai.iot.television.AudioRuntimeTest.xml": "f772fc6fdf7f2cd791b702c23d6a9b6b84196d92d746f3a46710defb3141bf2b",
+    "attempt-3/app/test-results/testDebugUnitTest/binary/output.bin": "e29779a8a6d54ca7abea746f42bcdf37a56e3391bc3f32a86a94de920854ba95",
+    "attempt-3/app/test-results/testDebugUnitTest/binary/output.bin.idx": "75470da7888aab0b0bd1be7f24ae5f88cfba8b371e4679538599ca88dc52a4aa",
+    "attempt-3/app/test-results/testDebugUnitTest/binary/results.bin": "3157280d8ec28dd610c3c5bfb52e6373fbc0777d0ff185a723e55990f5114355",
+    "attempt-3/core/test-results/test/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "9274b455df4b7f26d6286685894f23b88fada6e7dd16653b82844fac469dc533",
+    "attempt-3/core/test-results/test/TEST-run.limeai.iot.device.AudioAgentTest.xml": "3efbdbd609cd57171f6364ffcb1233e4fce20b9df3be3d734cc09f198115d4db",
+    "attempt-3/core/test-results/test/TEST-run.limeai.iot.device.AudioStateTest.xml": "c403205fd1e99beb36612fc114b55d772e6aa4c13a07b10fa6dff04c373853e0",
+    "attempt-3/core/test-results/test/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "c0c75f7fc7110637a029bf53c69a8e8e064ca2b398b96ef369cddd3a544b4e3b",
+    "attempt-3/core/test-results/test/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "a17612c7fcac7ca47c70b2e1e73dffeaa19ce9deab51152b992c29e113734067",
+    "attempt-3/core/test-results/test/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "01d36819fa18438d9a0f03cde5c744d897b2f378d105380842c65a677946a4bd",
+    "attempt-3/core/test-results/test/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "49485dbfb1cef3721304cb24f7454d8fc27c3273452d4c38c031ef33526e9ba3",
+    "attempt-3/core/test-results/test/binary/output.bin": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "attempt-3/core/test-results/test/binary/output.bin.idx": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+    "attempt-3/core/test-results/test/binary/results.bin": "1e6af07af0fd75bf8211ffeb278b012daaca44f9b08393685a95991481422855",
+    "attempt-3/exit-code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "attempt-3/frozen-differing-inputs/apps/tv-agent/app/src/main/kotlin/run/limeai/iot/television/TelevisionActivity.kt": "179012fe63be203ace5206bedd0a03a48ef57abfa5f81b9b7f0e20af9fce1c7e",
+    "attempt-3/lint-results-debug.html": "fa9478fc1ee23bb370392074515e608a6314e9e2a45b8edf04a46b3b278ec4db",
+    "attempt-3/lint-results-debug.xml": "5fdd649e96c962ad85554796ad811207a1107bc7af906773317922e972d1b008",
+    "attempt-3/source-manifest.json": "0b9af0f6f5439670f68b083ddb973b88e64558991275dbad6abc9a4b8abf5f55",
+    "attempt-3/verification.log": "8b6454f32971b427a79d16227a47eaa8bab5a5686bd9b01ab8cf5ccd893cf448",
+    "bounded-host.init.gradle": "01447fe572552519ae378a66d6dec573aab1089b1228d11960277788211f308d",
+    "exit-code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "lint-results-debug.xml": "5fdd649e96c962ad85554796ad811207a1107bc7af906773317922e972d1b008",
+    "next-integration-plan.md": "bb1b579bd81d9566035c09a21eab916375fa6a44db820f732a911deebfcb0a15",
+    "previous-evidence-sha256.json": "27cf3f2270228af352593e257cd02671168e59df9c8c813f67d8a747dedda3fd",
+    "repair-1.json": "a7b7d7b9adf189711c1aaef1b5516f6e087c867f13254aa2cac970594492d20d",
+    "repair-2.json": "bbcfcd3e1c82c4839565a0006ab33eab85602b535c8fa37d8ab3ca2ae71ce055",
+    "review-followup.json": "2c21ece6115eeb178ca8ef12f5337eb9628967da336c5e3b35717550883fc648",
+    "run-build.py": "7126e88d0ab80d43cf5262596fb9f50ab0ae7225a818dc7e177724c9667e74fc",
+    "scope.json": "ebeb97aca2815a68e145fa8f97634c3fd98e6da91cf2a98c130e52cc9791527a",
+    "source-manifest.json": "d6044f32b005b1f33aa6bb257c16a0743c82e272894230daac764b83a622ec56",
+    "test-results/app/TEST-run.limeai.iot.television.AgentApkQuiescenceTest.xml": "638b567a9e588112069c30fc627166f123a08fc397b85109fef3a4b8cc3074ee",
+    "test-results/app/TEST-run.limeai.iot.television.AndroidAudioTest.xml": "af7f3fe45a2254646324051ed971b7331d21bc27692cfbc88ffac1c0758787e5",
+    "test-results/app/TEST-run.limeai.iot.television.AudioConsentActivityTest.xml": "b1811b77491834cc72081c031ce51842253695908c1ed1f8eca6aa23fa67911d",
+    "test-results/app/TEST-run.limeai.iot.television.AudioRunConsentTest.xml": "0e2727c95093a77fbec62bd113cc9086429be4a18a64fd2f61e0713545faedaf",
+    "test-results/app/TEST-run.limeai.iot.television.AudioRuntimeTest.xml": "8595ad0aa4a08593610ae798f4b25317b17342edcaf95118947c0efce947e5e2",
+    "test-results/core/TEST-run.limeai.iot.device.ApkInstallJournalTest.xml": "9274b455df4b7f26d6286685894f23b88fada6e7dd16653b82844fac469dc533",
+    "test-results/core/TEST-run.limeai.iot.device.AudioAgentTest.xml": "3efbdbd609cd57171f6364ffcb1233e4fce20b9df3be3d734cc09f198115d4db",
+    "test-results/core/TEST-run.limeai.iot.device.AudioStateTest.xml": "c403205fd1e99beb36612fc114b55d772e6aa4c13a07b10fa6dff04c373853e0",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceAgentTest.xml": "c0c75f7fc7110637a029bf53c69a8e8e064ca2b398b96ef369cddd3a544b4e3b",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceEnrollmentTest.xml": "a17612c7fcac7ca47c70b2e1e73dffeaa19ce9deab51152b992c29e113734067",
+    "test-results/core/TEST-run.limeai.iot.device.DeviceSigningKeyTest.xml": "01d36819fa18438d9a0f03cde5c744d897b2f378d105380842c65a677946a4bd",
+    "test-results/core/TEST-run.limeai.iot.device.MqttJourneyTest.xml": "49485dbfb1cef3721304cb24f7454d8fc27c3273452d4c38c031ef33526e9ba3",
+    "tv-agent-audio-consent-debug.apk": "7c99756fb6499cb7e812e65008cea25f13b267be48188dad60341df49c0a95c0",
+    "verification.log": "8e616cc30a584505c4d568bbb19cbc9fe5637495861a88b72028259c316a11b4"
+  },
+  "failure_history": [
+    {
+      "attempt": 1,
+      "result": "test_compile_failed_before_app_execution",
+      "cause": "new activity fixture used type arguments for non-generic Robolectric getApplication",
+      "repair": "use existing non-generic API and cast to TelevisionApplication",
+      "original_inputs_and_log_retained": true,
+      "assertions_or_time_budget_weakened": false
+    },
+    {
+      "attempt": 2,
+      "result": "app_focused_30_passed_2_failed",
+      "causes": [
+        "dialog callback checked before main message dispatch",
+        "fixture second SQLite helper contends with Runtime refresh"
+      ],
+      "repair": "drive real Looper; inspect shared Runtime store and drain storage queue at cleanup",
+      "original_inputs_log_and_xml_retained": true,
+      "assertions_or_time_budget_weakened": false
+    }
+  ],
+  "review_followup": {
+    "attempt_3_focused_tests_and_build_passed": true,
+    "final_import_disclosure_updated_for_separate_audio_run_consent": true,
+    "final_app_checks_and_apk_lint_rerun_for_updated_activity": true
+  },
+  "limits": [
+    "Source and focused host tests only. Runtime threads, core consumer, AndroidAudio API calls and native host SQLite execute; connection/online/audio/permission facts are explicit fixtures. DeviceMqtt.run and sockets are not executed.",
+    "Activity Views/lifecycle execute under Robolectric API28; actual system Service scheduling, TV interaction and real AudioManager/vendor behavior are not verified.",
+    "Gateway model catalog, native property/action composition, web audio control, real MQTT audio journey and existing v3 identity model changes remain unimplemented.",
+    "The two prior API23 APK callback timeout regressions remain unresolved and were not retried. The full App suite was not run; current audio lint is separately recorded.",
+    "No TV probes, connections, operations, APK installation, emulator, global environment changes, commits, pushes or publication occurred. The full platform goal remains active."
+  ]
+}
