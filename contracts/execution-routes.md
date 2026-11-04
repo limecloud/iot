@@ -1,5 +1,7 @@
 # 执行路由、明确绑定与适配器结果
 
+本合同继续定义动作执行；同一设备的可写属性使用独立的[属性桥接授权](property-bridges.md)，不经动作绑定/组合/撤销API取得权限。属性协议受理与独立读回确认保留在原命令账本。
+
 [有限DLNA播放](dlna.md)也复用本执行合同：宿主候选由LIMEIOT_AUDIO_CONFIG准备，route固定完整config的JCS修订，所有者明确bind/revoke，动作仍由核心耐久意图/FIFO及原结果恢复；kind=dlna候选与媒体ID格式见其独立合同。SOAP/XML只在适配器内处理，不创建第二种CommandRequest、MQTT身份或通用插件IPC。电视与音箱候选合计16个，不能重复逻辑设备或adapter ID。
 
 当前实现第一方动作路由、现有空间明确绑定/组合/撤销，复用[命令合同](commands.md)与原操作账本。命令执行类型为 [execution.rs](../gateway/crates/core/src/execution.rs)，绑定决定为 [execution_binding.rs](../gateway/crates/core/src/execution_binding.rs)，机器合同为 [execution-bindings.schema.json](execution-bindings.schema.json)；ADB 实现与宿主配置见[电视适配器](../gateway/adapters/android-tv/README.md)。通用插件IPC、宿主配置热加载及外部更新提供方仍未实现；离线/unknown始终不自动切换路径。协议夹具/假ADB组合已有 [24第4.14节](../docs/24-实施计划与进度.md#414-显式能力组合与文档同步) 的历史通过证据；Agent受控模型及本机日志迁移已有实现，真实JVM组合未通过，最近假ADB专项亦保留失败，见 [第4.16节](../docs/24-实施计划与进度.md#416-tv-agent测试启动与当前验证状态)。

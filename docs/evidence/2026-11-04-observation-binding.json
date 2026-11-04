@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "managed_readonly_observation_binding_core_and_sqlite_durability",
+  "status": "macos_core_and_store_software_stage_passed",
+  "archive": ".dev/observation-binding-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "changes": {
+    "explicit_bind_revoke_and_original_operation_query": true,
+    "host_constructed_offer_max_seconds": 60,
+    "exact_readonly_model_and_manifest_digest": true,
+    "static_and_native_takeover_denied": true,
+    "revoked_device_still_denies_native_mqtt": true,
+    "fresh_session_required_after_rebind_or_restart": true,
+    "binding_model_device_operation_and_event_share_store_transaction": true,
+    "snapshot_version": 13,
+    "sqlite_table_schema_changed": false,
+    "initial_config_hash_changed": false,
+    "legacy_hidden_registry_and_inconsistent_decision_chain_rejected": true,
+    "v12_execution_plan_coexistence": true,
+    "max_sources_including_tombstones": 16,
+    "max_operations": 256,
+    "operation_capacity_stops_new_decisions_but_preserves_original_queries": true,
+    "new_production_dependency": false
+  },
+  "verification": {
+    "new_core_tests": 13,
+    "new_store_tests": 6,
+    "core_tests_passed": 222,
+    "runtime_tests_passed": 77,
+    "unique_core_runtime_tests_passed": 299,
+    "core_result_source": "core-runtime.log, core suite section; combined command later failed in a runtime future-version fixture",
+    "runtime_result_source": "runtime-final.log, successful final command after fixture update",
+    "commands": [
+      "cargo test --locked -p limeiot-core -p limeiot-gateway --target-dir .dev/znp-verification-20261103/target",
+      "cargo test --locked -p limeiot-gateway --target-dir .dev/znp-verification-20261103/target",
+      "cargo clippy --locked -p limeiot-core -p limeiot-gateway --all-targets --target-dir .dev/znp-verification-20261103/target -- -D warnings",
+      "cargo check --locked -p limeiot-gateway --no-default-features --target-dir .dev/znp-verification-20261103/target",
+      "cargo check --locked -p limeiot-gateway --no-default-features --features zigbee-znp --target-dir .dev/znp-verification-20261103/target",
+      "cargo test --locked -p limeiot-core --doc --target-dir .dev/znp-verification-20261103/target"
+    ],
+    "clippy_all_targets_warnings_denied": true,
+    "minimal_feature_check": true,
+    "zigbee_only_feature_check": true,
+    "core_documentation_tests": 0,
+    "faults": [
+      "snapshot_write_failure",
+      "event_insert_failure_after_snapshot_write",
+      "revoke_write_failure",
+      "rebind_write_failure"
+    ],
+    "corrupt_snapshot_cases": 10,
+    "logs_sha256": {
+      "clippy.log": "44b0c5c4cd710aaeac9065ee9613856e5cc2da7659cc9d4b50c6a6b9c5e41909",
+      "core-doc.log": "14f13c9e2d4f2c4cb1d418cdc6e0f5aa25f75c3fdf9d39d8253a6f47b47796e2",
+      "core-runtime.log": "eb1978c709bb9cdb2cb52c553a739bc7817b34c3d977b550408376cc19d9e11b",
+      "minimal-feature.log": "98a50e903f435f5786b966d0e846f216f0b17ae57fe033a268c7b7d8b62df4a4",
+      "runtime-final.log": "5a28b6f20bf9f3eef23842367a09e86bd2a5756b1e1acf036dfbc36f29d5b52d",
+      "store-initial.log": "3b906d491b0ce7c9f9a6af9e372fac7db333407994e098776a16bb1a921b8ad8",
+      "zigbee-feature.log": "165d416c6e2a86545f2795b2da5d6c68ee4781fa29490316ae93f69d5dd97c4a"
+    },
+    "documentation": {
+      "documents": 3,
+      "local_file_links": 223,
+      "broken": []
+    },
+    "rustfmt_checked_files": 8,
+    "scoped_git_diff_check": true
+  },
+  "history": {
+    "initial_observation_regression": {
+      "passed": false,
+      "failed_tests": 1,
+      "reason": "new exact-content check returned a different error code",
+      "fix": "preserve observation_model_unsupported without changing the assertion",
+      "excerpt": "observation-initial-excerpt.txt"
+    },
+    "initial_combined_command": {
+      "passed": false,
+      "core_passed": 222,
+      "runtime_passed": 76,
+      "runtime_failed": 1,
+      "reason": "second legacy fixture still treated version 13 as future",
+      "fix": "use future version 14 and retain rejection/no-rewrite checks",
+      "log": "core-runtime.log"
+    },
+    "format_check": {
+      "initial_passed": false,
+      "fix": "wrap the new serde attribute using rustfmt layout",
+      "final_passed": true
+    },
+    "assertions_relaxed": false
+  },
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "copies": "source",
+    "files": 13,
+    "captured_after_checks": true,
+    "whole_stage_inputs_frozen": false,
+    "post_check_rust_change": "engine.rs serde attribute whitespace only; final rustfmt check passed"
+  },
+  "not_implemented": [
+    "host_protocol_candidate_queue",
+    "http_cli_agent_and_web_source_entry",
+    "committed_dynamic_binding_driven_znp_polling",
+    "permit_join",
+    "static_source_migration"
+  ],
+  "not_verified": [
+    "new_gateway_network_journey",
+    "nas_v13_container_backup_restore",
+    "linux_serial",
+    "rf_and_hardware",
+    "complete_native_apps",
+    "official_cloud_deployment"
+  ],
+  "nas_backup_source_review": {
+    "path": "deploy/nas/manage.py",
+    "result": "copies SQLite and config directory without a gateway snapshot version limit",
+    "runtime_tested": false
+  },
+  "limits": [
+    "This is a core and real isolated SQLite software stage, not dynamic device onboarding end to end.",
+    "Manifest parsing and physical target uniqueness remain host adapter duties; a client-supplied manifest is not authorization.",
+    "A full database writer can reconstruct a consistent decision chain; validation is not a cryptographic database signature.",
+    "Older gateways reject v13. No automatic rollback or deletion of source history is provided.",
+    "Unrelated worktree changes exist; no whole-repository freeze or product completion is claimed."
+  ]
+}

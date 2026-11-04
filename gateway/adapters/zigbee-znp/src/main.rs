@@ -1,4 +1,6 @@
-use limeiot_zigbee_znp::{Error, Result};
+use limeiot_zigbee_znp::{
+    DiscoveryTarget, EnvironmentTarget, Error, JoinWindowTarget, OnOffCommandTarget, Result,
+};
 use serde_json::{json, Value};
 use std::{
     path::PathBuf,
@@ -10,17 +12,37 @@ struct Input {
     serial: PathBuf,
     timeout_ms: u64,
     address: Option<u16>,
+    target: Option<EnvironmentTarget>,
+    discovery: Option<DiscoveryTarget>,
+    join: Option<JoinWindowTarget>,
+    on_off: Option<OnOffCommandTarget>,
 }
 
 fn input() -> Result<Input> {
     let mut args = std::env::args().skip(1);
     let command = args.next().ok_or(Error::InvalidInput)?;
-    if !matches!(command.as_str(), "probe" | "interview") {
+    if !matches!(
+        command.as_str(),
+        "probe"
+            | "interview"
+            | "read-environment"
+            | "neighbors"
+            | "permit-join"
+            | "read-onoff"
+            | "set-onoff"
+    ) {
         return Err(Error::InvalidInput);
     }
     let mut serial = None;
     let mut timeout_ms = None;
     let mut address = None;
+    let mut coordinator = None;
+    let mut ieee = None;
+    let mut endpoint = None;
+    let mut duration = None;
+    let mut power = None;
+    let mut manufacturer_code = None;
+    let mut signature = None;
     while let Some(flag) = args.next() {
         let value = args.next().ok_or(Error::InvalidInput)?;
         match flag.as_str() {
@@ -38,9 +60,101 @@ fn input() -> Result<Input> {
                 }
                 address = Some(u16::from_str_radix(hex, 16).map_err(|_| Error::InvalidInput)?);
             }
+            "--coordinator-ieee" if coordinator.is_none() => coordinator = Some(value),
+            "--ieee" if ieee.is_none() => ieee = Some(value),
+            "--endpoint" if endpoint.is_none() => {
+                if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+                    return Err(Error::InvalidInput);
+                }
+                endpoint = Some(value.parse::<u8>().map_err(|_| Error::InvalidInput)?);
+            }
+            "--duration-seconds" if duration.is_none() => {
+                if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+                    return Err(Error::InvalidInput);
+                }
+                duration = Some(value.parse::<u8>().map_err(|_| Error::InvalidInput)?);
+            }
+            "--power" if power.is_none() => {
+                power = Some(match value.as_str() {
+                    "on" => true,
+                    "off" => false,
+                    _ => return Err(Error::InvalidInput),
+                })
+            }
+            "--manufacturer-code" if manufacturer_code.is_none() => {
+                let hex = value.strip_prefix("0x").ok_or(Error::InvalidInput)?;
+                if hex.len() != 4 || !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+                    return Err(Error::InvalidInput);
+                }
+                manufacturer_code =
+                    Some(u16::from_str_radix(hex, 16).map_err(|_| Error::InvalidInput)?);
+            }
+            "--signature-json" if signature.is_none() => {
+                if value.len() > 1024 {
+                    return Err(Error::InvalidInput);
+                }
+                signature = Some(serde_json::from_str(&value).map_err(|_| Error::InvalidInput)?);
+            }
             _ => return Err(Error::InvalidInput),
         }
     }
+    let mut target = if matches!(
+        command.as_str(),
+        "read-environment" | "read-onoff" | "set-onoff"
+    ) {
+        let target = EnvironmentTarget {
+            coordinator_ieee: coordinator.take().ok_or(Error::InvalidInput)?,
+            ieee_address: ieee.ok_or(Error::InvalidInput)?,
+            endpoint: endpoint.ok_or(Error::InvalidInput)?,
+        };
+        target.validate()?;
+        Some(target)
+    } else {
+        if (!matches!(command.as_str(), "neighbors" | "permit-join") && coordinator.is_some())
+            || ieee.is_some()
+            || endpoint.is_some()
+        {
+            return Err(Error::InvalidInput);
+        }
+        None
+    };
+    let on_off = if command == "set-onoff" {
+        let request = OnOffCommandTarget {
+            target: target.take().ok_or(Error::InvalidInput)?,
+            manufacturer_code: manufacturer_code.ok_or(Error::InvalidInput)?,
+            signature: signature.ok_or(Error::InvalidInput)?,
+            power: power.ok_or(Error::InvalidInput)?,
+        };
+        request.validate()?;
+        Some(request)
+    } else {
+        if power.is_some() || manufacturer_code.is_some() || signature.is_some() {
+            return Err(Error::InvalidInput);
+        }
+        None
+    };
+    let discovery = if command == "neighbors" {
+        let target = DiscoveryTarget {
+            coordinator_ieee: coordinator.take().ok_or(Error::InvalidInput)?,
+        };
+        target.validate()?;
+        Some(target)
+    } else {
+        None
+    };
+    let join = if command == "permit-join" {
+        let target = JoinWindowTarget {
+            coordinator_ieee: coordinator.ok_or(Error::InvalidInput)?,
+            duration_seconds: duration.ok_or(Error::InvalidInput)?,
+        };
+        target.validate()?;
+        Some(target)
+    } else {
+        if duration.is_some() {
+            return Err(Error::InvalidInput);
+        }
+        None
+    };
     let timeout_ms = timeout_ms.unwrap_or(5000);
     let serial = serial.ok_or(Error::InvalidInput)?;
     if !(100..=30000).contains(&timeout_ms)
@@ -56,6 +170,10 @@ fn input() -> Result<Input> {
         serial,
         timeout_ms,
         address,
+        target,
+        discovery,
+        join,
+        on_off,
     })
 }
 
@@ -65,7 +183,19 @@ async fn execute(input: Input) -> Result<Value> {
     use tokio::time::Instant;
     let deadline = Instant::now() + Duration::from_millis(input.timeout_ms);
     let mut session = Session::new(Serial::open(&input.serial)?);
-    let result = if let Some(address) = input.address {
+    let result = if let Some(target) = &input.on_off {
+        serde_json::to_value(session.set_on_off(target, deadline).await?)
+    } else if let Some(target) = &input.join {
+        serde_json::to_value(session.permit_join(target, deadline).await?)
+    } else if let Some(target) = &input.discovery {
+        serde_json::to_value(session.neighbors(target, deadline).await?)
+    } else if let Some(target) = &input.target {
+        if input.command == "read-onoff" {
+            serde_json::to_value(session.read_on_off(target, deadline).await?)
+        } else {
+            serde_json::to_value(session.read_environment(target, deadline).await?)
+        }
+    } else if let Some(address) = input.address {
         serde_json::to_value(session.interview(address, deadline).await?)
     } else {
         serde_json::to_value(session.probe(deadline).await?)
@@ -75,11 +205,18 @@ async fn execute(input: Input) -> Result<Value> {
         .duration_since(UNIX_EPOCH)
         .map_err(|_| Error::InvalidResponse)?
         .as_millis();
-    Ok(json!({
+    let mut report = json!({
         "schema_version":1,"operation":input.command,"protocol":"znp",
         "evidence":"unauthenticated_protocol","device_binding_created":false,
         "observed_at_unix_ms":observed_at_unix_ms,"result":result
-    }))
+    });
+    if input.join.is_some() {
+        report["network_write_requested"] = json!(true);
+    }
+    if input.on_off.is_some() {
+        report["device_write_requested"] = json!(true);
+    }
+    Ok(report)
 }
 
 #[cfg(not(unix))]
@@ -107,9 +244,12 @@ async fn execute_cancellable(input: Input) -> Result<Value> {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    let result = match input() {
-        Ok(input) => execute_cancellable(input).await,
-        Err(error) => Err(error),
+    let (result, network_write_requested) = match input() {
+        Ok(input) => {
+            let write = input.join.is_some() || input.on_off.is_some();
+            (execute_cancellable(input).await, write)
+        }
+        Err(error) => (Err(error), false),
     };
     match result {
         Ok(value) => println!("{value}"),
@@ -117,6 +257,10 @@ async fn main() {
             let mut detail = json!({"code":error.to_string()});
             if let Some(status) = error.status() {
                 detail["status"] = json!(status);
+            }
+            if network_write_requested {
+                detail["outcome"] = json!("unknown");
+                detail["retry_allowed"] = json!(false);
             }
             eprintln!("{}", json!({"error":detail}));
             std::process::exit(if matches!(error, Error::InvalidInput) {

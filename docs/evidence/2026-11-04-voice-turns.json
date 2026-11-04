@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-VOICE-TURNS-20261104-01",
+  "recorded_at": "2026-11-04T05:50:21.851827+00:00",
+  "status": "passed",
+  "scope": "已有录音的ASR→文字→TTS客户端组合、CLI与390px家庭网页及独立授权播放",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "provider_fixture": true,
+  "renderer_fixture": true,
+  "real_model_quality": false,
+  "native_voice_turn_ui": false,
+  "new_nas_image": false,
+  "published": false,
+  "full_goal_completed": false,
+  "implementation": [
+    "共用VoiceTurnClient组合正式ASR/Text/TTS接口，CLI及家庭网页共用原键、预算、状态和恢复；没有新增网关HTTP、数据库或运行依赖。",
+    "每回合最长300秒、每阶段最多一次POST；冻结部署修订，源音频仍有效才开始下一阶段，超出TTS长度拒绝推进且不截断。",
+    "本地只保存原请求/结果摘要，保存并读回后发送；404、unknown、终态/用量/身份漂移不自动重发或换键。",
+    "前台/进程的一次明确批准内可自动推进，后台/离页/离线暂停并清正文；恢复先GET，明确continue才创建尚未创建的下一阶段。",
+    "stop先耐久保存停止事实和放弃意图，成功文字可明确清除；迟到结果不恢复当前会话或继续TTS。",
+    "生成成功只选择media_id并清除授权勾选；授权和播放仍由原媒体与设备命令路径独立明确提交。"
+  ],
+  "checks": {
+    "new_integration_tests": 6,
+    "regression_tests": 1,
+    "failed": 0,
+    "skipped": 0,
+    "root_entry_command": "npm run test:voice-turns",
+    "root_entry_passed": true,
+    "input_schema_and_four_invalid_inputs_zero_effects": true,
+    "home_console_admin_builds": true,
+    "website_build": true,
+    "website_pages": 54,
+    "website_local_references": 2115,
+    "source_files": 444,
+    "core_artifacts": 196,
+    "unchanged_rust_inputs": 146,
+    "all_recorded_hashes_rechecked": true
+  },
+  "manifests": [
+    {
+      "path": ".dev/voice-turns-20261104/source-manifest.json",
+      "sha256": "1fa7f9d810d913ecaab4987e8ba450cfc757a479eebf4e4b1521c8f17a843604"
+    },
+    {
+      "path": ".dev/voice-turns-20261104/artifact-manifest.json",
+      "sha256": "f0fbb91e4a073e5fc3921956880500be61664b05b399b472842cc3cbc394b5af"
+    }
+  ],
+  "logs": [
+    {
+      "path": ".dev/voice-turn-entry-final-20261104.log",
+      "sha256": "b69bd01424a6242f3461e3964b2edd358dffadcf151caaa0120d0aaa597aae58"
+    },
+    {
+      "path": ".dev/voice-turn-media-regression-20261104.log",
+      "sha256": "4b63fa1b58e280af6b837ad294b59de7b8b711aa9a0315b4040f43335939e976"
+    },
+    {
+      "path": ".dev/voice-turn-control-build-final-20261104.log",
+      "sha256": "83f929b967f2602f307746eb3aad02b30781093556fbc0acad0415d3c5f4c15f"
+    }
+  ],
+  "reports": [
+    {
+      "path": ".dev/voice-turn-L9hnbt/voice-turn-web.json",
+      "sha256": "6caf5aa117f9e2c7f9859854120f40b8f539d1df084522fbc773aaaa394736a6",
+      "result": {
+        "passed": true,
+        "browser": true,
+        "viewport": 390,
+        "real_gateway": true,
+        "real_sqlite": true,
+        "provider_fixture": true,
+        "renderer_fixture": true,
+        "stages_posted_once": 3,
+        "summary_only_storage": true,
+        "reload_no_new_post": true,
+        "explicit_grant_and_play": true,
+        "range_pull": true,
+        "stop_clear_survives_gateway_restart": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "path": ".dev/voice-turn-5vyef5/voice-turn-web-faults.json",
+      "sha256": "f33057c589c50c4d2d8535370171b1abf41fd5dddce116993114e80db51a5f26",
+      "result": {
+        "passed": true,
+        "browser": true,
+        "save_failure_zero_post": true,
+        "response_loss_get_only": true,
+        "background_no_next_stage": true,
+        "resume_get_only_until_explicit_continue": true,
+        "corrupt_record_blocks": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "path": ".dev/voice-turn-5fQYrQ/voice-turn-result.json",
+      "sha256": "3da498fde867c8344604fd93b72dc63ab39c73b17f52246f0f4ad7aa53062194",
+      "result": {
+        "passed": true,
+        "real_gateway": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "provider_fixture": true,
+        "stages": [
+          "transcription",
+          "text",
+          "speech"
+        ],
+        "zero_implicit_play": true,
+        "restart_get_only": true,
+        "stop_clears_answer": true,
+        "hardware": false,
+        "real_model_quality": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "path": ".dev/voice-turn-9Xv0hW/voice-turn-faults.json",
+      "sha256": "4587172d09ddf0349f2497a7de216b013e2d6bb55d2cb50dc9515c2c99126746",
+      "result": {
+        "passed": true,
+        "lost_response_get_only": true,
+        "unknown_no_next_stage": true,
+        "paused_after_save_zero_post": true,
+        "missing_original_no_resubmit": true,
+        "stopped_late_output_ignored": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "path": ".dev/voice-turn-yPm4xk/voice-turn-cli.json",
+      "sha256": "8350edf0816d30eb1e378a4b418558cd1e75ba06f8529eafb13fd2399a77f15e",
+      "result": {
+        "passed": true,
+        "processes": 4,
+        "real_gateway": true,
+        "private_summary_only": true,
+        "get_only_recovery": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "path": ".dev/media-client-ZkHEcO/media-clients-result.json",
+      "sha256": "e7f6716a8c622a3ec3dc892eb5b5fc13033a5468e6c0153c96f401d6fbaa9b8d",
+      "result": {
+        "passed": true,
+        "cli": true,
+        "browser": true,
+        "viewport": 390,
+        "upload_storage_failure_zero_posts": true,
+        "lost_upload_original_only": true,
+        "records_exclude_audio_and_tokens": true,
+        "explicit_current_binding_grant": true,
+        "managed_media_gui_playback": true,
+        "soap_mutations": 3,
+        "media_range_pulls": 1,
+        "revoke_and_delete": true,
+        "restart_original_no_regrant": true,
+        "old_upload_does_not_restore_content": true,
+        "unified_workspace_media": true,
+        "workspace_control_identity_mocked": true,
+        "real_http": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "hardware": false,
+        "hardware_status": "用户要求跳过",
+        "audible_output": false,
+        "native_media_ui": false,
+        "nas_image_rebuilt": false,
+        "published": false,
+        "full_goal_completed": false
+      }
+    }
+  ],
+  "screenshots": [
+    {
+      "path": ".dev/voice-turn-L9hnbt/voice-turn-mobile.png",
+      "sha256": "246e59d72b542dd397bc52ca3ca89ee93a04e090be9e75b177ac99c59ed35aab"
+    }
+  ],
+  "documentation": [
+    {
+      "path": "README.md",
+      "sha256": "38bec0fb9a3faa87ba0a6dfac1ed4a323cc6efc89de88b106da7d1329763cbbf"
+    },
+    {
+      "path": "contracts/README.md",
+      "sha256": "5df33707ed99e707ddc545bc742792b1f8d666fd718b77ba152e78e78e60a620"
+    },
+    {
+      "path": "contracts/voice-turns.md",
+      "sha256": "72539eaee0a32cd40b30187114fa62e8991f584a51adf400b7164e352bb1f95d"
+    },
+    {
+      "path": "packages/cli/README.md",
+      "sha256": "1fa96116431e3e283ac63298cdab5e078b974c5c65779a20d74d2c7eae05650a"
+    },
+    {
+      "path": "deploy/dev/README.md",
+      "sha256": "21f061a593a9231d94780a52325eb7cc116ba4fdea1965a6b998513ba075871d"
+    },
+    {
+      "path": "llms.txt",
+      "sha256": "f63120291d7c0d0bb81555ea197ee58c242ae162df2e2a2abac9e5a39b5278b8"
+    },
+    {
+      "path": "docs/24-实施计划与进度.md",
+      "sha256": "31442c640282267f9d667572bdb6a0708150feb445674afca675cb63129db41a"
+    },
+    {
+      "path": "docs/33-多模态模型与媒体服务.md",
+      "sha256": "702db77ca0ec8be65636f4a01d956c86c6bc819f930f10b0b308757eb4bb1fc0"
+    }
+  ],
+  "website": {
+    "repository": "iotweb",
+    "sources": [
+      {
+        "path": "src/docs/content/audio-playback.md",
+        "sha256": "45c6a8ae5a9a71049e7645148e93481a79bb26eef14e797e5c38a87fdc212ed9"
+      },
+      {
+        "path": "src/docs/content/multimodal.md",
+        "sha256": "19fec9ff08a26165ee8d382f7078c3169be70db9b842c1eff65d2fa8de16b2fa"
+      }
+    ],
+    "build_log": {
+      "path": ".dev/voice-turn-docs-build-20261104.log",
+      "sha256": "5d8cf4564c41de9f0e880f0525f55a0f0e48f2db25b16f07dc5cfa7717189886"
+    },
+    "astro_check_errors": 0,
+    "astro_check_warnings": 0
+  },
+  "limits": [
+    "只组合已有PCM WAV与一轮有限回答，不访问麦克风；实时采音、流式/持续多轮、长期记忆与完整儿童/机构会话政策尚未交付。",
+    "模型与DLNA渲染器均为协议夹具，输出不证明ASR/文字/TTS真实质量、人工听感或物理发声。",
+    "本阶段未接原生组合页面、未重建NAS镜像，也未发布或更新官方云；此前NAS容器证据仅覆盖其冻结源码。",
+    "CLI独占锁异常遗留时拒绝继续，不自动删除；保存但未发送的未决键也不能因404补发。",
+    "结束回合不保证外部模型停止，不隐式停止设备或删除成功音频；ASR正文随源录音删除/到期清除，已生成媒体按原合同保留。",
+    "Android整包ANR、iOS完整SDK、AMD64多模态恢复与TV回调的既有阻塞保持原状态，未重复已达上限的失败点。"
+  ]
+}

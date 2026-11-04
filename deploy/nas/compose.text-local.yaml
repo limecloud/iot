@@ -1,0 +1,17 @@
+# 在基础与媒体覆盖后叠加；文字模型与设备秘密隔离，不启用规则推理或自动下载。
+services:
+  gateway:
+    environment:
+      LIMEIOT_TEXT_URL: http://text:11434
+      LIMEIOT_TEXT_MODEL: ${LIMEIOT_TEXT_MODEL:?}
+      LIMEIOT_TEXT_CA_FILE: ""
+    networks:
+      text: {}
+  text:
+    extends:
+      file: compose.ollama-service.yaml
+      service: ollama
+    networks: [text]
+networks:
+  text:
+    internal: true

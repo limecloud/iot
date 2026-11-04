@@ -3,6 +3,8 @@
 mod android_tv;
 #[cfg(feature = "dlna")]
 mod dlna;
+#[cfg(all(feature = "zigbee-znp", unix))]
+mod zigbee;
 
 use crate::application::App;
 #[cfg(any(not(feature = "android-tv"), not(feature = "dlna")))]
@@ -10,13 +12,31 @@ use limeiot_core::err;
 use limeiot_core::{engine::Data, ensure, execution::Route, execution_binding::Offer, Result};
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
-use tokio::task::JoinHandle;
+use tokio::task::JoinSet;
+
+#[cfg(any(
+    feature = "android-tv",
+    feature = "dlna",
+    all(feature = "zigbee-znp", unix)
+))]
+async fn run_owned_tasks(app: &App, mut tasks: JoinSet<()>) {
+    loop {
+        tokio::select! {
+            biased;
+            _ = app.wait_for_shutdown() => break,
+            result = tasks.join_next() => if result.is_none() { break; },
+        }
+    }
+    tasks.shutdown().await;
+}
 
 pub struct Registry {
     #[cfg(feature = "android-tv")]
     tv: android_tv::Adapters,
     #[cfg(feature = "dlna")]
     audio: dlna::Adapters,
+    #[cfg(all(feature = "zigbee-znp", unix))]
+    zigbee: zigbee::Adapters,
 }
 
 fn validate_identifiers<'a>(
@@ -34,11 +54,51 @@ fn validate_identifiers<'a>(
 }
 
 impl Registry {
+    pub async fn zigbee_coordinators(&self, app: &App, space: &str) -> Result<Value> {
+        ensure(app.store.lock().await.data.space_id == space, "forbidden")?;
+        #[cfg(all(feature = "zigbee-znp", unix))]
+        {
+            self.zigbee.coordinators()
+        }
+        #[cfg(not(all(feature = "zigbee-znp", unix)))]
+        {
+            Ok(json!({"items":[],"next_cursor":null}))
+        }
+    }
+
+    pub async fn zigbee_commission(
+        &self,
+        app: &App,
+        request: crate::commissioning::Request,
+    ) -> Result<crate::commissioning::Operation> {
+        request.validate()?;
+        {
+            let store = app.store.lock().await;
+            ensure(store.data.space_id == request.space_id, "forbidden")?;
+            if let Some(previous) = store.commissioning.get(&request.idempotency_key) {
+                ensure(previous.request == request, "idempotency_conflict")?;
+                return Ok(previous.clone());
+            }
+        }
+        #[cfg(all(feature = "zigbee-znp", unix))]
+        {
+            self.zigbee.commission(app, request).await
+        }
+        #[cfg(not(all(feature = "zigbee-znp", unix)))]
+        {
+            Err(limeiot_core::err("observation_not_enabled"))
+        }
+    }
+
     pub fn configured() -> Result<Self> {
         // 显式配置了未编译的集成时拒绝启动，避免悄悄忽略设备配置。
         for (key, enabled) in [
             ("LIMEIOT_TV_CONFIG", cfg!(feature = "android-tv")),
             ("LIMEIOT_AUDIO_CONFIG", cfg!(feature = "dlna")),
+            (
+                "LIMEIOT_ZIGBEE_CONFIG",
+                cfg!(all(feature = "zigbee-znp", unix)),
+            ),
         ] {
             ensure(
                 enabled || std::env::var_os(key).is_none(),
@@ -50,15 +110,93 @@ impl Registry {
             tv: android_tv::configured()?,
             #[cfg(feature = "dlna")]
             audio: dlna::configured()?,
+            #[cfg(all(feature = "zigbee-znp", unix))]
+            zigbee: zigbee::configured()?,
         };
         let groups: &[Vec<(&str, &str)>] = &[
             #[cfg(feature = "android-tv")]
             registry.tv.identifiers().collect(),
             #[cfg(feature = "dlna")]
             registry.audio.identifiers().collect(),
+            #[cfg(all(feature = "zigbee-znp", unix))]
+            registry.zigbee.identifiers().collect(),
         ];
         validate_identifiers(groups.iter().flatten().copied())?;
         Ok(registry)
+    }
+
+    pub fn observation_sources(&self) -> Vec<limeiot_core::observation::Policy> {
+        let groups: &[Vec<limeiot_core::observation::Policy>] = &[
+            #[cfg(all(feature = "zigbee-znp", unix))]
+            self.zigbee.policies(),
+        ];
+        groups.iter().flatten().cloned().collect()
+    }
+    pub fn property_bridges(&self) -> Vec<limeiot_core::property_bridge::Policy> {
+        #[cfg(all(feature = "zigbee-znp", unix))]
+        {
+            self.zigbee.property_bridges()
+        }
+        #[cfg(not(all(feature = "zigbee-znp", unix)))]
+        {
+            Vec::new()
+        }
+    }
+
+    pub async fn observation_candidates(&self, app: &App, space: &str) -> Result<Value> {
+        ensure(app.store.lock().await.data.space_id == space, "forbidden")?;
+        #[cfg(all(feature = "zigbee-znp", unix))]
+        {
+            self.zigbee.list()
+        }
+        #[cfg(not(all(feature = "zigbee-znp", unix)))]
+        {
+            Ok(json!({"coordinators":[],"items":[],"next_cursor":null}))
+        }
+    }
+
+    pub async fn observation_query(&self, app: &App, space: &str, _body: &[u8]) -> Result<Value> {
+        ensure(app.store.lock().await.data.space_id == space, "forbidden")?;
+        #[cfg(all(feature = "zigbee-znp", unix))]
+        {
+            self.zigbee.query(_body).await
+        }
+        #[cfg(not(all(feature = "zigbee-znp", unix)))]
+        {
+            Err(limeiot_core::err("observation_not_enabled"))
+        }
+    }
+
+    pub async fn observation_discovery(
+        &self,
+        app: &App,
+        space: &str,
+        _body: &[u8],
+        _endpoints: bool,
+    ) -> Result<Value> {
+        ensure(app.store.lock().await.data.space_id == space, "forbidden")?;
+        #[cfg(all(feature = "zigbee-znp", unix))]
+        {
+            self.zigbee.discover(_body, _endpoints).await
+        }
+        #[cfg(not(all(feature = "zigbee-znp", unix)))]
+        {
+            Err(limeiot_core::err("observation_not_enabled"))
+        }
+    }
+
+    pub fn observation_offer(
+        &self,
+        _source: &Route,
+    ) -> Option<limeiot_core::observation_binding::Offer> {
+        #[cfg(all(feature = "zigbee-znp", unix))]
+        {
+            self.zigbee.offer(_source)
+        }
+        #[cfg(not(all(feature = "zigbee-znp", unix)))]
+        {
+            None
+        }
     }
 
     pub fn offer(&self, _data: &Data, _device: &str, _route: &Route) -> Option<Offer> {
@@ -133,13 +271,13 @@ impl Registry {
         }
     }
 
-    pub fn start(&self, _app: &App) -> Vec<JoinHandle<()>> {
-        vec![
-            #[cfg(feature = "android-tv")]
-            tokio::spawn(android_tv::run(_app.clone(), self.tv.clone())),
-            #[cfg(feature = "dlna")]
-            tokio::spawn(dlna::run(_app.clone(), self.audio.clone())),
-        ]
+    pub fn start(&self, _app: &App, _tasks: &mut JoinSet<()>) {
+        #[cfg(feature = "android-tv")]
+        _tasks.spawn(android_tv::run(_app.clone(), self.tv.clone()));
+        #[cfg(feature = "dlna")]
+        _tasks.spawn(dlna::run(_app.clone(), self.audio.clone()));
+        #[cfg(all(feature = "zigbee-znp", unix))]
+        _tasks.spawn(zigbee::run(_app.clone(), self.zigbee.clone()));
     }
 }
 

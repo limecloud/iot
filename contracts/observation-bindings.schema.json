@@ -1,0 +1,457 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iot.limeai.run/contracts/observation-bindings.schema.json",
+  "title": "明确授权的观测与属性桥接接入",
+  "$ref": "#/$defs/change",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "not": {
+        "pattern": "\\s"
+      }
+    },
+    "digest": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ieee": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$",
+      "not": {
+        "enum": [
+          "0000000000000000",
+          "ffffffffffffffff"
+        ]
+      },
+      "minLength": 16,
+      "maxLength": 16
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "adapter_id": {
+          "$ref": "#/$defs/id"
+        },
+        "revision": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "required": [
+        "adapter_id",
+        "revision"
+      ],
+      "additionalProperties": false
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "coordinator_ieee": {
+          "$ref": "#/$defs/ieee"
+        },
+        "ieee_address": {
+          "$ref": "#/$defs/ieee"
+        },
+        "endpoint": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240
+        }
+      },
+      "required": [
+        "coordinator_ieee",
+        "ieee_address",
+        "endpoint"
+      ],
+      "additionalProperties": false
+    },
+    "signature": {
+      "type": "object",
+      "properties": {
+        "manufacturer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^(?=.*\\S)[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^(?=.*\\S)[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "application_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "hardware_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      },
+      "required": [
+        "manufacturer",
+        "model",
+        "application_version",
+        "hardware_version"
+      ],
+      "additionalProperties": false
+    },
+    "query": {
+      "type": "object",
+      "properties": {
+        "coordinator_id": {
+          "$ref": "#/$defs/id"
+        },
+        "ieee_address": {
+          "$ref": "#/$defs/ieee"
+        },
+        "endpoint": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240
+        },
+        "profile": {
+          "const": "on_off"
+        }
+      },
+      "required": [
+        "coordinator_id",
+        "ieee_address",
+        "endpoint"
+      ],
+      "additionalProperties": false
+    },
+    "change": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "sources.bind"
+            },
+            "device_id": {
+              "$ref": "#/$defs/id"
+            },
+            "source": {
+              "$ref": "#/$defs/source"
+            },
+            "expected_binding_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "expected_model_revision": {
+              "$ref": "#/$defs/digest"
+            }
+          },
+          "required": [
+            "type",
+            "device_id",
+            "source",
+            "expected_binding_revision",
+            "expected_model_revision"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "sources.revoke"
+            },
+            "device_id": {
+              "$ref": "#/$defs/id"
+            },
+            "expected_binding_revision": {
+              "$ref": "#/$defs/digest"
+            }
+          },
+          "required": [
+            "type",
+            "device_id",
+            "expected_binding_revision"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "candidate": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "model_revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "target": {
+          "$ref": "#/$defs/target"
+        },
+        "manufacturer_code": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "signature": {
+          "$ref": "#/$defs/signature"
+        },
+        "observed_at": {
+          "$ref": "#/$defs/time"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/time"
+        },
+        "protocol": {
+          "const": "zigbee-znp"
+        },
+        "evidence": {
+          "const": "unauthenticated_protocol"
+        },
+        "write_paths": {
+          "$ref": "#/$defs/write_paths"
+        }
+      },
+      "required": [
+        "source",
+        "model_revision",
+        "target",
+        "manufacturer_code",
+        "signature",
+        "observed_at",
+        "expires_at",
+        "protocol",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "binding": {
+      "type": "object",
+      "properties": {
+        "policy": {
+          "type": "object",
+          "properties": {
+            "device_id": {
+              "$ref": "#/$defs/id"
+            },
+            "model_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "source": {
+              "$ref": "#/$defs/source"
+            }
+          },
+          "required": [
+            "device_id",
+            "model_revision",
+            "source"
+          ],
+          "additionalProperties": false
+        },
+        "manifest": {
+          "type": "object",
+          "minProperties": 1
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "generation": {
+          "type": "string",
+          "pattern": "^observationop-[A-Za-z0-9_-]+$",
+          "maxLength": 128,
+          "not": {
+            "pattern": "\\s"
+          }
+        },
+        "changed_at": {
+          "$ref": "#/$defs/time"
+        },
+        "write_paths": {
+          "$ref": "#/$defs/write_paths"
+        }
+      },
+      "required": [
+        "policy",
+        "manifest",
+        "active",
+        "generation",
+        "changed_at"
+      ],
+      "additionalProperties": false
+    },
+    "view": {
+      "type": "object",
+      "properties": {
+        "device_id": {
+          "$ref": "#/$defs/id"
+        },
+        "revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "binding": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/binding"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "device_id",
+        "revision",
+        "binding"
+      ],
+      "additionalProperties": false
+    },
+    "operation": {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^observationop-[A-Za-z0-9_-]+$",
+          "maxLength": 128,
+          "not": {
+            "pattern": "\\s"
+          }
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "request": {
+          "type": "object",
+          "properties": {
+            "space_id": {
+              "$ref": "#/$defs/id"
+            },
+            "idempotency_key": {
+              "$ref": "#/$defs/id"
+            },
+            "change": {
+              "$ref": "#/$defs/change"
+            }
+          },
+          "required": [
+            "space_id",
+            "idempotency_key",
+            "change"
+          ],
+          "additionalProperties": false
+        },
+        "request_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "status": {
+          "enum": [
+            "applied",
+            "rejected",
+            "conflict"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "result": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/view"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "$ref": "#/$defs/time"
+        }
+      },
+      "required": [
+        "operation_id",
+        "sequence",
+        "request",
+        "request_digest",
+        "status",
+        "reason",
+        "result",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "candidates": {
+      "type": "object",
+      "properties": {
+        "coordinators": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "properties": {
+              "coordinator_id": {
+                "$ref": "#/$defs/id"
+              },
+              "coordinator_ieee": {
+                "$ref": "#/$defs/ieee"
+              },
+              "timeout_ms": {
+                "type": "integer",
+                "minimum": 100,
+                "maximum": 30000
+              },
+              "protocol": {
+                "const": "zigbee-znp"
+              }
+            },
+            "required": [
+              "coordinator_id",
+              "coordinator_ieee",
+              "timeout_ms",
+              "protocol"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/candidate"
+          }
+        },
+        "next_cursor": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "coordinators",
+        "items",
+        "next_cursor"
+      ],
+      "additionalProperties": false
+    },
+    "write_paths": {
+      "type": "array",
+      "items": {
+        "const": "light.power"
+      },
+      "minItems": 1,
+      "maxItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

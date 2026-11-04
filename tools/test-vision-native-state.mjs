@@ -17,7 +17,7 @@ const build = path.join(ios, '.build/debug');
 const objects = (await readdir(path.join(build, 'LimeIoTKit.build'))).filter(name => name.endsWith('.o')).map(name => path.join(build, 'LimeIoTKit.build', name));
 await run('swiftc', ['-swift-version', '6', '-parse-as-library', '-I', path.join(build, 'Modules'), 'App/VisionStore.swift', 'App/MediaFile.swift', 'Checks/VisionStoreChecks.swift', ...objects, '-o', path.join(directory, 'ios-vision-checks')], ios);
 await run(path.join(directory, 'ios-vision-checks'), []);
-await run('swiftc', ['-swift-version', '6', '-typecheck', '-I', path.join(build, 'Modules'), 'App/SecureStore.swift', 'App/FirmwareStore.swift', 'App/MediaStore.swift', 'App/SpeechStore.swift', 'App/TranscriptionStore.swift', 'App/VisionStore.swift', 'App/HomeStore.swift'], ios);
+await run('swiftc', ['-swift-version', '6', '-typecheck', '-I', path.join(build, 'Modules'), 'App/SecureStore.swift', 'App/FirmwareStore.swift', 'App/MediaStore.swift', 'App/SpeechStore.swift', 'App/TranscriptionStore.swift', 'App/VisionStore.swift', 'App/TextGenerationStore.swift', 'App/VoiceTurnStore.swift', 'App/CompanionStore.swift', 'App/ObservationStore.swift', 'App/ZigbeeStore.swift', 'App/HomeStore.swift'], ios);
 await run('swiftc', ['-frontend', '-parse', 'App/VisionViews.swift', 'App/TranscriptionViews.swift', 'App/SpeechViews.swift', 'App/MediaViews.swift', 'App/Views.swift', 'App/LimeIoTApp.swift'], ios);
 await run('plutil', ['-lint', 'LimeIoT.xcodeproj/project.pbxproj'], ios);
 // 共享有界读取器保留音频默认上限；端上系统选择器另行验收。

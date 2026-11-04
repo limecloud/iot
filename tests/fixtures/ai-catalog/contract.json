@@ -1,0 +1,659 @@
+{
+  "configured": {
+    "schema_version": 1,
+    "space_id": "space-demo",
+    "definitions": [
+      {
+        "capability_id": "automation.rule_draft",
+        "input_modalities": [
+          "text",
+          "device_context"
+        ],
+        "output_modalities": [
+          "rule"
+        ],
+        "input_schema": "draft-request",
+        "task_schema": null,
+        "create_operation": "drafts.create",
+        "resolve_operation": "drafts.resolve",
+        "streaming": false,
+        "tool_calling": false,
+        "structured_output": true,
+        "device_execution": false
+      },
+      {
+        "capability_id": "text.generate",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "input_schema": "text",
+        "task_schema": "text#/$defs/task",
+        "create_operation": "text-generations.create",
+        "resolve_operation": "text-generations.resolve",
+        "streaming": false,
+        "tool_calling": false,
+        "structured_output": false,
+        "device_execution": false
+      },
+      {
+        "capability_id": "vision.understand",
+        "input_modalities": [
+          "image",
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "input_schema": "vision",
+        "task_schema": "vision#/$defs/task",
+        "create_operation": "vision-observations.create",
+        "resolve_operation": "vision-observations.resolve",
+        "streaming": false,
+        "tool_calling": false,
+        "structured_output": false,
+        "device_execution": false
+      },
+      {
+        "capability_id": "audio.transcribe",
+        "input_modalities": [
+          "audio"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "input_schema": "transcription",
+        "task_schema": "transcription#/$defs/task",
+        "create_operation": "audio-transcriptions.create",
+        "resolve_operation": "audio-transcriptions.resolve",
+        "streaming": false,
+        "tool_calling": false,
+        "structured_output": false,
+        "device_execution": false
+      },
+      {
+        "capability_id": "audio.synthesize",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "audio"
+        ],
+        "input_schema": "speech",
+        "task_schema": "speech#/$defs/task",
+        "create_operation": "speech-syntheses.create",
+        "resolve_operation": "speech-syntheses.resolve",
+        "streaming": false,
+        "tool_calling": false,
+        "structured_output": false,
+        "device_execution": false
+      }
+    ],
+    "deployments": [
+      {
+        "capability_id": "automation.rule_draft",
+        "identity": {
+          "adapter": "ollama",
+          "revision": null,
+          "model": "fixture:rules",
+          "data_location": "local"
+        },
+        "configuration": {
+          "concurrency": 1,
+          "max_output_tokens": 1024
+        },
+        "license": null,
+        "cost_policy": null,
+        "resource_requirements": null,
+        "quality": null
+      },
+      {
+        "capability_id": "text.generate",
+        "identity": {
+          "adapter": "ollama-text-v1",
+          "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "model": "fixture:text",
+          "data_location": "local"
+        },
+        "configuration": {
+          "max_messages": 15,
+          "max_context_bytes": 8192,
+          "max_instructions_characters": 1024,
+          "max_text_bytes": 8192,
+          "max_characters": 2048,
+          "max_output_tokens": 1024,
+          "max_deadline_seconds": 90,
+          "max_retain_seconds": 3600,
+          "concurrency": 1,
+          "streaming": false,
+          "provider_cancellation": false,
+          "input_storage": "digest_only",
+          "server_memory": false,
+          "device_execution": false
+        },
+        "license": null,
+        "cost_policy": null,
+        "resource_requirements": null,
+        "quality": null
+      },
+      {
+        "capability_id": "vision.understand",
+        "identity": {
+          "adapter": "ollama-vision-v1",
+          "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "model": "fixture:vision",
+          "data_location": "local"
+        },
+        "configuration": {
+          "content_types": [
+            "image/png",
+            "image/jpeg"
+          ],
+          "max_image_bytes": 2097152,
+          "max_edge": 1024,
+          "max_prompt_characters": 512,
+          "max_text_bytes": 8192,
+          "max_characters": 2048,
+          "max_deadline_seconds": 90,
+          "max_retain_seconds": 3600,
+          "concurrency": 1,
+          "streaming": false,
+          "provider_cancellation": false,
+          "input_storage": "digest_only",
+          "device_execution": false
+        },
+        "license": null,
+        "cost_policy": null,
+        "resource_requirements": null,
+        "quality": null
+      },
+      {
+        "capability_id": "audio.transcribe",
+        "identity": {
+          "adapter": "local-http-transcription-v1",
+          "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "model": "test/zh-small",
+          "data_location": "local"
+        },
+        "configuration": {
+          "languages": [
+            "auto",
+            "zh",
+            "en"
+          ],
+          "concurrency": 1,
+          "max_audio_bytes": 4194304,
+          "max_audio_seconds": 60,
+          "max_text_bytes": 8192,
+          "max_characters": 2048,
+          "max_deadline_seconds": 90,
+          "streaming": false,
+          "provider_cancellation": false
+        },
+        "license": null,
+        "cost_policy": null,
+        "resource_requirements": null,
+        "quality": null
+      },
+      {
+        "capability_id": "audio.synthesize",
+        "identity": {
+          "adapter": "local-http-speech-v1",
+          "revision": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "model": "fixture/local-model",
+          "data_location": "local"
+        },
+        "configuration": {
+          "voices": [
+            "local",
+            "other"
+          ],
+          "concurrency": 1,
+          "max_text_bytes": 4096,
+          "max_characters": 1000,
+          "max_output_bytes": 4194304,
+          "max_audio_seconds": 60,
+          "max_deadline_seconds": 90,
+          "streaming": false,
+          "provider_cancellation": false
+        },
+        "license": null,
+        "cost_policy": null,
+        "resource_requirements": null,
+        "quality": null
+      }
+    ],
+    "health": [
+      {
+        "capability_id": "automation.rule_draft",
+        "status": "unknown",
+        "checked_at": null
+      },
+      {
+        "capability_id": "text.generate",
+        "status": "unknown",
+        "checked_at": null
+      },
+      {
+        "capability_id": "vision.understand",
+        "status": "unknown",
+        "checked_at": null
+      },
+      {
+        "capability_id": "audio.transcribe",
+        "status": "unknown",
+        "checked_at": null
+      },
+      {
+        "capability_id": "audio.synthesize",
+        "status": "unknown",
+        "checked_at": null
+      }
+    ],
+    "routing": {
+      "selection": "fixed_configuration",
+      "automatic_fallback": false
+    }
+  },
+  "unconfigured": {
+    "schema_version": 1,
+    "space_id": "space-demo",
+    "definitions": [
+      {
+        "capability_id": "automation.rule_draft",
+        "input_modalities": [
+          "text",
+          "device_context"
+        ],
+        "output_modalities": [
+          "rule"
+        ],
+        "input_schema": "draft-request",
+        "task_schema": null,
+        "create_operation": "drafts.create",
+        "resolve_operation": "drafts.resolve",
+        "streaming": false,
+        "tool_calling": false,
+        "structured_output": true,
+        "device_execution": false
+      },
+      {
+        "capability_id": "text.generate",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "input_schema": "text",
+        "task_schema": "text#/$defs/task",
+        "create_operation": "text-generations.create",
+        "resolve_operation": "text-generations.resolve",
+        "streaming": false,
+        "tool_calling": false,
+        "structured_output": false,
+        "device_execution": false
+      },
+      {
+        "capability_id": "vision.understand",
+        "input_modalities": [
+          "image",
+          "text"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "input_schema": "vision",
+        "task_schema": "vision#/$defs/task",
+        "create_operation": "vision-observations.create",
+        "resolve_operation": "vision-observations.resolve",
+        "streaming": false,
+        "tool_calling": false,
+        "structured_output": false,
+        "device_execution": false
+      },
+      {
+        "capability_id": "audio.transcribe",
+        "input_modalities": [
+          "audio"
+        ],
+        "output_modalities": [
+          "text"
+        ],
+        "input_schema": "transcription",
+        "task_schema": "transcription#/$defs/task",
+        "create_operation": "audio-transcriptions.create",
+        "resolve_operation": "audio-transcriptions.resolve",
+        "streaming": false,
+        "tool_calling": false,
+        "structured_output": false,
+        "device_execution": false
+      },
+      {
+        "capability_id": "audio.synthesize",
+        "input_modalities": [
+          "text"
+        ],
+        "output_modalities": [
+          "audio"
+        ],
+        "input_schema": "speech",
+        "task_schema": "speech#/$defs/task",
+        "create_operation": "speech-syntheses.create",
+        "resolve_operation": "speech-syntheses.resolve",
+        "streaming": false,
+        "tool_calling": false,
+        "structured_output": false,
+        "device_execution": false
+      }
+    ],
+    "deployments": [],
+    "health": [
+      {
+        "capability_id": "automation.rule_draft",
+        "status": "not_configured",
+        "checked_at": null
+      },
+      {
+        "capability_id": "text.generate",
+        "status": "not_configured",
+        "checked_at": null
+      },
+      {
+        "capability_id": "vision.understand",
+        "status": "not_configured",
+        "checked_at": null
+      },
+      {
+        "capability_id": "audio.transcribe",
+        "status": "not_configured",
+        "checked_at": null
+      },
+      {
+        "capability_id": "audio.synthesize",
+        "status": "not_configured",
+        "checked_at": null
+      }
+    ],
+    "routing": {
+      "selection": "fixed_configuration",
+      "automatic_fallback": false
+    }
+  },
+  "invalid": {
+    "foreign_space": {
+      "path": [
+        "space_id"
+      ],
+      "value": "foreign"
+    },
+    "version": {
+      "path": [
+        "schema_version"
+      ],
+      "value": 2
+    },
+    "extra": {
+      "path": [
+        "extra"
+      ],
+      "value": true
+    },
+    "duplicate_deployment": {
+      "path": [
+        "deployments",
+        "4"
+      ],
+      "value": {
+        "capability_id": "automation.rule_draft",
+        "identity": {
+          "adapter": "ollama",
+          "revision": null,
+          "model": "fixture:rules",
+          "data_location": "local"
+        },
+        "configuration": {
+          "concurrency": 1,
+          "max_output_tokens": 1024
+        },
+        "license": null,
+        "cost_policy": null,
+        "resource_requirements": null,
+        "quality": null
+      }
+    },
+    "duplicate_health": {
+      "path": [
+        "health",
+        "4"
+      ],
+      "value": {
+        "capability_id": "automation.rule_draft",
+        "status": "unknown",
+        "checked_at": null
+      }
+    },
+    "invented_health": {
+      "path": [
+        "health",
+        "0",
+        "status"
+      ],
+      "value": "healthy"
+    },
+    "invented_check": {
+      "path": [
+        "health",
+        "0",
+        "checked_at"
+      ],
+      "value": "2026-11-04T00:00:00Z"
+    },
+    "fallback": {
+      "path": [
+        "routing",
+        "automatic_fallback"
+      ],
+      "value": true
+    },
+    "execution": {
+      "path": [
+        "definitions",
+        "0",
+        "device_execution"
+      ],
+      "value": true
+    },
+    "streaming": {
+      "path": [
+        "definitions",
+        "1",
+        "streaming"
+      ],
+      "value": true
+    },
+    "input_contract": {
+      "path": [
+        "definitions",
+        "1",
+        "input_schema"
+      ],
+      "value": "foreign"
+    },
+    "task_contract": {
+      "path": [
+        "definitions",
+        "1",
+        "task_schema"
+      ],
+      "value": "foreign"
+    },
+    "create_tool": {
+      "path": [
+        "definitions",
+        "1",
+        "create_operation"
+      ],
+      "value": "commands.create"
+    },
+    "false_rule_revision": {
+      "path": [
+        "deployments",
+        "0",
+        "identity",
+        "revision"
+      ],
+      "value": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "wrong_adapter": {
+      "path": [
+        "deployments",
+        "1",
+        "identity",
+        "adapter"
+      ],
+      "value": "ollama-vision-v1"
+    },
+    "wrong_concurrency": {
+      "path": [
+        "deployments",
+        "1",
+        "configuration",
+        "concurrency"
+      ],
+      "value": 2
+    },
+    "embedded_configured": {
+      "path": [
+        "deployments",
+        "1",
+        "configuration",
+        "configured"
+      ],
+      "value": true
+    },
+    "private_url": {
+      "path": [
+        "deployments",
+        "1",
+        "configuration",
+        "url"
+      ],
+      "value": "http://private-host"
+    },
+    "claimed_license": {
+      "path": [
+        "deployments",
+        "1",
+        "license"
+      ],
+      "value": "MIT"
+    },
+    "claimed_quality": {
+      "path": [
+        "deployments",
+        "1",
+        "quality"
+      ],
+      "value": "passed"
+    },
+    "missing_deployment": {
+      "path": [
+        "deployments"
+      ],
+      "value": []
+    },
+    "missing_health": {
+      "path": [
+        "health"
+      ],
+      "value": []
+    },
+    "false_health": {
+      "path": [
+        "health",
+        "1",
+        "status"
+      ],
+      "value": "not_configured"
+    },
+    "nonlocal": {
+      "path": [
+        "deployments",
+        "1",
+        "identity",
+        "data_location"
+      ],
+      "value": "cloud"
+    },
+    "numeric_model": {
+      "path": [
+        "deployments",
+        "1",
+        "identity",
+        "model"
+      ],
+      "value": 42
+    },
+    "wrong_voices": {
+      "path": [
+        "deployments",
+        "4",
+        "configuration",
+        "voices"
+      ],
+      "value": []
+    },
+    "too_many_languages": {
+      "path": [
+        "deployments",
+        "3",
+        "configuration",
+        "languages"
+      ],
+      "value": [
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto",
+        "auto"
+      ]
+    },
+    "boolean_version": {
+      "path": [
+        "schema_version"
+      ],
+      "value": true
+    }
+  }
+}

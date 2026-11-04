@@ -52,6 +52,10 @@ Schema 1 保留属性/事件子集，`actions` 必须为空；Schema 2 支持类
 
 已发送命令超时成为 unknown，重启恢复也不自动重发。`idempotent=true` 是动作语义声明，当前不据此启用自动重试。未知命令不保证阻止用户后续新操作，也不证明其副作用已停止；客户端恢复只查询原操作，不补发过期按键或换路径重复执行。当前[第一方静态执行路由](execution-routes.md) 已固定单条命令的执行端；动态切换与原生 TV Agent 仍需实现。
 
+第一方本地客户端提交前保存完整设备、模型修订、期限、操作及原键，写入后回读成功才发送。提交响应和原键查询都须核对原空间与完整输入；confirmed 还须有对应的属性或动作证据，核对失败保留原记录。Swift/Kotlin 的 `resolve(space,intent)` 用于完整原请求恢复；兼容的按键重载只能核对原空间与键，不能证明已丢失的输入。
+
+家庭网页使用同源 localStorage 保存最多128条未核实记录，并通过 Web Locks 串行提交和恢复；没有锁或无法核对存储时禁写。旧 sessionStorage 的键/空间记录只供查询，保存并回读成功后才迁移。关闭浏览器不清理新记录，404和错误回执不产生补发；损坏或冲突记录阻止新控制。另一标签页清理记录后，仍持有未知结果的页面须核实原操作才能解除本页限制。
+
 ## 当前消费者与验证边界
 
 Rust 模型/命令核心、家庭网页和模拟器已接入动作；Go 远程输入/回执与控制面 CLI 已加入动作分支。本地 HTTP/MQTT 与 Chromium 软件旅程、远程动作完整旅程及实机验收分别记录，结果以 [实施进度](../docs/24-实施计划与进度.md) 为准。
@@ -61,7 +65,7 @@ Rust 模型/命令核心、家庭网页和模拟器已接入动作；Go 远程�
 | Rust 核心 | 核对当前授权、绑定模型的 input/output 与 completion、设备会话、原命令及精确时间范围；拥有命令状态机 |
 | Go 远程入口 | 核对原请求和完整请求摘要；confirmed 动作拒绝错误、未知/重复证据字段、错 path/输入摘要、缺失或 null 输出、非法完成范围和时间 |
 | 控制面 CLI | [共享 JS 回执校验](../packages/protocol/command-receipts.mjs) 重新计算完整请求 JCS 摘要，绑定原设备、模型、期限、键与动作证据；旧 create 仍只查原键 |
-| 家庭网页/模拟器 | 网页按模型生成遥控与应用启动控件，记录原操作并展示完成范围；模拟器只报告 submitted，不模拟已观测的界面效果 |
+| 家庭网页/模拟器 | 网页按模型生成控件，耐久保存完整原请求，重新计算回执JCS摘要并核对成功证据；模拟器只报告 submitted，不模拟已观测的界面效果 |
 | Swift/Kotlin 客户端 | 解析模型动作，创建 action.invoke；核对完整原请求、动作证据字段、摘要格式、完成范围和时间；正式 JCS 摘要与精确模型校验由 Go/Rust 完成 |
 
 Go 与 CLI 只验证回执外壳和原操作绑定，不能替代 Rust 的精确模型输出/完成范围校验，也不能独立证明物理效果。远程可见的回执不包含 issued_at，时间下界按 expires_at 前32秒作保守检查；Rust 仍执行 issued_at 前2秒的精确下界。远程 operation.path 与本地合同一致，总长度最多129，两段分别最多64个字符。
@@ -75,3 +79,5 @@ Swift/Kotlin 原生云客户端已分别接受属性 device_result 与动作 act
 核心专项：`cargo test --locked -p limeiot-core --test actions`。本地集成入口：`npm run test:actions`，先构建当前家庭网页及 Rust workspace，再验证回执、真实 HTTP/MQTT、虚拟动作设备、Chromium 桌面/手机视口、丢响应恢复和重启不重发。远程集成入口为 `npm run test:remote`，其动作旅程是否通过须另看实施进度，不能沿用历史属性旅程结论。这些软件夹具不能替代电视遥控、权限和故障实测，也不提供物理 exactly-once 保证。
 
 原生本地动作入口：`npm run test:actions:native`，需 Swift、JDK 21 和 Android 构建工具；两端使用真实 HTTP/MQTT 与虚拟设备验证模型发现、遥控/应用启动、丢响应后只查原键和完成范围。`npm run test:control:native` 分别验证两端的属性与动作 HTTPS/WSS/MySQL/MQTT 旅程，每个旅程只允许一条原云命令和一条设备命令。
+
+普通命令专项：`node --test tests/command-recovery.test.mjs tests/command-recovery-web.test.mjs`。先完成家庭网页及网关/模拟器构建；30组共享正反例由JS、Swift `ClientChecks`及Kotlin `CommandRecoveryTest`消费。Chromium专项使用真实Rust/SQLite/MQTT，覆盖持久浏览器配置重开、错误提交/查询回执、404、标签页竞争与存储故障；结果不扩展为原生App运行或实机证明。

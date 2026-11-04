@@ -1,0 +1,112 @@
+{
+  "evidence_id": "EVID-TV-JVM-AUDIO-20261104-01",
+  "observed_on": "2026-11-04",
+  "stage": "4.72",
+  "status": "passed_focused_jvm_audio_network_journey_only",
+  "archive": ".dev/tv-jvm-audio-v38qgdrk/",
+  "journey_archive": ".dev/tv-agent-audio-2xQk1s/",
+  "scope": {
+    "passed": true,
+    "actual_jvm_agent": true,
+    "native_protocol_fixture": false,
+    "real_mtls": true,
+    "real_mqtt": true,
+    "real_gateway": true,
+    "real_sqlite": true,
+    "explicit_web_composition": true,
+    "simulated_audio_port": true,
+    "android_audio_manager": false,
+    "quantized_volume_percent": 7,
+    "requested_volume_percent": 5,
+    "external_volume_observed": 41,
+    "submitted_not_reported": true,
+    "native_effects": 4,
+    "adapter_effects": 2,
+    "native_and_gateway_durable_before_effect": true,
+    "native_audio_and_apps_only": true,
+    "adapter_remote_only": true,
+    "unknown_audio_effect_preserved": true,
+    "journal_version": 4,
+    "gateway_and_jvm_restart_no_replay": true,
+    "native_offline_adapter_independent": true,
+    "revoked_both_paths": true,
+    "original_compose_does_not_reactivate": true,
+    "jvm_launches": 2,
+    "mobile_width": 390,
+    "hardware": false,
+    "native_app_runtime": false,
+    "full_goal_completed": false
+  },
+  "test_modules": {
+    "tv_core": {
+      "tests": 74,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 3,
+      "passed": 71
+    },
+    "jvm_audio_journey": {
+      "tests": 1,
+      "passed": 1,
+      "failures": 0,
+      "skipped": 0
+    }
+  },
+  "builds": {
+    "rust_gateway_model_validator_simulator": true,
+    "home": true,
+    "journey_runtime": true,
+    "apk_built_this_stage": false,
+    "android_lint_run_this_stage": false
+  },
+  "test_limits": {
+    "journey_ms": 240000,
+    "worker_ms": 60000,
+    "worker_ready_ms": 90000,
+    "observation_deadlines_unchanged": true
+  },
+  "failure_retained": {
+    "attempt": 1,
+    "native_effects": 0,
+    "reason": "Historical fixture asserted snapshot v9 and omitted execution_route; actual snapshot was v10 and native execution_route serialized as null.",
+    "repair": "Read the actual snapshot version before effects and require it unchanged, command dispatched, no execution route, and exact native path partition before every native effect.",
+    "repair_verifications": 1,
+    "final_passed": true
+  },
+  "adjacent_regressions": {
+    "original_three_jvm_journeys_rerun": false,
+    "android_app_checks_rerun": false,
+    "reason": "User requested ending the current round after the focused journey; no additional runtime checks started.",
+    "prior_apk_failures_retried": false,
+    "prior_apk_failures": 2
+  },
+  "source_scope": "Hashes identify actual local artifacts. This focused run does not establish that all concurrent workspace edits passed.",
+  "binary_sha256": {
+    "target/debug/limeiot-gateway": "4fb738e9af7b09c9663e6c9b43031287f8a2342b43f1e2680af9822d0d4a71a0",
+    "target/debug/limeiot-model-validator": "a9ad55e5d5d4dabe8422dcbd6d9bf8993f4553acb384a4df6bd23c7a94867d8d",
+    "target/debug/limeiot-simulator": "9f3ed0a14f61cb78f23ef13e0c72f4b8a7c8af53d918a24055ff8c52dfda12df"
+  },
+  "binaries_changed_since_first_attempt": false,
+  "mobile_screenshot_reviewed": true,
+  "mobile_horizontal_overflow": false,
+  "page_errors": [],
+  "hardware": false,
+  "device_connection": false,
+  "emulator_started": false,
+  "actual_audio_service": false,
+  "published": false,
+  "full_goal_completed": false,
+  "remaining": [
+    "Original three JVM journeys with the changed shared test fixture",
+    "Android AudioManager, background service and vendor behavior",
+    "Existing APK callback regressions from stage 4.63",
+    "Hardware acceptance"
+  ],
+  "documentation_checks": {
+    "document_count": 4,
+    "checked_local_links": 562,
+    "passed": true
+  },
+  "diff_check_passed": true,
+  "journey_processes_stopped": true
+}

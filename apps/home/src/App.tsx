@@ -4,15 +4,19 @@ import { Automation } from './Automation';
 import { Devices } from './Devices';
 import { ControlLinks } from './ControlLinks';
 import { ModelRegistry } from './ModelRegistry';
+import { ObservationSources } from './ObservationSources';
+import { ZigbeeCommissioning } from './ZigbeeCommissioning';
 import { Firmware } from './Firmware';
 import { Media } from './Media';
 import { Vision } from './Vision';
+import { TextGeneration } from './TextGeneration';
+import { AiServices } from './AiServices';
 import { ConditionEvidence } from './Conditions';
 import { conditionSources } from '../../../packages/protocol/condition-form.mjs';
 
 interface Snapshot { space: string; devices: Device[]; models: Record<string, Model>; inference: Inference | null; commands: Command[]; deployments: Deployment[]; runs: Run[]; next: string | null }
 const empty: Snapshot = { space: '', devices: [], models: {}, inference: null, commands: [], deployments: [], runs: [], next: null };
-const navigation = [['devices', '设备'], ['automation', '自动化'], ['media', '音频'], ['vision', '视觉'], ['activity', '执行记录'], ['connections', '网关配对'], ['models', '设备接入'], ['firmware', '固件升级']] as const;
+const navigation = [['devices', '设备'], ['automation', '自动化'], ['text', '对话'], ['companion', '陪伴'], ['media', '音频'], ['vision', '视觉'], ['ai', 'AI 服务'], ['activity', '执行记录'], ['connections', '网关配对'], ['models', '设备接入'], ['firmware', '固件升级']] as const;
 function currentView() { const view = new URLSearchParams(location.search).get('view'); return navigation.some(([id]) => id === view) ? view! : 'devices'; }
 function Icon({ name }: { name: string }) {
   const paths: Record<string, string> = {
@@ -24,6 +28,9 @@ function Icon({ name }: { name: string }) {
     firmware: 'M12 16V3 M7 8l5-5 5 5 M4 14v6h16v-6',
     media: 'M9 18V5l11-2v13 M9 5l11-2 M9 14c-7-2-7 7 0 4 M20 12c-7-2-7 7 0 4',
     vision: 'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M16 9h.01',
+    text: 'M4 4h16v12H9l-5 4z M8 8h8 M8 12h5',
+    companion: 'M8 4h8l4 6-2 10H6L4 10z M9 11h.01 M15 11h.01 M9 15q3 3 6 0',
+    ai: 'M7 7h10v10H7z M9 3v4 M15 3v4 M9 17v4 M15 17v4 M3 9h4 M3 15h4 M17 9h4 M17 15h4',
     menu: 'M4 6h16 M4 12h16 M4 18h16',
   };
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name] ?? paths.devices} /></svg>;
@@ -71,6 +78,7 @@ function Home({ session, onExpired, embeddedView }: { session: Session; onExpire
   const [online, setOnline] = useState(false);
   const [error, setError] = useState('');
   const [updated, setUpdated] = useState<string | null>(null);
+  const [observationRevision, setObservationRevision] = useState(0);
   const alive = useRef(true);
   const loading = useRef(false);
   const controller = useRef(new AbortController());
@@ -128,8 +136,9 @@ function Home({ session, onExpired, embeddedView }: { session: Session; onExpire
     const source = new EventSource(`${prefix}/events/stream`);
     let timer: ReturnType<typeof setTimeout> | undefined;
     const update = () => { clearTimeout(timer); timer = setTimeout(() => void refreshRef.current(), 160); };
-    const types = ['gateway.recovered', 'broker.disconnected', 'command.created', 'commands.transitioned', 'device.hello', 'device.state', 'device.result', 'device.event', 'adapter.connection', 'adapter.result', 'execution.operation', 'rule.deployed', 'rule.stopped', 'model.operation', 'ota.operation', 'ota.dispatch', 'gap'];
-    types.forEach(type => source.addEventListener(type, update));
+    const types = ['gateway.recovered', 'broker.disconnected', 'command.created', 'commands.transitioned', 'device.hello', 'device.state', 'device.result', 'device.event', 'adapter.connection', 'adapter.result', 'observation.started', 'observation.received', 'observation.closed', 'observation.operation', 'execution.operation', 'rule.deployed', 'rule.stopped', 'model.operation', 'ota.operation', 'ota.dispatch', 'gap'];
+    const sourcesChanged = () => { setObservationRevision(value => value + 1); update(); };
+    types.forEach(type => source.addEventListener(type, ['observation.operation', 'gateway.recovered', 'gap'].includes(type) ? sourcesChanged : update));
     source.addEventListener('session.expired', expire);
     source.onopen = update;
     source.onerror = () => { if (alive.current) setOnline(false); update(); };
@@ -147,15 +156,18 @@ function Home({ session, onExpired, embeddedView }: { session: Session; onExpire
     } catch (error) { handleError(error); }
   }
   const Heading = embeddedView === 'connections' ? 'h2' : 'h1';
-  const content = <><div className="page-heading"><Heading>{tab === 'devices' ? '我的设备' : tab === 'automation' ? '自动化' : tab === 'media' ? '音频' : tab === 'vision' ? '视觉' : tab === 'connections' ? '本地配对批准' : tab === 'models' ? '设备接入' : tab === 'firmware' ? '固件升级' : '执行记录'}</Heading><button onClick={() => void refresh()}>刷新</button></div>
+  const content = <><div className="page-heading"><Heading>{tab === 'devices' ? '我的设备' : tab === 'automation' ? '自动化' : tab === 'text' ? '对话' : tab === 'companion' ? '陪伴' : tab === 'media' ? '音频' : tab === 'vision' ? '视觉' : tab === 'ai' ? 'AI 服务' : tab === 'connections' ? '本地配对批准' : tab === 'models' ? '设备接入' : tab === 'firmware' ? '固件升级' : '执行记录'}</Heading><button onClick={() => void refresh()}>刷新</button></div>
     {(!online || error) && <div className="notice" role="alert">{error || '网关连接已中断，当前显示上次观测'}{updated && <span>上次更新 {when(updated)}</span>}</div>}
     {tab === 'devices' && <Devices {...snapshot} prefix={prefix} session={session} online={online} refresh={refresh} onError={handleError} />}
     {tab === 'automation' && <Automation {...snapshot} prefix={prefix} session={session} online={online} refresh={refresh} onError={handleError} />}
     {tab === 'activity' && <Activity {...snapshot} more={more} />}
     {tab === 'media' && prefix && <Media key={prefix} prefix={prefix} session={session} online={online} devices={snapshot.devices} models={snapshot.models} onError={handleError} />}
+    {tab === 'companion' && prefix && <Media key={`companion:${prefix}`} mode="companion" prefix={prefix} session={session} online={online} devices={snapshot.devices} models={snapshot.models} onError={handleError} />}
     {tab === 'vision' && prefix && <Vision key={prefix} prefix={prefix} session={session} online={online} onError={handleError} />}
+    {tab === 'text' && prefix && <TextGeneration key={prefix} prefix={prefix} session={session} online={online} onError={handleError} />}
+    {tab === 'ai' && prefix && <AiServices key={prefix} prefix={prefix} session={session} online={online} revision={updated} onError={handleError} />}
     {tab === 'connections' && prefix && <ControlLinks prefix={prefix} session={session} online={online} onError={handleError} />}
-    {tab === 'models' && prefix && <ModelRegistry key={prefix} prefix={prefix} session={session} online={online} onError={handleError} refresh={refresh} />}
+    {tab === 'models' && prefix && <><ZigbeeCommissioning key={`zigbee:${prefix}`} prefix={prefix} session={session} online={online} onError={handleError} /><ObservationSources key={`sources:${prefix}`} prefix={prefix} session={session} online={online} devices={snapshot.devices} revision={observationRevision} onError={handleError} refresh={refresh} /><ModelRegistry key={prefix} prefix={prefix} session={session} online={online} onError={handleError} refresh={refresh} /></>}
     {tab === 'firmware' && prefix && <Firmware key={prefix} prefix={prefix} session={session} online={online} devices={snapshot.devices} models={snapshot.models} onError={handleError} />}
   </>;
   if (embeddedView) return <div className="local-workspace">{content}</div>;

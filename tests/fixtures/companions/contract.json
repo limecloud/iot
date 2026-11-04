@@ -1,0 +1,1986 @@
+{
+  "now": 1793799511068,
+  "policy": {
+    "schema_version": 1,
+    "policy_id": "block-puppy",
+    "version": "1.0.0",
+    "name": "积木小狗豆豆",
+    "instructions": "你是积木小狗豆豆。用简短中文陪用户搭积木，不调用工具。",
+    "language": "zh",
+    "voice": "local",
+    "max_turns": 2,
+    "max_seconds": 300
+  },
+  "capabilities": {
+    "inference": {
+      "concurrency": 1,
+      "configured": false,
+      "data_location": "local",
+      "max_output_tokens": 1024,
+      "model": null,
+      "provider": "ollama"
+    },
+    "limits": {
+      "commands": 4096,
+      "dedup_events": 4096,
+      "devices": 64,
+      "model_installations": 128,
+      "model_operations": 1024,
+      "model_trusts": 32,
+      "rule_drafts": 128,
+      "rules": 64,
+      "runs": 1024
+    },
+    "mode": "loopback_simulation",
+    "models": {
+      "sha256:0f0e838376778c2c482137af23bbc06ed89c5d8dc9821a93ff26a059545c500f": {
+        "model_id": "urn:limeiot:model:dlna-speaker:1",
+        "model_version": "1.0.0",
+        "schema_version": 2,
+        "services": [
+          {
+            "actions": [
+              {
+                "completion": "submitted",
+                "id": "play",
+                "idempotent": false,
+                "input": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "media_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "media_id"
+                  ],
+                  "type": "object"
+                },
+                "output": {
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "risk": "low",
+                "semantic_id": "urn:limeiot:action:audio-play:1"
+              },
+              {
+                "completion": "submitted",
+                "id": "stop",
+                "idempotent": false,
+                "input": {
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "output": {
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "risk": "low",
+                "semantic_id": "urn:limeiot:action:audio-stop:1"
+              },
+              {
+                "completion": "submitted",
+                "id": "set_volume",
+                "idempotent": false,
+                "input": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "volume": {
+                      "maximum": 30,
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "volume"
+                  ],
+                  "type": "object"
+                },
+                "output": {
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "risk": "low",
+                "semantic_id": "urn:limeiot:action:audio-set-volume:1"
+              }
+            ],
+            "events": [],
+            "id": "playback",
+            "properties": [],
+            "semantic_id": "urn:limeiot:service:audio-playback:1"
+          }
+        ]
+      },
+      "sha256:c557e81af48798cd354c4a3558e822aed3d732f78ecdfb481d46883d13a7366d": {
+        "model_id": "urn:limeiot:model:demo-button:1",
+        "model_version": "1.0.0",
+        "schema_version": 1,
+        "services": [
+          {
+            "actions": [],
+            "events": [
+              {
+                "id": "pressed",
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "count": {
+                      "maximum": 3,
+                      "minimum": 1,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "count"
+                  ],
+                  "type": "object"
+                },
+                "semantic_id": "urn:limeiot:event:button-pressed:1"
+              }
+            ],
+            "id": "button",
+            "properties": [],
+            "semantic_id": "urn:limeiot:service:button:1"
+          }
+        ]
+      }
+    },
+    "operations": [
+      {
+        "method": "GET",
+        "operation_id": "spaces.list",
+        "path": "/api/v1/spaces",
+        "space_required": false
+      },
+      {
+        "method": "GET",
+        "operation_id": "devices.list",
+        "path": "/api/v1/spaces/{space_id}/devices",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "devices.get",
+        "path": "/api/v1/spaces/{space_id}/devices/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "capabilities.list",
+        "path": "/api/v1/spaces/{space_id}/capabilities",
+        "space_required": true
+      },
+      {
+        "local_only": true,
+        "method": "GET",
+        "operation_id": "ai-catalog.list",
+        "output_schema": "ai-catalog",
+        "path": "/api/v1/spaces/{space_id}/ai-catalog",
+        "side_effects": "none",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "models.get",
+        "path": "/api/v1/model-releases/{id}",
+        "space_required": false
+      },
+      {
+        "input_schema": "command-request",
+        "method": "POST",
+        "operation_id": "commands.create",
+        "path": "/api/v1/spaces/{space_id}/commands",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "commands.list",
+        "path": "/api/v1/spaces/{space_id}/commands",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "commands.get",
+        "path": "/api/v1/spaces/{space_id}/commands/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "commands.resolve",
+        "path": "/api/v1/spaces/{space_id}/commands/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "input_schema": "rule",
+        "method": "POST",
+        "operation_id": "rules.validate",
+        "path": "/api/v1/spaces/{space_id}/rules:validate",
+        "space_required": true
+      },
+      {
+        "input_schema": "simulation",
+        "method": "POST",
+        "operation_id": "rules.simulate",
+        "path": "/api/v1/spaces/{space_id}/rules:simulate",
+        "space_required": true
+      },
+      {
+        "conditional_headers": {
+          "If-Match": "quoted_current_revision",
+          "If-None-Match": "*",
+          "conflict_error": "revision_conflict",
+          "mutually_exclusive": true
+        },
+        "input_schema": "rule",
+        "method": "POST",
+        "operation_id": "rules.deploy",
+        "path": "/api/v1/spaces/{space_id}/rule-deployments",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "rules.list",
+        "path": "/api/v1/spaces/{space_id}/rule-deployments",
+        "space_required": true
+      },
+      {
+        "input_schema": "revision",
+        "method": "POST",
+        "operation_id": "rules.stop",
+        "path": "/api/v1/spaces/{space_id}/rule-deployments/{id}/stop",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "runs.list",
+        "path": "/api/v1/spaces/{space_id}/runs",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "events.list",
+        "path": "/api/v1/spaces/{space_id}/events",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "events.stream",
+        "path": "/api/v1/spaces/{space_id}/events/stream",
+        "space_required": true
+      },
+      {
+        "input_schema": "draft-request",
+        "method": "POST",
+        "operation_id": "drafts.create",
+        "path": "/api/v1/spaces/{space_id}/rule-drafts",
+        "recovery_operation": "drafts.resolve",
+        "side_effects": "local_inference_only",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "drafts.list",
+        "path": "/api/v1/spaces/{space_id}/rule-drafts",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "drafts.get",
+        "path": "/api/v1/spaces/{space_id}/rule-drafts/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "drafts.resolve",
+        "path": "/api/v1/spaces/{space_id}/rule-drafts/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "input_schema": "control-pairing-request",
+        "method": "POST",
+        "operation_id": "control-pairings.create",
+        "path": "/api/v1/spaces/{space_id}/control-pairings",
+        "recovery_operation": "control-pairings.resolve",
+        "side_effects": "review_only",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "control-pairings.list",
+        "path": "/api/v1/spaces/{space_id}/control-pairings",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "control-pairings.get",
+        "path": "/api/v1/spaces/{space_id}/control-pairings/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "control-pairings.resolve",
+        "path": "/api/v1/spaces/{space_id}/control-pairings/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "input_schema": "control-pairing-approval",
+        "method": "POST",
+        "operation_id": "control-pairings.approve",
+        "path": "/api/v1/spaces/{space_id}/control-pairings/{id}/approve",
+        "recovery_operation": "control-pairings.reconcile",
+        "requires_explicit_local_owner_approval": true,
+        "side_effects": "approves_gateway_binding",
+        "space_required": true
+      },
+      {
+        "method": "POST",
+        "operation_id": "control-pairings.reconcile",
+        "path": "/api/v1/spaces/{space_id}/control-pairings/{id}/reconcile",
+        "side_effects": "queries_original_pairing_only",
+        "space_required": true
+      },
+      {
+        "method": "POST",
+        "operation_id": "control-pairings.revoke",
+        "path": "/api/v1/spaces/{space_id}/control-pairings/{id}/revoke",
+        "space_required": true
+      },
+      {
+        "description": "读取随网关交付的固定模型目录；可用不代表设备已绑定或获准执行。",
+        "method": "GET",
+        "operation_id": "model-bundles.list",
+        "path": "/api/v1/spaces/{space_id}/model-bundles",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-bundles.get",
+        "path": "/api/v1/spaces/{space_id}/model-bundles/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-trusts.list",
+        "path": "/api/v1/spaces/{space_id}/model-trusts",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-trusts.get",
+        "path": "/api/v1/spaces/{space_id}/model-trusts/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-installations.list",
+        "pagination": "after",
+        "path": "/api/v1/spaces/{space_id}/model-installations",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-installations.get",
+        "path": "/api/v1/spaces/{space_id}/model-installations/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "device-models.get",
+        "path": "/api/v1/spaces/{space_id}/devices/{id}/model-binding",
+        "space_required": true
+      },
+      {
+        "description": "本地明确核对密钥指纹、安装签名模型、绑定安装或内置模型、撤销信任。请求先落盘，未知只查原键，404不补发；applied/conflict/rejected必须分别处理。",
+        "idempotency_header": true,
+        "input_schema": "model-change",
+        "method": "POST",
+        "operation_id": "model-changes.create",
+        "original_request": true,
+        "path": "/api/v1/spaces/{space_id}/model-operations",
+        "recovery_operation": "model-changes.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-changes.resolve",
+        "path": "/api/v1/spaces/{space_id}/model-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "firmware-trusts.list",
+        "path": "/api/v1/spaces/{space_id}/firmware-trusts",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "firmware-trusts.get",
+        "path": "/api/v1/spaces/{space_id}/firmware-trusts/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "ota-tasks.list",
+        "pagination": {
+          "page_size": 16,
+          "parameter": "after"
+        },
+        "path": "/api/v1/spaces/{space_id}/ota-tasks",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "ota-tasks.get",
+        "path": "/api/v1/spaces/{space_id}/ota-tasks/{id}",
+        "space_required": true
+      },
+      {
+        "device_execution": true,
+        "idempotency_required": true,
+        "input_schema": "ota-change",
+        "method": "POST",
+        "operation_id": "ota-changes.create",
+        "output_schema": "ota-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/ota-operations",
+        "recovery_operation": "ota-changes.resolve",
+        "side_effects": "explicit_local_trust_plan_approval_install_or_query",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "ota-changes.resolve",
+        "output_schema": "ota-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/ota-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "execution-adapters.list",
+        "path": "/api/v1/spaces/{space_id}/execution-adapters",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "execution-bindings.get",
+        "path": "/api/v1/spaces/{space_id}/devices/{id}/execution-binding",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "device-applications.list",
+        "path": "/api/v1/spaces/{space_id}/devices/{id}/applications",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "execution-change",
+        "method": "POST",
+        "operation_id": "execution-changes.create",
+        "original_request": true,
+        "output_schema": "execution-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/execution-operations",
+        "recovery_operation": "execution-changes.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "execution-changes.resolve",
+        "output_schema": "execution-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/execution-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "media.list",
+        "output_schema": "media#/$defs/page",
+        "path": "/api/v1/spaces/{space_id}/media",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "media",
+        "method": "POST",
+        "operation_id": "media-changes.create",
+        "original_request": true,
+        "output_schema": "media#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/media-operations",
+        "recovery_operation": "media-changes.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "media-changes.resolve",
+        "output_schema": "media#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/media-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "local_only": true,
+        "method": "GET",
+        "operation_id": "execution-plans.list",
+        "pagination": "after",
+        "path": "/api/v1/spaces/{space_id}/execution-plans",
+        "space_required": true
+      },
+      {
+        "local_only": true,
+        "method": "GET",
+        "operation_id": "execution-plans.get",
+        "path": "/api/v1/spaces/{space_id}/execution-plans/{id}",
+        "space_required": true
+      },
+      {
+        "input_schema": "execution-plan-change",
+        "local_only": true,
+        "method": "POST",
+        "operation_id": "execution-plan-changes.create",
+        "path": "/api/v1/spaces/{space_id}/execution-plan-operations",
+        "recovery_operation": "execution-plan-changes.resolve",
+        "requires_explicit_local_owner_approval": true,
+        "side_effects": "explicit_plan_start_only",
+        "space_required": true
+      },
+      {
+        "local_only": true,
+        "method": "GET",
+        "operation_id": "execution-plan-changes.resolve",
+        "path": "/api/v1/spaces/{space_id}/execution-plan-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "speech",
+        "method": "POST",
+        "operation_id": "speech-syntheses.create",
+        "original_request": true,
+        "output_schema": "speech#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/speech-syntheses",
+        "recovery_operation": "speech-syntheses.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "speech-syntheses.resolve",
+        "output_schema": "speech#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/speech-syntheses/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "description": "耐久放弃尚未完成的本地输出；不证明提供方已经取消。响应丢失后查询原任务。",
+        "method": "POST",
+        "operation_id": "speech-syntheses.discard",
+        "output_schema": "speech#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/speech-syntheses/by-key/{id}/discard",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "transcription",
+        "method": "POST",
+        "operation_id": "audio-transcriptions.create",
+        "original_request": true,
+        "output_schema": "transcription#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/audio-transcriptions",
+        "recovery_operation": "audio-transcriptions.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "audio-transcriptions.resolve",
+        "output_schema": "transcription#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/audio-transcriptions/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "description": "耐久放弃未完成的转写输出，不证明提供方已停止；响应丢失后查询原任务。",
+        "method": "POST",
+        "operation_id": "audio-transcriptions.discard",
+        "output_schema": "transcription#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/audio-transcriptions/by-key/{id}/discard",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "vision",
+        "method": "POST",
+        "operation_id": "vision-observations.create",
+        "original_request": true,
+        "output_schema": "vision#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/vision-observations",
+        "recovery_operation": "vision-observations.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "vision-observations.resolve",
+        "output_schema": "vision#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/vision-observations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "description": "耐久放弃未完成的输出，或清除已完成观察的文本；不证明模型已停止。响应丢失后查询原任务。",
+        "method": "POST",
+        "operation_id": "vision-observations.discard",
+        "output_schema": "vision#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/vision-observations/by-key/{id}/discard",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "text",
+        "method": "POST",
+        "operation_id": "text-generations.create",
+        "original_request": true,
+        "output_schema": "text#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/text-generations",
+        "recovery_operation": "text-generations.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "text-generations.resolve",
+        "output_schema": "text#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/text-generations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "description": "明确清除已完成文字或放弃未完成输出；不证明提供方停止。响应丢失后查询原任务。",
+        "method": "POST",
+        "operation_id": "text-generations.discard",
+        "output_schema": "text#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/text-generations/by-key/{id}/discard",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "observation-candidates.list",
+        "output_schema": "observation-change#/$defs/candidates",
+        "path": "/api/v1/spaces/{space_id}/observation-candidates",
+        "space_required": true
+      },
+      {
+        "device_execution": false,
+        "input_schema": "observation-query",
+        "method": "POST",
+        "operation_id": "observation-candidates.query",
+        "output_schema": "observation-change#/$defs/candidate",
+        "path": "/api/v1/spaces/{space_id}/observation-candidates",
+        "request_timeout_ms": 35000,
+        "side_effects": "bounded_protocol_reads_without_device_binding",
+        "space_required": true
+      },
+      {
+        "device_execution": false,
+        "input_schema": "observation-discovery#/$defs/query",
+        "method": "POST",
+        "operation_id": "observation-discoveries.query",
+        "output_schema": "observation-discovery#/$defs/neighbors",
+        "path": "/api/v1/spaces/{space_id}/observation-discoveries",
+        "request_timeout_ms": 35000,
+        "side_effects": "bounded_protocol_reads_without_device_binding",
+        "space_required": true
+      },
+      {
+        "device_execution": false,
+        "input_schema": "observation-discovery#/$defs/endpointQuery",
+        "method": "POST",
+        "operation_id": "observation-endpoints.query",
+        "output_schema": "observation-discovery#/$defs/endpoints",
+        "path": "/api/v1/spaces/{space_id}/observation-endpoints",
+        "request_timeout_ms": 35000,
+        "side_effects": "bounded_protocol_reads_without_device_binding",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "observation-bindings.get",
+        "output_schema": "observation-change#/$defs/view",
+        "path": "/api/v1/spaces/{space_id}/devices/{id}/observation-binding",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "observation-change",
+        "method": "POST",
+        "operation_id": "observation-changes.create",
+        "original_request": true,
+        "output_schema": "observation-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/observation-operations",
+        "recovery_operation": "observation-changes.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "observation-changes.resolve",
+        "output_schema": "observation-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/observation-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "zigbee-coordinators.list",
+        "output_schema": "zigbee-change#/$defs/coordinators",
+        "path": "/api/v1/spaces/{space_id}/zigbee-coordinators",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "zigbee-operations.list",
+        "output_schema": "zigbee-change#/$defs/operations",
+        "path": "/api/v1/spaces/{space_id}/zigbee-operations",
+        "space_required": true
+      },
+      {
+        "device_execution": false,
+        "idempotency_required": true,
+        "input_schema": "zigbee-change",
+        "method": "POST",
+        "network_write_requested": true,
+        "operation_id": "zigbee-changes.create",
+        "original_request": true,
+        "output_schema": "zigbee-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/zigbee-operations",
+        "recovery_operation": "zigbee-changes.resolve",
+        "request_timeout_ms": 35000,
+        "side_effects": "finite_coordinator_join_window_without_platform_binding",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "zigbee-changes.resolve",
+        "output_schema": "zigbee-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/zigbee-operations/by-key/{id}",
+        "space_required": true
+      }
+    ],
+    "space_id": "space-demo",
+    "speech": {
+      "capability": "audio.synthesize",
+      "concurrency": 1,
+      "configured": true,
+      "deployment": {
+        "adapter": "local-http-speech-v1",
+        "data_location": "local",
+        "model": "fixture/tts",
+        "revision": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+      },
+      "max_audio_seconds": 60,
+      "max_characters": 1000,
+      "max_deadline_seconds": 90,
+      "max_output_bytes": 4194304,
+      "max_text_bytes": 4096,
+      "provider_cancellation": false,
+      "streaming": false,
+      "voices": [
+        "local"
+      ]
+    },
+    "text": {
+      "capability": "text.generate",
+      "concurrency": 1,
+      "configured": true,
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "data_location": "local",
+        "model": "fixture:text",
+        "revision": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501"
+      },
+      "device_execution": false,
+      "input_storage": "digest_only",
+      "max_characters": 2048,
+      "max_context_bytes": 8192,
+      "max_deadline_seconds": 90,
+      "max_instructions_characters": 1024,
+      "max_messages": 15,
+      "max_output_tokens": 1024,
+      "max_retain_seconds": 3600,
+      "max_text_bytes": 8192,
+      "provider_cancellation": false,
+      "server_memory": false,
+      "streaming": false
+    },
+    "transcription": {
+      "capability": "audio.transcribe",
+      "concurrency": 1,
+      "configured": true,
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "data_location": "local",
+        "model": "fixture/asr",
+        "revision": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f"
+      },
+      "languages": [
+        "auto",
+        "zh",
+        "en"
+      ],
+      "max_audio_bytes": 4194304,
+      "max_audio_seconds": 60,
+      "max_characters": 2048,
+      "max_deadline_seconds": 90,
+      "max_text_bytes": 8192,
+      "provider_cancellation": false,
+      "streaming": false
+    },
+    "vision": {
+      "capability": "vision.understand",
+      "configured": false
+    }
+  },
+  "media": {
+    "configured": true,
+    "grants": [],
+    "items": [
+      {
+        "available": true,
+        "deleted_at": null,
+        "metadata": {
+          "actor": "local_owner",
+          "audio": {
+            "bits_per_sample": 16,
+            "channels": 1,
+            "frames": 16000,
+            "sample_rate": 8000
+          },
+          "byte_length": 32044,
+          "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+          "content_type": "audio/wav",
+          "created_at": "2026-11-04T13:38:31.046101Z",
+          "expires_at": "2026-11-04T13:48:31.046101Z",
+          "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+          "purpose": "device_playback",
+          "space_id": "space-demo"
+        }
+      }
+    ],
+    "next_cursor": null,
+    "space_id": "space-demo"
+  },
+  "started": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "session_id": "native-companion",
+    "previous_ids": [],
+    "policy_digest": "sha256:76c9aa8435c13b217defe07ef51a83373608f1bbf3d02d2e3927a1a2bab2f633",
+    "deployments": {
+      "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+      "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+      "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+    },
+    "created_at": "2026-11-04T13:38:31.068Z",
+    "expires_at": "2026-11-04T13:43:31.068Z",
+    "max_turns": 2,
+    "stopped": false,
+    "history": {
+      "digest": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "message_count": 0
+    },
+    "turns": [],
+    "checksum": "sha256:73030e622d40ae758cd6479a3c612d21e17ff660aa31c7b7e995026bb2eb9c7b"
+  },
+  "first": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "session_id": "native-companion",
+    "previous_ids": [],
+    "policy_digest": "sha256:76c9aa8435c13b217defe07ef51a83373608f1bbf3d02d2e3927a1a2bab2f633",
+    "deployments": {
+      "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+      "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+      "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+    },
+    "created_at": "2026-11-04T13:38:31.068Z",
+    "expires_at": "2026-11-04T13:43:31.068Z",
+    "max_turns": 2,
+    "stopped": false,
+    "history": {
+      "digest": "sha256:5968f42d891120bc02e7b1ea9400da3817652193df3ba0fc9356693b534d1aef",
+      "message_count": 2
+    },
+    "turns": [
+      {
+        "turn_id": "native-companion_t1",
+        "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+        "context_digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+        "completed": true,
+        "record": {
+          "version": 2,
+          "text_context": {
+            "digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+            "history_messages": 0
+          },
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "turn_id": "native-companion_t1",
+          "created_at": "2026-11-04T13:38:31.068Z",
+          "expires_at": "2026-11-04T13:43:31.068Z",
+          "source": {
+            "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+            "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "expires_at": "2026-11-04T13:48:31.046Z"
+          },
+          "language": "zh",
+          "voice": "local",
+          "retain_seconds": 600,
+          "deployments": {
+            "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+            "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+            "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+          },
+          "jobs": {
+            "transcription": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-transcription",
+                "input": {
+                  "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+                  "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+                  "language": "zh",
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:18df807deaa09d9a14d39380ecddeac88cd7aeceab300b25e4e666157872d51c"
+              },
+              "observation": {
+                "identity_digest": "sha256:595f87fb205e42518001d53d2d4afdd8e9bb553d921ff277ca5581ec242a9f43",
+                "terminal_digest": "sha256:d14296effae630d0d784af61182c08ab887a8696591601d69976a188c02f25ba",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.218Z",
+                "output": {
+                  "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+                  "expires_at": "2026-11-04T13:48:31.046Z",
+                  "cleared_at": null
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            },
+            "text": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-text",
+                "input": {
+                  "context_digest": "sha256:b51a90d88ba95549a23015cbde30b8ebc4903ef6a534cd3831fc12d78819b541",
+                  "context_bytes": 123,
+                  "message_count": 1,
+                  "retain_seconds": 600,
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:834dc0eb447edc4c9eb33b8a00d38ceffc3473c125930ec3a934ebafe8583b8a"
+              },
+              "observation": {
+                "identity_digest": "sha256:70b19be310e416963297c41cedec30ec7fab5b94f2b2122e7985babebd157a71",
+                "terminal_digest": "sha256:8de81b6c182d8013cdd66e18d696c71197e7179307072a63e6efc874de4431a8",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.297Z",
+                "output": {
+                  "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+                  "expires_at": "2026-11-04T13:48:31.297Z",
+                  "cleared_at": null
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            },
+            "speech": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-speech",
+                "request_digest": "sha256:721b450a01d2125b6e0b35b8f4f084f9c24bcee8cf311711fef6e8f756000c78",
+                "input_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+                "input_characters": 22,
+                "voice": "local",
+                "retain_seconds": 600,
+                "expires_at": "2026-11-04T13:39:56.068Z"
+              },
+              "observation": {
+                "identity_digest": "sha256:ff6a631fb340448fdb23173f45c4c1fef928f9d8cb9101f4df13a04148009aba",
+                "terminal_digest": "sha256:1a8332b21e13ee77ebbaecf91ee71f70ecc470250f37d4d299eb892a1df0da1f",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.497Z",
+                "output": null,
+                "media_id": "media-1b7e5bdb-e622-4031-9f22-209677f40bd5"
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            }
+          },
+          "stopped": false,
+          "checksum": "sha256:5d09fde4191fac9149b1525e9564bffe5e67536d5986d50a91ff85ddecfcbe71"
+        }
+      }
+    ],
+    "checksum": "sha256:2df71a076f0477db56cc3f09bb1b373bdc061117e5bd9bee6a064259570ec3e5"
+  },
+  "second": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "session_id": "native-companion",
+    "previous_ids": [],
+    "policy_digest": "sha256:76c9aa8435c13b217defe07ef51a83373608f1bbf3d02d2e3927a1a2bab2f633",
+    "deployments": {
+      "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+      "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+      "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+    },
+    "created_at": "2026-11-04T13:38:31.068Z",
+    "expires_at": "2026-11-04T13:43:31.068Z",
+    "max_turns": 2,
+    "stopped": false,
+    "history": {
+      "digest": "sha256:f19cc5c65750e780e73a72cec763fe9d0a9d6f20df76564e45b07f77c4e88df2",
+      "message_count": 4
+    },
+    "turns": [
+      {
+        "turn_id": "native-companion_t1",
+        "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+        "context_digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+        "completed": true,
+        "record": {
+          "version": 2,
+          "text_context": {
+            "digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+            "history_messages": 0
+          },
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "turn_id": "native-companion_t1",
+          "created_at": "2026-11-04T13:38:31.068Z",
+          "expires_at": "2026-11-04T13:43:31.068Z",
+          "source": {
+            "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+            "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "expires_at": "2026-11-04T13:48:31.046Z"
+          },
+          "language": "zh",
+          "voice": "local",
+          "retain_seconds": 600,
+          "deployments": {
+            "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+            "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+            "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+          },
+          "jobs": {
+            "transcription": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-transcription",
+                "input": {
+                  "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+                  "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+                  "language": "zh",
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:18df807deaa09d9a14d39380ecddeac88cd7aeceab300b25e4e666157872d51c"
+              },
+              "observation": {
+                "identity_digest": "sha256:595f87fb205e42518001d53d2d4afdd8e9bb553d921ff277ca5581ec242a9f43",
+                "terminal_digest": "sha256:d14296effae630d0d784af61182c08ab887a8696591601d69976a188c02f25ba",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.218Z",
+                "output": {
+                  "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+                  "expires_at": "2026-11-04T13:48:31.046Z",
+                  "cleared_at": null
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            },
+            "text": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-text",
+                "input": {
+                  "context_digest": "sha256:b51a90d88ba95549a23015cbde30b8ebc4903ef6a534cd3831fc12d78819b541",
+                  "context_bytes": 123,
+                  "message_count": 1,
+                  "retain_seconds": 600,
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:834dc0eb447edc4c9eb33b8a00d38ceffc3473c125930ec3a934ebafe8583b8a"
+              },
+              "observation": {
+                "identity_digest": "sha256:70b19be310e416963297c41cedec30ec7fab5b94f2b2122e7985babebd157a71",
+                "terminal_digest": "sha256:8de81b6c182d8013cdd66e18d696c71197e7179307072a63e6efc874de4431a8",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.297Z",
+                "output": {
+                  "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+                  "expires_at": "2026-11-04T13:48:31.297Z",
+                  "cleared_at": null
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            },
+            "speech": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-speech",
+                "request_digest": "sha256:721b450a01d2125b6e0b35b8f4f084f9c24bcee8cf311711fef6e8f756000c78",
+                "input_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+                "input_characters": 22,
+                "voice": "local",
+                "retain_seconds": 600,
+                "expires_at": "2026-11-04T13:39:56.068Z"
+              },
+              "observation": {
+                "identity_digest": "sha256:ff6a631fb340448fdb23173f45c4c1fef928f9d8cb9101f4df13a04148009aba",
+                "terminal_digest": "sha256:1a8332b21e13ee77ebbaecf91ee71f70ecc470250f37d4d299eb892a1df0da1f",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.497Z",
+                "output": null,
+                "media_id": "media-1b7e5bdb-e622-4031-9f22-209677f40bd5"
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            }
+          },
+          "stopped": false,
+          "checksum": "sha256:5d09fde4191fac9149b1525e9564bffe5e67536d5986d50a91ff85ddecfcbe71"
+        }
+      },
+      {
+        "turn_id": "native-companion_t2",
+        "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+        "context_digest": "sha256:423d46a0fc054203e5e21c9fef03df62e0bbbd8bb7c561d0af09740f59e04367",
+        "completed": true,
+        "record": {
+          "version": 2,
+          "text_context": {
+            "digest": "sha256:423d46a0fc054203e5e21c9fef03df62e0bbbd8bb7c561d0af09740f59e04367",
+            "history_messages": 2
+          },
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "turn_id": "native-companion_t2",
+          "created_at": "2026-11-04T13:38:31.068Z",
+          "expires_at": "2026-11-04T13:43:31.068Z",
+          "source": {
+            "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+            "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "expires_at": "2026-11-04T13:48:31.046Z"
+          },
+          "language": "zh",
+          "voice": "local",
+          "retain_seconds": 600,
+          "deployments": {
+            "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+            "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+            "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+          },
+          "jobs": {
+            "transcription": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t2-transcription",
+                "input": {
+                  "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+                  "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+                  "language": "zh",
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:f835828504515b459eafaaf34c0f3c4d0d6aead4b0f36fb3066dcded0520f4a1"
+              },
+              "observation": {
+                "identity_digest": "sha256:a10cb2bcbf4e2d80e419db83d0d339c785fde978c267d83d3b4c2fc5f2456f3c",
+                "terminal_digest": "sha256:c0df74ffcdd10b1436540b0feff5719f35c64e70e8c06e704817fa2e1e571d3b",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.727Z",
+                "output": {
+                  "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+                  "expires_at": "2026-11-04T13:48:31.046Z",
+                  "cleared_at": null
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            },
+            "text": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t2-text",
+                "input": {
+                  "context_digest": "sha256:58538ae1f66f95783284294c32cf1e165e0c15d8ca41c598d4a59a8081b189b9",
+                  "context_bytes": 231,
+                  "message_count": 3,
+                  "retain_seconds": 600,
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:7bc5afc90ed5fa0350915a3b99259f136ade6905a5ced34ee8a3e0382927c4ff"
+              },
+              "observation": {
+                "identity_digest": "sha256:e14b07c626a2231f348e8639f8584e69c4c8da365f58e7719568a92c03059980",
+                "terminal_digest": "sha256:54d11291a82cfe21d3fe3d46abff2eb003af921ca8a8a8cd78b507eb07f35e6e",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.798Z",
+                "output": {
+                  "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+                  "expires_at": "2026-11-04T13:48:31.798Z",
+                  "cleared_at": null
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            },
+            "speech": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t2-speech",
+                "request_digest": "sha256:edf7cf111828ad91e69177fc64680d966b095ab82bf0923d35db317294450ba0",
+                "input_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+                "input_characters": 22,
+                "voice": "local",
+                "retain_seconds": 600,
+                "expires_at": "2026-11-04T13:39:56.068Z"
+              },
+              "observation": {
+                "identity_digest": "sha256:067b1930c3a3d34fa298f8e1446cc02ff63a96731386281415a9fefdecd6032a",
+                "terminal_digest": "sha256:d223d95cdd97296ad04059d34da1228f6723e266de99370b510d8b201fc3ea90",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.984Z",
+                "output": null,
+                "media_id": "media-36a688c6-1119-426b-8b3a-28c22c28aace"
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            }
+          },
+          "stopped": false,
+          "checksum": "sha256:45e84c826144008772ec4e6a7622c58c7bc3eab4db7f514c23e88b21b60a1822"
+        }
+      }
+    ],
+    "checksum": "sha256:04438a1d524046a1b21bbf96026f63c86d5ac364adaa884b3ab019f159a7080c"
+  },
+  "stopped": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "session_id": "native-companion",
+    "previous_ids": [],
+    "policy_digest": "sha256:76c9aa8435c13b217defe07ef51a83373608f1bbf3d02d2e3927a1a2bab2f633",
+    "deployments": {
+      "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+      "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+      "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+    },
+    "created_at": "2026-11-04T13:38:31.068Z",
+    "expires_at": "2026-11-04T13:43:31.068Z",
+    "max_turns": 2,
+    "stopped": true,
+    "history": {
+      "digest": "sha256:f19cc5c65750e780e73a72cec763fe9d0a9d6f20df76564e45b07f77c4e88df2",
+      "message_count": 4
+    },
+    "turns": [
+      {
+        "turn_id": "native-companion_t1",
+        "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+        "context_digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+        "completed": true,
+        "record": {
+          "version": 2,
+          "text_context": {
+            "digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+            "history_messages": 0
+          },
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "turn_id": "native-companion_t1",
+          "created_at": "2026-11-04T13:38:31.068Z",
+          "expires_at": "2026-11-04T13:43:31.068Z",
+          "source": {
+            "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+            "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "expires_at": "2026-11-04T13:48:31.046Z"
+          },
+          "language": "zh",
+          "voice": "local",
+          "retain_seconds": 600,
+          "deployments": {
+            "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+            "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+            "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+          },
+          "jobs": {
+            "transcription": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-transcription",
+                "input": {
+                  "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+                  "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+                  "language": "zh",
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:18df807deaa09d9a14d39380ecddeac88cd7aeceab300b25e4e666157872d51c"
+              },
+              "observation": {
+                "identity_digest": "sha256:595f87fb205e42518001d53d2d4afdd8e9bb553d921ff277ca5581ec242a9f43",
+                "terminal_digest": "sha256:d14296effae630d0d784af61182c08ab887a8696591601d69976a188c02f25ba",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.218Z",
+                "output": {
+                  "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+                  "expires_at": "2026-11-04T13:48:31.046Z",
+                  "cleared_at": null
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            },
+            "text": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-text",
+                "input": {
+                  "context_digest": "sha256:b51a90d88ba95549a23015cbde30b8ebc4903ef6a534cd3831fc12d78819b541",
+                  "context_bytes": 123,
+                  "message_count": 1,
+                  "retain_seconds": 600,
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:834dc0eb447edc4c9eb33b8a00d38ceffc3473c125930ec3a934ebafe8583b8a"
+              },
+              "observation": {
+                "identity_digest": "sha256:70b19be310e416963297c41cedec30ec7fab5b94f2b2122e7985babebd157a71",
+                "terminal_digest": "sha256:8de81b6c182d8013cdd66e18d696c71197e7179307072a63e6efc874de4431a8",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.297Z",
+                "output": {
+                  "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+                  "expires_at": "2026-11-04T13:48:31.297Z",
+                  "cleared_at": "2026-11-04T13:38:32.151Z"
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": true
+            },
+            "speech": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-speech",
+                "request_digest": "sha256:721b450a01d2125b6e0b35b8f4f084f9c24bcee8cf311711fef6e8f756000c78",
+                "input_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+                "input_characters": 22,
+                "voice": "local",
+                "retain_seconds": 600,
+                "expires_at": "2026-11-04T13:39:56.068Z"
+              },
+              "observation": {
+                "identity_digest": "sha256:ff6a631fb340448fdb23173f45c4c1fef928f9d8cb9101f4df13a04148009aba",
+                "terminal_digest": "sha256:1a8332b21e13ee77ebbaecf91ee71f70ecc470250f37d4d299eb892a1df0da1f",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.497Z",
+                "output": null,
+                "media_id": "media-1b7e5bdb-e622-4031-9f22-209677f40bd5"
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            }
+          },
+          "stopped": true,
+          "checksum": "sha256:e9fd206c7037c47b45de1bef2c262f592c0c8e223b2342d48ec8781e3889c5aa"
+        }
+      },
+      {
+        "turn_id": "native-companion_t2",
+        "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+        "context_digest": "sha256:423d46a0fc054203e5e21c9fef03df62e0bbbd8bb7c561d0af09740f59e04367",
+        "completed": true,
+        "record": {
+          "version": 2,
+          "text_context": {
+            "digest": "sha256:423d46a0fc054203e5e21c9fef03df62e0bbbd8bb7c561d0af09740f59e04367",
+            "history_messages": 2
+          },
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "turn_id": "native-companion_t2",
+          "created_at": "2026-11-04T13:38:31.068Z",
+          "expires_at": "2026-11-04T13:43:31.068Z",
+          "source": {
+            "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+            "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "expires_at": "2026-11-04T13:48:31.046Z"
+          },
+          "language": "zh",
+          "voice": "local",
+          "retain_seconds": 600,
+          "deployments": {
+            "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+            "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+            "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+          },
+          "jobs": {
+            "transcription": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t2-transcription",
+                "input": {
+                  "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+                  "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+                  "language": "zh",
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:f835828504515b459eafaaf34c0f3c4d0d6aead4b0f36fb3066dcded0520f4a1"
+              },
+              "observation": {
+                "identity_digest": "sha256:a10cb2bcbf4e2d80e419db83d0d339c785fde978c267d83d3b4c2fc5f2456f3c",
+                "terminal_digest": "sha256:c0df74ffcdd10b1436540b0feff5719f35c64e70e8c06e704817fa2e1e571d3b",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.727Z",
+                "output": {
+                  "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+                  "expires_at": "2026-11-04T13:48:31.046Z",
+                  "cleared_at": null
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            },
+            "text": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t2-text",
+                "input": {
+                  "context_digest": "sha256:58538ae1f66f95783284294c32cf1e165e0c15d8ca41c598d4a59a8081b189b9",
+                  "context_bytes": 231,
+                  "message_count": 3,
+                  "retain_seconds": 600,
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:7bc5afc90ed5fa0350915a3b99259f136ade6905a5ced34ee8a3e0382927c4ff"
+              },
+              "observation": {
+                "identity_digest": "sha256:e14b07c626a2231f348e8639f8584e69c4c8da365f58e7719568a92c03059980",
+                "terminal_digest": "sha256:54d11291a82cfe21d3fe3d46abff2eb003af921ca8a8a8cd78b507eb07f35e6e",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.798Z",
+                "output": {
+                  "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+                  "expires_at": "2026-11-04T13:48:31.798Z",
+                  "cleared_at": "2026-11-04T13:38:32.190Z"
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": true
+            },
+            "speech": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t2-speech",
+                "request_digest": "sha256:edf7cf111828ad91e69177fc64680d966b095ab82bf0923d35db317294450ba0",
+                "input_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+                "input_characters": 22,
+                "voice": "local",
+                "retain_seconds": 600,
+                "expires_at": "2026-11-04T13:39:56.068Z"
+              },
+              "observation": {
+                "identity_digest": "sha256:067b1930c3a3d34fa298f8e1446cc02ff63a96731386281415a9fefdecd6032a",
+                "terminal_digest": "sha256:d223d95cdd97296ad04059d34da1228f6723e266de99370b510d8b201fc3ea90",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.984Z",
+                "output": null,
+                "media_id": "media-36a688c6-1119-426b-8b3a-28c22c28aace"
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            }
+          },
+          "stopped": true,
+          "checksum": "sha256:2b068a2b6538af90011bfa7ba7c6fbfa0befb4fc044668b0806947c4d167dd1e"
+        }
+      }
+    ],
+    "checksum": "sha256:70886ba9dfb65fdd67f4f4735af18c5163afdaecc70cf6a3c73fe54ec7d07599"
+  },
+  "tasks": {
+    "1": {
+      "transcription": {
+        "transcription_id": "transcription-b1991b6c-3378-42c6-bc25-ba7557277798",
+        "space_id": "space-demo",
+        "idempotency_key": "native-companion_t1-transcription",
+        "request_digest": "sha256:18df807deaa09d9a14d39380ecddeac88cd7aeceab300b25e4e666157872d51c",
+        "input": {
+          "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+          "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+          "language": "zh",
+          "expires_at": "2026-11-04T13:39:56.068Z"
+        },
+        "deployment": {
+          "adapter": "local-http-transcription-v1",
+          "revision": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+          "model": "fixture/asr",
+          "data_location": "local"
+        },
+        "created_at": "2026-11-04T13:38:31.188680Z",
+        "updated_at": "2026-11-04T13:38:31.218202Z",
+        "status": "succeeded",
+        "output": {
+          "text": "我想搭一个会说话的积木小狗。",
+          "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+          "expires_at": "2026-11-04T13:48:31.046101Z",
+          "cleared_at": null
+        },
+        "error_code": null
+      },
+      "text": {
+        "text_id": "text-468f7d88-d474-4d6a-b527-610509319a09",
+        "space_id": "space-demo",
+        "idempotency_key": "native-companion_t1-text",
+        "request_digest": "sha256:834dc0eb447edc4c9eb33b8a00d38ceffc3473c125930ec3a934ebafe8583b8a",
+        "input": {
+          "context_digest": "sha256:b51a90d88ba95549a23015cbde30b8ebc4903ef6a534cd3831fc12d78819b541",
+          "context_bytes": 123,
+          "message_count": 1,
+          "retain_seconds": 600,
+          "expires_at": "2026-11-04T13:39:56.068Z"
+        },
+        "deployment": {
+          "adapter": "ollama-text-v1",
+          "revision": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+          "model": "fixture:text",
+          "data_location": "local"
+        },
+        "created_at": "2026-11-04T13:38:31.279554Z",
+        "updated_at": "2026-11-04T13:38:31.297750Z",
+        "status": "succeeded",
+        "output": {
+          "text": "先搭一个稳固的底座，再给小狗装上灯和扬声器。",
+          "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+          "expires_at": "2026-11-04T13:48:31.297750Z",
+          "cleared_at": null
+        },
+        "usage": {
+          "input_tokens": 25,
+          "output_tokens": 8
+        },
+        "error_code": null
+      },
+      "speech": {
+        "synthesis_id": "speech-419fa707-faaf-49c3-9cbc-1d5f1f2f0def",
+        "space_id": "space-demo",
+        "idempotency_key": "native-companion_t1-speech",
+        "request_digest": "sha256:721b450a01d2125b6e0b35b8f4f084f9c24bcee8cf311711fef6e8f756000c78",
+        "input_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+        "input_characters": 22,
+        "voice": "local",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T13:39:56.068Z",
+        "deployment": {
+          "adapter": "local-http-speech-v1",
+          "revision": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097",
+          "model": "fixture/tts",
+          "data_location": "local"
+        },
+        "created_at": "2026-11-04T13:38:31.480209Z",
+        "updated_at": "2026-11-04T13:38:31.497310Z",
+        "status": "succeeded",
+        "media_id": "media-1b7e5bdb-e622-4031-9f22-209677f40bd5",
+        "error_code": null
+      }
+    },
+    "2": {
+      "transcription": {
+        "transcription_id": "transcription-6ddd2d7c-8d42-49d9-8b3f-5df631270c38",
+        "space_id": "space-demo",
+        "idempotency_key": "native-companion_t2-transcription",
+        "request_digest": "sha256:f835828504515b459eafaaf34c0f3c4d0d6aead4b0f36fb3066dcded0520f4a1",
+        "input": {
+          "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+          "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+          "language": "zh",
+          "expires_at": "2026-11-04T13:39:56.068Z"
+        },
+        "deployment": {
+          "adapter": "local-http-transcription-v1",
+          "revision": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+          "model": "fixture/asr",
+          "data_location": "local"
+        },
+        "created_at": "2026-11-04T13:38:31.707726Z",
+        "updated_at": "2026-11-04T13:38:31.727587Z",
+        "status": "succeeded",
+        "output": {
+          "text": "我想搭一个会说话的积木小狗。",
+          "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+          "expires_at": "2026-11-04T13:48:31.046101Z",
+          "cleared_at": null
+        },
+        "error_code": null
+      },
+      "text": {
+        "text_id": "text-1b340de9-a2a3-4e8f-9465-a82934ace839",
+        "space_id": "space-demo",
+        "idempotency_key": "native-companion_t2-text",
+        "request_digest": "sha256:7bc5afc90ed5fa0350915a3b99259f136ade6905a5ced34ee8a3e0382927c4ff",
+        "input": {
+          "context_digest": "sha256:58538ae1f66f95783284294c32cf1e165e0c15d8ca41c598d4a59a8081b189b9",
+          "context_bytes": 231,
+          "message_count": 3,
+          "retain_seconds": 600,
+          "expires_at": "2026-11-04T13:39:56.068Z"
+        },
+        "deployment": {
+          "adapter": "ollama-text-v1",
+          "revision": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+          "model": "fixture:text",
+          "data_location": "local"
+        },
+        "created_at": "2026-11-04T13:38:31.782115Z",
+        "updated_at": "2026-11-04T13:38:31.798694Z",
+        "status": "succeeded",
+        "output": {
+          "text": "先搭一个稳固的底座，再给小狗装上灯和扬声器。",
+          "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+          "expires_at": "2026-11-04T13:48:31.798694Z",
+          "cleared_at": null
+        },
+        "usage": {
+          "input_tokens": 25,
+          "output_tokens": 8
+        },
+        "error_code": null
+      },
+      "speech": {
+        "synthesis_id": "speech-e49145aa-a4a7-4ba9-97a3-53ac3406b4e5",
+        "space_id": "space-demo",
+        "idempotency_key": "native-companion_t2-speech",
+        "request_digest": "sha256:edf7cf111828ad91e69177fc64680d966b095ab82bf0923d35db317294450ba0",
+        "input_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+        "input_characters": 22,
+        "voice": "local",
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T13:39:56.068Z",
+        "deployment": {
+          "adapter": "local-http-speech-v1",
+          "revision": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097",
+          "model": "fixture/tts",
+          "data_location": "local"
+        },
+        "created_at": "2026-11-04T13:38:31.962658Z",
+        "updated_at": "2026-11-04T13:38:31.984794Z",
+        "status": "succeeded",
+        "media_id": "media-36a688c6-1119-426b-8b3a-28c22c28aace",
+        "error_code": null
+      }
+    }
+  },
+  "cleared": {
+    "1": {
+      "text_id": "text-468f7d88-d474-4d6a-b527-610509319a09",
+      "space_id": "space-demo",
+      "idempotency_key": "native-companion_t1-text",
+      "request_digest": "sha256:834dc0eb447edc4c9eb33b8a00d38ceffc3473c125930ec3a934ebafe8583b8a",
+      "input": {
+        "context_digest": "sha256:b51a90d88ba95549a23015cbde30b8ebc4903ef6a534cd3831fc12d78819b541",
+        "context_bytes": 123,
+        "message_count": 1,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T13:39:56.068Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T13:38:31.279554Z",
+      "updated_at": "2026-11-04T13:38:31.297750Z",
+      "status": "succeeded",
+      "output": {
+        "text": null,
+        "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+        "expires_at": "2026-11-04T13:48:31.297750Z",
+        "cleared_at": "2026-11-04T13:38:32.151539Z"
+      },
+      "usage": {
+        "input_tokens": 25,
+        "output_tokens": 8
+      },
+      "error_code": null
+    },
+    "2": {
+      "text_id": "text-1b340de9-a2a3-4e8f-9465-a82934ace839",
+      "space_id": "space-demo",
+      "idempotency_key": "native-companion_t2-text",
+      "request_digest": "sha256:7bc5afc90ed5fa0350915a3b99259f136ade6905a5ced34ee8a3e0382927c4ff",
+      "input": {
+        "context_digest": "sha256:58538ae1f66f95783284294c32cf1e165e0c15d8ca41c598d4a59a8081b189b9",
+        "context_bytes": 231,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T13:39:56.068Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T13:38:31.782115Z",
+      "updated_at": "2026-11-04T13:38:31.798694Z",
+      "status": "succeeded",
+      "output": {
+        "text": null,
+        "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+        "expires_at": "2026-11-04T13:48:31.798694Z",
+        "cleared_at": "2026-11-04T13:38:32.190810Z"
+      },
+      "usage": {
+        "input_tokens": 25,
+        "output_tokens": 8
+      },
+      "error_code": null
+    }
+  },
+  "prepared_slot": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "session_id": "native-companion",
+    "previous_ids": [],
+    "policy_digest": "sha256:76c9aa8435c13b217defe07ef51a83373608f1bbf3d02d2e3927a1a2bab2f633",
+    "deployments": {
+      "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+      "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+      "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+    },
+    "created_at": "2026-11-04T13:38:31.068Z",
+    "expires_at": "2026-11-04T13:43:31.068Z",
+    "max_turns": 2,
+    "stopped": false,
+    "history": {
+      "digest": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "message_count": 0
+    },
+    "turns": [
+      {
+        "turn_id": "native-companion_t1",
+        "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+        "context_digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+        "completed": false,
+        "record": null
+      }
+    ],
+    "checksum": "sha256:3267fc4bb41429ece17d303c414a7d75f685eaf4b9ddc6b52824035ee22eee8b"
+  },
+  "prepared": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "session_id": "native-companion",
+    "previous_ids": [],
+    "policy_digest": "sha256:76c9aa8435c13b217defe07ef51a83373608f1bbf3d02d2e3927a1a2bab2f633",
+    "deployments": {
+      "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+      "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+      "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+    },
+    "created_at": "2026-11-04T13:38:31.068Z",
+    "expires_at": "2026-11-04T13:43:31.068Z",
+    "max_turns": 2,
+    "stopped": false,
+    "history": {
+      "digest": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "message_count": 0
+    },
+    "turns": [
+      {
+        "turn_id": "native-companion_t1",
+        "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+        "context_digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+        "completed": false,
+        "record": {
+          "version": 2,
+          "text_context": {
+            "digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+            "history_messages": 0
+          },
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "turn_id": "native-companion_t1",
+          "created_at": "2026-11-04T13:38:31.068Z",
+          "expires_at": "2026-11-04T13:43:31.068Z",
+          "source": {
+            "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+            "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "expires_at": "2026-11-04T13:48:31.046Z"
+          },
+          "language": "zh",
+          "voice": "local",
+          "retain_seconds": 600,
+          "deployments": {
+            "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+            "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+            "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+          },
+          "jobs": {
+            "transcription": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-transcription",
+                "input": {
+                  "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+                  "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+                  "language": "zh",
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:18df807deaa09d9a14d39380ecddeac88cd7aeceab300b25e4e666157872d51c"
+              },
+              "observation": null,
+              "rejected_code": null,
+              "discard_attempted": false
+            },
+            "text": null,
+            "speech": null
+          },
+          "stopped": false,
+          "checksum": "sha256:b3eace4e63ca606b1bb8a7fc74adf426a0f40e79c57595010380b2ea6eac754c"
+        }
+      }
+    ],
+    "checksum": "sha256:bf379ee184b3be0bbdb8306015ea201562d8057d8d3ecb02e3a9fb36bc61cec4"
+  },
+  "ready": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "session_id": "native-companion",
+    "previous_ids": [],
+    "policy_digest": "sha256:76c9aa8435c13b217defe07ef51a83373608f1bbf3d02d2e3927a1a2bab2f633",
+    "deployments": {
+      "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+      "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+      "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+    },
+    "created_at": "2026-11-04T13:38:31.068Z",
+    "expires_at": "2026-11-04T13:43:31.068Z",
+    "max_turns": 2,
+    "stopped": false,
+    "history": {
+      "digest": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "message_count": 0
+    },
+    "turns": [
+      {
+        "turn_id": "native-companion_t1",
+        "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+        "context_digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+        "completed": false,
+        "record": {
+          "version": 2,
+          "text_context": {
+            "digest": "sha256:97db6bed8a76771c04107c8f9d42506335cffc4ff70a069eadf4fa57f84aa988",
+            "history_messages": 0
+          },
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "turn_id": "native-companion_t1",
+          "created_at": "2026-11-04T13:38:31.068Z",
+          "expires_at": "2026-11-04T13:43:31.068Z",
+          "source": {
+            "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+            "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "expires_at": "2026-11-04T13:48:31.046Z"
+          },
+          "language": "zh",
+          "voice": "local",
+          "retain_seconds": 600,
+          "deployments": {
+            "transcription": "sha256:16a623f81cb06b5da4413f39a4e2e425e0e7232b616e6d10a67e16f4337d246f",
+            "text": "sha256:a909f29c83ec246997fae9ba6037a085c303a91ff8fb23ec4a384eeec7e43501",
+            "speech": "sha256:0ce23089b2f4abe74e80cfe58b5940e7a09f6986c3fd975401a073d8f10c6097"
+          },
+          "jobs": {
+            "transcription": {
+              "original": {
+                "version": 1,
+                "origin": "https://nas.local",
+                "space_id": "space-demo",
+                "idempotency_key": "native-companion_t1-transcription",
+                "input": {
+                  "media_id": "media-78b36717-deba-4b74-972a-af43f7dc1738",
+                  "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+                  "language": "zh",
+                  "expires_at": "2026-11-04T13:39:56.068Z"
+                },
+                "request_digest": "sha256:18df807deaa09d9a14d39380ecddeac88cd7aeceab300b25e4e666157872d51c"
+              },
+              "observation": {
+                "identity_digest": "sha256:595f87fb205e42518001d53d2d4afdd8e9bb553d921ff277ca5581ec242a9f43",
+                "terminal_digest": "sha256:d14296effae630d0d784af61182c08ab887a8696591601d69976a188c02f25ba",
+                "status": "succeeded",
+                "updated_at": "2026-11-04T13:38:31.218Z",
+                "output": {
+                  "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+                  "expires_at": "2026-11-04T13:48:31.046Z",
+                  "cleared_at": null
+                },
+                "media_id": null
+              },
+              "rejected_code": null,
+              "discard_attempted": false
+            },
+            "text": null,
+            "speech": null
+          },
+          "stopped": false,
+          "checksum": "sha256:0313cb0b93407061e3f4c1024aa77f8f42d9cf0d9867d9c2df1793aa6c5d1ca7"
+        }
+      }
+    ],
+    "checksum": "sha256:33dbdff15e3c57be604f31e7ad743528d0d8e9fff8e6e3caaf8ca6de87c26feb"
+  }
+}

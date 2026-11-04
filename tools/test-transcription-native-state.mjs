@@ -17,7 +17,7 @@ const build = path.join(ios, '.build/debug');
 const objects = (await readdir(path.join(build, 'LimeIoTKit.build'))).filter(name => name.endsWith('.o')).map(name => path.join(build, 'LimeIoTKit.build', name));
 await run('swiftc', ['-swift-version', '6', '-parse-as-library', '-I', path.join(build, 'Modules'), 'App/TranscriptionStore.swift', 'Checks/TranscriptionStoreChecks.swift', ...objects, '-o', path.join(directory, 'ios-transcription-checks')], ios);
 await run(path.join(directory, 'ios-transcription-checks'), []);
-await run('swiftc', ['-swift-version', '6', '-typecheck', '-I', path.join(build, 'Modules'), 'App/SecureStore.swift', 'App/FirmwareStore.swift', 'App/MediaStore.swift', 'App/SpeechStore.swift', 'App/TranscriptionStore.swift', 'App/HomeStore.swift'], ios);
+await run('swiftc', ['-swift-version', '6', '-typecheck', '-I', path.join(build, 'Modules'), 'App/SecureStore.swift', 'App/FirmwareStore.swift', 'App/MediaStore.swift', 'App/SpeechStore.swift', 'App/TranscriptionStore.swift', 'App/VisionStore.swift', 'App/TextGenerationStore.swift', 'App/VoiceTurnStore.swift', 'App/CompanionStore.swift', 'App/ObservationStore.swift', 'App/ZigbeeStore.swift', 'App/HomeStore.swift'], ios);
 await run('swiftc', ['-frontend', '-parse', 'App/TranscriptionViews.swift', 'App/SpeechViews.swift', 'App/MediaViews.swift', 'App/Views.swift', 'App/LimeIoTApp.swift'], ios);
 await run('plutil', ['-lint', 'LimeIoT.xcodeproj/project.pbxproj'], ios);
 // 装配变更回归媒体选择与有界文件读取，不启动端上环境。

@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "gateway_cli_home_web_zigbee_discovery_and_ieee_interview",
+  "status": "software_gateway_cli_web_stage_passed",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "official_cloud_updated": false,
+  "new_nas_image": false,
+  "native_discovery_integrated": false,
+  "full_goal_completed": false,
+  "archive": ".dev/observation-discovery-20261104",
+  "changes": {
+    "shared_serial_actor_and_single_query_slot": true,
+    "bounded_neighbors_and_ieee_endpoint_queries": true,
+    "identity_and_current_short_address_rechecked": true,
+    "readonly_discovery_registers_af": false,
+    "discovery_creates_offer_device_or_binding": false,
+    "cli_agent_catalog_and_self_contained_schema": true,
+    "explicit_web_candidate_review_before_binding": true,
+    "ephemeral_results_seconds": 60,
+    "background_input_context_and_expiry_invalidate": true,
+    "new_dependencies": false,
+    "database_schema_changed": false
+  },
+  "verification": {
+    "rust_gateway_tests": 81,
+    "rust_znp_tests": 11,
+    "rust_results": "verified in tool execution output; no raw Rust test log archived",
+    "new_combined_tests": 7,
+    "existing_regression_tests": 12,
+    "failed": 0,
+    "skipped": 0,
+    "actual_gateway_receipts_match_schema": true,
+    "no_af_during_discovery_and_interview": true,
+    "short_address_change_during_interview_rejected": true,
+    "shared_busy_timeout_and_due_polling_fairness": true,
+    "coordinator_identity_change_closes_group": true,
+    "restart_no_replay": true,
+    "cookie_csrf_required": true,
+    "mobile_viewport_width": 390,
+    "all_targets_clippy_zero_warnings": true,
+    "minimal_feature_check": true,
+    "zigbee_only_feature_check": true,
+    "home_typecheck_and_build": true,
+    "website": {
+      "checked_files": 48,
+      "errors": 0,
+      "warnings": 0,
+      "pages": 53,
+      "local_references": 2055
+    },
+    "format_check": true,
+    "both_repository_diff_checks": true,
+    "document_links": {
+      "passed": true,
+      "files": 7,
+      "local_file_links": 300,
+      "broken": [],
+      "current_source_manifest_matches": true
+    }
+  },
+  "history": [
+    {
+      "stage": "initial new combined checks",
+      "passed": 5,
+      "failed": 2,
+      "reasons": [
+        "web fixture changed trigger device but retained condition device, causing 404",
+        "API fixture counted pre-deployment candidate samples as a threshold baseline"
+      ],
+      "fix": "correct condition device and wait for a post-deployment state revision; original assertions and deadlines retained",
+      "log": "journey-initial.log"
+    },
+    {
+      "stage": "first targeted repair verification",
+      "passed": 7,
+      "failed": 0,
+      "log": "journey-retry1.log"
+    },
+    {
+      "stage": "final verification with moved-address/schema cases and strict IEEE length",
+      "passed": 7,
+      "failed": 0,
+      "log": "journey-final.log"
+    }
+  ],
+  "source_manifest": {
+    "path": "source-sha256.json",
+    "files": 28,
+    "sha256": "2ad75d3f968fa8436baedb681e8027e367aef78742788c86e83d4c37fda40d8a",
+    "whole_workspace_frozen": false,
+    "current_files_match": true
+  },
+  "gateway_binary": {
+    "path": ".dev/znp-verification-20261103/target/debug/limeiot-gateway",
+    "sha256": "79569dabf8b87d4a125a6deee98fefb288d502514a3c8264d46f5b04591fc6c2"
+  },
+  "reports": [
+    {
+      "path": ".dev/zigbee-gateway-journey-Beg2RB/discovery-web-report.json",
+      "sha256": "b89e6bb92aa5e7fc25ac96feaeb1e7086859df551d4023fa845d30866f6f7abf"
+    },
+    {
+      "path": ".dev/zigbee-gateway-journey-kpJwOH/discovery-web-boundaries-report.json",
+      "sha256": "7f4535508816c7ff919cbb605f53e699184ba96245c345a062f798c39467259f"
+    },
+    {
+      "path": ".dev/zigbee-gateway-journey-Po9Rp2/discovery-runtime-report.json",
+      "sha256": "1e164a007e68afc455fb3c2c2e17744c7465e18e71d79b6e4624a41c5f2a734d"
+    },
+    {
+      "path": ".dev/zigbee-gateway-journey-dtBxCo/discovery-isolation-report.json",
+      "sha256": "475917e68c7438c16ff14fb121a1bb4199083d9ff4ea41b3a491be6dde92cd79"
+    },
+    {
+      "path": ".dev/zigbee-gateway-journey-gQgxsh/observation-runtime-report.json",
+      "sha256": "e05688492a0fe923570864da760bb857193b29159f99bffa1e4fd740ffdc2e3b"
+    },
+    {
+      "path": ".dev/zigbee-gateway-journey-flmJwn/observation-query-report.json",
+      "sha256": "6210b82f60ddc1393750297db8aaec007aa2a3500c6eda11a53cdd6dd036405a"
+    },
+    {
+      "path": ".dev/zigbee-gateway-journey-Ol1Uvq/observation-web-report.json",
+      "sha256": "f38276a79d29b474902ae334492a9da5a75f7fa6b74ae9c129a30b63468329bf"
+    },
+    {
+      "path": ".dev/zigbee-gateway-journey-pWuKa4/observation-web-lock-report.json",
+      "sha256": "6b775db6d631ca577b5ccc43df0e91adc362f268e43be5daa71122f37571c30b"
+    },
+    {
+      "path": ".dev/zigbee-gateway-journey-ajlS6A/observation-web-review-report.json",
+      "sha256": "5e16d3f6d67151a6d4e9411c67320a3ae14a2d7be72af1594606ebca9cd790c7"
+    }
+  ],
+  "reviewed_screenshots": [
+    ".dev/zigbee-gateway-journey-pAYb4H/discovery-neighbors-390.png",
+    ".dev/zigbee-gateway-journey-pAYb4H/discovery-endpoints-390.png"
+  ],
+  "final_screenshots": [
+    ".dev/zigbee-gateway-journey-Beg2RB/discovery-neighbors-390.png",
+    ".dev/zigbee-gateway-journey-Beg2RB/discovery-endpoints-390.png"
+  ],
+  "logs": {
+    "new_journeys": "journey-final.log",
+    "existing_journeys": "regression.log",
+    "clippy": "clippy.log",
+    "minimal_feature": "minimal-feature.log",
+    "zigbee_feature": "zigbee-feature.log",
+    "home_build": "home-build.log",
+    "website_build": "website-build.log",
+    "format": "format.log"
+  },
+  "limits": [
+    "coordinator neighbors only, not an atomic or complete network snapshot",
+    "unauthenticated protocol evidence does not grant platform identity",
+    "aborted HTTP does not immediately interrupt an already-started serial operation; original deadline still applies",
+    "no permit-join, network formation, router traversal, static migration or Zigbee execution mappings",
+    "native discovery entry, current NAS image and official cloud deployment not delivered in this stage",
+    "hardware, full native application runtime, AMD64 multimodal recovery, model quality and whole-platform acceptance remain separate"
+  ],
+  "design": "Reuse owned serial session, candidate pipeline, source decisions, CLI executor and page lifecycle; protocol types remain outside core domain."
+}

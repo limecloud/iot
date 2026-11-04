@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "independent_observation_port_and_single_target_znp_gateway_software_journey",
+  "status": "macos_host_software_stage_passed_with_recorded_limits",
+  "archive": ".dev/zigbee-gateway-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "linux_serial_runtime_verified": false,
+  "nas_serial_container_verified": false,
+  "official_cloud_updated": false,
+  "published": false,
+  "full_goal_completed": false,
+  "changes": {
+    "independent_read_only_observation_port": true,
+    "native_mqtt_takeover_rejected": true,
+    "source_token_not_persisted": true,
+    "source_policy_in_config_digest": true,
+    "store_atomicity_and_restart_baseline": true,
+    "fixed_environment_mapping_and_runtime": true,
+    "dynamic_pairing": false,
+    "permit_join": false,
+    "existing_installation_source_migration": false,
+    "zigbee_device_execution": false,
+    "database_schema_changed": false,
+    "new_third_party_dependency": false
+  },
+  "verification": {
+    "initial_core_and_runtime_tests": 279,
+    "runtime_tests_repeated": 71,
+    "runtime_repeat_precedes_last_core_condition_change": true,
+    "final_affected_core_tests": {
+      "observation": 9,
+      "conditions": 11,
+      "thresholds": 8
+    },
+    "final_znp": {
+      "rust_session_tests": 8,
+      "diagnostics_pty_tests": 23,
+      "environment_pty_tests": 17,
+      "strict_schema_groups": 5
+    },
+    "config_contract_groups": 2,
+    "single_target_gateway_journeys": 1,
+    "journey": {
+      "passed": true,
+      "real_gateway_sqlite_mqtt": true,
+      "real_serial_component_with_software_ncp": true,
+      "external_source_without_native_identity": true,
+      "threshold_and_condition": true,
+      "gateway_restart_no_replay": true,
+      "signature_failure_offline": true,
+      "timeout_recovery": true,
+      "responsive_browser": true,
+      "hardware": false,
+      "published": false,
+      "full_goal_completed": false,
+      "commands": [
+        {
+          "command_id": "c1-2-132cd68f-3ac3-42f3-846e-1636166205fe",
+          "status": "confirmed"
+        },
+        {
+          "command_id": "c1-1-ead8787d-546c-4f10-851e-ab0ace3a1049",
+          "status": "confirmed"
+        }
+      ]
+    },
+    "journey_archive": ".dev/zigbee-gateway-journey-85amEF",
+    "clippy_all_affected_targets_warnings_denied": true,
+    "feature_checks": {
+      "minimal": true,
+      "zigbee_only": true,
+      "precede_last_core_condition_change": true
+    },
+    "gateway_simulator_build": true,
+    "home_build": true,
+    "home_existing_dependency_warnings_retained": true,
+    "website": {
+      "astro_errors": 0,
+      "astro_warnings": 0,
+      "astro_hints": 0,
+      "html_pages": 53,
+      "local_references": 2053
+    },
+    "nas_compose_render_only": true,
+    "prepared_artifact": {
+      "path": ".dev/releases/official-control-OVVa1v",
+      "files": 151,
+      "source_inputs": 146,
+      "all_inputs_match_current_sources": true,
+      "collected_gateway_bin_cargo_check": true,
+      "deployed": false
+    },
+    "documentation": {
+      "documents": 6,
+      "local_file_links": 316,
+      "broken": []
+    },
+    "logs_sha256": {
+      "artifact-cargo-check-final.log": "bf02d0da9d60847e58eef3b587450eda5f97c186b484deb295caa21396da0e1c",
+      "artifact-cargo-check.log": "a247d41c844d38e3b4ebe9325078c6cf98bbb8681ede64200840ef24adb44183",
+      "artifact-preparation-final.log": "865821cfffa14f97d58e17ed2746bf0de9d117a746f346b53c981dd57190e3d7",
+      "build-final.log": "aa752ea00708606f18ae328d107018684d89297280c33b233d4d45c23ad951fd",
+      "build.log": "1cbe9c5c108ebb74c489853083e085d6976d80240402c0e09abc191bc5f6869f",
+      "clippy-final.log": "497fed59ae1252d245b8557394638f159bf545945fadd6ee49559cc6b78d046f",
+      "clippy-initial.log": "4be6f5e9b0c9eb314d6d4c8293571a5ff867f17dd8b641632ddde035c0cf08ea",
+      "config-contract.log": "f87d6b67774993d03e9c386006dd3e3df6b9d9b0147fb2f03888fe4a57d195f1",
+      "control-artifact.log": "0da1a45ac09f80387a05be506de34c6a844da8690526871a99d6c1f9ecffdac1",
+      "core-affected-final.log": "f3e64532eec5b7d4db48e946a6d07fd2d95f0c796fc05918f80d532d18306ef5",
+      "core-initial.log": "05882cf2efb79af3fdd16d2c065ec930b6d448fbc8060c1d4c2cac0c6fa55a90",
+      "core-repair-1.log": "bfcb4ed17aa98f8dc52c49a694ace0af0da1df1fa676197dabf2684a47b84bd6",
+      "core-runtime-tests-initial.log": "ca6e78c7b99f8307fb32cf66e00edfc050e58602a6394c449539ae80d466ad7d",
+      "home-build.log": "82d596c451698201e23824645d5e771c389ef84dfb537f008341beb646aaaa93",
+      "journey-final.log": "4936042880b44f10b4adea9937a2607376f3b6499f80013b013a65cce112d373",
+      "journey-initial.log": "5d888458915c9cc10dd8c75c07d5392120dd4b72caaa6e492c30c0de969e7264",
+      "minimal-feature-check.log": "7b00fad4675799b362f2782ae41dfdc0243bdc8f6d67b0663482fbb47e859168",
+      "runtime-initial.log": "d969f7f9b12fa78f1bbacca84f3d1054b44b3952a5494929b7924ed46611e62e",
+      "runtime-tests-final.log": "4c9802113390eb29b77c8b8c1f9226cd90eca672fca2e9a19fb73b864832ad33",
+      "website-build-final.log": "a89a516c16922b1168768d53890c504a6b8966cb99f876445de98a782b73fba0",
+      "website-build.log": "1b40062330c28fa4df2f14cc1654f0c1be1437bf90a161c0ed41b657c07d30b7",
+      "zigbee-feature-check.log": "060b39013f5e388f44b9d207d978dab1003bb2f4ba12493b75870fdbd7d03b12",
+      "zigbee-regression-final.log": "f8fc7f1e7a0bc034a95da8ac3a3e1f44bde6a2ba2b981d099dd3bb886e29fe92"
+    },
+    "source_manifest_sha256": "d5a91d687a416ad407522c5e7512f8f715d0dd18733fb7c11d865200126cd21d"
+  },
+  "history": {
+    "artifact_initial_check": {
+      "passed": false,
+      "reason": "Collector omitted contracts/tools/catalog.json and contracts/rule.schema.json.",
+      "repair": "Include both embedded contracts, prepare a fresh artifact and rerun cargo check.",
+      "final_passed": true,
+      "repair_rounds": 1
+    }
+  },
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "files": 36,
+    "captured_after_checks": true,
+    "whole_stage_inputs_frozen": false
+  },
+  "limits": [
+    "A failed target or unavailable source ends the entire serial group and rebuilds all threshold baselines; persistent faults may disrupt peer automation.",
+    "Only one Zigbee target has a runtime journey; multi-target configuration grouping is not fault isolation acceptance.",
+    "Explicit configuration is for a new installation; do not remove or rewrite an existing database to bypass the config digest.",
+    "Protocol IEEE and Basic signatures are unauthenticated evidence; confirmed readings do not establish cryptographic device identity.",
+    "Tests use macOS PTY software NCP and MQTT simulator, not RF, fixed firmware, procurement models or Linux/NAS serial.",
+    "Final checks cover the named modules; unrelated concurrent worktree changes and earlier test results do not establish a frozen whole-product pass."
+  ],
+  "next": [
+    "per_device_observation_lifecycle_separate_from_serial_session",
+    "multi_target_fault_isolation_journey",
+    "managed_binding_pairing_and_join"
+  ]
+}

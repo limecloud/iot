@@ -1,7 +1,7 @@
 name: limeiot
 services:
   gateway:
-    image: limeiot/local:0.5.0
+    image: limeiot/local:0.6.0
     build:
       context: ../..
       dockerfile: deploy/nas/Dockerfile
@@ -41,7 +41,7 @@ services:
       - ${LIMEIOT_STATE_DIR:?}/firmware:/firmware:ro
     networks: [local, ingress]
   lamp:
-    image: limeiot/local:0.5.0
+    image: limeiot/local:0.6.0
     profiles: [simulation]
     user: "${LIMEIOT_UID:?}:${LIMEIOT_GID:?}"
     command: [simulator, device-lamp]

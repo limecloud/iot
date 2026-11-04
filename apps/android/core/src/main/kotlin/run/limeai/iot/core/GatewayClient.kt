@@ -33,19 +33,20 @@ class GatewayException(val code: String, val status: Int = 0) : Exception(code) 
         "unsupported_capability" to "草案引用了不支持的设备能力", "draft_expired" to "生成请求已过期", "draft_not_found" to "未找到原草案，请确认网关地址"
     )[code] ?: "请求未完成（$code）"
 }
-data class GatewayRequest(val url: String, val method: String, val headers: Map<String, String>, val body: String?)
+data class GatewayRequest(val url: String, val method: String, val headers: Map<String, String>, val body: String?, val timeoutMillis: Long = 12000)
 data class GatewayResponse(val status: Int, val body: String, val cookie: String? = null)
 fun interface GatewayTransport { suspend fun send(request: GatewayRequest): GatewayResponse }
 interface SessionStore { suspend fun load(origin: String): String?; suspend fun save(origin: String, value: String?) }
 
 // OkHttp 只存在于传输适配器，不将其类型暴露给界面或领域合同。
 class OkHttpTransport : GatewayTransport {
-    private val client = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false).callTimeout(12, TimeUnit.SECONDS).cache(null).build()
+    private val client = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false).callTimeout(12, TimeUnit.SECONDS).readTimeout(35, TimeUnit.SECONDS).cache(null).build()
     override suspend fun send(request: GatewayRequest): GatewayResponse = suspendCancellableCoroutine { continuation ->
         val builder = Request.Builder().url(request.url)
         request.headers.forEach { (name, value) -> builder.header(name, value) }
         builder.method(request.method, request.body?.toRequestBody("application/json".toMediaType()))
         val call = client.newCall(builder.build())
+        call.timeout().timeout(request.timeoutMillis, TimeUnit.MILLISECONDS)
         continuation.invokeOnCancellation { call.cancel() }
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) { if (!continuation.isCancelled) continuation.resumeWithException(e) }
@@ -72,13 +73,13 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
     }
     private fun segment(value: String) = URLEncoder.encode(value, "UTF-8").replace("+", "%20")
     private fun base(space: String) = "/api/v1/spaces/${segment(space)}"
-    private suspend inline fun <reified T> call(path: String, method: String = "GET", body: String? = null, key: String? = null, authenticated: Boolean = true, strictJSON: Boolean = false): T = mutex.withLock {
+    private suspend inline fun <reified T> call(path: String, method: String = "GET", body: String? = null, key: String? = null, authenticated: Boolean = true, strictJSON: Boolean = false, timeoutMillis: Long = 12000, maxJSONBytes: Int = 2_000_000): T = mutex.withLock {
         if (authenticated && saved == null) throw GatewayException("unauthenticated", 401)
         val headers = mutableMapOf("Origin" to origin, "Cache-Control" to "no-store")
         saved?.let { headers["Cookie"] = it.cookie; headers["X-CSRF-Token"] = it.session.csrfToken }
         key?.let { headers["Idempotency-Key"] = it }
         if (body != null) headers["Content-Type"] = "application/json"
-        val response = transport.send(GatewayRequest(origin + path, method, headers, body))
+        val response = transport.send(GatewayRequest(origin + path, method, headers, body, timeoutMillis))
         if (response.status !in 200..299) {
             val code = runCatching { json.decodeFromString<Failure>(response.body).error.code }.getOrDefault("request_failed")
             if (response.status == 401 && authenticated) { saved = null; store?.save(origin, null) }
@@ -90,7 +91,7 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
             saved = SavedSession(json.decodeFromString(response.body), cookie)
             store?.save(origin, json.encodeToString(saved))
         }
-        if (strictJSON) json.decodeFromJsonElement(IntegerJSON.parse(response.body)) else json.decodeFromString(response.body.ifEmpty { "{}" })
+        if (strictJSON) json.decodeFromJsonElement(IntegerJSON.parse(response.body, maxBytes = maxJSONBytes)) else json.decodeFromString(response.body.ifEmpty { "{}" })
     }
     suspend fun login(token: String) { mutex.withLock { saved = null }; call<Session>("/api/v1/auth/session", "POST", json.encodeToString(Login(token)), authenticated = false) }
     suspend fun restore() {
@@ -105,11 +106,43 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
         val capabilities = call<Capabilities>("$path/capabilities")
         return Snapshot(space, call<Page<Device>>("$path/devices").items, capabilities.models, call("$path/commands"), call<Page<Deployment>>("$path/rule-deployments").items, call<Page<Run>>("$path/runs").items, capabilities.inference)
     }
-    suspend fun create(space: String, intent: CommandIntent): Command = call(base(space) + "/commands", "POST", json.encodeToString(intent.input), intent.key)
-    suspend fun resolve(space: String, key: String): Command = call(base(space) + "/commands/by-key/" + segment(key))
-    suspend fun command(space: String, id: String): Command = call(base(space) + "/commands/" + segment(id))
+    suspend fun create(space: String, intent: CommandIntent): Command = checkedCommand(call(base(space) + "/commands", "POST", json.encodeToString(intent.input), intent.key), space, intent.key, intent)
+    suspend fun resolve(space: String, key: String): Command = checkedCommand(call(base(space) + "/commands/by-key/" + segment(key)), space, key)
+    suspend fun resolve(space: String, intent: CommandIntent): Command = checkedCommand(call(base(space) + "/commands/by-key/" + segment(intent.key)), space, intent.key, intent)
+    suspend fun command(space: String, id: String): Command = checkedCommand(call(base(space) + "/commands/" + segment(id)), space, commandId = id)
+    private fun checkedCommand(value: JsonObject, space: String, key: String? = null, intent: CommandIntent? = null, commandId: String? = null): Command {
+        fun fail(): Nothing = throw GatewayException("invalid_response")
+        fun text(objectValue: JsonObject, name: String): String = (objectValue[name] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: fail()
+        val request = value["request"] as? JsonObject ?: fail()
+        val status = text(value, "status")
+        val id = text(value, "command_id")
+        if (!id.matches(Regex("[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")) || commandId != null && id != commandId || status !in setOf("accepted", "dispatched", "confirmed", "unknown", "failed", "expired", "rejected") || !text(value, "request_digest").matches(Regex("sha256:[a-f0-9]{64}"))) fail()
+        if (request.keys != setOf("space_id", "device_id", "model_revision", "idempotency_key", "expires_at", "operation") || text(request, "space_id") != space || key != null && text(request, "idempotency_key") != key) fail()
+        val operation = request["operation"] as? JsonObject ?: fail()
+        if (operation.keys != setOf("type", "path", "value") || text(operation, "type") !in setOf("property.set", "action.invoke")) fail()
+        val expires = runCatching { java.time.Instant.parse(text(request, "expires_at")) }.getOrElse { fail() }
+        if (intent != null && (text(request, "device_id") != intent.input.deviceId || text(request, "model_revision") != intent.input.modelRevision || operation != json.encodeToJsonElement(intent.input.operation) || expires != java.time.Instant.parse(intent.input.expiresAt))) fail()
+        if (status == "confirmed") {
+            if (value["error"] != JsonNull) fail()
+            val evidence = value["evidence"] as? JsonObject ?: fail()
+            when (text(operation, "type")) {
+                "property.set" -> if (evidence["type"] != JsonPrimitive("device_result") || (evidence["reported"] as? JsonObject)?.get(text(operation, "path")) != operation["value"]) fail()
+                "action.invoke" -> {
+                    val observed = runCatching { java.time.Instant.parse(text(evidence, "observed_at")) }.getOrElse { fail() }
+                    if (evidence.keys != setOf("type", "path", "input_digest", "output", "completion", "observed_at") || evidence["type"] != JsonPrimitive("action_result") || evidence["path"] != operation["path"] || !text(evidence, "input_digest").matches(Regex("sha256:[a-f0-9]{64}")) || evidence["output"] == null || evidence["output"] == JsonNull || evidence["completion"] !in listOf(JsonPrimitive("submitted"), JsonPrimitive("observed")) || observed < expires.minusSeconds(32) || observed > java.time.Instant.now().plusSeconds(2)) fail()
+                }
+            }
+        }
+        return json.decodeFromJsonElement(value)
+    }
+    suspend fun aiCatalog(space: String): AiCatalog {
+        if (!space.matches(Regex("[A-Za-z0-9_-]{1,128}"))) throw AiCatalogException()
+        val value = call<JsonObject>(base(space) + "/ai-catalog", strictJSON = true, maxJSONBytes = 32768)
+        return AiCatalog.parse(IntegerJSON.canonical(value), space)
+    }
     internal suspend fun otaCall(space: String, suffix: String, method: String = "GET", body: String? = null, key: String? = null): JsonObject = call(base(space) + suffix, method, body, key, strictJSON = true)
     internal suspend fun mediaCall(space: String, suffix: String, method: String = "GET", body: String? = null, key: String? = null): JsonObject = call(base(space) + suffix, method, body, key, strictJSON = true)
+    internal suspend fun observationCall(space: String, suffix: String, method: String = "GET", body: String? = null, key: String? = null, query: Boolean = false): JsonObject = call(base(space) + suffix, method, body, key, strictJSON = true, timeoutMillis = if (query) 35000 else 12000)
     suspend fun createDraft(reference: DraftReference, input: DraftInput): RuleDraft = call(base(reference.space) + "/rule-drafts", "POST", json.encodeToString(input), reference.key)
     suspend fun resolveDraft(reference: DraftReference): RuleDraft = call(base(reference.space) + "/rule-drafts/by-key/" + segment(reference.key))
     suspend fun simulate(space: String, rule: Rule, eventData: JsonElement): Simulation {

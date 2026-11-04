@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "linux_arm64_packaged_zigbee_commissioning_discovery_and_nas_restore",
+  "status": "software_container_stage_passed",
+  "archive": ".dev/commissioning-nas-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "physical_device_passthrough": false,
+  "native_app_runtime": false,
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "changes": {
+    "journey": "tools/test-nas-zigbee.mjs",
+    "new_nas_verification_image": true,
+    "rust_changed": false,
+    "backup_implementation_changed": false,
+    "database_schema_changed": false,
+    "new_dependencies": false
+  },
+  "build": {
+    "platform": "linux/arm64",
+    "source_digest": "62c78699a94e3744f72a1490c9785ba3df3d96ebd0d93e8655a9118fd4f14498",
+    "source_inputs": 399,
+    "artifact_files": 91,
+    "linux_elfs": 4,
+    "node": "v24.21.0",
+    "toolchain": {
+      "rust": "1.93.1",
+      "zig": "0.14.1",
+      "zig_archive_sha256": "39f3dc5e79c22088ce878edc821dedb4ca5a1cd9f5ef915e9b3cc3053e8faefa",
+      "rust_std_sha256": "56f2cd66ad7167dd6924ff095063ffddfe731812a1909b9200bb0ee21982fc47",
+      "rust_target": "aarch64-unknown-linux-gnu",
+      "c_target": "aarch64-linux-gnu.2.36"
+    },
+    "manifest_sha256": "08c0bca3bb5205fe898c9baa949377c8b37e97d7ec8c3deede2db538b8a646b7",
+    "image": {
+      "id": "sha256:418b44461945893892c3655ea10966a3645b2648a8596352481c890045262237",
+      "reference": "limeiot/verification:nas-arm64-commissioning-20261104",
+      "platform": "linux/arm64"
+    },
+    "runtime_base_id": "sha256:c9c96ae578fec47d78e537d39502b11a0604a6bb1308a92ae15a72cc1e19ca7e",
+    "final_source_inputs_match": true
+  },
+  "verification": {
+    "complete_journey_passes": 1,
+    "failed_journeys_this_stage": 0,
+    "latest_report": ".dev/nas-zigbee-4dd2cba7132467fc/report.json",
+    "report_sha256": "a4bc5c1524f5c36e006c9445236e9445364a5270a2ce2b25aea8c7c192d1c424",
+    "linux_machine": "aarch64",
+    "emulated": false,
+    "https_verified_ca": true,
+    "non_root_read_only_cap_drop_all": true,
+    "physical_device_passthrough": false,
+    "actual_initial_ncp_join_requests": [
+      60,
+      0
+    ],
+    "actual_recreated_ncp_join_requests": [],
+    "actual_restored_ncp_join_requests": [],
+    "commissioning_posts": 2,
+    "commissioning_operations": 2,
+    "commissioning_events": 4,
+    "commissioning_unknown_preserved": true,
+    "independent_close_and_lost_response_get_recovery": true,
+    "cancel_zero_save_and_send": true,
+    "original_readback_before_post": true,
+    "unknown_blocks_replacement_open": true,
+    "missing_coordinator_history_readable_and_new_write_rejected": true,
+    "commissioning_recreate_and_restore_zero_replay": true,
+    "backup_commissioning_events_sha256": "97a3b1aaf87a58937d84f5080ab377facafcb5e30e83a6db2a62169dbc25becd",
+    "restored_commissioning_events_sha256": "97a3b1aaf87a58937d84f5080ab377facafcb5e30e83a6db2a62169dbc25becd",
+    "snapshot_version": 13,
+    "backup_snapshot_body_sha256": "c57b5701f6993fb0aab5d8b221edcb45e92b37e88c31df407dd3fd68f70ec9f8",
+    "restored_snapshot_body_sha256": "c57b5701f6993fb0aab5d8b221edcb45e92b37e88c31df407dd3fd68f70ec9f8",
+    "original_observation_decisions": 5,
+    "confirmed_threshold_commands": 2,
+    "historical_applied_does_not_reactivate": true,
+    "packaged_page_discovery_and_endpoints": true,
+    "mobile_390px": true,
+    "screenshots_visually_reviewed": true,
+    "page_errors": [],
+    "ncp_fixture_errors": [],
+    "test_containers_cleaned": true,
+    "remaining_compose_containers": 0,
+    "website": {
+      "errors": 0,
+      "warnings": 0,
+      "pages": 53,
+      "local_references": 2055,
+      "log": "website-build.log"
+    },
+    "node_syntax": true,
+    "both_repository_diff_checks": true,
+    "document_links": {
+      "passed": true,
+      "files": 3,
+      "local_file_links": 280,
+      "broken": []
+    }
+  },
+  "source_sha256": {
+    "tools/test-nas-zigbee.mjs": "7a3940acc55f065a51fa3e87cc06e27c734edbe43ab3c94bd78099f4b1ece740",
+    "contracts/zigbee-operations.md": "a4537777c219e921b43fdc8a925c755715f6d0b4d3a76b371aa355a99cf44d38",
+    "deploy/nas/README.md": "35f033cf9c276af977743f495916838f28d0ca0dea9f453bf6fd9883b89c4ced",
+    "docs/24-实施计划与进度.md": "b63664637452648b026243320e65da0da286b83fb7b69ab6865ff258b6c20432"
+  },
+  "website_source_sha256": {
+    "src/docs/content/zigbee.md": "cb6ecd09b61f8fe76984fd0685c8327ad443a5103be3ebe84bdace33fbff42b6"
+  },
+  "log_sha256": {
+    "build.log": "035ca8bda166bd6b74209ff587f486952075b03af6505d070059597a1ccef7d5",
+    "image.log": "c8067c2cc0ab23b2b590d85d1c9dcabe1dfd06c270bf60c9600003ccaecab835",
+    "journey-first.log": "2320f78576aafc67026d52675a8436b858675eee886063da9708b3320ad1302b",
+    "website-build.log": "8e67ccb75567bbfc14c17ece0f93a7b6eedb055008ca6907167629d2881dd883"
+  },
+  "history": [
+    {
+      "stage": "first_current_source_build_image_and_complete_journey",
+      "result": "passed",
+      "targeted_fix_retries": 0
+    }
+  ],
+  "design": "仅扩展既有NAS验收入口，复用正式构建、HTTPS会话、协议校验、入网原请求存储和备份恢复；来源与入网事件分别核对，不新增交付框架、生产依赖或数据库结构。",
+  "freeze_scope": "构建前后及收尾核对399份正式制品输入一致；验收脚本另记摘要。未冻结整个双仓工作区，历史阶段不提升为当前全量验收。",
+  "limitations": [
+    "软件PTY NCP仅验证有限入网请求及恢复语义，不证明真实设备加入、空口窗口、USB透传或采购型号；实机按用户要求跳过。",
+    "本阶段为ARM64网关基础包及打包家庭网页，不提升完整NAS私有工作台或AMD64动态来源、多模态恢复。",
+    "NCP随容器结束，不以本次清理证明优雅关停或termios恢复；该能力另有宿主专项证据。",
+    "iOS完整工具链、Android启动ANR、生产Keychain/Keystore及TV回调超时仍保留。",
+    "官方云冻结版本未更新，真实模型质量、更多协议与品牌生态及玩具机器人样板仍未完成。"
+  ]
+}

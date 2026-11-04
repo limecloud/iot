@@ -38,6 +38,7 @@ class NasArtifactTests(unittest.TestCase):
                 "deploy/dev/config.json": "{}", "tools/build-nas-artifacts.py": "fixture",
                 "contracts/tools/catalog.json": '{"operations":[]}',
                 "contracts/rule.schema.json": '{"type":"object"}',
+                "examples/companions/block-puppy/policy.json": '{"schema_version":1}',
             }
             for name, content in fixtures.items():
                 path = directory / name
@@ -46,7 +47,7 @@ class NasArtifactTests(unittest.TestCase):
             with patch.object(nas, "ROOT", directory):
                 original = nas.source_inputs()
                 self.assertTrue(fixtures.keys() <= original.keys())
-                for name in ["contracts/tools/catalog.json", "contracts/rule.schema.json", "packages/cli/package.json"]:
+                for name in ["contracts/tools/catalog.json", "contracts/rule.schema.json", "packages/cli/package.json", "examples/companions/block-puppy/policy.json"]:
                     path = directory / name
                     content = path.read_text()
                     path.write_text(content + "\n")
@@ -190,6 +191,52 @@ class NasArtifactTests(unittest.TestCase):
             (directory / "build.json").write_text(json.dumps(manifest))
             with self.assertRaisesRegex(ValueError, "packaged_source_mismatch"):
                 nas.verify(directory)
+
+    def test_rust_reuse_requires_identical_sources_and_embedded_contracts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "repo"
+            root.mkdir()
+            directory = Path(temp) / "artifacts"
+            directory.mkdir()
+            manifest = self.bundle(directory)
+            sources = {"Cargo.toml": "fixture", "Cargo.lock": "fixture", "deploy/dev/config.json": "{}",
+                       "gateway/core.rs": 'const CONTRACT: &str = include_str!("../contracts/rule.schema.json");',
+                       "contracts/rule.schema.json": '{}'}
+            for name, content in sources.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content)
+            inputs = {**manifest["source_files"], **{name: nas.digest(root / name) for name in sources}}
+            manifest["toolchain"] = {"rust": nas.RUST, "zig": nas.ZIG, "zig_archive_sha256": nas.ZIG_HASH,
+                                     "rust_std_sha256": nas.TARGETS["linux/arm64"][4], "rust_target": nas.TARGETS["linux/arm64"][0], "c_target": nas.TARGETS["linux/arm64"][1]}
+            def save():
+                manifest["source_files"] = inputs.copy()
+                manifest["source_digest"] = nas.canonical_digest(inputs)
+                (directory / "build.json").write_text(json.dumps(manifest))
+            save()
+            with patch.object(nas, "ROOT", root):
+                self.assertEqual(nas.reused_rust(directory, "linux/arm64", inputs), manifest)
+                # 网页新增未嵌入的合同不改变Rust输入，已嵌入合同和新增Rust文件必须拒绝。
+                self.assertEqual(nas.reused_rust(directory, "linux/arm64", {**inputs, "contracts/unused.schema.json": "a" * 64}), manifest)
+                for changed, error in [({**inputs, "Cargo.lock": "a" * 64}, "reused_rust_sources_changed"),
+                                       ({**inputs, "gateway/new.rs": "a" * 64}, "reused_rust_sources_changed"),
+                                       ({**inputs, "contracts/rule.schema.json": "a" * 64}, "reused_rust_embedded_source_changed")]:
+                    with self.assertRaisesRegex(ValueError, error):
+                        nas.reused_rust(directory, "linux/arm64", changed)
+                with self.assertRaisesRegex(ValueError, "reused_rust_platform_mismatch"):
+                    nas.reused_rust(directory, "linux/amd64", inputs)
+                for code, error in [('include_str!(concat!("../contracts/", "rule.schema.json"));', "reused_rust_dynamic_include_not_supported")]:
+                    (root / "gateway/core.rs").write_text(code)
+                    inputs["gateway/core.rs"] = nas.digest(root / "gateway/core.rs")
+                    save()
+                    with self.assertRaisesRegex(ValueError, error):
+                        nas.reused_rust(directory, "linux/arm64", inputs)
+                (root / "gateway/build.rs").write_text("fn main() {}")
+                inputs["gateway/build.rs"] = nas.digest(root / "gateway/build.rs")
+                inputs.pop("gateway/core.rs")
+                save()
+                with self.assertRaisesRegex(ValueError, "reused_rust_build_script_not_supported"):
+                    nas.reused_rust(directory, "linux/arm64", inputs)
 
 
 if __name__ == "__main__":

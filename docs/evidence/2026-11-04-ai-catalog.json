@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-04",
+  "stage": "local_ai_catalog",
+  "full_goal_completed": false,
+  "implemented": [
+    "正式Schema与ai-catalog.list工具",
+    "五类能力定义、实际部署、独立健康状态",
+    "现有服务限制的只读投影",
+    "CLI发现至明确生成",
+    "家庭网页与NAS私有工作台源码入口",
+    "共享消费者严格校验、离线与损坏响应清入口"
+  ],
+  "checks": [
+    {
+      "command": "npm run test:ai-catalog",
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "log": ".dev/ai-catalog-20261104/final-root-attempt1.log"
+    },
+    {
+      "command": "cargo clippy --locked -p limeiot-gateway -- -D warnings",
+      "exit_code": 0,
+      "tool_session": 58831
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/voice-turns.test.mjs",
+      "exit_code": 0,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "log": ".dev/ai-catalog-20261104/voice-turn-regression.log"
+    },
+    {
+      "command": "npm run build",
+      "working_directory": "../iotweb",
+      "exit_code": 0,
+      "html_pages": 54,
+      "local_references": 2115,
+      "log": ".dev/ai-catalog-20261104/iotweb-build.log"
+    }
+  ],
+  "api_cli_report": ".dev/run-1793789493376-34931637/ai-catalog-result.json",
+  "browser_report": ".dev/run-1793789466747-d41fb924/ai-catalog-web-result.json",
+  "runtime": {
+    "real_gateway": true,
+    "real_sqlite": true,
+    "real_mqtt": true,
+    "discovery_provider_calls": 0,
+    "explicit_provider_calls": 1,
+    "configured_capabilities": 5,
+    "rejected_corruptions": 17,
+    "gateway_restarts_in_api_cli_journey": 3,
+    "unreachable_provider_status": "unknown",
+    "manual_device_command": "confirmed",
+    "media_state_unchanged_by_discovery": true
+  },
+  "browser": {
+    "widths": [
+      390,
+      1440
+    ],
+    "screenshots_reviewed": true,
+    "horizontal_overflow": false,
+    "screenshots": [
+      ".dev/run-1793789466747-d41fb924/ai-catalog-mobile.png",
+      ".dev/run-1793789466747-d41fb924/ai-catalog-desktop-dark.png"
+    ]
+  },
+  "source_manifest": ".dev/ai-catalog-20261104/source-manifest.json",
+  "source_count": 34,
+  "artifact_count": 17,
+  "preserved_failures": [
+    {
+      "log": ".dev/ai-catalog-20261104/attempt1.log",
+      "cause": "空字符串配置不表示停用；组合语音夹具要求已有ASR转写，不能直接验证独立文字调用。"
+    },
+    {
+      "log": ".dev/ai-catalog-20261104/attempt2.log",
+      "cause": "未删除可选服务环境键；浏览器路由取回与页面取消竞争；不可达POST按原合同为unknown而不是failed。"
+    }
+  ],
+  "design": "复用既有服务、网络、工具和各模态校验器；无新增依赖、数据库结构或提供方权限。",
+  "limits": {
+    "provider_fixture": true,
+    "provider_health_checked": false,
+    "model_license_verified": false,
+    "real_model_quality": false,
+    "dynamic_policy_routing": false,
+    "native_catalog_page": false,
+    "native_app_runtime": false,
+    "nas_workspace_runtime": false,
+    "nas_image_rebuilt": false,
+    "hardware": "用户要求跳过",
+    "cloud_updated": false,
+    "published": false
+  }
+}

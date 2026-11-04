@@ -1,0 +1,10 @@
+// 只导出已通过测试的宿主运行路径，后续恢复阶段直接启动独立JVM。
+gradle.projectsEvaluated {
+    def app = gradle.rootProject.findProject(':app')
+    def output = System.getenv('LIMEIOT_VOICE_TEST_CLASSPATH')
+    if (app != null && output != null) {
+        app.tasks.named('testDebugUnitTest', org.gradle.api.tasks.testing.Test).configure {
+            doLast { new File(output).text = classpath.asPath }
+        }
+    }
+}

@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "fixed_znp_af_zcl_environment_reader_and_local_cli",
+  "status": "macos_host_software_stage_passed",
+  "archive": ".dev/znp-environment-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "linux_serial_runtime_verified": false,
+  "gateway_observation_implemented": false,
+  "gateway_binding_implemented": false,
+  "official_cloud_updated": false,
+  "published": false,
+  "full_goal_completed": false,
+  "changes": {
+    "read_environment_cli_and_library": true,
+    "pinned_coordinator_and_device_ieee": true,
+    "endpoint_240_register_if_absent_and_readback": true,
+    "all_three_af_receipts_in_any_order": true,
+    "basic_temperature_humidity_fixed_read": true,
+    "independent_received_timestamps": true,
+    "measurements_not_clamped": true,
+    "session_failure_and_cancel_close": true,
+    "strict_machine_schema": true,
+    "same_site_guide": true,
+    "new_production_dependency": false
+  },
+  "verification": {
+    "platform": "macOS-15.8.1-arm64-arm-64bit-Mach-O",
+    "rust_session_tests": 8,
+    "environment_pty_tests": 17,
+    "diagnostics_pty_tests": 23,
+    "strict_schema_groups": 5,
+    "clippy_all_targets_warnings_denied": true,
+    "entry": "npm run test:zigbee",
+    "isolated_target": ".dev/znp-verification-20261103/target",
+    "binary_sha256": "403f8d81a8ef285965f86776d4710926601a91951d500633993d59a883bad488",
+    "website": {
+      "astro_errors": 0,
+      "astro_warnings": 0,
+      "astro_hints": 0,
+      "html_pages": 53,
+      "local_references": 2052
+    },
+    "logs_sha256": {
+      "suite-final.log": "08420a5f660dbd87c2fd994513834f86d99b45ed0943583d00621f7d48e9933b",
+      "clippy-final.log": "099c52c4eb95f8d30d607737926ccac6df3b7d41b1b22fdad0c53c735ae1d74c",
+      "website-build.log": "261b9059b60f0af33f8647aff55eb5e126734387858134b678e7b968a49192d6",
+      "pty-initial.log": "850a74452ea9ad1911120c9ba25f547bb5e969a4f007928cb67c780997886847",
+      "clippy-initial.log": "e4be9ec51fccb59b487866e504f31b1f58994eb2087bdf578b8d52627d196658",
+      "schema-initial.log": "74ab2786defed878c64adf9eccbb6bb6edebd2828cc20d1877aed8f6d86d75e2",
+      "rust-sessions.log": "f111efc7396f81cb9b93946b5ba976b3f6f54a9db16bdf5d96a3571e177e8f5a",
+      "pty-results.json": "63e9bb66216cc839d4cbb50214d80119aff21521c29fd2a951d6c14d32835426",
+      "diagnostics-pty-results.json": "770612eaa08c15035f7f98ff3194cbccad8e05dddbf71260c1d1e6f2c864a341",
+      "source-sha256.json": "7e5bb9abd80fee2319bdd06ba7a6208e70eada5d85879cc27462cc7d1596b33c"
+    },
+    "documentation": {
+      "documents": 5,
+      "local_file_links": 265,
+      "broken": [],
+      "git_diff_whitespace_check": true
+    }
+  },
+  "reference": {
+    "repository": "TexasInstruments/simplelink-lowpower-f2-sdk",
+    "revision": "3615ad5d3f4f271258d18a2f5ce1785064ff9a58",
+    "verified_sources": [
+      {
+        "path": "source/ti/zstack/mt/mt_zdo.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_zdo.c",
+        "sha256": "c55081cd012540f64f157cde6bec63b6ca7d5606f018aa2c992eb1113a0ea432",
+        "bytes": 91814
+      },
+      {
+        "path": "source/ti/zstack/mt/mt.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt.c",
+        "sha256": "baccd3cce2df0093d61671117a11f09db104d0cb9b6043c38a6d7183bbb5efa6",
+        "bytes": 16699
+      },
+      {
+        "path": "source/ti/zstack/mt/mt_af.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_af.c",
+        "sha256": "7e2fa8b2cd2a3bdb8da2a6d5a452f07b9c8cafeb634c0f39f727a9cc44b9a5ed",
+        "bytes": 29126
+      },
+      {
+        "path": "source/ti/zstack/stack/zcl/zcl_general.h",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/stack/zcl/zcl_general.h",
+        "sha256": "6c065e21f49b7ab36c37ab7c2638ec0d043d7d3253d791186b6f0832055c7d32",
+        "bytes": 157135
+      },
+      {
+        "path": "source/ti/zstack/stack/zcl/zcl.h",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/stack/zcl/zcl.h",
+        "sha256": "b1b4e0d3783e32ba674f0addc0d1bcd64d74b13548cf75d87b34d9c24926d40b",
+        "bytes": 88729
+      },
+      {
+        "path": "source/ti/zstack/stack/zcl/zcl_ms.h",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/stack/zcl/zcl_ms.h",
+        "sha256": "016ca9062b54fd9e4af8dbbd9eb465a3bc71bdea1732a767d5440c6b65c753e2",
+        "bytes": 23778
+      }
+    ]
+  },
+  "history": {
+    "initial_environment_pty": {
+      "passed": true,
+      "tests": 17
+    },
+    "initial_clippy": {
+      "passed": false,
+      "reason": "unnecessary_unwrap after is_some in new AF receipt loop",
+      "repair": "Use Option::take with if let; no warning suppression or assertion relaxation.",
+      "final_passed": true
+    }
+  },
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "files": 23,
+    "captured_after_checks": true,
+    "whole_stage_inputs_frozen": false,
+    "final_captured_inputs_unchanged": true
+  },
+  "next": [
+    "generic_source_observation_port_with_native_source_isolation",
+    "persisted_config_identity_and_runtime_zigbee_worker",
+    "real_gateway_sqlite_mqtt_automation_software_journey",
+    "managed_binding_and_pairing"
+  ],
+  "limits": [
+    "Protocol IEEE and Basic signature are unauthenticated evidence, not platform identity.",
+    "Host receipt time is not device sampling time; temperature and humidity are separate reads.",
+    "AF transaction IDs do not wrap within a session; a new session restarts at zero and does not prove replay protection.",
+    "No gateway observation or automation integration, device binding, permit-join, device control or NCP firmware compatibility acceptance.",
+    "Tests use software NCP and macOS PTY; no hardware or Linux/NAS serial runtime.",
+    "The worktree has unrelated concurrent changes; source archive was captured after checks and is not a whole-stage frozen-build claim."
+  ]
+}

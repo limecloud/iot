@@ -5,11 +5,14 @@ import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.FrameLayout
 import run.limeai.iot.device.*
 
 /** 本地文件导入及可见批准；不在生命周期回调创建/提交系统安装会话。 */
@@ -27,16 +30,26 @@ class ApkUpdateActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         pendingCandidate = savedInstanceState?.getString("candidate_request")
-        content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(40, 24, 40, 24) }
-        label("电视 Agent 更新", 26f)
+        content = TvUi.column(this, 24)
+        label("设备维护 / 应用更新", 14f)
+        label("应用更新", 30f)
         label("先停止设备连接，再选择签名预检文件与同次发布的 APK。核对版本、签名与权限变化后保存计划；安装后还须核对原身份、记录与健康。")
         notice = label("")
         import = button("导入签名预检文件") { choose(PREFLIGHT) }
         button("刷新原更新记录") { refresh() }
         entries = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }.also(content::addView)
         button("返回设备页面") { finish() }
-        setContentView(ScrollView(this).apply { isFillViewport = true; addView(content) })
+        val frame = FrameLayout(this).apply {
+            setBackgroundColor(TvUi.background)
+            addView(ScrollView(this@ApkUpdateActivity).apply {
+                isFillViewport = true
+                setPadding(TvUi.dp(context, 72), TvUi.dp(context, 24), TvUi.dp(context, 72), TvUi.dp(context, 24))
+                clipToPadding = false; addView(content)
+            }, FrameLayout.LayoutParams(-1, -1))
+        }
+        setContentView(frame)
         import.requestFocus()
     }
 
@@ -271,10 +284,17 @@ class ApkUpdateActivity : Activity() {
         ApkInstallPhase.FAILED -> "系统报告原安装失败，原记录保留"
         ApkInstallPhase.CANCELLED -> "原计划或系统安装已取消，原记录保留"
     }
-    private fun label(value: String, size: Float = 18f) = TextView(this).apply { text = value; textSize = size }.also(content::addView)
-    private fun button(value: String, click: () -> Unit) = Button(this).apply { text = value; isFocusable = true; setOnClickListener { if (!busy) click() } }.also(content::addView)
-    private fun row(value: String) { entries.addView(TextView(this).apply { text = value; textSize = 18f }) }
-    private fun action(value: String, click: () -> Unit) { entries.addView(Button(this).apply { text = value; isFocusable = true; isEnabled = !busy && !runtime.running; setOnClickListener { if (!busy) click() } }) }
+    private fun label(value: String, size: Float = 16f) = TvUi.label(this, value, size, size < 20f).also {
+        content.addView(it, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = TvUi.dp(this@ApkUpdateActivity, 12) })
+    }
+    private fun button(value: String, click: () -> Unit) = TvUi.button(this, value) { if (!busy) click() }.also(content::addView)
+    private fun row(value: String) {
+        entries.addView(TvUi.card(this).apply { addView(TvUi.label(this@ApkUpdateActivity, value, 16f)) },
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = TvUi.dp(this@ApkUpdateActivity, 20) })
+    }
+    private fun action(value: String, click: () -> Unit) {
+        entries.addView(TvUi.button(this, value) { if (!busy) click() }.apply { isEnabled = !busy && !runtime.running })
+    }
     companion object {
         private const val PREFLIGHT = 61; private const val CANDIDATE = 62
         private const val SOURCE_SETTINGS = 63; private const val SYSTEM_CONFIRMATION = 64

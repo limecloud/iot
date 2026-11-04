@@ -12,10 +12,15 @@ import { root, freePort, until } from './dev-stack.mjs';
 import { mqttProbe } from '../tests/support/mqtt-probe.mjs';
 import { nasVerificationPlatform, inspectNasImages, nasImageOverrides, verifyNasMachine } from './nas-verification-platform.mjs';
 import { prepareNasMultimodal, nasMultimodalJourney } from './nas-multimodal-journey.mjs';
+import { pcmWav } from '../tests/helpers/media.mjs';
+import { instrumentNasRecording, nasRecordingVoiceJourney } from './nas-recording-journey.mjs';
+import { nasCompanionJourney } from './nas-companion-journey.mjs';
 
 // 只使用本次创建的Compose项目和目录，不连接既有NAS实例。
 const exec = promisify(execFile);
-const { values } = parseArgs({ options: { image: { type: 'string' }, 'no-build': { type: 'boolean' }, platform: { type: 'string' }, multimodal: { type: 'boolean' } } });
+const { values } = parseArgs({ options: { image: { type: 'string' }, 'no-build': { type: 'boolean' }, platform: { type: 'string' }, multimodal: { type: 'boolean' }, recording: { type: 'boolean' }, companion: { type: 'boolean' } } });
+if (values.recording && !values.multimodal) throw new Error('recording_requires_multimodal');
+if (values.companion && (!values.multimodal || values.recording)) throw new Error('companion_requires_separate_multimodal_journey');
 if (values.platform) nasVerificationPlatform(values.platform);
 const id = randomBytes(8).toString('hex'), project = 'limeiot-nas-' + id;
 const directory = path.join(root, '.dev', 'nas-container-' + id), state = path.join(directory, 'installation');
@@ -38,7 +43,7 @@ async function run(command, args, logName, options = {}) {
   });
 }
 async function compose(args, log = 'compose.log') {
-  const files = ['compose.yaml', ...(values.multimodal ? ['compose.media.yaml', 'compose.speech.yaml', 'compose.transcription.yaml', 'compose.vision.yaml'] : [])];
+  const files = ['compose.yaml', ...(values.multimodal ? ['compose.media.yaml', 'compose.speech.yaml', 'compose.transcription.yaml', 'compose.vision.yaml', 'compose.text.yaml'] : [])];
   return run(composeCommand, [...composePrefix, '--project-name', project, '--env-file', path.join(currentState, 'compose.env'), ...files.flatMap(file => ['-f', path.join(root, 'deploy/nas', file)]), '-f', composeFile, '--profile', 'simulation', ...args], log, { env: { ...process.env, ...multimodalConfiguration?.environment, LIMEIOT_STATE_DIR: currentState, LIMEIOT_BIND_HOST: '127.0.0.1', LIMEIOT_MQTT_TLS_PORT: String(mqttPort) } });
 }
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -176,9 +181,12 @@ try {
   assert.equal((await call(base + '/rule-deployments', { input: rule })).status, 200);
   report.mqtt_command_confirmed = true;
   await multimodal?.begin();
-  browser = await chromium.launch({ headless: true, executablePath: process.env.LIMEIOT_BROWSER_EXECUTABLE });
+  const recordingAudio = path.join(directory, 'fake-microphone.wav');
+  if (values.recording || values.companion) await writeFile(recordingAudio, pcmWav());
+  browser = await chromium.launch({ headless: true, executablePath: process.env.LIMEIOT_BROWSER_EXECUTABLE, args: values.recording ? ['--use-fake-device-for-media-stream', `--use-file-for-fake-audio-capture=${recordingAudio}`] : [] });
   // 浏览器只验UI；TLS信任由上面的Node专用CA连接独立证明。
-  const page = await browser.newPage({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 960 } });
+  const page = await browser.newPage({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 960 }, permissions: values.recording ? ['microphone'] : [] });
+  if (values.recording) await page.addInitScript(instrumentNasRecording);
   const pageErrors = []; page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto(origin); await page.getByLabel('所有者凭据', { exact: true }).fill(owner);
   await page.getByRole('button', { name: '连接家庭网关', exact: true }).click();
@@ -191,6 +199,17 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await page.screenshot({ path: path.join(directory, 'nas-mobile.png'), fullPage: true });
+  if (values.recording) {
+    await page.goto(origin + '/?view=media');
+    const upload = page.getByRole('region', { name: '上传音频', exact: true }), microphone = upload.getByRole('group', { name: '麦克风录音', exact: true }), posts = [];
+    page.on('request', request => { if (request.method() === 'POST') posts.push(new URL(request.url()).pathname); });
+    await microphone.getByRole('button', { name: '开始录音', exact: true }).click(); await expect(microphone.getByText(/正在录音 [1-9]/)).toBeVisible();
+    await microphone.getByRole('button', { name: '完成录音', exact: true }).click(); await expect(upload.getByText('recording.wav', { exact: true })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.__nasStreams.length === 1 && window.__nasStreams.every(stream => stream.getTracks().every(track => track.readyState === 'ended')) && window.__nasContexts.length === 1 && window.__nasContexts.every(context => context.state === 'closed'))).toBe(true);
+    assert.deepEqual(posts, []); assert.deepEqual(await page.evaluate(() => window.__nasCsp), []); assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    await page.screenshot({ path: path.join(directory, 'nas-recording-mobile.png'), fullPage: true });
+    report.browser_recording = { passed: true, microphone_fixture: true, real_microphone: false, https_packaged_worklet: true, tracks_ended: true, context_closed: true, recording_completed: true, implicit_uploads: 0, csp_violations: 0, hardware: false };
+  }
   assert.deepEqual(pageErrors, []); await browser.close(); browser = undefined;
   report.browser_home_and_model_entry = true;
   // 替换网关时入口不重建，核对DNS更新和模拟器网络命名空间重新关联。
@@ -232,7 +251,7 @@ try {
   await run('python3', [manager, 'restore', '--backup', backup, '--directory', restored], 'restore.log');
   if (multimodalSnapshot) {
     for (const location of [backup, restored]) assert.deepEqual(await readFile(path.join(location, 'data/gateway.sqlite.media.json')), multimodalSnapshot);
-    report.multimodal.snapshot_v4_backup_and_restore_byte_exact = true;
+    report.multimodal.snapshot_v5_backup_and_restore_byte_exact = true;
   }
   assert.equal(hash(await readFile(path.join(restored, 'secrets/gateway-identity.pk8'))), originalKey);
   await compose(['down', '--remove-orphans']); currentState = restored;
@@ -261,6 +280,8 @@ try {
   assert.equal((await call(base + '/devices/device-lamp')).value.reported['light.brightness'].value, 0);
   await assert.rejects(mqttProbe(mqtt));
   report.consistent_backup_restore = true; report.revocation_restored = true; report.no_command_replay = true;
+  if (values.recording) report.browser_voice_turn = await nasRecordingVoiceJourney({ origin, owner, call, provider: multimodal.provider, directory, recordingAudio });
+  if (values.companion) report.browser_companion = await nasCompanionJourney({ origin, owner, call, provider: multimodal.provider, compose, directory, recordingAudio });
   report.passed = true;
   console.log('NAS容器：HTTPS、家庭页面、MQTT控制、mTLS/撤销和新目录备份恢复通过。' + (values.multimodal ? ' 多模态容器、显式播放与清文恢复通过。' : ''));
 } catch (error) {

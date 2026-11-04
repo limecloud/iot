@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.dev/contracts/ai-catalog.schema.json",
+  "title": "Local AI capability catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "space_id", "definitions", "deployments", "health", "routing"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "space_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$"},
+    "definitions": {
+      "const": [
+        {"capability_id":"automation.rule_draft","input_modalities":["text","device_context"],"output_modalities":["rule"],"input_schema":"draft-request","task_schema":null,"create_operation":"drafts.create","resolve_operation":"drafts.resolve","streaming":false,"tool_calling":false,"structured_output":true,"device_execution":false},
+        {"capability_id":"text.generate","input_modalities":["text"],"output_modalities":["text"],"input_schema":"text","task_schema":"text#/$defs/task","create_operation":"text-generations.create","resolve_operation":"text-generations.resolve","streaming":false,"tool_calling":false,"structured_output":false,"device_execution":false},
+        {"capability_id":"vision.understand","input_modalities":["image","text"],"output_modalities":["text"],"input_schema":"vision","task_schema":"vision#/$defs/task","create_operation":"vision-observations.create","resolve_operation":"vision-observations.resolve","streaming":false,"tool_calling":false,"structured_output":false,"device_execution":false},
+        {"capability_id":"audio.transcribe","input_modalities":["audio"],"output_modalities":["text"],"input_schema":"transcription","task_schema":"transcription#/$defs/task","create_operation":"audio-transcriptions.create","resolve_operation":"audio-transcriptions.resolve","streaming":false,"tool_calling":false,"structured_output":false,"device_execution":false},
+        {"capability_id":"audio.synthesize","input_modalities":["text"],"output_modalities":["audio"],"input_schema":"speech","task_schema":"speech#/$defs/task","create_operation":"speech-syntheses.create","resolve_operation":"speech-syntheses.resolve","streaming":false,"tool_calling":false,"structured_output":false,"device_execution":false}
+      ]
+    },
+    "deployments": {"type":"array","maxItems":5,"items":{"$ref":"#/$defs/deployment"}},
+    "health": {"type":"array","minItems":5,"maxItems":5,"items":{"$ref":"#/$defs/health"}},
+    "routing": {"const":{"selection":"fixed_configuration","automatic_fallback":false}}
+  },
+  "$defs": {
+    "capability_id": {"enum":["automation.rule_draft","text.generate","vision.understand","audio.transcribe","audio.synthesize"]},
+    "identity": {
+      "type":"object","additionalProperties":false,
+      "required":["adapter","revision","model","data_location"],
+      "properties":{
+        "adapter":{"enum":["ollama","ollama-text-v1","ollama-vision-v1","local-http-transcription-v1","local-http-speech-v1"]},
+        "revision":{"anyOf":[{"type":"string","pattern":"^sha256:[a-f0-9]{64}$"},{"type":"null"}]},
+        "model":{"type":"string","pattern":"^[A-Za-z0-9_:./-]{1,128}$"},
+        "data_location":{"const":"local"}
+      }
+    },
+    "deployment": {
+      "type":"object","additionalProperties":false,
+      "required":["capability_id","identity","configuration","license","cost_policy","resource_requirements","quality"],
+      "properties":{
+        "capability_id":{"$ref":"#/$defs/capability_id"},
+        "identity":{"$ref":"#/$defs/identity"},
+        "configuration":{
+          "type":"object","minProperties":1,"maxProperties":24,
+          "propertyNames":{"enum":["concurrency","max_output_tokens","max_messages","max_context_bytes","max_instructions_characters","max_text_bytes","max_characters","max_deadline_seconds","max_retain_seconds","streaming","provider_cancellation","input_storage","server_memory","device_execution","content_types","max_image_bytes","max_edge","max_prompt_characters","languages","max_audio_bytes","max_audio_seconds","voices","max_output_bytes"]},
+          "additionalProperties":{"anyOf":[{"type":"integer","minimum":0,"maximum":16777216},{"type":"boolean"},{"type":"string","maxLength":64},{"type":"array","maxItems":32,"items":{"type":"string","maxLength":64}}]}
+        },
+        "license":{"type":"null"},"cost_policy":{"type":"null"},"resource_requirements":{"type":"null"},"quality":{"type":"null"}
+      }
+    },
+    "health": {
+      "type":"object","additionalProperties":false,
+      "required":["capability_id","status","checked_at"],
+      "properties":{
+        "capability_id":{"$ref":"#/$defs/capability_id"},
+        "status":{"enum":["unknown","not_configured"]},
+        "checked_at":{"type":"null"}
+      }
+    }
+  }
+}

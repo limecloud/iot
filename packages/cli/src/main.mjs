@@ -6,7 +6,15 @@ const catalog=JSON.parse(await readFile(new URL('../../../contracts/tools/catalo
 const exits={unauthenticated:3,forbidden:3,idempotency_conflict:4,unsupported_capability:4,device_offline:4};
 const fail=(code,status=2)=>{console.error(JSON.stringify({error:{code}}));process.exitCode=status;};
 const registryOperation=process.argv[2]==='invoke'?process.argv[3]:`${process.argv[2]}.${process.argv[3]}`;
-if(process.argv[2]==='zigbee') {
+if(process.argv[2]==='companion') {
+  await (await import('./companion.mjs')).runCompanion(process.argv.slice(3));
+} else if(process.argv[2]==='composition') {
+  await (await import('./composition.mjs')).runComposition(process.argv.slice(3));
+} else if(process.argv[2]==='voice-turns') {
+  await (await import('./voice-turns.mjs')).runVoiceTurns(process.argv.slice(3));
+} else if(registryOperation.startsWith('zigbee-')) {
+  await (await import('./registry.mjs')).runRegistry(process.argv.slice(2));
+} else if(process.argv[2]==='zigbee') {
   await (await import('./zigbee.mjs')).runZigbee(process.argv.slice(3));
 } else if(process.argv[2]==='tui') {
   await (await import('./tui.mjs')).runTui(process.argv.slice(3));
@@ -20,14 +28,18 @@ if(process.argv[2]==='zigbee') {
   await (await import('./transcription.mjs')).runTranscription(process.argv.slice(2));
 } else if(['vision-observations.create','vision-observations.resolve','vision-observations.discard'].includes(registryOperation)) {
   await (await import('./vision.mjs')).runVision(process.argv.slice(2));
+} else if(['text-generations.create','text-generations.resolve','text-generations.discard'].includes(registryOperation)) {
+  await (await import('./text.mjs')).runText(process.argv.slice(2));
 } else if(process.argv[2]==='ota') {
   await (await import('./ota.mjs')).runOta(process.argv.slice(3));
 } else if(process.argv[2]==='model') {
   await (await import('./model.mjs')).runModel(process.argv.slice(3));
+} else if(['observation-discoveries.query','observation-endpoints.query'].includes(registryOperation)) {
+  await (await import('./registry.mjs')).runRegistry(process.argv.slice(2));
 } else if(process.argv[2]==='control') {
   if(process.argv[3]==='tui')await (await import('./control-tui.mjs')).runControlTui(process.argv.slice(4));
   else await (await import('./control.mjs')).runControl(process.argv.slice(3));
-} else if(['model-bundles.list','model-bundles.get','model-trusts.list','model-trusts.get','model-installations.list','model-installations.get','device-models.get','model-changes.create','model-changes.resolve','firmware-trusts.list','firmware-trusts.get','ota-tasks.list','ota-tasks.get','ota-changes.create','ota-changes.resolve','execution-adapters.list','execution-bindings.get','device-applications.list','execution-changes.create','execution-changes.resolve'].includes(registryOperation)) {
+} else if(['model-bundles.list','model-bundles.get','model-trusts.list','model-trusts.get','model-installations.list','model-installations.get','device-models.get','model-changes.create','model-changes.resolve','firmware-trusts.list','firmware-trusts.get','ota-tasks.list','ota-tasks.get','ota-changes.create','ota-changes.resolve','execution-adapters.list','execution-bindings.get','device-applications.list','execution-changes.create','execution-changes.resolve','observation-candidates.list','observation-candidates.query','observation-bindings.get','observation-changes.create','observation-changes.resolve'].includes(registryOperation)) {
   await (await import('./registry.mjs')).runRegistry(process.argv.slice(2));
 } else try {
   const {values:flags,positionals}=parseArgs({allowPositionals:true,options:{'space-id':{type:'string'},input:{type:'string'},id:{type:'string'},'idempotency-key':{type:'string'},after:{type:'string'},cursor:{type:'string'},json:{type:'boolean'},endpoint:{type:'string'}}});
@@ -75,7 +87,7 @@ if(process.argv[2]==='zigbee') {
           }
         }
       } else {
-        const value=await response.json();
+        const value=operationID==='ai-catalog.list'&&response.ok?(await import('../../protocol/ai-catalog.mjs')).parseAiCatalog(await response.text(),flags['space-id']):await response.json();
         if(!response.ok) {fail(value.error?.code??'request_failed',exits[value.error?.code]??(response.status>=500?5:2));}
         else {console.log(JSON.stringify(value));if(value.status==='unknown')process.exitCode=6;else if(['failed','rejected','expired'].includes(value.status))process.exitCode=7;}
       }

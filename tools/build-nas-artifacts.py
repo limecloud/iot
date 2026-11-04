@@ -119,7 +119,7 @@ def source_inputs():
     files = {"Cargo.toml", "Cargo.lock", "package.json", "package-lock.json", "LICENSE", "deploy/dev/config.json", "tools/build-nas-artifacts.py"}
     for workspace in json.loads((ROOT / "package.json").read_text())["workspaces"]:
         files.add(workspace + "/package.json")
-    for name in ["gateway", "tools/simulator", "tools/model-validator", "contracts", "deploy/nas", "apps/home", "packages/control-ui", "packages/protocol"]:
+    for name in ["gateway", "tools/simulator", "tools/model-validator", "contracts", "deploy/nas", "apps/home", "packages/control-ui", "packages/protocol", "examples/companions", "examples/compositions"]:
         for path in (ROOT / name).rglob("*"):
             relative = path.relative_to(ROOT)
             if any(part in {"node_modules", "dist", "target", "build", "__pycache__", ".git"} for part in relative.parts):
@@ -130,7 +130,7 @@ def source_inputs():
     return {name: digest(ROOT / name) for name in sorted(files)}
 
 
-def check_elf(path, target):
+def check_elf(path, target, *, static=False):
     data = Path(path).read_bytes()
     _, _, machine, interpreter, _ = TARGETS[target]
     require(len(data) >= 64 and data[:7] == b"\x7fELF\x02\x01\x01", "not_linux_elf64")
@@ -147,7 +147,7 @@ def check_elf(path, target):
             length = struct.unpack_from("<Q", data, header + 32)[0]
             require(1 < length <= 128 and start + length <= len(data), "invalid_elf_interpreter")
             interpreters.append(data[start:start + length])
-    require(interpreters == [interpreter.encode() + b"\0"], "elf_interpreter_mismatch")
+    require(interpreters == ([] if static else [interpreter.encode() + b"\0"]), "elf_interpreter_mismatch")
 
 
 def runtime_dockerfile(source):
@@ -165,8 +165,7 @@ def runtime_dockerfile(source):
     return result
 
 
-def cached_runtime_dockerfile(source, platform_name, base):
-    marker = "COPY bin/limeiot-gateway /usr/local/bin/limeiot-gateway"
+def cached_runtime_dockerfile(source, platform_name, base, *, marker="COPY bin/limeiot-gateway /usr/local/bin/limeiot-gateway"):
     require(source.count(marker) == 1, "nas_runtime_stage_changed")
     prefix, remainder = source.split(marker)
     require(prefix.startswith("FROM debian:bookworm-slim AS runtime\n"), "nas_runtime_stage_changed")
@@ -211,7 +210,37 @@ def verify(directory):
     return manifest
 
 
-def build(target, output, cache, jobs=1):
+def reused_rust(directory, target, inputs):
+    manifest = verify(directory)
+    require(manifest["platform"] == target, "reused_rust_platform_mismatch")
+    prefixes = ("gateway/", "tools/simulator/", "tools/model-validator/")
+    rust = lambda name: name in {"Cargo.toml", "Cargo.lock", "deploy/dev/config.json"} or name.startswith(prefixes)
+    previous = {name: value for name, value in manifest["source_files"].items() if rust(name)}
+    current = {name: value for name, value in inputs.items() if rust(name)}
+    require(previous == current and current, "reused_rust_sources_changed")
+    # 无自定义构建脚本时，字面量include宏是仓库内的编译期文件依赖；非字面量宏拒绝复用。
+    embedded = set()
+    for name in current:
+        require(Path(name).name != "build.rs", "reused_rust_build_script_not_supported")
+        if not name.endswith(".rs"):
+            continue
+        source = (ROOT / name).read_text()
+        macros = re.findall(r'\binclude_(?:str|bytes)!\s*\(', source)
+        paths = re.findall(r'\binclude_(?:str|bytes)!\s*\(\s*"([^"]+)"', source)
+        require(len(macros) == len(paths), "reused_rust_dynamic_include_not_supported")
+        for path in paths:
+            relative = ((ROOT / name).parent / path).resolve().relative_to(ROOT.resolve()).as_posix()
+            if relative.startswith("contracts/"):
+                embedded.add(relative)
+    for name in embedded:
+        require(name in inputs and manifest["source_files"].get(name) == inputs[name], "reused_rust_embedded_source_changed")
+    expected = {"rust": RUST, "zig": ZIG, "zig_archive_sha256": ZIG_HASH,
+                "rust_std_sha256": TARGETS[target][4], "rust_target": TARGETS[target][0], "c_target": TARGETS[target][1]}
+    require(manifest.get("toolchain") == expected, "reused_rust_toolchain_mismatch")
+    return manifest
+
+
+def build(target, output, cache, jobs=1, rust_artifacts=None):
     inputs = source_inputs()
     source_digest = canonical_digest(inputs)
     output = output or ROOT / ".dev/nas-artifacts" / (target.replace("/", "-") + "-" + source_digest[:16])
@@ -219,11 +248,17 @@ def build(target, output, cache, jobs=1):
         manifest = verify(output)
         require(manifest["platform"] == target and manifest["source_files"] == inputs, "existing_artifact_source_mismatch")
         return output
-    environment, toolchain = prepare_toolchain(cache, target, jobs)
     triple = TARGETS[target][0]
-    run(["cargo", "build", "--locked", "--release", "--workspace", "--target", triple], env=environment)
+    reused = reused_rust(rust_artifacts, target, inputs) if rust_artifacts else None
+    if reused:
+        toolchain = reused["toolchain"]
+        binary_directory = rust_artifacts / "bin"
+    else:
+        environment, toolchain = prepare_toolchain(cache, target, jobs)
+        run(["cargo", "build", "--locked", "--release", "--workspace", "--target", triple], env=environment)
+        binary_directory = cache / "target" / triple / "release"
     for binary in BINARIES:
-        check_elf(cache / "target" / triple / "release" / binary, target)
+        check_elf(binary_directory / binary, target)
     node = subprocess.check_output(["node", "--version"], text=True).strip()
     require(node.startswith("v24.") and tuple(map(int, node[1:].split("."))) >= (24, 21, 0), "node24_21_required")
     run(["npm", "run", "build:home"])
@@ -231,7 +266,7 @@ def build(target, output, cache, jobs=1):
     output.mkdir(parents=True)
     (output / "bin").mkdir()
     for binary in BINARIES:
-        shutil.copy2(cache / "target" / triple / "release" / binary, output / "bin" / binary)
+        shutil.copy2(binary_directory / binary, output / "bin" / binary)
     shutil.copytree(ROOT / "apps/home/dist", output / "home")
     shutil.copytree(ROOT / "contracts/models", output / "contracts/models")
     (output / "deploy/nas").mkdir(parents=True)
@@ -243,6 +278,9 @@ def build(target, output, cache, jobs=1):
     manifest = {"schema": "limeiot.nas-artifacts", "version": 1, "platform": target,
                 "source_digest": source_digest, "source_files": inputs, "toolchain": toolchain,
                 "node": node, "build_jobs": jobs, "files": tree_files(output), "hardware": False, "published": False}
+    if reused:
+        require(verify(rust_artifacts) == reused and reused_rust(rust_artifacts, target, inputs) == reused, "reused_rust_changed_during_build")
+        manifest["rust_reuse"] = {"source_digest": reused["source_digest"], "binary_files": {name: digest(output / "bin" / name) for name in BINARIES}}
     (output / "build.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     verify(output)
     return output
@@ -256,6 +294,7 @@ def main():
     create.add_argument("--output", type=Path)
     create.add_argument("--toolchain-cache", type=Path, default=ROOT / ".dev/nas-cross-toolchain")
     create.add_argument("--jobs", type=int, choices=(1, 2), default=1, help="宿主编译并发；默认1，资源允许时可明确选择2")
+    create.add_argument("--rust-artifacts", type=Path, help="复用已验证的同平台NAS Rust制品，必须通过源码和include依赖校验")
     for name in ["verify", "image"]:
         command = commands.add_parser(name)
         command.add_argument("--directory", type=Path, required=True)
@@ -269,7 +308,7 @@ def main():
         cache.mkdir(parents=True, exist_ok=True)
         with (cache / "build.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            directory = build(args.platform, args.output.resolve() if args.output else None, cache, args.jobs)
+            directory = build(args.platform, args.output.resolve() if args.output else None, cache, args.jobs, args.rust_artifacts.resolve() if args.rust_artifacts else None)
     else:
         directory = args.directory.resolve()
     manifest = verify(directory)

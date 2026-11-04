@@ -1,5 +1,21 @@
 # iOS 原生客户端
 
+本地“设置 → 音频 → 陪伴”支持自定义角色说明、实际声音和逐轮录音，默认四轮、十分钟。`CompanionClient`与`#companion:space_id`摘要账本复用原三阶段；后台/离页/离线清除内存历史，返回只GET，停止无需正文并清各轮文字。生成音频仍须独立授权播放。入口`npm run test:companion:native`检查共享账本、实际状态层及真实网关跨进程恢复，见[原生合同](../../contracts/companion.md#原生客户端)。完整原生页面、生产安全存储与真实模型质量独立验收，实机跳过。
+
+“设置 → AI 服务”展示当前五类能力、实际模型、部署修订和限制；“已配置，健康未检测”不表示模型可用。已配置条目可进入原自动化、对话、视觉或音频页面，仍需明确调用。后台、离页、离线或会话变化会清除目录，迟到响应不恢复旧入口；查询不创建推理任务，不持久保存目录。SDK使用`try await gateway.aiCatalog(space: "space-demo")`，严格合同见[AI目录](../../contracts/ai-catalog.md)。统一检查入口为`npm run test:ai-catalog:native`，SwiftUI语法与宿主状态层检查不代表完整iOS应用运行。
+
+静态配置的Zigbee开关复用家庭设备页现有电源控件与GatewayClient，不增加协议专用UI。`npm run test:zigbee:onoff-native`使用真实Rust/SQLite和软件NCP，检查Swift/Kotlin客户端库的完整读回证据、丢响应原键查询、客户端进程及网关重启零补发；宿主库联调与完整App运行分别验收。配置与范围见[属性桥接合同](../../contracts/property-bridges.md)。
+
+## Zigbee 来源接入
+
+同页的“Zigbee 入网”支持选择协调器、填写1–120秒时长，核对IEEE后明确开放；关闭独立确认。ZigbeeClient使用`origin#zigbee-operations`保存并回读原请求，未知只查询原键，禁止换键延长未知窗口。已完成回执不可变化；后台、离页、离线或60秒过期清除核对，准备与取消零POST。共享合同与运行边界见[入网管理合同](../../contracts/zigbee-operations.md#原生客户端)。
+
+本地“设置 → Zigbee 设备”支持选择已配置的协调器，发现已有邻居、读取端点，再查询支持的温湿度端点，核对厂商/型号后明确添加；也保留已知 IEEE/端点和设备编号的手填入口。发现和端点只在内存保留最长 60 秒，过期、输入/来源变化或暂停后清除，不创建设备或保存原请求。托管来源可先读取当前绑定再确认撤销；重新接入重新查询候选。配置接入的静态来源只展示，不接管或迁移。
+
+`ObservationClient(gateway:store:)`复用当前HTTPS会话与Keychain适配器，独立`origin#observation-operations`最多保留128条完整原请求。保存并回读成功才POST；同键仅GET，未知同设备/来源阻止换键和换编号。后台、离线、离页、输入/模型/来源变化和60秒到期清除核对；状态层取消在途任务，迟到结果不恢复页面。原请求查询不会重新启用已撤销来源。
+
+在仓库根目录执行`node tools/test-observation-native.mjs ios`，检查共享合同、实际ObservationStore、HomeStore类型、SwiftUI语法与工程文件；完整组合旅程为`npm run test:zigbee:native`，需要Swift、JDK21和Android SDK。详情见[来源合同](../../contracts/observation-sources.md#原生客户端接入与恢复)。宿主文件存储为夹具，不代表Keychain或iOS App运行；完整Xcode/iOS SDK的既有缺口保留，实机按用户要求跳过。
+
 使用 Swift 6、SwiftUI 和 URLSession，最低 iOS 17。`LimeIoT.xcodeproj` 是可打开的 iPhone/iPad 应用工程，`Package.swift` 提供独立、可编译的 `LimeIoTKit` 客户端库。没有 WebView、跨平台 UI 框架或官网源码依赖。
 
 应用提供家庭网关与云服务两类入口。NAS入口支持设备开关/亮度、状态和回执、事件/阈值规则预演/启用/停用、关联运行及退出；云入口支持独立授权、空间/设备与原操作。本地规则表单支持数值/布尔属性和模型动作，动作参数使用JSON，先预演再明确启用；单操作编辑保留完整比较/all/any条件树及毫秒冷却，多操作规则完整展示并可停用，编辑使用TUI或CLI/API。规则执行语义见[合同](../../contracts/rules.md)，宿主软件入口为`npm run test:rules:conditions:native`和`npm run test:rules:actions:native`，不代表SwiftUI或实机验收。
@@ -27,6 +43,10 @@ xcodebuild -project "LimeIoT.xcodeproj" -scheme LimeIoT \
 输入 NAS 的精确 HTTPS Origin，例如 `https://192.168.1.20:8443`，不附带路径或末尾斜杠，然后输入安装目录中的所有者凭据。使用本地 CA 时，先在设备/模拟器安装并启用信任。应用不绕过 TLS，不接受任意证书。
 
 会话保存在 Keychain，所有者原始凭据不长期保存。会话恢复需网关再次验证；退出撤销服务器会话。重启网关后需重新登录。控制前保存原操作的幂等身份，本地写入失败时不发送。响应丢失、代理5xx或响应无法解析时保留身份，重新登录后仍查询原操作，不在断网时排队发送新控制。设备操作界面当前显示最近100条，完整分页合同由API/CLI提供。
+
+普通控制在发送前保存并回读完整原输入；`GatewayClient.create`及`resolve(space:intent:)`核对空间、键、设备、模型、期限和操作，confirmed另核对属性或动作证据。错误回执不清除原请求；SDK校验摘要格式，正式JCS摘要由Rust负责。共享向量位于`tests/fixtures/commands/recovery.json`，`swift run ClientChecks`执行30组合同检查。库检查与HomeStore类型检查不代表Keychain故障或完整App运行验收。
+
+仓库根目录执行`node tools/test-home-native-state.mjs ios`，直接编译并运行实际HomeStore的六组宿主旅程，覆盖存储抛错/未真正保存时零POST、错误回执与404保留原字节、状态重建/退出后恢复、清理未保存及503离线禁写。HomeStore通过现有SessionStore、HTTPTransport和独立偏好存储注入；生产默认使用Keychain，在连接时创建URLSession传输实例。测试使用内存存储及HTTP夹具，不代表生产Keychain故障或完整SwiftUI运行。
 
 NAS快照读取失败（包括HTTP 503）时保留上次观测，并禁用设备控制；只有再次成功读取快照后才恢复控制。该状态处理已在macOS宿主类型检查，iOS整包运行仍需完整Xcode与iOS SDK。
 
@@ -85,6 +105,16 @@ CloudStore持有当前云任务，scenePhase转为非active或切离云入口时
 
 `npm run test:media:native`检查库；`npm run test:media:native:state`编译运行实际`MediaStore`与文件读取器，通过真实Rust/SQLite/MQTT及软件音箱检查丢回执、明确授权/播放、客户端进程和网关重启、撤销/删除与原键不复活正文。另查本地无副作用、确认失效、取消保存后零POST、离线禁写和401。恢复文件为宿主夹具，不代替Keychain、系统文件选择器或SwiftUI运行。完整Xcode/iOS SDK缺失的限制保留，实机按用户要求跳过。
 
+## 有限麦克风录音
+
+“设置 → 音频 → 上传音频”支持明确开始、完成和取消录音。`AppleRecordingInput`在系统许可后使用AVAudioEngine与AVAudioConverter，`RecordingStore`同步写入有界内存缓冲，`PcmRecording`输出16 kHz单声道PCM16 WAV；最多60秒、960000帧，不补静音或创建临时录音文件。完成先关闭采音，再交给`MediaStore`独立保留，另行明确上传；不自动调用模型、授权或播放。后台、离页、断线、取消、音频路由变化或系统中断清除未上传录音，迟到权限和回调不恢复旧状态。工程声明麦克风用途，没有后台采音模式。
+
+根目录`node tools/test-recording-native.mjs ios`检查实际状态层、AVFoundation独立解码、与JS逐字节一致及既有媒体回归；完整`npm run test:recording:native`另查两端真实Rust/SQLite上传、丢HTTP回执及新进程/网关重启只GET原键。适配器以macOS SDK编译，SwiftUI只作语法/工程检查，测试不打开系统麦克风。完整Xcode/iOS SDK缺失的限制保留，Keychain、iOS系统采音与完整App运行另验；同页分步组合见下段，统一回合见下方新增入口；实机按要求跳过。正式边界见[原生录音合同](../../contracts/voice-turns.md#原生有限录音)。
+
+在同页识别录音后，点击“带入新对话”，核对问题后“发送”；回答通过“带入语音合成”填入完整文本，再明确“生成音频”。两处带入只改当前内存草稿，不发请求；提问使用新对话上下文，超长回答不截断，未决或离线时不替换输入。合成成功后继续独立授权并在设备页播放。后台/离页清文，新进程查询各原键，不自动推进或重播。检查入口`npm run test:voice-handoff:native`，正式边界见[原生分步组合](../../contracts/voice-turns.md#原生分步组合)。
+
+“设置 → 音频 → 语音对话”另提供统一回合：选择已上传录音和声音，明确开始后依次调用ASR、文字与TTS；原任务共用v1摘要账本和5分钟期限。后台、离页或断网取消推进并清文，返回后查询原回合，明确继续才创建未创建阶段；停止需要确认，丢回执后只GET。生成音频须另行选择、授权和播放。SDK为`VoiceTurnClient`，检查入口`npm run test:voice-turns:native`，详见[原生统一回合](../../contracts/voice-turns.md#原生统一回合)。完整App、系统采音和真实模型质量保持独立验收。
+
 ## 本地文字转语音库
 
 `SpeechClient(gateway:store:)`复用NAS会话，提供`capabilities`、`submit`、`records`、`resolve`和`discard`。`SpeechRequests.input`校验文本、声音、保留时间与截止时间，并将时间规范为UTC毫秒。独立`origin#speech-syntheses`最多保存128条摘要记录，每条最多8个明确放弃意图；不保存文本。首次提交和新放弃意图均先保存并回读，同键仅GET，结果未知继续阻止换键生成。响应必须匹配原摘要，部署与任务身份不得漂移，终态不得回退。
@@ -120,3 +150,11 @@ CloudStore持有当前云任务，scenePhase转为非active或切离云入口时
 必填安全存储以 `origin#ota-operations` 与会话、模型和云操作隔离，最多128项。先保存并回读完整原请求，再单次POST；跨实例互斥、损坏/移除拒绝、404保持未知、同设备未知请求阻止换键。退出和重新登录不删除原记录。历史applied是已保存的操作决定，当前任务的匹配设备证据才表示升级终态。签名与兼容策略由Rust统一执行。
 
 仓库根目录 `npm run test:ota:native` 验证库，`npm run test:ota:native:state` 用真实Rust/SQLite/MQTT与内存存储编译并运行实际FirmwareStore，检查取消、批准不安装、逐次核对、丢响应、重新登录和重启恢复。需要两端工具链；它不编译SwiftUI或运行Keychain/iOS App。iOS整包仍受完整Xcode/iOS SDK缺失阻塞，实机按用户要求跳过。
+
+## 本地文字对话
+
+“设置 → 本地对话”使用 `TextGenerationStore` 与 `TextGenerationClient(gateway:store:)`，遵循[正式文字合同](../../contracts/text.md)。`TextGenerationRequests.input(messages:instructions:retainSeconds:expiresAt:)` 构造有界上下文；当前页面成功后可继续提问，最早回答期限约束整个上下文。
+
+本机 `origin#text-generations` 仅保存原输入摘要、去正文观测和明确清除意图。后台、离页、离线、退出或期限经过时清除本页消息；前台只读取元数据，完成回答需要明确查询。原键只 GET，404 与 unknown 均不视为可以重发；明确放弃不保证外部模型停止计算。原请求尚无观测时保留 unresolved，不能自动删除或换键。
+
+运行 `npm run test:text:native:state` 检查实际状态层及 Android 构建；运行 `npm run test:text:native` 与真实 Rust 网关验证两端宿主恢复。SwiftUI 仅作语法和工程装配检查；缺少完整 Xcode/iOS SDK，完整 App、Keychain 和真实模型效果独立验收。实机按要求跳过。

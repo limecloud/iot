@@ -4,12 +4,12 @@ import CryptoKit
 // 媒体与OTA共用的有界安全整数JSON；领域字段仍由各自合同核对。
 enum IntegerJSON {
     private static func fail() -> GatewayError { .invalidResponse }
-    static func parse(_ text: String, maxBytes: Int = 2_000_000, maxDepth: Int = 24, maxNodes: Int = 65536) throws -> JSONValue {
-        var parser = Parser(bytes: Array(text.utf8), maxBytes: maxBytes, maxDepth: maxDepth, maxNodes: maxNodes)
+    static func parse(_ text: String, maxBytes: Int = 2_000_000, maxDepth: Int = 24, maxNodes: Int = 65536, allowFractionalNumbers: Bool = false) throws -> JSONValue {
+        var parser = Parser(bytes: Array(text.utf8), maxBytes: maxBytes, maxDepth: maxDepth, maxNodes: maxNodes, allowFractionalNumbers: allowFractionalNumbers)
         return try parser.parse()
     }
     private struct Parser {
-        let bytes: [UInt8]; let maxBytes: Int; let maxDepth: Int; let maxNodes: Int
+        let bytes: [UInt8]; let maxBytes: Int; let maxDepth: Int; let maxNodes: Int; let allowFractionalNumbers: Bool
         var p = 0; var nodes = 0
         mutating func ws() { while p < bytes.count && [9, 10, 13, 32].contains(bytes[p]) { p += 1 } }
         mutating func take(_ b: UInt8) -> Bool { ws(); if p < bytes.count && bytes[p] == b { p += 1; return true }; return false }
@@ -49,6 +49,14 @@ enum IntegerJSON {
             case "false": return .bool(false)
             case "null": return .null
             default:
+                if allowFractionalNumbers {
+                    guard token.range(of: #"^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$"#, options: .regularExpression) != nil,
+                          let number = Double(token), number.isFinite else { throw fail() }
+                    if number.rounded(.towardZero) == number {
+                        guard abs(number) <= 9007199254740991 else { throw fail() }; return .integer(Int(number))
+                    }
+                    return .number(number)
+                }
                 guard token.count <= 32, token.range(of: #"^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$"#, options: .regularExpression) != nil,
                       let decimal = Decimal(string: token, locale: Locale(identifier: "en_US_POSIX")) else { throw fail() }
                 let integer = NSDecimalNumber(decimal: decimal).int64Value

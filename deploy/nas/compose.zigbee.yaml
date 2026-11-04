@@ -1,0 +1,8 @@
+services:
+  gateway:
+    devices:
+      - "${LIMEIOT_ZNP_DEVICE:?}:/dev/limeiot-znp:rw"
+    group_add:
+      - "${LIMEIOT_ZNP_GID:?}"
+    environment:
+      LIMEIOT_ZIGBEE_CONFIG: /config/zigbee.json

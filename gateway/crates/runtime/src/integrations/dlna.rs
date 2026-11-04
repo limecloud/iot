@@ -193,7 +193,7 @@ pub async fn run(app: App, adapters: Adapters) {
     for entry in adapters.entries {
         tasks.spawn(run_entry(app.clone(), entry));
     }
-    while tasks.join_next().await.is_some() {}
+    super::run_owned_tasks(&app, tasks).await;
 }
 async fn run_entry(app: App, entry: Arc<Entry>) {
     let mut interval = tokio::time::interval(Duration::from_millis(50));

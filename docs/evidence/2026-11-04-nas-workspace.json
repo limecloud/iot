@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "linux_arm64_private_nas_workspace_installation_business_and_full_backup_restore",
+  "status": "software_container_stage_passed",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "changes": {
+    "private_workspace_vision_entry": true,
+    "optional_services_keep_local_context": true,
+    "new_dependencies": false,
+    "database_schema_changed": false,
+    "rust_changed": false
+  },
+  "build": {
+    "gateway": {
+      "directory": ".dev/nas-arm64-workspace-20261104",
+      "source_digest": "6e3ea47f3c376830b564ceab110e94a1494d66d9d5951071e99c652d2ef8106f",
+      "source_inputs": 406,
+      "manifest_sha256": "ade7460b22ec3c7e6eed83dd9a6094c3d32fe5b2af63f7528d425e26bbd823bc",
+      "image_id": "sha256:d1b6a8c9f0c15a08b0be5ffaa3c38ec7dddd319c9c89dc8913b24841bd0f86dd",
+      "rust_binaries_identical_to_previous_dynamic_switch": [
+        "limeiot-gateway",
+        "limeiot-simulator",
+        "limeiot-model-validator",
+        "limeiot-ota"
+      ]
+    },
+    "control": {
+      "directory": ".dev/control-arm64-workspace-20261104",
+      "source_digest": "aef9e33a218cf104df1274dc304cb4f8ac37ffe125a2df4ef90aa5e6fff667d7",
+      "source_inputs": 492,
+      "manifest_sha256": "dc929145fa600e13977064140a78b9bf2d2ff69eb884daba836f5a1f53bc0478",
+      "image_id": "sha256:51ff3e7c5754e6ea529ebc97b1627343988f1ccd034aedb3d8e352761f8e836d"
+    }
+  },
+  "checks": {
+    "home_console_admin_types_and_build": "passed",
+    "locale_keys": 252,
+    "runtime_report": ".dev/nas-platform-a66308155537161e/result.json",
+    "runtime_report_sha256": "3814623df7debb348a321173f2eab9fecff0f4cc94a54f863cfec165a1e47198",
+    "same_document_menus": 13,
+    "runtime_account_cannot_migrate": true,
+    "non_root_readonly_no_database_port": true,
+    "local_product_validation_signed_publication": true,
+    "explicit_pairing_wss": true,
+    "optional_services_local_context": true,
+    "local_and_managed_space_tasks": true,
+    "control_failure_local_maintenance": true,
+    "backup_restored_products_rules_commands_identity": true,
+    "containers_cleaned": true,
+    "desktop_and_390px_dark_screenshots_reviewed": true,
+    "website_build": {
+      "status": "passed",
+      "html_pages": 53,
+      "local_references": 2055,
+      "astro_diagnostics": {
+        "errors": 0,
+        "warnings": 0,
+        "hints": 0
+      }
+    },
+    "core_markdown_local_references": 284,
+    "both_repository_diff_checks": "passed"
+  },
+  "test_script": {
+    "path": "tools/test-nas-platform.mjs",
+    "sha256": "66dc8d868a5b74581f9d98eb58efb52ce79641f487a928fb3f9a3aa33366662c"
+  },
+  "logs": {
+    ".dev/nas-platform-control-build-20261104.log": "c0886f1f6fe3a61651179a49386febd9310ded53197c90134910faef9b5a2c05",
+    ".dev/nas-platform-gateway-build-20261104.log": "7130a13a5ed96cd6270f1bc3627538719ce69d47fcd844b21324fb17a3a30b18",
+    ".dev/nas-platform-control-image-20261104.log": "ecb4d0b7a52c87a0fbef98e0903ded23d8dc89a7361586ec7efa32119ad5a4a0",
+    ".dev/nas-platform-gateway-image-20261104.log": "7a6c386f9d76e06341cc9104a9b6476bdea0fe63ac40e1aa466ceb7d2c568106",
+    ".dev/nas-platform-closure-20261104.log": "96d0e2ffb9863de45878131b4683e980e85713476b173d01bfbbbab161788962",
+    ".dev/nas-platform-website-build-20261104.log": "6ba0cd960a251bd3e14c09ee958ecf6bbae63716cfd2f2513eccb271344db0d3"
+  },
+  "not_covered": [
+    "configured_inference_services_and_model_quality",
+    "amd64_private_workspace",
+    "full_native_app_runtime",
+    "tv_callback",
+    "production_cloud_update",
+    "physical_hardware",
+    "additional_protocol_and_brand_ecosystems"
+  ]
+}

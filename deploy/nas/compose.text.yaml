@@ -1,0 +1,7 @@
+# 在基础与媒体覆盖后叠加；模型由所有者独立准备，不自动下载或切换提供方。
+services:
+  gateway:
+    environment:
+      LIMEIOT_TEXT_URL: ${LIMEIOT_TEXT_URL:?}
+      LIMEIOT_TEXT_MODEL: ${LIMEIOT_TEXT_MODEL:?}
+      LIMEIOT_TEXT_CA_FILE: ${LIMEIOT_TEXT_CA_FILE:-}

@@ -7,7 +7,10 @@ import { createPrivate, readPrivate, readPrivateToken } from './control-files.mj
 import { parseModelChange, sameModelRequest, verifyModelBinding, verifyModelInstallation, verifyModelOperation, verifyPublisherTrust, verifyModelBundle, verifyModelBundles } from '../../protocol/model-registry.mjs';
 import { parseOtaChange, parseOtaResponse, verifyFirmwareTrust, verifyOtaOperation, verifyOtaTask } from '../../protocol/ota-tasks.mjs';
 import { parseExecutionChange, verifyExecutionOperation, verifyExecutionBinding, verifyExecutionAdapters, verifyApplications } from '../../protocol/execution-bindings.mjs';
+import { parseObservationChange, parseObservationQuery, verifyObservationOperation, verifyObservationBinding, verifyObservationCandidates, verifyObservationCandidate } from '../../protocol/observation-bindings.mjs';
 import { parseBoundedJSON } from '../../protocol/products.mjs';
+import { parseObservationDiscoveryQuery, verifyObservationDiscovery, verifyObservationEndpoints } from '../../protocol/observation-discovery.mjs';
+import { parseZigbeeChange, verifyZigbeeCoordinators, verifyZigbeeOperation, verifyZigbeeOperations } from '../../protocol/zigbee-operations.mjs';
 
 const catalog = JSON.parse(await readFile(new URL('../../../contracts/tools/catalog.json', import.meta.url), 'utf8'));
 const problem = (code, exit) => Object.assign(new Error(code), { safeCode: code, exit });
@@ -21,8 +24,10 @@ export async function runRegistry(args) {
     const operationID = p[0] === 'invoke' ? p[1] : `${p[0]}.${p[1]}`;
     const firmware = ['ota-changes.', 'ota-tasks.', 'firmware-trusts.'].some(prefix => operationID.startsWith(prefix));
     const execution = ['execution-', 'device-applications.'].some(prefix => operationID.startsWith(prefix));
-    const changes = execution ? 'execution-changes' : firmware ? 'ota-changes' : 'model-changes';
-    const operationsPath = execution ? 'execution-operations' : firmware ? 'ota-operations' : 'model-operations';
+    const observation = operationID.startsWith('observation-');
+    const commissioning = operationID.startsWith('zigbee-');
+    const changes = commissioning ? 'zigbee-changes' : observation ? 'observation-changes' : execution ? 'execution-changes' : firmware ? 'ota-changes' : 'model-changes';
+    const operationsPath = commissioning ? 'zigbee-operations' : observation ? 'observation-operations' : execution ? 'execution-operations' : firmware ? 'ota-operations' : 'model-operations';
     const operation = catalog.operations.find(value => value.operation_id === operationID);
     if (!operation) throw problem('unsupported_operation', 2);
     const endpoint = new URL(flags.endpoint ?? process.env.LIMEIOT_ENDPOINT ?? 'http://127.0.0.1:17880');
@@ -34,20 +39,20 @@ export async function runRegistry(args) {
     if (!token) throw problem('unauthenticated', 3);
     const call = async (url, input, key) => {
       let response;
-      try { response = await fetch(endpoint.origin + url, { method: input === undefined ? 'GET' : 'POST', redirect: 'error', signal: AbortSignal.timeout(12000),
-        headers: { Authorization: `Bearer ${token}`, ...(input === undefined ? {} : { 'Content-Type': 'application/json', 'Idempotency-Key': key }) },
+      try { response = await fetch(endpoint.origin + url, { method: input === undefined ? 'GET' : 'POST', redirect: 'error', signal: AbortSignal.timeout(operation.request_timeout_ms ?? 12000),
+        headers: { Authorization: `Bearer ${token}`, ...(input === undefined ? {} : { 'Content-Type': 'application/json', ...(key ? { 'Idempotency-Key': key } : {}) }) },
         body: input === undefined ? undefined : JSON.stringify(input) }); }
-      catch { throw problem('operation_unknown', input === undefined ? 5 : 6); }
-      let result; try { const raw = await response.text(); if (Buffer.byteLength(raw) > 2_000_000) throw new Error(); result = execution ? parseBoundedJSON(raw,{maxBytes:2_000_000,maxDepth:12,maxNodes:20000}) : firmware ? parseOtaResponse(raw) : JSON.parse(raw); } catch { throw problem('invalid_response', original ? 6 : 5); }
+      catch { throw problem('operation_unknown', original ? 6 : 5); }
+      let result; try { const raw = await response.text(); if (Buffer.byteLength(raw) > 2_000_000) throw new Error(); result = execution || observation || commissioning ? parseBoundedJSON(raw,{maxBytes:2_000_000,maxDepth:observation?16:12,maxNodes:20000}) : firmware ? parseOtaResponse(raw) : JSON.parse(raw); } catch { throw problem('invalid_response', original ? 6 : 5); }
       if (!response.ok) throw problem(/^[a-z][a-z0-9_]{0,63}$/.test(result.error?.code ?? '') ? result.error.code : 'request_failed', response.status === 401 || response.status === 403 ? 3 : response.status === 409 ? 4 : response.status >= 500 ? original ? 6 : 5 : 2);
       return result;
     };
     let url = operation.path.replace('{space_id}', encodeURIComponent(space)).replace('{id}', encodeURIComponent(resource ?? ''));
     if (flags.after !== undefined) { if (!operation.pagination) throw problem('unsupported_pagination', 2); url += '?after=' + encodeURIComponent(flags.after); }
-    let expected, result;
+    let expected, result, query;
     if (operationID === changes + '.create') {
       const key = flags['idempotency-key']; if (!/^[A-Za-z0-9_-]{1,128}$/.test(key ?? '') || !flags.input) throw problem('input_and_idempotency_key_required', 2);
-      let change; try { change = (execution ? parseExecutionChange : firmware ? parseOtaChange : parseModelChange)(await readFile(flags.input, 'utf8')); } catch { throw problem(execution ? 'invalid_execution_change' : firmware ? 'invalid_ota_change' : 'invalid_model_change', 2); }
+      let change; try { change = (commissioning ? parseZigbeeChange : observation ? parseObservationChange : execution ? parseExecutionChange : firmware ? parseOtaChange : parseModelChange)(await readFile(flags.input, 'utf8')); } catch { throw problem(commissioning ? 'invalid_zigbee_change' : observation ? 'invalid_observation_change' : execution ? 'invalid_execution_change' : firmware ? 'invalid_ota_change' : 'invalid_model_change', 2); }
       expected = { space_id: space, idempotency_key: key, change };
       const record = { version: 1, origin: endpoint.origin, request: expected };
       const recordFile = path.join(path.resolve(flags['state-dir'] ?? path.join(homedir(), '.local/state/limeiot/gateway')), operationsPath, createHash('sha256').update(endpoint.origin + '\n' + space + '\n' + key).digest('hex') + '.json');
@@ -58,14 +63,43 @@ export async function runRegistry(args) {
         let saved; try { saved = await readPrivate(recordFile); } catch { throw problem('original_record_unavailable', 5); }
         if (!sameModelRequest(saved, record)) throw problem('idempotency_conflict', 4); existing = true;
       }
+      if (commissioning) {
+        let saved; try { saved = await readPrivate(recordFile); } catch { throw problem('original_record_unavailable', 5); }
+        if (!sameModelRequest(saved, record)) throw problem('original_record_unavailable', 5);
+      }
       try { result = existing ? await call(`/api/v1/spaces/${encodeURIComponent(space)}/${operationsPath}/by-key/${encodeURIComponent(key)}`) : await call(url, change, key); }
-      catch (error) { if (error.safeCode === (execution ? 'execution_operation_not_found' : firmware ? 'ota_operation_not_found' : 'model_operation_not_found') || error.exit >= 5) throw problem('operation_unknown', 6); throw error; }
+      catch (error) { if (error.safeCode === (commissioning ? 'zigbee_operation_not_found' : observation ? 'observation_operation_not_found' : execution ? 'execution_operation_not_found' : firmware ? 'ota_operation_not_found' : 'model_operation_not_found') || error.exit >= 5) throw problem('operation_unknown', 6); throw error; }
+    } else if (['observation-candidates.query', 'observation-discoveries.query', 'observation-endpoints.query'].includes(operationID)) {
+      if (!flags.input) throw problem('input_required', 2);
+      try {
+        const text = await readFile(flags.input, 'utf8');
+        query = operationID === 'observation-candidates.query' ? parseObservationQuery(text)
+          : parseObservationDiscoveryQuery(text, operationID === 'observation-endpoints.query');
+      } catch { throw problem('invalid_observation_query', 2); }
+      result = await call(url, query);
     } else result = await call(url);
     if (operationID.startsWith(changes + '.')) {
       try {
-        await (execution ? verifyExecutionOperation : firmware ? verifyOtaOperation : verifyModelOperation)(result, expected);
+        await (commissioning ? verifyZigbeeOperation : observation ? verifyObservationOperation : execution ? verifyExecutionOperation : firmware ? verifyOtaOperation : verifyModelOperation)(result, expected);
         if (result.request.space_id !== space || operationID === changes + '.resolve' && result.request.idempotency_key !== resource) throw new Error();
       } catch { throw problem('operation_unknown', 6); }
+    } else if (commissioning) {
+      try {
+        if (operationID === 'zigbee-coordinators.list') verifyZigbeeCoordinators(result);
+        else await verifyZigbeeOperations(result, space);
+      } catch { throw problem('invalid_response', 5); }
+    } else if (observation) {
+      try {
+        if (operationID === 'observation-bindings.get') await verifyObservationBinding(result, resource);
+        else if (operationID === 'observation-candidates.list') await verifyObservationCandidates(result);
+        else if (operationID === 'observation-candidates.query') {
+          await verifyObservationCandidate(result);
+          if (result.target.ieee_address !== query.ieee_address || result.target.endpoint !== query.endpoint) throw new Error();
+        }
+        else if (operationID === 'observation-discoveries.query') verifyObservationDiscovery(result, query);
+        else if (operationID === 'observation-endpoints.query') verifyObservationEndpoints(result, query);
+        else throw new Error();
+      } catch { throw problem('invalid_response', 5); }
     } else if (execution) {
       try {
         if(operationID==='execution-bindings.get') verifyExecutionBinding(result,resource);
@@ -102,6 +136,7 @@ export async function runRegistry(args) {
     }
     console.log(JSON.stringify({ ...result, ...(original ? { cli: original } : {}) }));
     if (result.status === 'conflict') process.exitCode = 4;
+    else if (commissioning && result.status === 'unknown') process.exitCode = 6;
     else if (result.status === 'rejected') process.exitCode = 7;
   } catch (error) {
     console.error(JSON.stringify({ error: { code: error.safeCode ?? 'local_file_unavailable' }, ...(original ? { original } : {}) }));

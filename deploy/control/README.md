@@ -40,10 +40,24 @@ docker build -f "deploy/control/Dockerfile" -t limeiot-control:local .
 
 构建输出包含 Go 服务、独立显式迁移程序、Rust物模型校验器和两份静态 Web，不包含官网或文档源码。运行用户为10001，密钥文件应只对该运行身份可读，通过只读 secret 挂载配置；不把 Secret 写进镜像、构建参数或浏览器。校验器默认从 PATH 发现，也可用 `LIMEIOT_MODEL_VALIDATOR` 指定绝对路径；缺失时仅校验接口返回503，不影响其他服务入口。
 
+macOS ARM64 开发机也可在项目内交叉构建 Linux ARM64/AMD64 制品，减少容器中的编译开销：
+
+```sh
+npm run test:control:artifacts
+npm run build:control:artifacts -- --platform linux/arm64 --output "$PWD/.dev/control-arm64-build"
+python3 "tools/build-control-artifacts.py" verify --directory "$PWD/.dev/control-arm64-build"
+python3 "tools/build-control-artifacts.py" image --directory "$PWD/.dev/control-arm64-build" \
+  --tag "limeiot/verification:control-arm64-local"
+```
+
+Go 版本取固定的 `1.26.10`，关闭 CGO，两个程序分别构建；Rust 工具链与[网关构建](../nas/README.md#项目内-linux-交叉构建)共用缓存与锁。需要 Node.js 24.21+、Python 3.12+、已有项目依赖及 Docker。依赖首次取得仍需联网。输出清单包含源码、工具链和全部制品摘要，验证静态 Go ELF、动态 Rust ELF、两份网页及正式 Dockerfile 的运行层；构建过程中输入变化则拒绝打包。工具仅组装本地 `limeiot/verification` 镜像，不执行迁移或发布。
+
+已有可信且验证通过的同平台 NAS 制品时，`build` 可追加 `--rust-artifacts "/absolute/nas-artifacts"`，只复用其中的校验器。工具必须核对原制品、全部 Rust/Cargo 源码、字面量 `include_str!`/`include_bytes!` 所引用合同与固定工具链；新增构建脚本、动态 include、源码或嵌入文件变化均拒绝复用。Go 与 Console/Admin 仍从当前源码构建。`image --runtime-base` 仅接受运行依赖前缀匹配的同平台本地镜像，不能使用网关的运行依赖层冒充控制面基础层。
+
 API 默认使用平台 `PORT`。Railway 选择本 Dockerfile、仓库根为构建上下文，就绪探针为 `/health/ready`；迁移应作为独立、获准的发布步骤运行 `limeiot-migrate`，不作为 API 启动动作。LimeCloud/OIDC 应用需真实登记后配置，不能以开发夹具代替。
 
 可选模型签名使用独立私钥的只读Secret文件及 `LIMEIOT_MODEL_RELEASE_KEY_FILE` 绝对路径，容器运行身份须有读取权限且文件模式为0600。不要复用会话加密密钥、设备证书私钥或网关机器私钥。未提供时新发布503，历史下载与原决定读取仍工作；配置了错误材料则拒绝启动。发布v5迁移须单独执行，API不自动升级，详见[发布合同](../../contracts/model-release.md)。
 
-本地构建、宿主进程浏览器联调与容器验收分别报告。本轮 Linux ARM64 完整本地工作台已通过 Compose 安装、显式迁移、统一业务和新目录备份恢复，回执见 `.dev/nas-platform-6939c2d0e130e891/result.json`。未据此声明 x86_64、NAS 实机或 Cloudflare/Railway 正式部署通过。
+本地构建、宿主进程浏览器联调与容器验收分别报告。当前Linux ARM64完整本地工作台已通过Compose安装、显式迁移、16菜单、统一业务、控制面故障维护和新目录空数据库恢复，见[整包证据](../../docs/evidence/2026-11-04-companion-nas.json)。本轮Go与Console/Admin从当前源码构建，Rust校验器按依赖校验复用；镜像内文件逐项核对。未据此声明x86_64、NAS实机或Cloudflare/Railway正式部署通过。
 
 通用 Console/Admin 复用 `packages/control-ui/src/workspace`，与完整 NAS 采用相同的导航、主题、产品校验和发布组件。2026-11-02 已通过 Go race/vet 与10项真实 MySQL、HTTP、WSS、Rust/MQTT和浏览器回归；包含受众隔离、手机授权、原请求恢复和不重放。容器安装与恢复使用独立检查 `npm run test:nas:platform`，结果不与宿主进程检查混用。

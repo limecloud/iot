@@ -1,0 +1,2040 @@
+{
+  "candidate": {
+    "source": {
+      "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+      "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+    },
+    "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348",
+    "target": {
+      "coordinator_ieee": "0102030405060708",
+      "ieee_address": "1122334455667788",
+      "endpoint": 1
+    },
+    "manufacturer_code": 1234,
+    "signature": {
+      "manufacturer": "LimeIoT",
+      "model": "环境传感器",
+      "application_version": 1,
+      "hardware_version": 2
+    },
+    "observed_at": "2030-01-01T00:00:00Z",
+    "expires_at": "2030-01-01T00:01:00Z",
+    "protocol": "zigbee-znp",
+    "evidence": "unauthenticated_protocol"
+  },
+  "page": {
+    "coordinators": [
+      {
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "timeout_ms": 30000,
+        "protocol": "zigbee-znp"
+      }
+    ],
+    "items": [
+      {
+        "source": {
+          "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+          "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+        },
+        "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348",
+        "target": {
+          "coordinator_ieee": "0102030405060708",
+          "ieee_address": "1122334455667788",
+          "endpoint": 1
+        },
+        "manufacturer_code": 1234,
+        "signature": {
+          "manufacturer": "LimeIoT",
+          "model": "环境传感器",
+          "application_version": 1,
+          "hardware_version": 2
+        },
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol"
+      }
+    ],
+    "next_cursor": null
+  },
+  "empty": {
+    "device_id": "sensor",
+    "revision": "sha256:d392eb0bd4547a2e84a32c53137a47bfe167d58baba8f1a4906dcaf3b044e703",
+    "binding": null
+  },
+  "bind": {
+    "type": "sources.bind",
+    "device_id": "sensor",
+    "source": {
+      "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+      "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+    },
+    "expected_binding_revision": "sha256:d392eb0bd4547a2e84a32c53137a47bfe167d58baba8f1a4906dcaf3b044e703",
+    "expected_model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348"
+  },
+  "request": {
+    "space_id": "space-demo",
+    "idempotency_key": "original",
+    "change": {
+      "type": "sources.bind",
+      "device_id": "sensor",
+      "source": {
+        "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+        "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+      },
+      "expected_binding_revision": "sha256:d392eb0bd4547a2e84a32c53137a47bfe167d58baba8f1a4906dcaf3b044e703",
+      "expected_model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348"
+    }
+  },
+  "current": {
+    "device_id": "sensor",
+    "revision": "sha256:db1cc4fe1b2b9896f22b600f9b152939967c9d64b86d49c26b3ca79b6b517fda",
+    "binding": {
+      "policy": {
+        "device_id": "sensor",
+        "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348",
+        "source": {
+          "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+          "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+        }
+      },
+      "manifest": {
+        "mapping": "znp-environment-v1",
+        "target": {
+          "coordinator_ieee": "0102030405060708",
+          "ieee_address": "1122334455667788",
+          "endpoint": 1
+        },
+        "manufacturer_code": 1234,
+        "signature": {
+          "manufacturer": "LimeIoT",
+          "model": "环境传感器",
+          "application_version": 1,
+          "hardware_version": 2
+        },
+        "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348"
+      },
+      "active": true,
+      "generation": "observationop-original",
+      "changed_at": "2030-01-01T00:00:01Z"
+    }
+  },
+  "operation": {
+    "operation_id": "observationop-original",
+    "sequence": 1,
+    "request": {
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "change": {
+        "type": "sources.bind",
+        "device_id": "sensor",
+        "source": {
+          "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+          "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+        },
+        "expected_binding_revision": "sha256:d392eb0bd4547a2e84a32c53137a47bfe167d58baba8f1a4906dcaf3b044e703",
+        "expected_model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348"
+      }
+    },
+    "request_digest": "sha256:f92d0d9f8d2df5d6dc267006a735ba53d0bcbd0aafb4d6b3ae654b5bf6799708",
+    "status": "applied",
+    "reason": null,
+    "result": {
+      "device_id": "sensor",
+      "revision": "sha256:db1cc4fe1b2b9896f22b600f9b152939967c9d64b86d49c26b3ca79b6b517fda",
+      "binding": {
+        "policy": {
+          "device_id": "sensor",
+          "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348",
+          "source": {
+            "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+            "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+          }
+        },
+        "manifest": {
+          "mapping": "znp-environment-v1",
+          "target": {
+            "coordinator_ieee": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "endpoint": 1
+          },
+          "manufacturer_code": 1234,
+          "signature": {
+            "manufacturer": "LimeIoT",
+            "model": "环境传感器",
+            "application_version": 1,
+            "hardware_version": 2
+          },
+          "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348"
+        },
+        "active": true,
+        "generation": "observationop-original",
+        "changed_at": "2030-01-01T00:00:01Z"
+      }
+    },
+    "created_at": "2030-01-01T00:00:01Z"
+  },
+  "revoke": {
+    "type": "sources.revoke",
+    "device_id": "sensor",
+    "expected_binding_revision": "sha256:db1cc4fe1b2b9896f22b600f9b152939967c9d64b86d49c26b3ca79b6b517fda"
+  },
+  "revoked": {
+    "device_id": "sensor",
+    "revision": "sha256:83cd69fa1e1457ed3e8d6a71808a070599fb9e683a661f9ddda3f77dc71dfe31",
+    "binding": {
+      "policy": {
+        "device_id": "sensor",
+        "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348",
+        "source": {
+          "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+          "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+        }
+      },
+      "manifest": {
+        "mapping": "znp-environment-v1",
+        "target": {
+          "coordinator_ieee": "0102030405060708",
+          "ieee_address": "1122334455667788",
+          "endpoint": 1
+        },
+        "manufacturer_code": 1234,
+        "signature": {
+          "manufacturer": "LimeIoT",
+          "model": "环境传感器",
+          "application_version": 1,
+          "hardware_version": 2
+        },
+        "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348"
+      },
+      "active": false,
+      "generation": "observationop-revoke",
+      "changed_at": "2030-01-01T00:00:02Z"
+    }
+  },
+  "revokeOperation": {
+    "operation_id": "observationop-revoke",
+    "sequence": 2,
+    "request": {
+      "space_id": "space-demo",
+      "idempotency_key": "revoke",
+      "change": {
+        "type": "sources.revoke",
+        "device_id": "sensor",
+        "expected_binding_revision": "sha256:db1cc4fe1b2b9896f22b600f9b152939967c9d64b86d49c26b3ca79b6b517fda"
+      }
+    },
+    "request_digest": "sha256:cc28c6c9de137c0978e238db12c11a8e9e627cdc5d54e9c189785b0f76807942",
+    "status": "applied",
+    "reason": null,
+    "result": {
+      "device_id": "sensor",
+      "revision": "sha256:83cd69fa1e1457ed3e8d6a71808a070599fb9e683a661f9ddda3f77dc71dfe31",
+      "binding": {
+        "policy": {
+          "device_id": "sensor",
+          "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348",
+          "source": {
+            "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+            "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+          }
+        },
+        "manifest": {
+          "mapping": "znp-environment-v1",
+          "target": {
+            "coordinator_ieee": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "endpoint": 1
+          },
+          "manufacturer_code": 1234,
+          "signature": {
+            "manufacturer": "LimeIoT",
+            "model": "环境传感器",
+            "application_version": 1,
+            "hardware_version": 2
+          },
+          "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348"
+        },
+        "active": false,
+        "generation": "observationop-revoke",
+        "changed_at": "2030-01-01T00:00:02Z"
+      }
+    },
+    "created_at": "2030-01-01T00:00:02Z"
+  },
+  "rejected": {
+    "operation_id": "observationop-original",
+    "sequence": 1,
+    "request": {
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "change": {
+        "type": "sources.bind",
+        "device_id": "sensor",
+        "source": {
+          "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+          "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+        },
+        "expected_binding_revision": "sha256:d392eb0bd4547a2e84a32c53137a47bfe167d58baba8f1a4906dcaf3b044e703",
+        "expected_model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348"
+      }
+    },
+    "request_digest": "sha256:f92d0d9f8d2df5d6dc267006a735ba53d0bcbd0aafb4d6b3ae654b5bf6799708",
+    "status": "rejected",
+    "reason": "candidate_expired",
+    "result": null,
+    "created_at": "2030-01-01T00:00:01Z"
+  },
+  "conflict": {
+    "operation_id": "observationop-original",
+    "sequence": 1,
+    "request": {
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "change": {
+        "type": "sources.bind",
+        "device_id": "sensor",
+        "source": {
+          "adapter_id": "znp-a04a8f02a1ab5baffcb39791eb2c07ce98da84a52d911f083012fe0354e52470",
+          "revision": "sha256:00b895b96ce7bf15259e10c502dba85f9500cfc67a027e16abd7c7cd8c0243e8"
+        },
+        "expected_binding_revision": "sha256:d392eb0bd4547a2e84a32c53137a47bfe167d58baba8f1a4906dcaf3b044e703",
+        "expected_model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348"
+      }
+    },
+    "request_digest": "sha256:f92d0d9f8d2df5d6dc267006a735ba53d0bcbd0aafb4d6b3ae654b5bf6799708",
+    "status": "conflict",
+    "reason": "revision_conflict",
+    "result": null,
+    "created_at": "2030-01-01T00:00:01Z"
+  },
+  "discovery": {
+    "observed_at": "2030-01-01T00:00:00Z",
+    "expires_at": "2030-01-01T00:01:00Z",
+    "protocol": "zigbee-znp",
+    "evidence": "unauthenticated_protocol",
+    "coordinator_id": "home-znp",
+    "coordinator_ieee": "0102030405060708",
+    "scope": "coordinator_neighbors",
+    "items": [
+      {
+        "extended_pan_id": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "device_type": 2,
+        "rx_on_when_idle": 0,
+        "relationship": 1,
+        "flags": 18,
+        "permit_joining": 0,
+        "depth": 1,
+        "link_quality": 200
+      }
+    ]
+  },
+  "endpoints": {
+    "observed_at": "2030-01-01T00:00:00Z",
+    "expires_at": "2030-01-01T00:01:00Z",
+    "protocol": "zigbee-znp",
+    "evidence": "unauthenticated_protocol",
+    "coordinator_id": "home-znp",
+    "coordinator_ieee": "0102030405060708",
+    "ieee_address": "1122334455667788",
+    "network_address": 4660,
+    "manufacturer_code": 1234,
+    "endpoints": [
+      {
+        "endpoint": 1,
+        "profile_id": 260,
+        "device_id": 770,
+        "device_version": 0,
+        "input_clusters": [
+          0,
+          1026,
+          1029
+        ],
+        "output_clusters": []
+      },
+      {
+        "endpoint": 2,
+        "profile_id": 260,
+        "device_id": 770,
+        "device_version": 0,
+        "input_clusters": [
+          0
+        ],
+        "output_clusters": []
+      }
+    ]
+  },
+  "invalidDiscovery": [
+    {
+      "name": "coordinator_id-other",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "other",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "coordinator_ieee-8877665544332211",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "8877665544332211",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "expires_at-2030-01-01T00:01:01Z",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:01Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "expires_at-2030-01-01T00:00:00Z",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:00:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "observed_at-invalid",
+      "document": {
+        "observed_at": "invalid",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "scope-network",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "network",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "serial-/dev/ttyUSB0",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ],
+        "serial": "/dev/ttyUSB0"
+      }
+    },
+    {
+      "name": "neighbor-flags-0",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 0,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "neighbor-ieee_address-0102030405060708",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "0102030405060708",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "neighbor-ieee_address-1122334455667788\n",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788\n",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "neighbor-network_address-65528",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 65528,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "neighbor-network_address-True",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": true,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "neighbor-extended_pan_id-fffffffffffffffff",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "fffffffffffffffff",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "neighbor-link_quality-256",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 256
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-ieee",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4661,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-short",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "8877665544332211",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "capacity",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "scope": "coordinator_neighbors",
+        "items": [
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          },
+          {
+            "extended_pan_id": "0102030405060708",
+            "ieee_address": "1122334455667788",
+            "network_address": 4660,
+            "device_type": 2,
+            "rx_on_when_idle": 0,
+            "relationship": 1,
+            "flags": 18,
+            "permit_joining": 0,
+            "depth": 1,
+            "link_quality": 200
+          }
+        ]
+      }
+    }
+  ],
+  "invalidEndpoints": [
+    {
+      "name": "coordinator_ieee",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "8877665544332211",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": []
+          },
+          {
+            "endpoint": 2,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0
+            ],
+            "output_clusters": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "ieee_address",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "8877665544332211",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": []
+          },
+          {
+            "endpoint": 2,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0
+            ],
+            "output_clusters": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "expires_at",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:01Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": []
+          },
+          {
+            "endpoint": 2,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0
+            ],
+            "output_clusters": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "manufacturer_code",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 65536,
+        "endpoints": [
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": []
+          },
+          {
+            "endpoint": 2,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0
+            ],
+            "output_clusters": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "manifest",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": []
+          },
+          {
+            "endpoint": 2,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0
+            ],
+            "output_clusters": []
+          }
+        ],
+        "manifest": {}
+      }
+    },
+    {
+      "name": "endpoint-endpoint-0",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": 0,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "endpoint-endpoint-True",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": true,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "endpoint-device_version-16",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 16,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "endpoint-input_clusters-[0, 0]",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              0
+            ],
+            "output_clusters": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "endpoint-output_clusters-[1, 1]",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": [
+              1,
+              1
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "endpoint-input_clusters-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+              25,
+              26,
+              27,
+              28,
+              29,
+              30,
+              31,
+              32
+            ],
+            "output_clusters": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-endpoint",
+      "document": {
+        "observed_at": "2030-01-01T00:00:00Z",
+        "expires_at": "2030-01-01T00:01:00Z",
+        "protocol": "zigbee-znp",
+        "evidence": "unauthenticated_protocol",
+        "coordinator_id": "home-znp",
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "network_address": 4660,
+        "manufacturer_code": 1234,
+        "endpoints": [
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": []
+          },
+          {
+            "endpoint": 1,
+            "profile_id": 260,
+            "device_id": 770,
+            "device_version": 0,
+            "input_clusters": [
+              0,
+              1026,
+              1029
+            ],
+            "output_clusters": []
+          }
+        ]
+      }
+    }
+  ]
+}

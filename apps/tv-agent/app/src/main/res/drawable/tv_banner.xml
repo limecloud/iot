@@ -1,1 +1,1 @@
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle"><size android:width="320dp" android:height="180dp" /><solid android:color="#152D28" /><stroke android:width="6dp" android:color="#5ED2A0" /></shape>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android" android:src="@drawable/tv_launcher_banner" android:gravity="fill" />

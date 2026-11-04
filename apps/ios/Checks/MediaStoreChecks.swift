@@ -69,6 +69,12 @@ private actor LiveWire: HTTPTransport {
             return MediaStore(client: MediaClient(gateway: gateway, store: memory), space: "space-demo", authFailure: { _ in authFailures += 1 })
         }
         let store = try await connect(); store.refresh(); await store.waitForIdle()
+        store.selectFile(name: "recording.wav", data: bytes); store.clearRecording()
+        try expect(store.canUpload && store.fileName == "recording.wav", "manual file with recording name remains selected")
+        try expect(store.selectRecording(bytes) && store.canUpload, "recorded selection owned by media")
+        store.clearRecording(); store.upload(); try expect(!store.canUpload && store.fileName.isEmpty, "clear only recorded selection"); try await expectPosts(0)
+        _ = store.selectRecording(bytes); store.pause(); store.upload(); try await expectPosts(0)
+        store.refresh(); await store.waitForIdle()
         store.selectFile(name: "sample.wav", data: bytes)
         try expect(store.ready && store.canUpload && store.targets.count == 2, "file and candidates loaded"); try await expectPosts(0)
         store.grant(); store.approve(true); store.setGrantDuration(30); try expect(!store.approved, "duration clears approval")
@@ -98,7 +104,7 @@ private actor LiveWire: HTTPTransport {
         do { _ = try await MediaFile.read(file); throw Failure.check("oversized file accepted") } catch MediaFile.Failure.tooLarge {}
         let task = Task { try await MediaFile.read(file) }; task.cancel()
         do { _ = try await task.value; throw Failure.check("cancelled file returned") } catch is CancellationError {}
-        print("{\"media_state_contract_groups\":7}")
+        print("{\"media_state_contract_groups\":8}")
     }
     @MainActor static func live() async throws {
         let env = ProcessInfo.processInfo.environment, phase = env["LIMEIOT_MEDIA_PHASE"]!, space = "space-demo"

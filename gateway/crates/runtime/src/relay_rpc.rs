@@ -46,9 +46,12 @@ struct Model {
 fn payload<T: serde::de::DeserializeOwned>(value: Value) -> Result<T> {
     serde_json::from_value(value).map_err(|_| err("invalid_remote_request"))
 }
-fn receipt(command: Command) -> Value {
-    json!({"command_id":command.command_id,"request":command.request,"request_digest":command.request_digest,
-        "status":command.status,"evidence":command.evidence,"error":command.error})
+fn receipt(command: Command) -> Result<Value> {
+    let evidence = limeiot_core::property_bridge::remote_evidence(&command)?;
+    Ok(
+        json!({"command_id":command.command_id,"request":command.request,"request_digest":command.request_digest,
+        "status":command.status,"evidence":evidence,"error":command.error}),
+    )
 }
 pub async fn execute(
     app: &App,
@@ -86,7 +89,7 @@ pub async fn execute(
             // 核对授权、去重及创建均在同一个SQLite事务中，本地撤销不能穿过检查与提交。
             app.update("remote.command.accepted", |data| {
                 data.create_remote_command(authority, &input.remote_id, input.command, now)
-                    .map(receipt)
+                    .and_then(receipt)
             })
             .await
         }
@@ -96,7 +99,7 @@ pub async fn execute(
             store
                 .data
                 .remote_command(&authority, &input.remote_id, now)
-                .map(receipt)
+                .and_then(receipt)
         }
         "devices.list" => {
             let page: Page = payload(request.payload)?;

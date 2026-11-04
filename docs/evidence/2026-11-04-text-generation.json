@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-04T04:10:46.262371+00:00",
+  "scope": "有限文字生成的API、CLI、家庭网页及NAS宿主恢复软件闭环",
+  "status": "passed",
+  "hardware": false,
+  "hardware_status": "用户要求跳过",
+  "provider_fixture": true,
+  "real_model_quality": false,
+  "native_text_client": false,
+  "native_app_runtime": false,
+  "container_runtime": false,
+  "new_nas_image": false,
+  "published": false,
+  "full_goal_completed": false,
+  "implementation": [
+    "独立TextProvider隔离Ollama；有界user/assistant上下文，不向模型提供设备工具",
+    "首次提供方请求前原子保存摘要任务；重启running转unknown，不重发正文",
+    "媒体快照v5读取v1至v5；文字与既有音频、转写和视觉共存且不降版本",
+    "CLI复用runModelJob，创建与放弃记录保存后回读核对，原键恢复只GET",
+    "家庭网页提供当前页面多轮；后台、离线、离开和保留期限清正文，存储失败零POST",
+    "NAS覆盖复用媒体存储、备份恢复及正式Nginx路由；本地工作台增加对话菜单",
+    "官网同站文档增加本地文字模型配置、操作与恢复指南"
+  ],
+  "checks": {
+    "core": {
+      "passed": 12,
+      "scope": "text 2项、media 8项、speech 2项",
+      "logs": [
+        {
+          "path": ".dev/text-generation-core-20261104.log",
+          "sha256": "78e2d9cdb4ff4079c252b7c55c2004be684a6c5af2c8736d08ea39b7baa0f78b"
+        },
+        {
+          "path": ".dev/text-generation-quality-20261104.log",
+          "sha256": "d493745c05f03caf266bbe03eab0c53a59386f43ca5fc43b611db8a21c300432"
+        }
+      ]
+    },
+    "runtime": {
+      "passed": 100,
+      "log": {
+        "path": ".dev/text-generation-runtime-20261104.log",
+        "sha256": "0acf38f8836e295912ad12493110d80d8fc49b36887eddeee1d9226c77490475"
+      },
+      "schema_field_correction_after_run": true,
+      "note": "Rust实现未在此后更改；最终HTTP旅程核对重建二进制的Schema"
+    },
+    "quality": {
+      "fmt": true,
+      "clippy": true,
+      "warnings": 0,
+      "log": {
+        "path": ".dev/text-generation-quality-20261104.log",
+        "sha256": "d493745c05f03caf266bbe03eab0c53a59386f43ca5fc43b611db8a21c300432"
+      }
+    },
+    "build": {
+      "gateway": {
+        "path": ".dev/text-generation-build-final-20261104.log",
+        "sha256": "4a52743701c4a7a271a0547af951e43ab107f869f0ab61d3355349d283c8a8e6"
+      },
+      "home": {
+        "path": ".dev/text-generation-home-build-20261104.log",
+        "sha256": "fdc4da2b428c1a24a12253ec5a2e0169a84c2f61316d591ff9ba0fa29e7fcf05"
+      },
+      "console_admin": {
+        "path": ".dev/text-generation-control-build-20261104.log",
+        "sha256": "2a513da7f597904a435fed2886835d18ea8e7610ed074f388d767cd8ee8ff870"
+      }
+    },
+    "text_journeys": {
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "node": "24.21.0",
+      "log": {
+        "path": ".dev/text-generation-journeys-final-20261104.log",
+        "sha256": "d95ded9821053141e988333a2099b59111bcec12fcb25a5f321342b360e51e9d"
+      }
+    },
+    "existing_model_regressions": {
+      "initial_tests": 12,
+      "initial_passed": 11,
+      "initial_failed": 1,
+      "log": {
+        "path": ".dev/text-generation-regressions-20261104.log",
+        "sha256": "c30ad85f217b93db9c755ceec2b3f64ec9865dc01703816585fcec612243249b"
+      },
+      "failed_test": "视觉模型计算期间，本地设备控制仍通过原MQTT回执完成",
+      "failure": "2秒HTTP请求超时，未确定单一根因",
+      "isolated_recheck": {
+        "tests": 1,
+        "passed": 1,
+        "assertions_and_deadlines_unchanged": true,
+        "source_changed": false,
+        "log": {
+          "path": ".dev/text-generation-vision-control-recheck-20261104.log",
+          "sha256": "c9ba27556b4d3c329fbea10d8cad46c665697b41155f790be2234e388d966e38"
+        }
+      }
+    },
+    "website": {
+      "pages": 54,
+      "local_references": 2112,
+      "node": "24.21.0",
+      "log": {
+        "path": ".dev/text-generation-website-build-final-20261104.log",
+        "sha256": "23c8c959c2ff5b9180c04998d418fd2389bf417b0c8905c36a67340d5b24219b"
+      }
+    },
+    "nas": {
+      "snapshot_version": 5,
+      "backup_byte_exact": true,
+      "restored_new_directory": true,
+      "compose_rendered": true,
+      "nginx_templates": 2,
+      "tls_dns_and_addresses_substituted_for_host": true,
+      "container_runtime": false,
+      "new_nas_image": false,
+      "fourteen_menu_container_harness": "已更新并通过语法检查，未运行新容器；此前13菜单证据未提升"
+    },
+    "browser": {
+      "viewport": 390,
+      "screenshot_reviewed": true,
+      "horizontal_overflow": false
+    },
+    "python_compile": true,
+    "diff_check": true
+  },
+  "failure_history": [
+    {
+      "check": "首次文字合同组合旅程",
+      "result": "6通过、1失败",
+      "cause": "Schema生成时将revision误改为retext",
+      "repair_rounds": 1,
+      "fix": "仅修正文字Schema与工具目录，重建网关，最终7项通过",
+      "log": {
+        "path": ".dev/text-generation-journeys-20261104.log",
+        "sha256": "e68a675fb1d3bb81e4c7d244899c9267d0b17f0981165bc8e7eacf7a23d8f5df"
+      }
+    }
+  ],
+  "source_manifest": {
+    "path": ".dev/text-generation/source-manifest.json",
+    "sha256": "62be51007468c43f99f3437d449ebe6c78f66c93570a895907f7d1eaefc9aa9c"
+  },
+  "source_files": 414,
+  "binaries": [
+    {
+      "path": "target/debug/limeiot-gateway",
+      "sha256": "90da6bb8f6c53e1995c7a3c356985685fffcf9e9df927db88317df65bfa242b1"
+    },
+    {
+      "path": "target/debug/limeiot-model-validator",
+      "sha256": "ebe57871f9b496f50483e42245123921a2f6e315270e8abc296e5b1072b45948"
+    },
+    {
+      "path": "target/debug/limeiot-simulator",
+      "sha256": "229ef250fb2d6e45695b0901c9f5a4a1ab2ef74df9462b3a59c9741d3ae974f2"
+    }
+  ],
+  "reports": [
+    {
+      "path": ".dev/text-nas-C8Vt6O/text-generation-nas-result.json",
+      "sha256": "26467f0ad31474fbddbc1c2269139c24823f0d8730acce44b129baa143b82e70"
+    },
+    {
+      "path": ".dev/run-1793765049303-36f1b1d7/text-generation-ingress-result.json",
+      "sha256": "7cfc37974d862b9c45cb2ba07bb7fc0ee28588dce5d1e120994fa0adb1c0f31b"
+    },
+    {
+      "path": ".dev/run-1793765059471-63e45db1/text-web-result.json",
+      "sha256": "61004f995897fee27402a4f0525de11c739f3cc8b1c63d4acfd38bfb139f92bc"
+    },
+    {
+      "path": ".dev/run-1793765081215-640849da/text-web-recovery-result.json",
+      "sha256": "9ce2cb7507853177c1c0dbe74994f36863c258f74c196f544678c389df70ddf4"
+    },
+    {
+      "path": ".dev/run-1793765100586-6b7dd542/text-generation-result.json",
+      "sha256": "fd516ec845e42e18899d178ee1292012184b1b4103fd1644a9eedc154165f56a"
+    },
+    {
+      "path": ".dev/run-1793765109043-9c7f3fda/text-generation-faults.json",
+      "sha256": "5e2834376b09d8c0696615b9045fa7659abaccdf4549ba6d75a56d8507f3b4a2"
+    },
+    {
+      "path": ".dev/speech-compose-7JI4K4/speech-compose-result.json",
+      "sha256": "51304af7a48f4176a7a1f7036848828a52770e0bc08686a12a7670ebf99aa08b"
+    },
+    {
+      "path": ".dev/speech-journey-m93dIh/speech-result.json",
+      "sha256": "7236afc644463a412587dd0a51022554d40b7b689af2df6f3040227b6772af32"
+    },
+    {
+      "path": ".dev/speech-faults-Vf6Yiv/speech-faults-result.json",
+      "sha256": "09f115d9f436994379ce82eac4bd8c0fe8c426fd9414617465d2b9955abe98c8"
+    },
+    {
+      "path": ".dev/speech-nas-JbJiV6/speech-nas-result.json",
+      "sha256": "bf7e60bc43d676db4d2e63c635561e564aec9fb071e08626dbc174fa639e9bb3"
+    },
+    {
+      "path": ".dev/transcription-MF2WuZ/transcription-result.json",
+      "sha256": "62c251859c4ae556d2434ba3fd3bb706e680506d6d48a717c4a5cbae6bc11c39"
+    },
+    {
+      "path": ".dev/transcription-faults-hxIMPC/transcription-faults-result.json",
+      "sha256": "9f4a5f28d07d73c8fc542d8df128bff94bc51303051bc75bd83d7d4fea34a38a"
+    },
+    {
+      "path": ".dev/transcription-nas-hXfIXW/transcription-nas-result.json",
+      "sha256": "3e2e47a50a49573c9fff55eac0a7593f6d584892e8b4644dda91382788bf21b2"
+    },
+    {
+      "path": ".dev/vision-nas-mciATw/vision-nas-result.json",
+      "sha256": "a419d6b950273511126322edae0ab180a16f169075a77d94dabad3f8ed1464fa"
+    },
+    {
+      "path": ".dev/run-1793765252726-61dcb55d/vision-ingress-result.json",
+      "sha256": "26b5a9154e090a43b53652f0b3de00c28df454a4b2638cf2a399f8883892d3e5"
+    },
+    {
+      "path": ".dev/run-1793765271076-3c95b04e/vision-result.json",
+      "sha256": "0ef99e6d0f0ef5783d68633c1328218dbe844645b6bf276fcabebebafb83e5a7"
+    },
+    {
+      "path": ".dev/run-1793765278154-f58171ca/vision-faults-result.json",
+      "sha256": "f6e92db3ca3233209909580f19c17920aa66af86d73cc248fbcfdf8675dae3bd"
+    },
+    {
+      "path": ".dev/run-1793765354323-7a66990a/vision-availability-result.json",
+      "sha256": "0a8e92fa242fb7416a7c64a7da0b33fcb54a1c13b8e3754f5199cfb5c303e0c1"
+    }
+  ],
+  "limits": [
+    "提供方为HTTP协议夹具，不证明真实模型质量或最大上下文被具体模型完整消费",
+    "NAS本阶段运行宿主备份恢复、Compose渲染与替换TLS/DNS后的真实Nginx，不代表新容器或镜像验收",
+    "原生对话入口、完整会话政策、长期记忆、ASR/TTS对话流水线和流式输出未实现",
+    "官网与官方云未发布，既有AMD64/原生App/TV阻塞与全部实机跳过范围保持"
+  ]
+}

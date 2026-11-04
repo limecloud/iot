@@ -1,11 +1,21 @@
-//! 第一方ZNP诊断与只读ZDO访谈。协议数据不取得平台身份或控制权。
+//! 第一方ZNP诊断、ZDO访谈、固定属性、On/Off与有限入网。协议数据不取得平台身份。
+mod commissioning;
+mod discovery;
+mod environment;
 mod frame;
+mod on_off;
 #[cfg(unix)]
 pub mod serial;
 mod session;
+mod zcl;
 mod zdo;
 
+pub use commissioning::{JoinWindow, JoinWindowTarget};
+pub use discovery::{DiscoveryTarget, InterviewTarget, Neighbor, Neighbors};
+pub use environment::EnvironmentReading;
+pub use on_off::{OnOffCommand, OnOffCommandTarget, OnOffReading};
 pub use session::Session;
+pub use zcl::{EndpointTarget as EnvironmentTarget, EndpointTarget as OnOffTarget, Signature};
 pub use zdo::{Endpoint, Interview, NodeDescriptor, Probe};
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -36,6 +46,20 @@ pub enum Error {
     CapabilityMissing,
     #[error("znp_identity_changed")]
     IdentityChanged,
+    #[error("znp_signature_mismatch")]
+    SignatureMismatch,
+    #[error("znp_coordinator_required")]
+    CoordinatorRequired,
+    #[error("znp_neighbor_table_changed")]
+    NeighborTableChanged,
+    #[error("znp_endpoint_conflict")]
+    EndpointConflict,
+    #[error("znp_profile_unsupported")]
+    ProfileUnsupported,
+    #[error("znp_zcl_rejected")]
+    ZclRejected(u8),
+    #[error("znp_delivery_failed")]
+    DeliveryFailed(u8),
     #[error("znp_session_closed")]
     SessionClosed,
     #[error("invalid_znp_input")]
@@ -45,7 +69,10 @@ pub enum Error {
 impl Error {
     pub fn status(&self) -> Option<u8> {
         match self {
-            Self::RequestRejected(status) | Self::DeviceRejected(status) => Some(*status),
+            Self::RequestRejected(status)
+            | Self::DeviceRejected(status)
+            | Self::ZclRejected(status)
+            | Self::DeliveryFailed(status) => Some(*status),
             _ => None,
         }
     }

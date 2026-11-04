@@ -2,11 +2,19 @@
 
 本目录独立于手机控制端 `apps/android`，包含设备 JVM 核心与独立 Android 电视应用。本机能力按明确模型及当前授权提供应用启动，音频模型另支持音量/静音动作与只读状态；已有v3身份可在本机明确扩展模型并保留原身份与记录，见[能力配置](#扩展本机引用身份的能力配置)。可选择独立应用模型或显式组合所用的遥控逻辑模型；使用设备 MQTT 5/mTLS、会话/期限、耐久尝试与回执，以及当前本机授权。应用提供设备材料核对、Keystore 加密、私有 SQLite、Leanback 启动入口与可见连接服务；源码、构建、宿主沙箱和真实电视验收分别记录。
 
+电视界面分为总览、连接设置、应用授权、设备维护和诊断信息，使用原生Views、顶部横向导航、原创山湖背景与亮蓝色遥控焦点。第3版根据MiTV4-ANSM0实测的深灰底色与系统设置蓝色重新设计；具体来源、接入流程和视觉素材见[体验设计](DESIGN.md)。定向入口`npm run test:tv-agent:ui`不连接电视或启动模拟器，其APK更新类存在已归档失败，不能将部分定向检查称为该完整命令通过。2026-11-04用户已恢复实机联调，独立包的应用启动、撤权和新进程恢复通过，见[实机证据](../../docs/evidence/2026-11-04-tv-agent-api23-resumed.json)；界面重构与系统音频分别验收。
+
+各版界面的构建、宿主检查与实机方向键/返回键结果分别记录于[体验证据](../../docs/evidence/2026-11-04-tv-agent-experience.json)，实机导航要求连接保持停止、完整Agent数据库字节不变。自动截图测试因电视上测试组件登记路径缺失而受阻，没有新UI实机截图；生成的首页图是设计参考。正常文件首配、生产认领、系统音频与长稳仍有独立验收范围。
+
+第3版APK、14项定向宿主检查及lint通过（0错误/8警告），独立包安装回读一致，实机已确认新的连接失败提示。新版完整遥控旅程未通过，当前按受阻记录；独立测试Agent已停止，数据保留。原临时网关及ADB转发已关闭，需配置运行中的网关才能恢复实际连接。
+
+同日后续按用户要求卸载旧正式包及遗留测试包，电视仅保留第3版独立应用；恢复原身份对应的电脑本地Broker、Rust网关与ADB转发后，电视和网关均确认已连接，同一会话心跳连续增长。服务保留运行，身份及授权未改变；当前依赖电脑和该转发，尚非NAS或局域网直连部署，见[连接恢复证据](../../docs/evidence/2026-11-04-tv-agent-connection-restored.json)。
+
 正式边界见 [设备核心合同](../../contracts/tv-agent.md) 与 [回执确认合同](../../contracts/command-receipts.md)，角色、路径与权限见 [电视设计](../../docs/34-电视终端与AndroidTV接入.md)。0.3.0受控模型/日志迁移实现见 [24第4.15节](../../docs/24-实施计划与进度.md#415-tv-agent模型配置与日志迁移文档同步)，入口拆分见4.16，跨模型与实际JVM/假ADB组合软件结果分别见 [4.19](../../docs/24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)、[4.22](../../docs/24-实施计划与进度.md#422-adb身份预检合并与实际jvm组合软件验收)，Android端上诊断、安全组及阻塞见 [4.24](../../docs/24-实施计划与进度.md#424-独立启动诊断与android安全组端上验证)；0.2.0历史结果保留于4.13，不扩展为当前源码最终通过。
 
 ## 构建与验证
 
-2026-11-03真实MiTV4-ANSM0/API23验证已取得AES-GCM/错误主机名2项、P-256不可导出/CSR/重开1项和一次实际目标Activity启动的证据；完整旅程仍未通过。第二条命令为confirmed/submitted，但未得到第二条Activity生命周期记录；测试目标改为singleTask后仅构建/lint通过，尚未安装复验。用户因家人观看暂停电视调试，自有Agent测试进程已停止；后续不自动恢复实机动作。详情及前台服务限制见 [24第4.51节](../../docs/24-实施计划与进度.md#451-tv-agent-api23兼容修复与实机阶段暂停) 和 [型号台账](../../docs/30-设备支持矩阵与证据台账.md#9-dev-cand-08-tv-agent-api23阶段验证)。
+2026-11-03历史验证取得AES-GCM/错误主机名2项、P-256不可导出/CSR/重开1项及一次目标Activity启动，随后因第二次Activity记录超时和家人观看而暂停，原失败保留。2026-11-04用户明确恢复后，先核对旧安装制品，再用独立包在同一MiTV4-ANSM0/API23完成前台create、后台singleTask new_intent、撤权拒绝、原日志回收与新进程恢复；原正式包未被替换，测试凭据仅进入隔离instrumentation。详见[恢复证据](../../docs/evidence/2026-11-04-tv-agent-api23-resumed.json)和[型号台账](../../docs/30-设备支持矩阵与证据台账.md#9-dev-cand-08-tv-agent-api23阶段验证)。这是短程PEM身份功能验收，前台服务长稳、系统音频、本机EC身份全流程、正常文件导入和跨APK更新仍分别验收；不能将旧安全单项与本次旅程合并为完整生产认领通过。
 
 需要 JDK21；协议旅程另需仓库 Rust/Node24 工具、OpenSSL 和测试 Broker，Android 任务需 Android SDK 36/build-tools 36.0.0 并设置 `ANDROID_HOME`。使用本工程自带的Gradle wrapper（固定8.13分发与SHA-256）；无需手机工程目录，正式设备模型仍来自本仓库contracts：
 
@@ -17,19 +25,21 @@ npm run test:tv-agent:android
 npm run test:tv-agent:runtime
 ```
 
-第一条执行设备核心单元检查并导出网络旅程入口；需要独立环境的 `MqttJourneyTest` 会明确跳过。第二条构建Rust、执行第一条Gradle任务，再串行运行原回收、已有设备跨内置模型绑定及真实JVM/假ADB组合旅程，各自创建独立CA/Broker/网关与JVM进程。第三条运行Android宿主沙箱、构建调试APK并执行lint；Robolectric的SDK/原生测试库首次会下载。它们均不连接真实电视或读写用户数据库。请顺序运行同一Gradle工程的任务。
+第一条执行设备核心单元检查并导出网络旅程入口；需要独立环境的 `MqttJourneyTest` 会明确跳过。第二条构建Rust和Home网页、执行第一条Gradle任务，再串行运行原回收、已有设备跨内置模型绑定、真实JVM/假ADB组合及实际JVM音频网页组合四条旅程，各自创建独立CA/Broker/网关与JVM进程。第三条运行Android宿主沙箱、构建调试APK并执行lint；Robolectric的SDK/原生测试库首次会下载。它们均不连接真实电视或读写用户数据库。请顺序运行同一Gradle工程的任务。
 
 第四条为独立Android端上检查，另需SDK内现有的API36 Google APIs ARM64系统镜像、emulator、platform-tools和avdmanager。入口先创建并核对本任务AVD/ADB及系统启动，再生成私有CA、启动真实网关/Broker与构建APK；只安装到核对归属后的模拟器，不连接用户设备。安装后仅对本任务的应用与测试APK显式执行AOT speed编译，结果记录compilation_profile，普通debug冷启动ANR另行保留。使用生产Keystore、SQLite、MQTT/TLS、Service和Leanback启动端口，分别检查密文绑定/损坏拒绝、可达但名称不匹配的TLS拒绝、单次目标Activity启动、后台/撤权拒绝及新进程恢复。应用仍使用正式TLS校验；凭据只进入隔离测试APK的assets，不加入正式APK。每次结果保留在`.dev/tv-agent-android-runtime-*/report.json`，失败不算通过，具体状态见24。当前镜像是API36手机系统，不能替代API23、电视系统、遥控器完整交互、实际Agent/ADB组合或物理归属验收。
 
 仅定位启动时，在相同JDK21/SDK环境执行`node "tools/test-tv-agent-android-runtime.mjs" --boot-only`。该模式不构建/安装APK或启动业务栈，逐次保存有界ADB输出、退出/超时、boot值与归属到`boot-probes.jsonl`；仍使用原180秒预算。`mode=boot_diagnostic`的passed只证明启动，native_app_runtime保持false。已有52.6秒启动通过，以及完整入口中实际AOT和安全组2项通过；业务旅程先在焦点断言失败，后续焦点前置修正虽已编译，两次复验均止于启动，完整入口仍未通过，详见24第4.24节。最新顺序先启动再构建，也未消除ADB离线，达到本轮上限后不继续重跑。
 
-已有当前Rust构建时，可先执行第一条，再单独运行Node旅程：
+已有当前Rust及Home构建时，可先执行第一条，再单独运行Node旅程：
 
 ```sh
-node --test --test-concurrency=1 "tests/tv-agent.test.mjs" "tests/tv-agent-model-binding.test.mjs" "tests/tv-agent-composition.test.mjs"
+node --test --test-concurrency=1 "tests/tv-agent.test.mjs" "tests/tv-agent-model-binding.test.mjs" "tests/tv-agent-composition.test.mjs" "tests/tv-agent-audio.test.mjs"
 ```
 
 `:core:journeyRuntime`在编译测试类后生成`core/build/journey/runtime.json`，包含Gradle所选JDK21可执行文件、测试classpath及`MqttJourneyMain`入口。Node直接启动Java，由该入口复用原`MqttJourneyTest`及断言；设备启动与重启均不再启动Gradle，连接期限和业务断言保持原值。入口缺失时明确失败；源码、构建输出或JDK位置变化后须重新生成。此文件含本机绝对路径，仅供测试，不随APK交付；`:core:mqttJourney`任务仍保留。
+
+音频定向入口为`npm run test:tv-agent:audio`。它运行实际DeviceAgent/DeviceMqtt、mTLS/MQTT、Rust网关、SQLite和390px网页；音频端口为独立采样的文件混音器，ADB为无网络假进程。验证请求5%实际回读7%、外部音量变化、原生音频与外部按键分区、离线独立、unknown跨重启不重放及撤销。2026-11-04该旅程与核心检查已通过；本次未重跑另外三条旅程或Android应用测试，不据此声明整套或实际AudioManager通过，见[4.72](../../docs/24-实施计划与进度.md#472-实际jvm音频与网页及adb组合软件闭环)。
 
 内置模型路径可独立运行 `npm run test:model-bundles`：核心/存储/共享协议与CLI、网页、设备核心及已有设备跨模型JVM旅程，包含必要构建，不依赖ADB。该旅程只在私有测试Broker阻断退休确认以保留实际confirmed/unknown记录，经CLI明确换绑、材料/日志迁移及网关/JVM重启核对；结果见 [24第4.19节](../../docs/24-实施计划与进度.md#419-内置模型绑定与跨模型软件闭环)。它不替代实际Agent/ADB组合、Android端上或实机验收。
 
@@ -37,7 +47,7 @@ node --test --test-concurrency=1 "tests/tv-agent.test.mjs" "tests/tv-agent-model
 
 实际JVM Agent/假ADB组合的后续软件验收已通过，见 [24第4.22节](../../docs/24-实施计划与进度.md#422-adb身份预检合并与实际jvm组合软件验收)。三个JVM、同一逻辑设备，原生与假ADB各两次模拟效果；验证单路径离线、两端撤销、网关/JVM重启及unknown保留不重放。等待新原生启动时同时核对apps.launch可用，不以ADB维持的聚合ready代替。ADB身份查询已合并为固定只读命令，仍核对两项身份和原期限；Android端上完整入口及物理归属继续未验收。
 
-`core` 和 `app` 输出 Java 8 字节码，使用 Kotlin、Jackson流式解析、Paho MQTT5和OkHttp主机校验；依赖在各模块独立锁定。APK 位于 `app/build/outputs/apk/debug/app-debug.apk`，包名 `run.limeai.iot.television`，minSdk=23、targetSdk=36、versionCode=3/versionName=0.3.0。这是调试构建；真实Keystore/TLS的分项证据与系统运行政策、完整指定电视验收分别记录。
+`core` 和 `app` 输出 Java 8 字节码，使用 Kotlin、Jackson流式解析、Paho MQTT5和OkHttp主机校验；依赖在各模块独立锁定。APK 位于 `app/build/outputs/apk/debug/app-debug.apk`，包名 `run.limeai.iot.television`，minSdk=23、targetSdk=36、versionCode=4/versionName=0.4.0。这是调试构建；真实Keystore/TLS的分项证据与系统运行政策、完整指定电视验收分别记录。
 
 外部Broker配置仍只接受`ssl://`。Paho1.2.5默认TLS模块引用API24才有的`SNIHostName`，已用其公开传输SPI接入`VerifiedMqttTls`，仅内部使用`limeiot-ssl`。系统分层TLS工厂接收原始host，保持独立CA、客户端证书、握手期限及OkHttp严格主机名校验；不回退明文或系统CA。APK合并第一方与Paho的SPI服务声明。这是固定依赖的传输兼容修复，不是通用设备插件机制；实际正向mTLS使用旧PEM材料路线，不能替代本机EC身份的完整签发/连接验收。
 
@@ -189,7 +199,7 @@ npm run test:tv-agent:apk
 
 示例占位值必须替换。普通调用默认拒绝调试候选；仅受控开发样本额外传`--allow-debug`，不放行testOnly或其他错误。包名固定run.limeai.iot.television；暂不支持split、共享UID、证书轮换、多签名或降级，也不自动接受额外系统库/硬件要求。输出会列出新增权限；offline_checks_passed始终保留installation_authorized/device_state_verified/storage_compatibility_verified=false。ABI是打包目录检查，非ELF加载或设备运行证明。
 
-专项入口使用官方工具生成真实签名的隔离测试APK，核对篡改、错误签名、API23的v2-only拒绝、API/ABI、版本、拆分依赖及进程预算；没有ADB或模拟器前提。工具路径可用LIMEIOT_ANDROID_BUILD_TOOLS和LIMEIOT_ANDROID_PLATFORM_JAR指定；默认复用ANDROID_HOME或本仓库开发SDK。13项及隔离TV Agent版本码3→4候选包的离线结果见 [24第4.52节](../../docs/24-实施计划与进度.md#452-tv-agent-apk离线预检与签名制品验证)，输出边界见 [合同](../../contracts/tv-agent.md#apk离线预检)。版本4仅为测试构建覆盖，根工程版本保持0.3.0/3；没有安装到电视或发布。
+专项入口使用官方工具生成真实签名的隔离测试APK，核对篡改、错误签名、API23的v2-only拒绝、API/ABI、版本、拆分依赖及进程预算；没有ADB或模拟器前提。工具路径可用LIMEIOT_ANDROID_BUILD_TOOLS和LIMEIOT_ANDROID_PLATFORM_JAR指定；默认复用ANDROID_HOME或本仓库开发SDK。13项及隔离TV Agent版本码3→4候选包的离线结果见 [24第4.52节](../../docs/24-实施计划与进度.md#452-tv-agent-apk离线预检与签名制品验证)，输出边界见 [合同](../../contracts/tv-agent.md#apk离线预检)。该专项当时使用版本码3→4的测试覆盖，未安装到电视或发布；当前源码版本另见上方构建说明。
 
 ## APK安装账本基础
 

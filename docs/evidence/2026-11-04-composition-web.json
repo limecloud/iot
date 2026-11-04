@@ -1,0 +1,471 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-COMPOSITION-WEB-20261104-01",
+  "recorded_at": "2026-11-04T15:27:24.356672+00:00",
+  "status": "passed_with_delivery_blocker",
+  "scope": "共享组合规划器与家庭网页软件闭环、ARM64双镜像构建；新NAS完整安装启动受阻",
+  "full_goal_completed": false,
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "website_published": false,
+  "cloud_updated": false,
+  "native_app_runtime": false,
+  "implemented": [
+    "CLI与网页共用精确模型核对、验证和完整预演",
+    "模板或自定义组合包、显式逐模块绑定、60秒预演与条件创建",
+    "完整原请求先保存并回读、摘要及重新编译校验、同源Web Locks互斥",
+    "只接受原POST合法回执，丢回执恢复只GET，未知提交不替代",
+    "原列表展示全部步骤及明确停用，复用原规则与命令账本"
+  ],
+  "design": {
+    "shared_planner": true,
+    "existing_session_and_csrf": true,
+    "existing_rule_engine": true,
+    "new_gateway_api": false,
+    "new_database": false,
+    "new_dependency": false
+  },
+  "verification": {
+    "distinct_js_checks": 11,
+    "composition": {
+      "command": "npm run test:composition",
+      "exit_code": 0,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "log": {
+        "path": ".dev/composition-web-20261104/composition-final.log",
+        "sha256": "66ff16c6ebdeaa6df5b0671f0d42defe5aa8240b509313a5bc4c6af50c6c6d51"
+      }
+    },
+    "browser": {
+      "passed": 3,
+      "run_as_targeted_journeys": true,
+      "success_log": {
+        "path": ".dev/composition-web-20261104/browser-success-attempt3.log",
+        "sha256": "59ec940d49efbf3555ba21b5c0c8abc744d8e62477e3b51a1e0f8318dc868367"
+      },
+      "faults_log": {
+        "path": ".dev/composition-web-20261104/browser-attempt2.log",
+        "sha256": "7e39f860fa7ee647a38a2ae54bbeb5b025a3599e6f2d7853b5aa7372c0a94de5"
+      },
+      "faults_log_overall_exit_code": 1,
+      "faults_log_note": "该次故障旅程及并发旅程通过，主旅程因测试访问错误事件字段失败，修正后定向复验通过。",
+      "concurrency_and_expiry_log": {
+        "path": ".dev/composition-web-20261104/browser-expiry.log",
+        "sha256": "46255a441ba65473bac600ba4fda2fb08185cff43e54cefcc27e89ac491da1d0"
+      },
+      "npm_web_entry_executed": false
+    },
+    "existing_automation": {
+      "passed": 1,
+      "exit_code": 0,
+      "log": {
+        "path": ".dev/composition-web-20261104/automation-regression.log",
+        "sha256": "785421cef708e0e8a281567e3183f335dd54a0b335a571921bcd6069be6e1755"
+      }
+    },
+    "artifact_tools": {
+      "passed": 15,
+      "nas": {
+        "path": ".dev/composition-web-20261104/nas-artifact-tests.log",
+        "sha256": "4d85d8e0f6ca072dcd6263b9b7a9021e41282a7d81d3a29af080b299374e9bfd"
+      },
+      "control": {
+        "path": ".dev/composition-web-20261104/control-artifact-tests.log",
+        "sha256": "6ae4c1861326c75b16056e08e55a593522675e75789a32e4904504edd11e75fc"
+      }
+    },
+    "website": {
+      "exit_code": 0,
+      "pages": 54,
+      "local_references": 2119,
+      "log": {
+        "path": ".dev/composition-web-20261104/website-build.log",
+        "sha256": "fd5161f9ba65950cbecb128d17d2b137276f00bc6cb8d2b2f89af26baaab6e1b"
+      }
+    }
+  },
+  "journeys": [
+    {
+      "report": {
+        "path": ".dev/run-1793804835444-76a83a8a/composition-web-success.json",
+        "sha256": "ae501767a7cd44fc689dc4569d57fef2182e65fe08c77e40e570f37e6b2adf58"
+      },
+      "checks": {
+        "passed": true,
+        "real_gateway": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "browser": true,
+        "deployment_posts": 1,
+        "preview_zero_execution": true,
+        "conditional_create": true,
+        "two_confirmed_commands": true,
+        "explicit_stop_blocks_new_event": true,
+        "restart_read_only": true,
+        "mobile_no_overflow": true,
+        "hardware": false,
+        "nas_image": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/run-1793804733295-9abcc88a/composition-web-faults.json",
+        "sha256": "83be93631c88a625f70336dec79d4fccc43157959f10cda281e13f7bfca7c333"
+      },
+      "checks": {
+        "passed": true,
+        "real_gateway": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "browser": true,
+        "deployment_posts": 1,
+        "save_failure_zero_posts": true,
+        "lost_response_get_only": true,
+        "current_state_not_original_receipt": true,
+        "unknown_blocks_replacement": true,
+        "cross_tab_deleted_record_blocks": true,
+        "corrupt_record_blocks": true,
+        "hardware": false,
+        "nas_image": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/run-1793805706924-69e43f66/composition-web-concurrency.json",
+        "sha256": "d20b306a7d2bcac0b68ba7c451e291247576e50ac80c0caf447c41cf8948d47f"
+      },
+      "checks": {
+        "passed": true,
+        "real_gateway": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "browser": true,
+        "deployment_posts": 1,
+        "proof_expires_after_60_seconds": true,
+        "binding_change_invalidates_proof": true,
+        "background_invalidates_proof": true,
+        "changed_model_blocks_deploy": true,
+        "cross_tab_lock": true,
+        "conditional_create_preserves_existing_rule": true,
+        "hardware": false,
+        "nas_image": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/run-1793805934216-52dd3301/composition-result.json",
+        "sha256": "d19a5310587d127b5141b9896755f582b3a907fd6bef092c736c76a415e3cc6a"
+      },
+      "checks": {
+        "passed": true,
+        "real_rust_gateway": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "cli": true,
+        "package_digest": "sha256:036573d9c6b2c4068288e07e47e51f3b5d8cc26ce7831f43f7987091c589277a",
+        "bindings_digest": "sha256:d153ca9d57b8225542e8a3ed6b465a3e69ce8b4953672fbc00bea221b5efb604",
+        "rule_revision": "sha256:33aa953d04a7299d34243c748d3c2a263a446b0f2c792b68cb1fd14683d3eba6",
+        "package_modules": 2,
+        "generated_actions": 2,
+        "planning_device_commands": 0,
+        "planning_deployments": 0,
+        "explicit_deployment": true,
+        "gateway_restarts": 1,
+        "device_restarts": 1,
+        "command_statuses": [
+          "confirmed",
+          "confirmed"
+        ],
+        "lost_receipt": false,
+        "original_queries_preserved": true,
+        "duplicate_event_no_replay": true,
+        "explicit_stop_blocks_new_event": true,
+        "hardware": false,
+        "toy_firmware": false,
+        "multimodal_companion": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/run-1793805944408-d37f4fbf/composition-result.json",
+        "sha256": "4537b8c28e46c306f5fb39138be5b7ca508fb493f66f5e85b7e6faeed18f304f"
+      },
+      "checks": {
+        "passed": true,
+        "real_rust_gateway": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "cli": true,
+        "package_digest": "sha256:036573d9c6b2c4068288e07e47e51f3b5d8cc26ce7831f43f7987091c589277a",
+        "bindings_digest": "sha256:d153ca9d57b8225542e8a3ed6b465a3e69ce8b4953672fbc00bea221b5efb604",
+        "rule_revision": "sha256:71c4ec3e54bf168cdcb432c39e8faf5d99b329f4e99b26de5f0f52381fd1930d",
+        "package_modules": 2,
+        "generated_actions": 2,
+        "planning_device_commands": 0,
+        "planning_deployments": 0,
+        "explicit_deployment": true,
+        "gateway_restarts": 1,
+        "device_restarts": 1,
+        "command_statuses": [
+          "unknown",
+          "expired"
+        ],
+        "lost_receipt": true,
+        "original_queries_preserved": true,
+        "duplicate_event_no_replay": true,
+        "explicit_stop_blocks_new_event": true,
+        "hardware": false,
+        "toy_firmware": false,
+        "multimodal_companion": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/composition-boundaries-q88NVS/result.json",
+        "sha256": "1518076dc0a43ea0f7da8313f9adf4abee93977dab355cd8f17eeab5a454d855"
+      },
+      "checks": {
+        "passed": true,
+        "malformed_schema_cases": 23,
+        "no_deployment_or_command": true,
+        "model_changes_rejected": true,
+        "forged_simulation_rejected": true,
+        "bounded_response": true,
+        "requests": [
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-lamp"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-button"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/spaces/space-demo/rules:validate"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/spaces/space-demo/rules:simulate"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-lamp"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-button"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-lamp"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-lamp"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-button"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/spaces/space-demo/rules:validate"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/spaces/space-demo/rules:simulate"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-lamp"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-lamp"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-button"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/spaces/space-demo/rules:validate"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/spaces/space-demo/rules:simulate"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/spaces/space-demo/devices/device-lamp"
+          }
+        ]
+      }
+    }
+  ],
+  "builds": {
+    "gateway": {
+      "source_digest": "11e5e3a392b785c0de50418e52da822383379d6d4823f1cc2d201b5afc1dc460",
+      "source_files": 443,
+      "artifact_files": 93,
+      "rust_reuse": {
+        "source_digest": "7287585433b3efdeb79e0a72a880f963fa9a0c0daa516e43f57a7c8ecade9f12",
+        "binary_files": {
+          "limeiot-gateway": "8e620995a018fe8f829f4593dae4c87bf4b660839681e80a3ee71adb54382297",
+          "limeiot-simulator": "9a11e3bd62834e8e2e8fb702479bf49d727f5162cfada8da91edbcea4ece0efd",
+          "limeiot-model-validator": "8a46cba1260a4e10c85ee34ab5ab6f437ada6eb7b153739cb00e75ab7f9d1bc3",
+          "limeiot-ota": "f998eed0fb01f3f9110e9ca6410d0de1a3fb4c82a52ef921d0ed3e31073bae1c"
+        }
+      },
+      "manifest": {
+        "path": ".dev/nas-arm64-composition-20261104/build.json",
+        "sha256": "1c711414245ac654450e202f77d2b21d68d6d82d17ce14d9689b700e2f4ba136"
+      },
+      "image": {
+        "image": "limeiot/verification:nas-arm64-composition-20261104",
+        "id": "sha256:6eba04f7939ebd6cb5da7155499b0c168e9ae2ddad561b8effb77a77dd0bbb36",
+        "platform": "linux/arm64",
+        "source_digest": "11e5e3a392b785c0de50418e52da822383379d6d4823f1cc2d201b5afc1dc460",
+        "verified_files": 91
+      }
+    },
+    "control": {
+      "source_digest": "65ef5feb2834ae09cb15157e6c664f63e4d25c79ae0758bc02e45c443ed23c54",
+      "source_files": 446,
+      "artifact_files": 128,
+      "rust_reuse": {
+        "source_digest": "7287585433b3efdeb79e0a72a880f963fa9a0c0daa516e43f57a7c8ecade9f12",
+        "binary_files": {
+          "limeiot-model-validator": "8a46cba1260a4e10c85ee34ab5ab6f437ada6eb7b153739cb00e75ab7f9d1bc3"
+        }
+      },
+      "manifest": {
+        "path": ".dev/control-arm64-composition-20261104/build.json",
+        "sha256": "838e6b724f6b312f8c1c66fa0fdc83a029426b9e8b1c4880ce4d9a36e099dd92"
+      },
+      "image": {
+        "image": "limeiot/verification:control-arm64-composition-20261104",
+        "id": "sha256:1822a24f64d0691a425e6ce210f94964baf4f47811d7eb3a76ae5a6e77f7d1ce",
+        "platform": "linux/arm64",
+        "source_digest": "65ef5feb2834ae09cb15157e6c664f63e4d25c79ae0758bc02e45c443ed23c54",
+        "verified_files": 126
+      }
+    }
+  },
+  "build_review": {
+    "go_and_web_rebuilt": true,
+    "rust_rebuilt": false,
+    "rust_source_and_include_dependencies_checked": true,
+    "verified_image_runtime_files": 217,
+    "image_integrity": {
+      "path": ".dev/composition-web-20261104/image-integrity.json",
+      "sha256": "9d1bb66d68968ab9a466d6b298da6bc9b574597ad4889d58bdbacf7580f1cb08"
+    },
+    "gateway_log": {
+      "path": ".dev/composition-web-20261104/nas-build.log",
+      "sha256": "9a5920e7fc35e3d68d7658d70f36795cf58f9b51d8a571157645c1ab420b5ec1"
+    },
+    "control_log": {
+      "path": ".dev/composition-web-20261104/control-build.log",
+      "sha256": "7cee309fbd9a9064566c4ad68b9bdc0013dd834291625e19bb62b87981ba47b9"
+    },
+    "gateway_image_log": {
+      "path": ".dev/composition-web-20261104/nas-image.log",
+      "sha256": "561474bb9b4808617df54b1f5534f39d0d61fca9dd833dfb3b9bb44ef178f1e1"
+    },
+    "control_image_log": {
+      "path": ".dev/composition-web-20261104/control-image-attempt2.log",
+      "sha256": "38bd583e81743f6203e4036d8855b2c71c7576516bda47fc895b41a59667d140"
+    }
+  },
+  "nas_installation": {
+    "status": "blocked",
+    "attempts": [
+      {
+        "report": {
+          "path": ".dev/nas-platform-6c7fb43e9e1b1863/result.json",
+          "sha256": "c47064e4372176fd38a6af7a3c45867eeae5eaa252a2d5475236a95784d812f3"
+        },
+        "log": {
+          "path": ".dev/composition-web-20261104/nas-platform.log",
+          "sha256": "e68bc2adae2abf7166c336c41a93a1657d2e520d527311a4ddf259946c144352"
+        },
+        "exit_code": 1,
+        "passed": false,
+        "containers_cleaned": true,
+        "error": "application not healthy after 1m30s",
+        "composition_journey_reached": false
+      },
+      {
+        "report": {
+          "path": ".dev/nas-platform-09fe36d2c3620f4b/result.json",
+          "sha256": "9f62def9895b0f9cbc2ade8f3c5c0e33c01a9b9d71f6dcf5d72e1170f257e650"
+        },
+        "log": {
+          "path": ".dev/composition-web-20261104/nas-platform-attempt2.log",
+          "sha256": "e320586c468c6c80388bb9a745402267d5916e4c83a9408e25a6b778b773281b"
+        },
+        "exit_code": 1,
+        "passed": false,
+        "containers_cleaned": true,
+        "error": "application not healthy after 1m30s",
+        "composition_journey_reached": false
+      }
+    ],
+    "original_health_deadline_seconds": 90,
+    "assertions_unchanged": true,
+    "timeout_extended": false,
+    "root_cause_confirmed": false,
+    "diagnosis": "两次均在MySQL健康检查处失败，其余服务报告healthy；部分本项目容器只读检查超时。未确认根因，不推定OOM。",
+    "latest_fully_verified_stage": "docs/evidence/2026-11-04-companion-nas.json"
+  },
+  "screenshots": [
+    {
+      "path": ".dev/run-1793804835444-76a83a8a/composition-mobile.png",
+      "sha256": "ace79367e9232ec3b5a8765e62aad1f51cf5ee3772cf9880b5e3552f20cbb544"
+    }
+  ],
+  "source_manifest": {
+    "path": ".dev/composition-web-20261104/source-manifest-final.json",
+    "sha256": "3d0dac1d0c5c294e8225f8960442f3e4475983404b9ea605abc111612f77acca"
+  },
+  "source_file_count": 542,
+  "retained_failures": [
+    {
+      "log": {
+        "path": ".dev/composition-web-20261104/browser-tests.log",
+        "sha256": "3b04ab928c16e06a532921f0f7e35176c76dd9494910d3a9898f8bc37a82913c"
+      },
+      "reason": "390px侧栏收起，测试直接点击屏外按钮。改为正常打开家庭导航，未force点击或放宽检查。"
+    },
+    {
+      "log": {
+        "path": ".dev/composition-web-20261104/browser-attempt2.log",
+        "sha256": "7e39f860fa7ee647a38a2ae54bbeb5b025a3599e6f2d7853b5aa7372c0a94de5"
+      },
+      "reason": "测试将事件业务ID误从data读取，按正式合同修正为payload.data.event_id，保留精确事件及零新命令断言。"
+    },
+    {
+      "log": {
+        "path": ".dev/composition-web-20261104/control-image.log",
+        "sha256": "706c0436bbe96059d031673866c1c5ec3975e0ac567c488513289922986bdbed"
+      },
+      "reason": "旧控制面镜像没有运行层前缀摘要标签，复用门禁正确拒绝；改用正式默认运行层构建，未绕过校验。"
+    }
+  ],
+  "limits": [
+    "新NAS完整安装、组合包备份恢复尚未通过",
+    "组合包SwiftUI/Compose入口尚未实现",
+    "模型/物理玩具/儿童政策和机器人运动不在本阶段",
+    "完整原生App、AMD64多模态、品牌生态和正式发布保持原状态"
+  ]
+}

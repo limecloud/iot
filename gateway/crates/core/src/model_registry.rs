@@ -471,8 +471,23 @@ impl Data {
     ) -> Result<Resource> {
         let device_id_owned = binding.device_id().to_owned();
         let device_id = &device_id_owned;
+        ensure(
+            !self.observation_registry.bindings.contains_key(device_id),
+            "observation_model_locked",
+        )?;
         let current = self.devices.get(device_id);
         if let Some(device) = current {
+            ensure(
+                device.property_bridge_policy.is_none(),
+                "property_bridge_model_locked",
+            )?;
+            ensure(
+                device
+                    .observation_policy
+                    .as_ref()
+                    .is_none_or(|policy| policy.model_revision == binding.model_revision()),
+                "observation_model_locked",
+            )?;
             if !device.routes.is_empty() {
                 let native = self
                     .execution_registry
@@ -580,6 +595,7 @@ impl Data {
         device.seen.clear();
         device.receipt_ledger = false;
         device.native_actions = None;
+        device.observation_session = None;
         self.invalidate_model_device(device_id, "device_model_changed");
         self.models
             .insert(binding.model_revision().to_owned(), model);
@@ -595,6 +611,7 @@ impl Data {
             device.ready = false;
             device.device_info = None;
             device.adapter_sessions.clear();
+            device.observation_session = None;
         }
         for command in self
             .commands

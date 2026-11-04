@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "linux_arm64_nas_managed_znp_observations_and_v13_backup_restore",
+  "status": "software_container_stage_passed",
+  "archive": ".dev/observation-nas-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "physical_device_passthrough": false,
+  "native_app_runtime": false,
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "changes": {
+    "nas_zigbee_journey_script": "tools/test-nas-zigbee.mjs",
+    "root_command": "test:nas:zigbee",
+    "ncp_error_diagnostics": true,
+    "rust_changed": false,
+    "backup_implementation_changed": false,
+    "database_schema_changed": false,
+    "new_dependencies": false
+  },
+  "build": {
+    "platform": "linux/arm64",
+    "source_digest": "f0a967c364b55ffff5ea612a3cf23d508588a13d0c9fe83faa2b9f7907d52a3f",
+    "source_inputs": 383,
+    "artifact_files": 91,
+    "linux_elfs": 4,
+    "toolchain": {
+      "rust": "1.93.1",
+      "zig": "0.14.1",
+      "zig_archive_sha256": "39f3dc5e79c22088ce878edc821dedb4ca5a1cd9f5ef915e9b3cc3053e8faefa",
+      "rust_std_sha256": "56f2cd66ad7167dd6924ff095063ffddfe731812a1909b9200bb0ee21982fc47",
+      "rust_target": "aarch64-unknown-linux-gnu",
+      "c_target": "aarch64-linux-gnu.2.36"
+    },
+    "build_manifest_sha256": "947d7a9f2a4e523cbc36efd261333d0f970a6424697fd15d7b97a6d5e81b3369",
+    "image": {
+      "id": "sha256:d0567b761a26ffbb873799086ec556da0c346d3b41da847bf5d284f66f16f14d",
+      "reference": "limeiot/verification:nas-arm64-observation-20261104",
+      "platform": "linux/arm64"
+    },
+    "runtime_base_id": "sha256:c9c96ae578fec47d78e537d39502b11a0604a6bb1308a92ae15a72cc1e19ca7e",
+    "runtime_prefix_sha256": "ee08d021ca985c895d92fdf3677e24f899aa8a0fd876fa4a502d1d04c6a57bcc",
+    "final_source_inputs_match": true
+  },
+  "verification": {
+    "complete_journey_passes": 2,
+    "latest_report": ".dev/nas-zigbee-8c6c5b097cc02f06/report.json",
+    "latest_report_sha256": "e0164dd44b6cc968bb9cded5ae33474918cd9339a60a2885b391d27ffbe8b797",
+    "archived_report": "reports/final-pass.json",
+    "linux_machine": "aarch64",
+    "emulated": false,
+    "https_verified_ca": true,
+    "non_root_read_only_cap_drop_all": true,
+    "container_internal_pty": true,
+    "known_target_queries": 3,
+    "decisions": 5,
+    "applied_decisions": 4,
+    "conflict_decisions": 1,
+    "confirmed_threshold_commands": 2,
+    "snapshot_version": 13,
+    "backup_snapshot_body_sha256": "2aa403fd2f80899d6da18ed055472390aff0b2fd709bbe45f16266c27fb09209",
+    "restored_snapshot_body_sha256": "2aa403fd2f80899d6da18ed055472390aff0b2fd709bbe45f16266c27fb09209",
+    "source_config_byte_equal": true,
+    "original_config_hash_unchanged": true,
+    "original_decisions_unchanged_after_recreation": true,
+    "candidate_cache_empty_after_recreation": true,
+    "revoked_source_zero_polling_before_explicit_rebind": true,
+    "missing_coordinator_stale_without_mqtt_fallback": true,
+    "historical_applied_does_not_reactivate": true,
+    "recreation_does_not_replay_threshold": true,
+    "packaged_pwa_mobile_390px": true,
+    "mobile_navigation_open_and_close": true,
+    "screenshots_visually_reviewed": true,
+    "ncp_fixture_errors": [],
+    "physical_compose_device_and_gid_config_check": true,
+    "test_containers_cleaned": true,
+    "website": {
+      "checked_files": 48,
+      "errors": 0,
+      "warnings": 0,
+      "hints": 0,
+      "pages": 53,
+      "local_references": 2055,
+      "log": "website-build.log"
+    },
+    "document_links": {
+      "passed": true,
+      "files": 4,
+      "local_file_links": 274,
+      "broken": []
+    },
+    "node_syntax": true,
+    "python_fixture_syntax": true,
+    "both_repository_diff_checks": true,
+    "docker_authoritative_cleanup_check": {
+      "projects": 3,
+      "remaining_containers": 0
+    },
+    "artifact_final_verify_log": "artifact-final-verify.log"
+  },
+  "history": [
+    {
+      "result": "failed",
+      "stage": "first container journey",
+      "report": "reports/first-failure.json",
+      "reason": "new browser script omitted opening mobile navigation before clicking offscreen menu",
+      "fix": "use normal family navigation toggle then click; original timeout retained"
+    },
+    {
+      "result": "passed",
+      "stage": "full journey after navigation correction",
+      "report": "reports/mobile-fixed-pass.json",
+      "visual_note": "screenshot captured midway through sidebar closing transition"
+    },
+    {
+      "result": "passed",
+      "stage": "full journey and stable mobile screenshots",
+      "report": "reports/final-pass.json",
+      "fix": "assert aria-expanded=false and sidebar fully outside viewport before screenshot"
+    }
+  ],
+  "not_verified": [
+    "host USB device passthrough and physical serial access permissions",
+    "Zigbee radio network and procurement model compatibility; skipped by user",
+    "normal container shutdown termios restoration",
+    "AMD64 dynamic source journey and existing failed multimodal recovery",
+    "complete NAS private control plane or multimodal regression on this source digest",
+    "complete iOS or Android app runtime and production secure storage",
+    "real multimodal model quality",
+    "latest official cloud deployment"
+  ],
+  "not_implemented": [
+    "Zigbee network commissioning and automatic discovery",
+    "static observation source migration",
+    "complete BLE Matter 433 ecosystems and brand-specific integrations",
+    "complete toy and robotics samples"
+  ],
+  "limits": [
+    "PTY and NCP run inside gateway container; no host hardware is opened",
+    "NCP is terminated with its container; no graceful TTY restoration claim",
+    "confirmed reports adapter protocol acknowledgement, not physical effect or authenticated Zigbee identity",
+    "previous native-stage source manifest is a historical snapshot and is not upgraded to match this stage",
+    "frozen official cloud remains control-login-e74691eb51706b10"
+  ],
+  "design": "Reuse official artifact builder, installer, HTTPS session, observation contracts and SQLite backup; no second packaging or persistence implementation.",
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "manifest_sha256": "27cbfca0ada30f1ca6b138ca2b70e3b4a82493c36100c9510334b1d1f9ebaa43",
+    "files": 394,
+    "copies": "source",
+    "includes_all_artifact_build_inputs": true,
+    "final_current_files_and_copies_match": true
+  }
+}

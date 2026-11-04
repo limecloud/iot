@@ -109,7 +109,7 @@ test('本地存储不可写时不发送设备操作', async ({ page }) => {
   });
   const lamp = page.getByRole('article', { name: '环境灯', exact: true });
   await lamp.getByRole('switch', { name: '电源' }).click();
-  await expect(page.getByText('无法保存本地操作记录，请检查浏览器存储设置', { exact: true })).toBeVisible();
+  await expect(page.getByText('无法核对本地操作记录，尚未发送请求', { exact: true })).toBeVisible();
   expect(submitted).toBe(0);
   expect((await stack.request('/api/v1/spaces/space-demo/commands')).value.items.length).toBe(before);
   expect(errors).toEqual([]);

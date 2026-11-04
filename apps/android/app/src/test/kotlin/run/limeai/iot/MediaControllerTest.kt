@@ -36,6 +36,17 @@ private suspend fun mediaController(scope: CoroutineScope, memory: MediaMemory, 
     return MediaController(MediaClient(gateway, memory), "space-demo", scope, auth).also { it.refresh(); it.waitForIdle(); assertTrue(it.state.value.ready) }
 }
 class MediaControllerTest {
+    @Test fun recordedSelectionIsOwnedAndClearedWithoutRemovingManualFile() = runBlocking {
+        val wire = MediaStateWire(); val controller = mediaController(this, MediaMemory(), wire)
+        val bytes = PcmRecording.encode(ShortArray(1600) { 321 })
+        controller.selectFile("recording.wav", bytes); controller.clearRecording(); assertEquals("recording.wav", controller.state.value.fileName)
+        assertTrue(controller.selectRecording(bytes)); bytes.fill(0)
+        assertEquals("recording.wav", controller.state.value.fileName); assertEquals(0, wire.posts)
+        controller.clearRecording(); controller.upload(); controller.waitForIdle(); assertEquals("", controller.state.value.fileName); assertEquals(0, wire.posts)
+        assertTrue(controller.selectRecording(PcmRecording.encode(ShortArray(1600) { 123 })))
+        controller.pause(); controller.upload(); controller.waitForIdle(); assertEquals("", controller.state.value.fileName); assertEquals(0, wire.posts)
+        controller.close()
+    }
     @Test fun localSelectionApprovalAndCancelledDeletionNeverWrite() = runBlocking {
         val wire = MediaStateWire(); val controller = mediaController(this, MediaMemory(), wire)
         val bytes = Base64.getDecoder().decode(wire.media.getValue("change").jsonObject.getValue("content_base64").jsonPrimitive.content)

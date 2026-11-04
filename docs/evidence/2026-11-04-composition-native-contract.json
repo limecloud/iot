@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-COMPOSITION-NATIVE-CONTRACT-20261104-01",
+  "recorded_at": "2026-11-04T15:45:28.657714+00:00",
+  "status": "passed_limited_scope",
+  "scope": "Swift/Kotlin组合包离线解析、编译与原请求记录校验；本轮收尾",
+  "full_goal_completed": false,
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "native_composition_network_client": false,
+  "native_composition_ui": false,
+  "new_nas_acceptance": false,
+  "published": false,
+  "checks": [
+    {
+      "name": "Swift package build and standalone composition contract",
+      "status": "passed",
+      "compiled_vectors": 22,
+      "record_states": 3
+    },
+    {
+      "name": "Kotlin core CompositionTest",
+      "status": "passed",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "Current JavaScript fixture parity",
+      "status": "passed",
+      "compiled": 22,
+      "records": 3,
+      "invalid_packages": 12,
+      "invalid_records": 6
+    }
+  ],
+  "initial_failures": [
+    {
+      "name": "Swift checks preparation",
+      "reason": "测试autoclosure未声明throws，定向修正后通过"
+    },
+    {
+      "name": "Kotlin compilation",
+      "reason": "错误使用多变量val声明，拆为独立声明后通过"
+    }
+  ],
+  "design": "复用原JSON解析边界，仅组合包显式启用小数；移除尚未接通的预留类型，不新增依赖或执行内核。",
+  "remaining": [
+    "原生组合包在线规划、部署、持久恢复、状态层及SwiftUI/Compose页面尚未实现",
+    "新NAS组合版完整安装两次受MySQL的90秒健康检查失败阻塞；未重试或降低断言",
+    "完整原生App运行、既有Android启动及AMD64多模态等阻塞保持原状态",
+    "更多协议、品牌生态、真实模型质量与玩具机器人样板尚未完成"
+  ],
+  "prior_evidence": "docs/evidence/2026-11-04-composition-web.json",
+  "source_note": "本文件仅冻结所列输入；历史网页及NAS证据不代表当前新增原生源码通过整体验收。",
+  "artifacts": [
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/IntegerJSON.swift",
+      "sha256": "14adf8bf3094a9c8d7b4386375de5fdc4755701a5139ef2bbffbca0aec5bd582"
+    },
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/CompositionModels.swift",
+      "sha256": "28c293ef7637d9d50ae06fa52f6b7c7d828386d72e60d3ab01a1421ea1e7f272"
+    },
+    {
+      "path": "apps/ios/Checks/CompositionChecks.swift",
+      "sha256": "61a3502b6a40d51c47ecff10ed4cadeb05f43b51ca8765e03a932f2aba7ef99e"
+    },
+    {
+      "path": "apps/android/core/src/main/kotlin/run/limeai/iot/core/IntegerJSON.kt",
+      "sha256": "371e4632f6afe4fa7753bb1413498f5410a981a8ebcd9ab9dc1dade7150e4be7"
+    },
+    {
+      "path": "apps/android/core/src/main/kotlin/run/limeai/iot/core/CompositionModels.kt",
+      "sha256": "ce28809fe34fc3d8d0db8278374e3b5dc489ba3a6dd01f4ff5de7544a1ae6244"
+    },
+    {
+      "path": "apps/android/core/src/test/kotlin/run/limeai/iot/core/CompositionTest.kt",
+      "sha256": "7bc097df7378b54d71de17a1fb654f68718732091c76e0af9404b918f745e1ef"
+    },
+    {
+      "path": "tests/fixtures/compositions/contract.json",
+      "sha256": "b6df33de237e1318f7abda090342f7cca202cca7e6120bcadf62b3914c19ce30"
+    },
+    {
+      "path": "packages/protocol/composition.mjs",
+      "sha256": "e13fb8bff43437f11bdebfb2e79bada8efb3193bbc24caaac53442f20195a7f7"
+    },
+    {
+      "path": "packages/protocol/model-validation.mjs",
+      "sha256": "c2bdfc7531d9b4a06bb116ad6d795e89aa74c5e69fb3673fdbaaa4ef71048c06"
+    },
+    {
+      "path": "contracts/composition.md",
+      "sha256": "eb38b187f35cb4c9e22487d587e7d5df622bf5fc228554dc6e8c242eb64a025e"
+    },
+    {
+      "path": "docs/24-实施计划与进度.md",
+      "sha256": "fd307bfdb5f47d7b9814f6b6eab05a8d81f596046ede043235c81f858f269924"
+    },
+    {
+      "path": ".dev/composition-native-20261104/swift-contract-final.log",
+      "sha256": "e30e65db1061d020aaf687a4f653be1acc84c41c1cd5c1eef7fe846bb0dd4990"
+    },
+    {
+      "path": ".dev/composition-native-20261104/kotlin-contract-final.log",
+      "sha256": "0caaca962f3ebc375b4fc2c275ecd287f013f4ffd704b79f6e8ca44e9f4b1b11"
+    },
+    {
+      "path": ".dev/composition-native-20261104/js-fixtures-final.log",
+      "sha256": "08afdde98bf255bb8de6b2fae711e443d76e9d093531d80e7ae5e387b080f1dc"
+    },
+    {
+      "path": ".dev/composition-native-20261104/kotlin-composition-final.xml",
+      "sha256": "7107e30de9f535be63338e0c1883b3c1291f609408e7ceabb02140a93185caeb"
+    },
+    {
+      "path": ".dev/composition-native-20261104/ios-composition-checks",
+      "sha256": "dabca100ba4a01de2b3a23d4423e53364b704ecc7accc8cc78e80cff5c318695"
+    },
+    {
+      "path": ".dev/composition-native-20261104/swift-contract-attempt2.log",
+      "sha256": "8cd528eee3c4d8a223af4c8e6546dd6c645a297bd5438b4569e993d684ae5ea4"
+    },
+    {
+      "path": ".dev/composition-native-20261104/kotlin-contract-attempt2.log",
+      "sha256": "fb4d0d17165fce05d51ec21e33a15dfed70a0ee720ea62af9481461205fc6a79"
+    },
+    {
+      "path": ".dev/composition-native-kotlin-contract.log",
+      "sha256": "b681f10925003c6846bc8e6daafa223e00000c583f3562e93f9b260f6d178e03"
+    }
+  ]
+}

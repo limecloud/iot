@@ -1,10 +1,89 @@
 # LimeIoT CLI
 
+`schema ai-catalog.list`离线发现AI目录合同，`ai-catalog list --space-id space-demo`或`invoke ai-catalog.list --space-id space-demo`只读查询五类能力。输出包含真实部署配置、输入限制与独立健康状态；已配置不等于健康，查看目录零推理。Agent按返回的创建/恢复操作进入已有任务合同，详见[AI目录](../../contracts/ai-catalog.md)。
+
+## 有限陪伴会话
+
+```sh
+node packages/cli/src/main.mjs companion schema
+node packages/cli/src/main.mjs companion start --space-id space-demo --policy "./policy.json" --id puppy-UNIQUE
+node packages/cli/src/main.mjs companion reply --space-id space-demo --policy "./policy.json" --context "./context.json" --input "./reply.json" --wait
+node packages/cli/src/main.mjs companion resolve --space-id space-demo
+node packages/cli/src/main.mjs companion stop --space-id space-demo
+```
+
+start固定角色、三类模型修订、1–8轮及30–1800秒预算，零推理。每次reply明确选择已有录音，先保存轮次，再沿现有ASR/文字/TTS任务推进。context为准确交替问答的`{"history":[]}`或先前历史，reply为`{"media_id":"media-已有编号"}`；输入均为本人0600普通文件，正文不自动写入会话账本。
+
+resolve只查询；continue须提供原政策及准确context；stop无需角色文件或历史，先保存停止，再清各轮文字回答和放弃未决输出。unknown退出6，不换回合。`--emit-context`显式导出内存历史，调用方管理终端及自己的保存文件。正常SIGINT/SIGTERM释放进程锁，硬终止遗留锁不自动清理。
+
+完整步骤见[积木小狗样板](../../examples/companions/block-puppy/README.md)，字段及上下文v2边界见[正式合同](../../contracts/companion.md)。旧voice-turns网页/CLI/原生端保持v1单回合；家庭网页“陪伴”使用独立会话账本，专用原生陪伴页面另行交付。检查入口`npm run test:companion`。
+
+## 声明式组合包
+
+```sh
+node packages/cli/src/main.mjs composition schema
+node packages/cli/src/main.mjs composition compile \
+  --input "examples/compositions/reading-companion/package.json" \
+  --bindings "examples/compositions/reading-companion/bindings.json" --id reading-demo
+node packages/cli/src/main.mjs composition plan \
+  --input "examples/compositions/reading-companion/package.json" \
+  --bindings "examples/compositions/reading-companion/bindings.json" --id reading-demo --space-id space-demo
+```
+
+schema和compile离线运行，不读取凭据。plan复用当前网关Token，核对角色对应设备的精确物模型和ready，验证/预演后再次核对；仅访问设备GET和规则验证/预演POST。所有输出均为JSON，deployed始终为false。最终rule和simulation_input可交给原规则工具，required_permissions只用于审阅，不授予权限。
+
+首版只编译1–8角色、事件触发、空条件与1–16个set操作，不增加包执行器或本机任务日志。规则ID由--id显式选择；正文或设备变化后须重新核对。正式启用、当前部署查询与停用见[可运行样板](../../examples/compositions/reading-companion/README.md)，完整字段与限制见[组合合同](../../contracts/composition.md)。`npm run test:composition`覆盖软件闭环，发布、硬件和多模态玩具另验。
+
 ## Zigbee诊断
 
 `zigbee schema`离线返回正式合同；先执行`cargo build --locked -p limeiot-zigbee-znp`，再用`zigbee probe --serial "/dev/ttyUSB0"`读取NCP，或`zigbee interview --serial "/dev/ttyUSB0" --address 0x1234`访谈已入网设备。默认整个操作5000ms，可用`--timeout-ms`设100–30000ms。组件路径可由当前进程的`LIMEIOT_ZNP_TOOL`绝对路径指定。
 
-该入口是本地串口工具，不使用网关Token；只发固定SYS/ZDO读取，超时关闭且不重试，不创建设备身份或绑定。完整机器输出、资源边界和错误见[正式合同](../../contracts/zigbee-diagnostics.md)，软件验证入口为`npm run test:zigbee`。
+`zigbee read-environment --serial "/dev/ttyUSB0" --coordinator-ieee 0102030405060708 --ieee 1122334455667788 --endpoint 1`读取指定设备的Basic型号信息、温度及湿度。IEEE和端点须来自自己的网络；该命令会在需要时注册NCP运行期端点240，冲突时拒绝，不删除既有端点。
+
+`zigbee read-onoff --serial "/dev/ttyUSB0" --coordinator-ieee 0102030405060708 --ieee 1122334455667788 --endpoint 1`读取标准On/Off端点的Basic指纹与boolean状态。明确控制使用相同目标参数的`zigbee set-onoff`，另提供`--power on`或`off`、`--manufacturer-code 0x1234`及`--signature-json`完整Basic JSON；指纹必须来自已核对设备。正式字段见[合同](../../contracts/zigbee-diagnostics.md#固定onoff端点)。独立CLI调用前须释放NCP，不能与运行网关争用；运行网关使用[v3属性桥接配置](../../contracts/property-bridges.md#新安装配置)，再通过原commands工具与控件操作，不直接开第二个串口。
+
+On/Off协议受理仅返回`power_requested`和`device_state_confirmed=false`，实际状态另行read-onoff，不把请求值当实际值。控制最多发送一次，丢回执、坏JSON、取消或失败均保留unknown和`retry_allowed=false`，不自动重试。固定主机端点239不覆盖环境240，冲突拒绝；`npm run test:zigbee:onoff`运行软件检查。
+
+`zigbee neighbors --serial "/dev/ttyUSB0" --coordinator-ieee 0102030405060708`分页读取该协调器的邻居表，最多64条，不截断、不开放入网。结果提供短地址和IEEE，可继续显式访谈；邻居表不等于全网清单或设备在线证明。调用前确保网关等服务已经释放NCP，不能与其争用串口。命令核对前后协调器身份，失败不输出部分清单；CLI另核对条目、位字段、唯一地址和预期协调器。
+
+`zigbee config-schema`离线返回网关侧固定环境来源的配置合同。运行时通过`LIMEIOT_ZIGBEE_CONFIG`加载，配置驱动的状态/自动化接入见[观测来源合同](../../contracts/observation-sources.md)；本地单次读取不自动修改网关。
+
+这些入口是本地串口工具，不使用网关Token。读取只运行固定任务与上述AF注册，超时关闭且不重试，不创建设备身份或绑定。完整机器输出、资源边界和错误见[正式合同](../../contracts/zigbee-diagnostics.md)，软件验证入口为`npm run test:zigbee`。
+
+## 有限允许设备加入
+
+释放已有网关对NCP的占用后，显式执行`zigbee permit-join --serial "/dev/ttyUSB0" --coordinator-ieee 0102030405060708 --duration-seconds 60`。这会向已核对IEEE及角色的协调器发送一次网络写请求；0明确关闭，1–120秒有限允许加入，不接受永久开放或广播。返回`network_write_requested=true`与`status=protocol_accepted`，不证明当前窗口状态或设备已加入，也不创建设备绑定。
+
+超时、取消或坏回执保留`outcome=unknown`、`retry_allowed=false`，不自动重发。需要关闭时，核对同一协调器后显式发送0。CLI将取消信号传递给子组件并等待退出；本命令没有耐久幂等记录，不能用同参再次运行替代查询原决定。网关HTTP和客户端写入口仍待接入。独立检查入口为`npm run test:zigbee:commissioning`。
+
+## 运行中接入只读来源
+
+不知道设备IEEE或端点时，先通过运行中的网关发现已有邻居，再访谈指定IEEE，无需停网关或直接打开串口：
+
+```sh
+node packages/cli/src/main.mjs schema observation-discoveries.query
+node packages/cli/src/main.mjs invoke observation-discoveries.query --space-id space-demo --input "./discovery.json"
+node packages/cli/src/main.mjs invoke observation-endpoints.query --space-id space-demo --input "./endpoints.json"
+```
+
+`discovery.json`为`{"coordinator_id":"home-znp"}`，`endpoints.json`为`{"coordinator_id":"home-znp","ieee_address":"1122334455667788"}`。替换为自己的协调器和设备。两类结果最长有效60秒，不注册AF、不生成候选或创建设备；邻居可能过期或遗漏后代，端点描述仍需后续完整属性查询。正式输出见[发现Schema](../../contracts/observation-discovery.schema.json)。两工具与候选查询共享单slot和期限，CLI校验请求上下文及回执，不保存原请求日志或自动重试。
+
+网关使用[v2协调器配置](../../deploy/dev/zigbee-coordinator.example.json)后，CLI使用原本地所有者身份查询已知IEEE/端点，无需预建逻辑设备。以下使用当前安装的空间与协调器ID，`query.json`正文为`{"coordinator_id":"home-znp","ieee_address":"1122334455667788","endpoint":1}`，替换为自己的网络信息：
+
+```sh
+node packages/cli/src/main.mjs schema observation-changes.create
+node packages/cli/src/main.mjs invoke observation-candidates.list --space-id space-demo
+node packages/cli/src/main.mjs invoke observation-candidates.query --space-id space-demo --input "./query.json"
+node packages/cli/src/main.mjs invoke observation-bindings.get --space-id space-demo --id sensor
+node packages/cli/src/main.mjs invoke observation-changes.create --space-id space-demo --input "./source-change.json" --idempotency-key source-bind-001
+node packages/cli/src/main.mjs invoke observation-changes.resolve --space-id space-demo --id source-bind-001
+```
+
+查询只返回60秒内有效候选，不创建设备。核对候选后，`source-change.json`使用`sources.bind`、新device_id、候选完整source/model_revision及当前绑定revision；撤销使用`sources.revoke`、device_id及当前revision。正式字段见[来源Schema](../../contracts/observation-bindings.schema.json)与[来源合同](../../contracts/observation-sources.md)。客户端不能指定串口或manifest。
+
+写请求先保存至私有`--state-dir`，保存失败零POST；同键再次create只查询原决定，不因候选过期、缓存清空或撤销后恢复旧applied而重新绑定。同键异参退出4，原决定未知退出6并保留记录。撤销立即离线，旧值保留但过期；重绑需新键、当前修订及新鲜候选。家庭网页和Swift/Kotlin状态层已有发现、端点选择及明确接入，完整原生运行独立验收。全网发现和静态来源迁移仍未实现。
+
+运行中管理入网先调用`invoke zigbee-coordinators.list --space-id space-demo`，核对协调器和revision。`schema zigbee-changes.create`返回精确输入：coordinator_id、expected_revision、duration_seconds（0关闭，1–120有限开放）。按明确意图用`invoke zigbee-changes.create --space-id space-demo --input "./join.json" --idempotency-key join-original`提交。CLI先保存并回读私有原请求，同键再运行只GET；`invoke zigbee-changes.resolve --space-id space-demo --id join-original`显式查询，`zigbee-operations.list`读取历史。unknown退出6，不自动重发；协议受理不表示设备已加入。新关闭须单独明确请求和新键，未知开放的可能窗口内禁止换键延长，详见[入网与恢复合同](../../contracts/zigbee-operations.md)。家庭网页与Swift/Kotlin已接入独立入网核对与原操作查询；完整App和硬件效果仍须分别验收。
 
 ## 多设备分阶段计划
 
@@ -314,6 +393,12 @@ npm run cli -- control auth logout --session-file "/absolute/private/session.jso
 ```
 
 先撤销本站会话，再清除文件中的会话秘密；从Console导入的子会话退出不撤销父网页登录。私有实例直接登录的CLI会话独立于浏览器会话。
+
+## 本地文字生成
+
+已有录音的ASR→文字→TTS组合使用`voice-turns schema`发现。按[有限语音回合合同](../../contracts/voice-turns.md)将`turn_id,media_id,language,voice`保存为0600私有JSON，再运行`voice-turns start --space-id space-demo --input "./voice-turn.json" --wait`。`voice-turns resolve --space-id space-demo`只查询原任务；`continue --wait`明确推进未创建的下一阶段；`stop`先保存停止事实再放弃未决输出及清除文字回答。进程退出不后台推进，摘要记录与独占锁位于私有状态目录；生成的媒体仍须独立授权播放。
+
+文字回答使用 `schema text-generations.create` 发现输入，按[文字合同](../../contracts/text.md)准备消息JSON，再运行 `text-generations create --space-id space-demo --input "./text.json" --idempotency-key text-01`。消息按user/assistant交替，以user开始和结束；输入正文不写入原记录。同键再次create只查询，`text-generations resolve text-01 --space-id space-demo`恢复原结果，`text-generations discard text-01 --space-id space-demo`明确放弃或清文。未知仍占预算，404不补发；输入文件本身由调用者私有管理。
 
 ## 本地文字转语音
 

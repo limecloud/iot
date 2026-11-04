@@ -210,6 +210,8 @@ pub struct State {
     pub transcriptions: BTreeMap<String, crate::transcription::Task>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub visions: BTreeMap<String, crate::vision::Task>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub texts: BTreeMap<String, crate::text::Task>,
 }
 pub struct GrantTarget {
     pub device_id: String,
@@ -228,6 +230,7 @@ impl State {
             speech: BTreeMap::new(),
             transcriptions: BTreeMap::new(),
             visions: BTreeMap::new(),
+            texts: BTreeMap::new(),
         }
     }
     pub fn active_object(&self, id: &str, now: DateTime<Utc>) -> Result<&Object> {
@@ -302,6 +305,14 @@ impl State {
     }
     pub fn prune(&mut self, now: DateTime<Utc>) -> bool {
         let mut changed = false;
+        for task in self.texts.values_mut() {
+            if let Some(output) = task.output.as_mut() {
+                if output.expires_at <= now && output.text.take().is_some() {
+                    output.cleared_at = Some(now);
+                    changed = true;
+                }
+            }
+        }
         for task in self.visions.values_mut() {
             if let Some(output) = task.output.as_mut() {
                 if output.expires_at <= now && output.text.take().is_some() {
@@ -486,15 +497,28 @@ impl State {
     pub fn validate(&self) -> Result<()> {
         let valid = || err("media_storage_corrupt");
         ensure(
-            ((self.schema_version == 1
-                && self.speech.is_empty()
-                && self.transcriptions.is_empty())
-                || (self.schema_version == 2
-                    && !self.speech.is_empty()
-                    && self.transcriptions.is_empty())
-                || (self.schema_version == 3 && !self.transcriptions.is_empty()))
-                && self.visions.is_empty()
-                || self.schema_version == 4 && !self.visions.is_empty(),
+            match self.schema_version {
+                1 => {
+                    self.speech.is_empty()
+                        && self.transcriptions.is_empty()
+                        && self.visions.is_empty()
+                        && self.texts.is_empty()
+                }
+                2 => {
+                    !self.speech.is_empty()
+                        && self.transcriptions.is_empty()
+                        && self.visions.is_empty()
+                        && self.texts.is_empty()
+                }
+                3 => {
+                    !self.transcriptions.is_empty()
+                        && self.visions.is_empty()
+                        && self.texts.is_empty()
+                }
+                4 => !self.visions.is_empty() && self.texts.is_empty(),
+                5 => !self.texts.is_empty(),
+                _ => false,
+            },
             "media_storage_corrupt",
         )?;
         ensure(
@@ -508,6 +532,14 @@ impl State {
             self.visions.len() <= crate::vision::MAX_TASKS,
             "media_storage_corrupt",
         )?;
+        ensure(
+            self.texts.len() <= crate::text::MAX_TASKS,
+            "media_storage_corrupt",
+        )?;
+        for (key, task) in &self.texts {
+            ensure(key == &task.idempotency_key, "media_storage_corrupt")?;
+            task.validate(&self.space_id, self.saved_at)?;
+        }
         for (key, task) in &self.visions {
             ensure(key == &task.idempotency_key, "media_storage_corrupt")?;
             task.validate(&self.space_id, self.saved_at)?;

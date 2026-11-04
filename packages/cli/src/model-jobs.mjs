@@ -61,6 +61,8 @@ export async function runModelJob(args,{family,discards,discardAction,parseInput
         if (!validOriginal(saved, endpoint.origin, space, key)) throw problem('original_record_unavailable', 5);
         if (!sameJSON(saved, expected)) throw problem('idempotency_conflict', 4); existing = true;
       }
+      let saved; try { saved = await readPrivate(original.record_file); } catch { throw problem('original_record_unavailable', 5); }
+      if (!validOriginal(saved, endpoint.origin, space, key) || !sameJSON(saved, expected)) throw problem('original_record_unavailable', 5);
       value = existing ? await call(resolve) : await call(prefix, input);
     } else {
       await load();
@@ -70,6 +72,8 @@ export async function runModelJob(args,{family,discards,discardAction,parseInput
         original = { request_key: key, record_file: filename(discards), recovery_operation: `${family}.resolve` };
         let existing = false;
         try { await createPrivate(original.record_file, intent); } catch (error) { if (error.code !== 'EEXIST') throw problem('original_record_unavailable', 5); if (!sameJSON(await readPrivate(original.record_file), intent)) throw problem('original_record_unavailable', 5); existing = true; }
+        let saved; try { saved = await readPrivate(original.record_file); } catch { throw problem('original_record_unavailable', 5); }
+        if (!sameJSON(saved, intent)) throw problem('original_record_unavailable', 5);
         value = existing ? await call(resolve) : await call(resolve + '/discard', {});
         if (existing && value.status === 'running') throw problem('operation_unknown', 6);
       } else value = await call(resolve);

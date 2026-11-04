@@ -1,11 +1,13 @@
 """NAS隔离验收夹具：有限模型HTTP和DLNA，不代表模型质量或物理播放。"""
 import base64
 import hashlib
+import io
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import struct
 import threading
 import urllib.request
+import wave
 import xml.etree.ElementTree as ET
 
 
@@ -15,12 +17,18 @@ def wav():
 
 
 AUDIO = wav()
-TEXT = {"asr": "这是容器协议夹具的识别结果。", "vision": "这是容器协议夹具的图片观察结果。"}
+TEXT = {"asr": "这是容器协议夹具的识别结果。", "vision": "这是容器协议夹具的图片观察结果。", "text": "这是容器协议夹具的文字回答。"}
+COMPANION = {
+    "instructions": "你是本地搭建伙伴，用简短中文回答，不调用工具。",
+    "asr": ["我想搭一个会说话的积木小狗。", "怎样让小狗的底座更稳？"],
+    "text": ["先搭一个稳固底座，再安装灯和扬声器。", "可以加宽底座，让两侧积木交错连接。"],
+}
 LOCK = threading.Lock()
 STATE = {"calls": [], "effects": [], "pulls": [], "errors": []}
-MODES = {kind: "ok" for kind in ("speech", "asr", "vision")}
+MODES = {kind: "ok" for kind in ("speech", "asr", "vision", "text")}
 RELEASE = {kind: threading.Event() for kind in MODES}
 URI = ""
+SCENARIO = "bounded_tasks"
 HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
@@ -46,11 +54,19 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(404, {})
 
     def do_POST(self):
-        global URI
+        global URI, SCENARIO
         try:
             size = int(self.headers.get("Content-Length", "0"))
             assert 0 < size <= 3_000_000, "invalid_fixture_body_size"
             raw = self.rfile.read(size)
+            if self.path == "/fixture/scenario":
+                value = json.loads(raw)
+                assert value in ({"scenario": "recorded_voice_turn"}, {"scenario": "companion"})
+                with LOCK:
+                    assert not STATE["calls"]
+                    SCENARIO = value["scenario"]
+                self.reply(200, {})
+                return
             if self.path == "/fixture/mode":
                 value = json.loads(raw)
                 assert value["kind"] in MODES and value["mode"] in ("ok", "hold")
@@ -83,25 +99,75 @@ class Handler(BaseHTTPRequestHandler):
                 assert set(value) == {"model", "input", "voice", "response_format", "speed"}
                 assert value["model"] == "fixture/local-model" and value["voice"] == "local"
                 assert value["response_format"] == "wav" and value["speed"] == 1
+                if SCENARIO == "recorded_voice_turn":
+                    assert value["input"] == TEXT["text"]
+                elif SCENARIO == "companion":
+                    with LOCK:
+                        turn = sum(item["kind"] == "speech" for item in STATE["calls"])
+                    assert turn < 2 and value["input"] == COMPANION["text"][turn]
                 evidence = {"kind": kind, "digest": hashlib.sha256(value["input"].encode()).hexdigest()}
                 output, content_type = AUDIO, "audio/wav"
             elif self.path == "/v1/audio/transcriptions":
                 kind = "asr"
-                assert raw == AUDIO and self.headers.get("Content-Type") == "audio/wav"
+                assert self.headers.get("Content-Type") == "audio/wav"
+                if SCENARIO in ("recorded_voice_turn", "companion"):
+                    with wave.open(io.BytesIO(raw), "rb") as recording:
+                        frames = recording.getnframes()
+                        assert recording.getnchannels() == 1 and recording.getsampwidth() == 2
+                        assert recording.getframerate() == 16000 and 0 < frames <= 960000
+                        assert len(recording.readframes(frames)) == frames * 2
+                else:
+                    assert raw == AUDIO
                 assert self.headers.get("X-LimeIoT-Model") == "fixture/asr"
-                assert self.headers.get("X-LimeIoT-Language") == "auto"
+                assert self.headers.get("X-LimeIoT-Language") == ("zh" if SCENARIO == "companion" else "auto")
                 evidence = {"kind": kind, "bytes": len(raw), "digest": hashlib.sha256(raw).hexdigest()}
                 output, content_type = {"text": TEXT[kind]}, "application/json"
+                if SCENARIO == "companion":
+                    with LOCK:
+                        turn = sum(item["kind"] == "asr" for item in STATE["calls"])
+                    assert turn < 2
+                    output = {"text": COMPANION["asr"][turn]}
             elif self.path == "/api/chat":
-                kind, value = "vision", json.loads(raw)
-                assert value["model"] == "fixture:vision" and value["stream"] is False and value["keep_alive"] == 0
+                value = json.loads(raw)
+                assert value["model"] in ("fixture:vision", "fixture:text") and value["stream"] is False and value["keep_alive"] == 0
                 assert "tools" not in value and value["options"] == {"num_ctx": 4096, "num_predict": 1024, "temperature": 0}
-                assert len(value["messages"]) == 2 and value["messages"][1]["role"] == "user"
-                assert len(value["messages"][1]["images"]) == 1
-                image = base64.b64decode(value["messages"][1]["images"][0], validate=True)
-                assert image.startswith(b"\x89PNG\r\n\x1a\n")
-                evidence = {"kind": kind, "bytes": len(image), "digest": hashlib.sha256(image).hexdigest()}
-                output = {"model": "fixture:vision", "done": True, "done_reason": "stop", "message": {"role": "assistant", "content": TEXT[kind]}}
+                kind = "vision" if value["model"] == "fixture:vision" else "text"
+                if kind == "vision":
+                    assert len(value["messages"]) == 2 and value["messages"][1]["role"] == "user"
+                    assert len(value["messages"][1]["images"]) == 1
+                    image = base64.b64decode(value["messages"][1]["images"][0], validate=True)
+                    assert image.startswith(b"\x89PNG\r\n\x1a\n")
+                    evidence = {"kind": kind, "bytes": len(image), "digest": hashlib.sha256(image).hexdigest()}
+                else:
+                    assert value["messages"][0]["role"] == "system"
+                    if SCENARIO == "recorded_voice_turn":
+                        instructions = "请根据用户的语音内容，用简短、清晰的中文回答。回答不超过300字，不调用工具。"
+                        assert value["messages"][1] == {"role": "system", "content": instructions}
+                        messages = value["messages"][2:]
+                        assert messages == [{"role": "user", "content": TEXT["asr"]}]
+                    elif SCENARIO == "companion":
+                        with LOCK:
+                            turn = sum(item["kind"] == "text" for item in STATE["calls"])
+                        assert turn < 2 and "no tools, device access" in value["messages"][0]["content"]
+                        instructions = COMPANION["instructions"]
+                        assert value["messages"][1] == {"role": "system", "content": instructions}
+                        messages = value["messages"][2:]
+                        expected = [{"role": "user", "content": COMPANION["asr"][0]}]
+                        if turn == 1:
+                            expected += [{"role": "assistant", "content": COMPANION["text"][0]}, {"role": "user", "content": COMPANION["asr"][1]}]
+                        assert messages == expected, "companion_exact_history_mismatch"
+                    else:
+                        instructions = ""
+                        messages = value["messages"][1:]
+                        assert len(messages) == 7
+                        assert all(set(message) == {"role", "content"} and message["role"] == ("user" if index % 2 == 0 else "assistant") for index, message in enumerate(messages))
+                    context = json.dumps({"instructions": instructions, "messages": messages}, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+                    evidence = {"kind": kind, "message_count": len(messages), "context_digest": "sha256:" + hashlib.sha256(context).hexdigest()}
+                output = {"model": value["model"], "done": True, "done_reason": "stop", "message": {"role": "assistant", "content": TEXT[kind]}}
+                if kind == "text" and SCENARIO == "companion":
+                    output["message"]["content"] = COMPANION["text"][turn]
+                if kind == "text":
+                    output.update({"prompt_eval_count": 25, "eval_count": 8})
                 content_type = "application/json"
             else:
                 self.reply(404, {})

@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "swift_kotlin_managed_znp_observation_onboarding_and_original_request_recovery",
+  "status": "native_host_software_stage_passed",
+  "archive": ".dev/observation-native-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "production_secure_store_runtime": false,
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "changes": {
+    "native_query_review_explicit_bind_revoke_and_fresh_rebind": true,
+    "existing_gateway_session_and_secure_store_adapters_reused": true,
+    "shared_js_swift_kotlin_vectors": true,
+    "source_manifest_binding_and_decision_digests_checked": true,
+    "original_records_per_origin_across_spaces": 128,
+    "cross_instance_domain_lock": true,
+    "save_and_exact_readback_before_single_post": true,
+    "same_key_get_only": true,
+    "unknown_blocks_device_or_source_alias": true,
+    "known_record_change_or_removal_blocks_writes": true,
+    "decided_receipts_immutable": true,
+    "historical_applied_does_not_restore_binding": true,
+    "review_memory_only": true,
+    "review_max_seconds": 60,
+    "task_owned_and_cancelled_by_native_state": true,
+    "cancel_during_save_zero_post": true,
+    "late_response_cannot_revive_review": true,
+    "snapshot_context_and_pre_submit_binding_candidate_recheck": true,
+    "query_timeout_ms": 35000,
+    "other_timeout_ms": 12000,
+    "android_new_input_border_dp": 0.5,
+    "new_dependencies": false,
+    "rust_changed": false,
+    "database_schema_changed": false,
+    "rust_inputs_unchanged_from_runtime_stage": [
+      "iot/gateway/crates/core/src/execution_binding.rs",
+      "iot/gateway/crates/core/tests/observation_binding.rs",
+      "iot/gateway/crates/runtime/src/integrations/zigbee.rs",
+      "iot/gateway/crates/runtime/src/integrations/mod.rs",
+      "iot/gateway/crates/runtime/src/observation_api.rs",
+      "iot/gateway/crates/runtime/src/api.rs",
+      "iot/gateway/crates/runtime/src/main.rs"
+    ]
+  },
+  "verification": {
+    "swift_contract_groups": 7,
+    "swift_state_groups": 7,
+    "swift_existing_client_regression": true,
+    "swift_home_typecheck": true,
+    "swiftui_parse_only": true,
+    "xcode_project_plutil": true,
+    "android_junit": {
+      "run.limeai.iot.VisionControllerTest": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "run.limeai.iot.ObservationControllerTest": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "run.limeai.iot.core.ObservationClientTest": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "run.limeai.iot.core.OtaClientTest": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "run.limeai.iot.core.GatewayClientTest": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "android_debug_apk_initial_passed": true,
+    "android_final_ui_artifact_passed": true,
+    "android_lint_errors": 0,
+    "android_lint_warnings": 17,
+    "js_shared_schema_cli_checks": 4,
+    "native_host_journeys": 2,
+    "each_journey": {
+      "native_processes": 2,
+      "gateway_restarts": 2,
+      "decision_posts": 3,
+      "query_posts": 2,
+      "confirmed_threshold_commands": 1
+    },
+    "reports": [
+      {
+        "target": "ios",
+        "path": ".dev/observation-native-20261104/reports/ios-journey.json",
+        "source": ".dev/zigbee-gateway-journey-18IPnh/observation-native-result.json",
+        "sha256": "eacdc01bf33f3091d1aa669c0821e4ab6c4b362ccf31f1aa2e3dbfa1aaffd115"
+      },
+      {
+        "target": "android",
+        "path": ".dev/observation-native-20261104/reports/android-journey.json",
+        "source": ".dev/zigbee-gateway-journey-vlX3ZG/observation-native-result.json",
+        "sha256": "9a5e44dda16c391d7b99811d873ccbd6916ee400375c1346fec36f7f5c726c11"
+      }
+    ],
+    "native_transport": "loopback HTTP fixture; production HTTPS session code reused",
+    "website_checked_files": 48,
+    "website_errors": 0,
+    "website_warnings": 0,
+    "website_pages": 53,
+    "website_local_references": 2054,
+    "document_links": {
+      "passed": true,
+      "files": 6,
+      "local_file_links": 258
+    },
+    "android_final_ui_artifact_log": "android-ui-final.log",
+    "android_debug_apk": {
+      "path": "apps/android/app/build/outputs/apk/debug/app-debug.apk",
+      "bytes": 13112951,
+      "sha256": "91e5426c096fdafd4c7ff57ecc53ad97ac6600cc139fc501fc3cdf6a84df5d0f",
+      "archive_binary_copy": false
+    },
+    "android_relevant_junit_total": 33,
+    "source_copies_match_current_files": true,
+    "logs": {
+      "swift_contract_and_state": "swift-live-build-fixed.log",
+      "swift_existing_contract_regression": "swift-regression.log",
+      "android_contract_state_apk_lint": "android-final.log",
+      "android_final_border_only_apk_lint": "android-ui-final.log",
+      "native_journeys": "native-journey.log",
+      "shared_js_schema_cli": "js-contract.log",
+      "website": "website-build.log",
+      "document_links": "document-links.json"
+    }
+  },
+  "history": [
+    {
+      "stage": "initial Swift state compile",
+      "result": "failed",
+      "reason": "Published wrapper used for multiple variable declarations",
+      "fix": "split into individual published properties; original assertions retained",
+      "log": "swift-state-initial-failure.log"
+    },
+    {
+      "stage": "new Swift host journey compile",
+      "result": "failed",
+      "reason": "missing try at two throwing sample calls",
+      "fix": "propagate errors with try await; no failure suppression",
+      "log": "swift-final.log"
+    },
+    {
+      "stage": "native host state and combined journeys",
+      "result": "passed",
+      "logs": [
+        "swift-live-build-fixed.log",
+        "android-final.log",
+        "native-journey.log"
+      ]
+    }
+  ],
+  "not_implemented": [
+    "Zigbee network commissioning or automatic discovery",
+    "static observation source migration",
+    "brand-specific compatibility and action mappings",
+    "complete BLE Matter 433 ecosystems",
+    "complete toy or robotics samples"
+  ],
+  "not_verified": [
+    "iOS full application build or runtime; complete Xcode and iOS SDK unavailable",
+    "current complete Android app or system browser runtime; previous startup ANR retained",
+    "production Keychain or Keystore observation records runtime",
+    "Linux NAS serial runtime or dynamic v13 container backup restore",
+    "updated NAS images or latest official cloud release",
+    "physical hardware; skipped by user",
+    "real multimodal model quality and complete product acceptance"
+  ],
+  "limits": [
+    "confirmed is adapter protocol confirmation, not cryptographic device identity or physical-effect proof",
+    "software PTY NCP and host file persistence are explicit fixtures",
+    "prior AMD64 multimodal restore and TV callback timeouts remain unresolved and were not retried",
+    "current native source is not part of the frozen official deployment control-login-e74691eb51706b10"
+  ],
+  "design": "Reuse existing session, storage and integer JSON/JCS; domain-specific validation and persistence, no new protocol or identity stack.",
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "copies": "source",
+    "files": 167,
+    "captured_after_behavior_checks": true,
+    "final_android_artifact_check_pending": false,
+    "whole_stage_inputs_frozen": false,
+    "manifest_sha256": "1eb9f06d2f3bf967839a4bc9a01067309866603675dab674eca69ffeb388aa0e",
+    "current_files_match_after_final_artifact_check": true
+  }
+}

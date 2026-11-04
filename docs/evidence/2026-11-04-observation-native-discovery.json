@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "swift_kotlin_znp_neighbor_discovery_endpoint_selection_and_existing_onboarding",
+  "status": "native_host_software_stage_passed",
+  "archive": ".dev/observation-native-discovery-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "production_secure_store_runtime": false,
+  "published": false,
+  "official_cloud_updated": false,
+  "new_nas_image": false,
+  "full_goal_completed": false,
+  "changes": {
+    "shared_formal_discovery_contract": true,
+    "existing_gateway_session_and_query_budget_reused": true,
+    "strict_neighbor_and_endpoint_validation": true,
+    "query_timeout_ms": 35000,
+    "temporary_memory_seconds": 60,
+    "future_and_expired_observations_rejected": true,
+    "context_ABA_and_late_result_guard": true,
+    "discovery_does_not_persist_original_records": true,
+    "only_supported_environment_endpoints_query_candidates": true,
+    "explicit_bind_revoke_and_same_original_get_reused": true,
+    "custom_device_id_preserved": true,
+    "new_dependencies": false,
+    "rust_changed": false,
+    "database_schema_changed": false,
+    "firmware_changed": false
+  },
+  "verification": {
+    "shared_js_schema_check": true,
+    "shared_negative_discovery_vectors": 17,
+    "shared_negative_endpoint_vectors": 12,
+    "swift_contract_groups": 9,
+    "swift_state_groups": 12,
+    "swift_home_typecheck": true,
+    "swiftui_parse_only": true,
+    "xcode_project_plutil": true,
+    "android": {
+      "junit": {
+        "run.limeai.iot.VisionControllerTest": {
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "run.limeai.iot.ObservationControllerTest": {
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "run.limeai.iot.core.ObservationClientTest": {
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "run.limeai.iot.core.OtaClientTest": {
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "run.limeai.iot.core.GatewayClientTest": {
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      },
+      "junit_tests": 39,
+      "lint": {
+        "Error": 0,
+        "Fatal": 0,
+        "Warning": 17
+      },
+      "apk": {
+        "path": "apps/android/app/build/outputs/apk/debug/app-debug.apk",
+        "bytes": 13527070,
+        "sha256": "c67b2d824ab0f8b291ab71d49c33640009a27b17d7193e44c13c492aacc36add"
+      }
+    },
+    "native_host_journeys": [
+      {
+        "target": "ios",
+        "path": ".dev/observation-native-discovery-20261104/reports/ios-journey.json",
+        "source": ".dev/zigbee-gateway-journey-7rdReF/observation-native-result.json",
+        "sha256": "ef9ce3e21a08e7550d0bab09a420a17cbac241221f7b5ae24795651798cf0b34",
+        "result": {
+          "passed": true,
+          "target": "ios",
+          "native_host_state": true,
+          "native_processes": 2,
+          "gateway_restarts": 2,
+          "real_rust_sqlite_mqtt": true,
+          "software_pty_ncp": true,
+          "discovery_and_endpoint_selection": true,
+          "discovery_posts": 2,
+          "endpoint_posts": 2,
+          "response_loss_and_original_get": true,
+          "revoke_and_explicit_rebind": true,
+          "native_js_rust_digest_match": true,
+          "threshold_command_confirmed": true,
+          "no_replay_after_restart": true,
+          "decision_posts": 3,
+          "query_posts": 2,
+          "transport": "loopback HTTP fixture",
+          "production_secure_store_runtime": false,
+          "native_app_runtime": false,
+          "hardware": false,
+          "hardware_status": "用户要求跳过",
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "target": "android",
+        "path": ".dev/observation-native-discovery-20261104/reports/android-journey.json",
+        "source": ".dev/zigbee-gateway-journey-cJlyXL/observation-native-result.json",
+        "sha256": "52959782aeb6d751dce446781bf7508bd2a817d0b5987a806aa8011fb29ee884",
+        "result": {
+          "passed": true,
+          "target": "android",
+          "native_host_state": true,
+          "native_processes": 2,
+          "gateway_restarts": 2,
+          "real_rust_sqlite_mqtt": true,
+          "software_pty_ncp": true,
+          "discovery_and_endpoint_selection": true,
+          "discovery_posts": 2,
+          "endpoint_posts": 2,
+          "response_loss_and_original_get": true,
+          "revoke_and_explicit_rebind": true,
+          "native_js_rust_digest_match": true,
+          "threshold_command_confirmed": true,
+          "no_replay_after_restart": true,
+          "decision_posts": 3,
+          "query_posts": 2,
+          "transport": "loopback HTTP fixture",
+          "production_secure_store_runtime": false,
+          "native_app_runtime": false,
+          "hardware": false,
+          "hardware_status": "用户要求跳过",
+          "published": false,
+          "full_goal_completed": false
+        }
+      }
+    ],
+    "website_checked_files": 48,
+    "website_errors": 0,
+    "website_warnings": 0,
+    "website_pages": 53,
+    "website_local_references": 2055,
+    "document_links": {
+      "passed": true,
+      "files": 5,
+      "local_file_links": 253,
+      "fragment_check": false
+    }
+  },
+  "history": [
+    {
+      "result": "not_started",
+      "log": "android-initial.log",
+      "reason": "default shell lacks Java; reused existing project JDK21 and SDK36 for process only"
+    },
+    {
+      "result": "compile_failed",
+      "log": "android-toolchain.log",
+      "reason": "new test compared Long timeout with Int literal"
+    },
+    {
+      "result": "passed",
+      "log": "android-retry1.log",
+      "fix": "35000L comparison; assertions and production code retained"
+    }
+  ],
+  "source_manifest": {
+    "path": "source-sha256.json",
+    "files": 31,
+    "sha256": "60876f752a09135a3d347a38c3d6e08def54f217ee1c75ec8d9bbc03cb2f9be2",
+    "captured_after_checks": true,
+    "whole_workspace_frozen": false,
+    "source_copies": false,
+    "current_files_match_after_final_checks": true
+  },
+  "logs_sha256": {
+    "android-journey.log": "5a7d72b13ed346fb6aba2af92c1e0ab011496358fc6fd40ac9ac13fbc8cf0b1d",
+    "ios-initial.log": "626404175adc7807798414147a984cf27571ede0f3ed401815fd71ba2f05ccb2",
+    "ios-journey.log": "760c6778e7b213c1bb4cda15bf66102a4cfcec1ee28058a9362b7b266ce9b16f",
+    "website-build.log": "59c55ee03b85c5cbc7c37932d0bdd62a2581b663ee60e140bcc918872a4d3b5f",
+    "shared-contract.log": "bbd9a9c18864269252137dbba63bc85b5f125f6e99cb3e84c40abf43dfb05045",
+    "android-initial.log": "c0e3e5c8966db44beba3191e88fa0b315e399514efa2e79a916372d2ec205eb9",
+    "android-retry1.log": "75c0a834633366ec37d56da015143cfa7990291e73ea1a5da735d098593109ea",
+    "android-toolchain.log": "5261ac9cc93c8a3ace13d7901ec704991453233f880d0d98f4cb9be56966d0ab",
+    "ios-final.log": "e1780d384426731f1f4b0104c2cb9da79aaac189c3b51e2e4d6fa2c2b74f515c"
+  },
+  "limitations": [
+    "Software PTY NCP, host state and fixture file storage do not prove radio, physical device identity, native UI or secure store runtime.",
+    "No full iOS app build/runtime or Android app startup; prior Android ANR retained.",
+    "Prior AMD64 multimodal recovery and TV callback failures were not retried.",
+    "Network commissioning, complete network traversal, Zigbee actions/models, BLE/Matter/433, brand ecosystems, model quality and toy/robot samples remain incomplete.",
+    "Existing NAS images and official deployment control-login-e74691eb51706b10 remain frozen historical artifacts."
+  ],
+  "design": "复用正式合同、会话、JSON和原请求恢复；领域校验与临时界面状态各自负责，不增加协议栈、持久化或框架。"
+}

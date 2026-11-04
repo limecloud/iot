@@ -70,10 +70,11 @@ public actor GatewayClient {
     }
     private static func encoder() -> JSONEncoder { let encoder = JSONEncoder(); encoder.keyEncodingStrategy = .convertToSnakeCase; return encoder }
     private static func decoder() -> JSONDecoder { let decoder = JSONDecoder(); decoder.keyDecodingStrategy = .convertFromSnakeCase; return decoder }
-    private func call<T: Decodable & Sendable>(_ path: String, method: String = "GET", body: Data? = nil, key: String? = nil, authenticated: Bool = true, strictJSON: Bool = false) async throws -> T {
+    private func call<T: Decodable & Sendable>(_ path: String, method: String = "GET", body: Data? = nil, key: String? = nil, authenticated: Bool = true, strictJSON: Bool = false, timeout: TimeInterval = 12, maxJSONBytes: Int = 2_000_000) async throws -> T {
         guard let url = URL(string: origin + path) else { throw GatewayError.invalidEndpoint }
         if authenticated && saved == nil { throw GatewayError.unauthenticated }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData)
+        request.timeoutInterval = timeout
         request.httpMethod = method; request.httpBody = body
         request.setValue(origin, forHTTPHeaderField: "Origin")
         if body != nil { request.setValue("application/json", forHTTPHeaderField: "Content-Type") }
@@ -95,7 +96,7 @@ public actor GatewayClient {
             try await store?.save(origin: origin, data: Self.encoder().encode(saved))
         }
         if strictJSON {
-            guard let text = String(data: data, encoding: .utf8), let result = try IntegerJSON.parse(text) as? T else { throw GatewayError.invalidResponse }
+            guard data.count <= maxJSONBytes, let text = String(data: data, encoding: .utf8), let result = try IntegerJSON.parse(text, maxBytes: maxJSONBytes) as? T else { throw GatewayError.invalidResponse }
             return result
         }
         return try Self.decoder().decode(T.self, from: data.isEmpty ? Data("{}".utf8) : data)
@@ -129,15 +130,53 @@ public actor GatewayClient {
         return try await Snapshot(space: space, devices: devices.items, models: capabilities.models, inference: capabilities.inference, commands: commands, deployments: deployments.items, runs: runs.items)
     }
     public func create(space: String, intent: CommandIntent) async throws -> Command {
-        try await call(base(space) + "/commands", method: "POST", body: Self.encoder().encode(intent.input), key: intent.key)
+        try checkedCommand(await call(base(space) + "/commands", method: "POST", body: Self.encoder().encode(intent.input), key: intent.key), space: space, key: intent.key, intent: intent)
     }
-    public func resolve(space: String, key: String) async throws -> Command { try await call(base(space) + "/commands/by-key/" + Self.segment(key)) }
-    public func command(space: String, id: String) async throws -> Command { try await call(base(space) + "/commands/" + Self.segment(id)) }
+    public func resolve(space: String, key: String) async throws -> Command { try checkedCommand(await call(base(space) + "/commands/by-key/" + Self.segment(key)), space: space, key: key) }
+    public func resolve(space: String, intent: CommandIntent) async throws -> Command { try checkedCommand(await call(base(space) + "/commands/by-key/" + Self.segment(intent.key)), space: space, key: intent.key, intent: intent) }
+    public func command(space: String, id: String) async throws -> Command { try checkedCommand(await call(base(space) + "/commands/" + Self.segment(id)), space: space, commandId: id) }
+    private func checkedCommand(_ value: JSONValue, space: String, key: String? = nil, intent: CommandIntent? = nil, commandId: String? = nil) throws -> Command {
+        func text(_ object: [String: JSONValue], _ name: String) throws -> String { guard case .string(let result) = object[name] else { throw GatewayError.invalidResponse }; return result }
+        func date(_ text: String) -> Date? { let format = ISO8601DateFormatter(); format.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; if let value = format.date(from: text) { return value }; format.formatOptions = [.withInternetDateTime]; return format.date(from: text) }
+        guard case .object(let receipt) = value, case .object(let request) = receipt["request"], case .object(let operation) = request["operation"] else { throw GatewayError.invalidResponse }
+        let status = try text(receipt, "status"), id = try text(receipt, "command_id")
+        guard id.range(of: #"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"#, options: .regularExpression) != nil,
+              commandId == nil || commandId == id, ["accepted", "dispatched", "confirmed", "unknown", "failed", "expired", "rejected"].contains(status),
+              try text(receipt, "request_digest").range(of: #"^sha256:[a-f0-9]{64}$"#, options: .regularExpression) != nil,
+              Set(request.keys) == Set(["space_id", "device_id", "model_revision", "idempotency_key", "expires_at", "operation"]), request["space_id"] == .string(space),
+              key == nil || request["idempotency_key"] == .string(key!), Set(operation.keys) == Set(["type", "path", "value"]),
+              [.string("property.set"), .string("action.invoke")].contains(operation["type"]), let expires = date(try text(request, "expires_at")) else { throw GatewayError.invalidResponse }
+        if let intent {
+            let input = try Self.decoder().decode(JSONValue.self, from: Self.encoder().encode(intent.input.operation))
+            guard request["device_id"] == .string(intent.input.deviceId), request["model_revision"] == .string(intent.input.modelRevision), request["operation"] == input,
+                  date(intent.input.expiresAt) == expires else { throw GatewayError.invalidResponse }
+        }
+        if status == "confirmed" {
+            guard receipt["error"] == .null, case .object(let evidence) = receipt["evidence"] else { throw GatewayError.invalidResponse }
+            if operation["type"] == .string("property.set") {
+                guard evidence["type"] == .string("device_result"), case .object(let reported) = evidence["reported"], reported[try text(operation, "path")] == operation["value"] else { throw GatewayError.invalidResponse }
+            } else {
+                guard Set(evidence.keys) == Set(["type", "path", "input_digest", "output", "completion", "observed_at"]), evidence["type"] == .string("action_result"), evidence["path"] == operation["path"],
+                      try text(evidence, "input_digest").range(of: #"^sha256:[a-f0-9]{64}$"#, options: .regularExpression) != nil, let output = evidence["output"], output != .null,
+                      [.string("submitted"), .string("observed")].contains(evidence["completion"]), let observed = date(try text(evidence, "observed_at")),
+                      observed >= expires.addingTimeInterval(-32), observed <= Date.now.addingTimeInterval(2) else { throw GatewayError.invalidResponse }
+            }
+        }
+        return try Self.decoder().decode(Command.self, from: JSONEncoder().encode(value))
+    }
+    public func aiCatalog(space: String) async throws -> AiCatalog {
+        guard space.range(of: #"^[A-Za-z0-9_-]{1,128}$"#, options: .regularExpression) != nil else { throw AiCatalogError() }
+        let value: JSONValue = try await call(base(space) + "/ai-catalog", strictJSON: true, maxJSONBytes: 32768)
+        return try AiCatalog.parse(IntegerJSON.canonical(value), space: space)
+    }
     func otaCall(space: String, suffix: String, method: String = "GET", body: JSONValue? = nil, key: String? = nil) async throws -> JSONValue {
         try await call(base(space) + suffix, method: method, body: body.map { Data(OtaJSON.canonical($0).utf8) }, key: key, strictJSON: true)
     }
     func mediaCall(space: String, suffix: String, method: String = "GET", body: JSONValue? = nil, key: String? = nil) async throws -> JSONValue {
         try await call(base(space) + suffix, method: method, body: body.map { Data(IntegerJSON.canonical($0).utf8) }, key: key, strictJSON: true)
+    }
+    func observationCall(space: String, suffix: String, method: String = "GET", body: JSONValue? = nil, key: String? = nil, query: Bool = false) async throws -> JSONValue {
+        try await call(base(space) + suffix, method: method, body: body.map { Data(IntegerJSON.canonical($0).utf8) }, key: key, strictJSON: true, timeout: query ? 35 : 12)
     }
     public func createDraft(reference: DraftReference, input: DraftInput) async throws -> RuleDraft {
         try await call(base(reference.space) + "/rule-drafts", method: "POST", body: Self.encoder().encode(input), key: reference.key)

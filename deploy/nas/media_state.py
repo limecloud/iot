@@ -70,6 +70,13 @@ def read_snapshot(path, space_id):
             for name in ("speech", "transcriptions"):
                 if name in value and (not isinstance(value[name], dict) or not 1 <= len(value[name]) <= 256):
                     raise ValueError()
+        elif value["schema_version"] == 5:
+            optional = {name for name in ("speech", "transcriptions", "visions") if name in value}
+            if set(value) != fields | {"texts"} | optional or not isinstance(value["texts"], dict) or not 1 <= len(value["texts"]) <= 128:
+                raise ValueError()
+            for name, limit in (("speech", 256), ("transcriptions", 256), ("visions", 128)):
+                if name in value and (not isinstance(value[name], dict) or not 1 <= len(value[name]) <= limit):
+                    raise ValueError()
         else:
             raise ValueError()
         for name, limit in (("objects", 256), ("grants", 512), ("operations", 1024)):

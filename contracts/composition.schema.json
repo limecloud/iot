@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT declarative event composition v1",
+  "type": "object",
+  "required": ["schema_version", "package_id", "version", "name", "modules", "rule", "sample_event_data"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "package_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$"},
+    "version": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,5})\\.(0|[1-9][0-9]{0,5})\\.(0|[1-9][0-9]{0,5})$"},
+    "name": {"type": "string", "minLength": 1, "maxLength": 80},
+    "modules": {
+      "type": "object", "minProperties": 1, "maxProperties": 8,
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,31}$"},
+      "additionalProperties": {
+        "type": "object", "required": ["model_revision"],
+        "properties": {"model_revision": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}},
+        "additionalProperties": false
+      }
+    },
+    "rule": {
+      "allOf": [
+        {"$ref": "rule.schema.json"},
+        {
+          "type": "object",
+          "properties": {
+            "trigger": {"type": "object", "required": ["device", "event"], "properties": {"device": {"type": "string"}, "event": {"type": "string"}}},
+            "conditions": {"type": "array", "maxItems": 0},
+            "actions": {"type": "array", "items": {"type": "object", "required": ["set"], "properties": {"set": {"type": "object"}}}}
+          }
+        }
+      ]
+    },
+    "sample_event_data": {"type": "object"}
+  },
+  "additionalProperties": false
+}

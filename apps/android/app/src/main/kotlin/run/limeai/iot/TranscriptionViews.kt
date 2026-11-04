@@ -12,8 +12,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.*
 
-@Composable fun TranscriptionPanel(controller: TranscriptionController, online: Boolean) {
+@Composable fun TranscriptionPanel(controller: TranscriptionController, online: Boolean, conversation: TextGenerationController? = null) {
     val state by controller.state.collectAsStateWithLifecycle()
+    val conversationState = conversation?.state?.collectAsStateWithLifecycle()?.value
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(controller, lifecycle, online) {
         if (!online) { controller.pause(); return@LaunchedEffect }
@@ -36,6 +37,7 @@ import kotlinx.coroutines.*
         key(record.key) {
             Text(record.statusText, fontSize = 14.sp)
             state.text(record.key)?.let { text -> SelectionContainer { Text(text.ifEmpty { "未识别到语音" }, fontSize = 14.sp, modifier = Modifier.testTag("transcription-result")) } }
+            if (conversation != null && !state.text(record.key).isNullOrBlank()) TextButton(onClick = { controller.state.value.text(record.key)?.let(conversation::prepareQuestion) }, enabled = online && conversationState?.editable == true && conversationState.capabilities?.configured == true, modifier = Modifier.testTag("transcription-use-text")) { Text("带入新对话") }
             var expanded by remember { mutableStateOf(false) }
             TextButton(onClick = { expanded = !expanded }) { Text("任务详情") }
             if (expanded) Text(record.key, fontSize = 12.sp)

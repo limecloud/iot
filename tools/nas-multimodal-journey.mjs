@@ -5,11 +5,13 @@ import path from 'node:path';
 import { root, freePort, until } from './dev-stack.mjs';
 import { pcmWav } from '../tests/helpers/media.mjs';
 import { png, input as visionInput } from '../tests/helpers/vision.mjs';
+import { verifyAiCatalog } from '../packages/protocol/ai-catalog.mjs';
 
 const base = '/api/v1/spaces/space-demo';
 const snapshot = 'data/gateway.sqlite.media.json';
-const texts = { asr: '这是容器协议夹具的识别结果。', vision: '这是容器协议夹具的图片观察结果。' };
-const routes = { speech: 'speech-syntheses', asr: 'audio-transcriptions', vision: 'vision-observations' };
+const texts = { asr: '这是容器协议夹具的识别结果。', vision: '这是容器协议夹具的图片观察结果。', text: '这是容器协议夹具的文字回答。' };
+const routes = { speech: 'speech-syntheses', asr: 'audio-transcriptions', vision: 'vision-observations', text: 'text-generations' };
+const kinds = Object.keys(routes);
 const address = value => value.split('.').reduce((result, part) => result * 256 + Number(part), 0);
 
 // 仅在本次Compose网络使用地址，避开Docker当前已分配的IPv4网段。
@@ -58,6 +60,7 @@ export async function prepareNasMultimodal({ state, image, manager, run, emulate
       LIMEIOT_TTS_URL: 'http://multimodal:17883', LIMEIOT_TTS_MODEL: 'fixture/local-model', LIMEIOT_TTS_VOICES: 'local', LIMEIOT_TTS_CA_FILE: '',
       LIMEIOT_ASR_URL: 'http://multimodal:17883', LIMEIOT_ASR_MODEL: 'fixture/asr', LIMEIOT_ASR_CA_FILE: '',
       LIMEIOT_VISION_URL: 'http://multimodal:17883', LIMEIOT_VISION_MODEL: 'fixture:vision', LIMEIOT_VISION_CA_FILE: '',
+      LIMEIOT_TEXT_URL: 'http://multimodal:17883', LIMEIOT_TEXT_MODEL: 'fixture:text', LIMEIOT_TEXT_CA_FILE: '',
     },
     overrides: {
       services: {
@@ -111,14 +114,34 @@ export function nasMultimodalJourney({ configuration, call, compose, directory, 
     return response.value.result.grant_id;
   }
   async function verifyResults() {
-    for (const kind of Object.keys(routes)) {
+    for (const kind of kinds) {
       const result = await finish(kind, 'nas-' + kind);
       assert.deepEqual(result, completed[kind]);
     }
   }
+  async function verifyDirectory() {
+    const before = await provider();
+    const catalog = verifyAiCatalog((await call(base + '/ai-catalog')).value, 'space-demo');
+    const capabilities = (await call(base + '/capabilities')).value;
+    assert.equal(catalog.deployments.length, 4);
+    for (const [id, source] of [['text.generate', 'text'], ['vision.understand', 'vision'], ['audio.transcribe', 'transcription'], ['audio.synthesize', 'speech']]) {
+      const item = catalog.deployments.find(item => item.capability_id === id);
+      assert.deepEqual(item.identity, capabilities[source].deployment);
+      const configuration = { ...capabilities[source] };
+      for (const key of ['configured', 'capability', 'deployment']) delete configuration[key];
+      assert.deepEqual(item.configuration, configuration);
+      assert.equal(catalog.health.find(item => item.capability_id === id).status, 'unknown');
+    }
+    assert.equal(catalog.health.find(item => item.capability_id === 'automation.rule_draft').status, 'not_configured');
+    const after = await provider(); assert.deepEqual(after.calls, before.calls); assert.deepEqual(after.effects, before.effects);
+    report.ai_catalog_checks = (report.ai_catalog_checks ?? 0) + 1;
+    report.ai_catalog_discovery_zero_inference_or_play = true;
+  }
   return {
     report,
+    provider,
     async begin() {
+      await verifyDirectory();
       const initialCommands = (await call(base + '/commands')).value.items.length;
       const uploaded = await mediaOperation({ type: 'media.upload', content_base64: bytes.toString('base64'), retain_seconds: 600 }, 'nas-source');
       assert.equal(uploaded.status, 200); const media = uploaded.value.result.media;
@@ -126,14 +149,18 @@ export function nasMultimodalJourney({ configuration, call, compose, directory, 
         speech: freshSpeech('这段文字只用于容器语音协议验收。'),
         asr: { media_id: media.media_id, media_digest: media.content_digest, language: 'auto', expires_at: new Date(Date.now() + 60000).toISOString() },
         vision: { ...visionInput(image), prompt },
+        text: { instructions: '', messages: Array.from({ length: 7 }, (_, i) => ({ role: i % 2 === 0 ? 'user' : 'assistant', content: '问题🍋' + '\n'.repeat(1150) })), retain_seconds: 600, expires_at: new Date(Date.now() + 60000).toISOString() },
       };
+      report.text_json_bytes = Buffer.byteLength(JSON.stringify(original.text));
+      assert.ok(report.text_json_bytes > 16384 && report.text_json_bytes <= 65536);
       completed = {};
-      for (const kind of Object.keys(routes)) {
+      for (const kind of kinds) {
         assert.equal((await create(kind, original[kind], 'nas-' + kind)).status, 202);
         completed[kind] = await finish(kind, 'nas-' + kind);
         assert.equal(completed[kind].status, 'succeeded', JSON.stringify(completed[kind]));
       }
       assert.equal(completed.asr.output.text, texts.asr); assert.equal(completed.vision.output.text, texts.vision);
+      assert.equal(completed.text.output.text, texts.text); assert.deepEqual(completed.text.usage, { input_tokens: 25, output_tokens: 8 });
       assert.equal((await call(base + '/media')).value.grants.length, 0);
       assert.equal((await call(base + '/commands')).value.items.length, initialCommands);
       const offers = (await call(base + '/execution-adapters')).value.items;
@@ -149,43 +176,48 @@ export function nasMultimodalJourney({ configuration, call, compose, directory, 
       originalMediaURL = `${configuration.mediaOrigin}/media/v1/${grantID}/${disk.grants[grantID].grant.token}.wav`;
       report.play_command = await play(completed.speech.media_id, 'nas-speech-play');
       report.grant_id = grantID;
-      const state = await provider(); assert.deepEqual(state.errors, []); assert.equal(state.calls.length, 3);
+      const state = await provider(); assert.deepEqual(state.errors, []); assert.equal(state.calls.length, kinds.length);
       assert.deepEqual(state.effects, ['SetVolume', 'SetAVTransportURI', 'Play']); assert.equal(state.pulls[0].bytes, bytes.length);
       assert.equal(state.calls.find(call => call.kind === 'vision').bytes, image.length);
       report.image_bytes = image.length; report.image_json_bytes = Buffer.byteLength(JSON.stringify(original.vision));
       assert.ok(report.image_json_bytes > 512 * 1024);
       assert.equal((await call(base + '/commands', { input: { padding: 'x'.repeat(17000) }, key: 'nas-small-route-limit' })).status, 413);
       assert.equal((await call(base + '/vision-observations', { input: { padding: 'x'.repeat(2804397) }, key: 'nas-large-route-limit' })).status, 413);
+      assert.equal((await call(base + '/text-generations', { input: { padding: 'x'.repeat(65537) }, key: 'nas-text-route-limit' })).status, 413);
+      assert.equal(state.calls.find(call => call.kind === 'text').message_count, original.text.messages.length);
+      assert.equal(state.calls.find(call => call.kind === 'text').context_digest, completed.text.input.context_digest);
       report.no_implicit_grant_or_play = true; report.explicit_play_range_bytes_verified = true;
       report.source_media_id = media.media_id;
     },
     async afterRecreate() {
+      await verifyDirectory();
       await verifyResults();
       const page = (await call(base + '/media')).value;
       assert.equal(page.grants.find(grant => grant.grant_id === report.grant_id).active_in_process, false);
       assert.equal(await oldGrantStatus(), 404);
-      const state = await provider(); assert.deepEqual(state.errors, []); assert.equal(state.calls.length, 3); assert.equal(state.effects.length, 3);
+      const state = await provider(); assert.deepEqual(state.errors, []); assert.equal(state.calls.length, kinds.length); assert.equal(state.effects.length, 3);
       report.recreation_no_inference_or_play = true;
     },
     async beforeBackup() {
       await verifyResults();
-      pending = { speech: freshSpeech('该任务在备份时保持运行。'), asr: { ...original.asr, expires_at: new Date(Date.now() + 60000).toISOString() }, vision: { ...original.vision, expires_at: new Date(Date.now() + 60000).toISOString() } };
-      for (const kind of Object.keys(routes)) {
+      pending = { speech: freshSpeech('该任务在备份时保持运行。'), asr: { ...original.asr, expires_at: new Date(Date.now() + 60000).toISOString() }, vision: { ...original.vision, expires_at: new Date(Date.now() + 60000).toISOString() }, text: { ...original.text, expires_at: new Date(Date.now() + 60000).toISOString() } };
+      for (const kind of kinds) {
         await provider('/fixture/mode', { kind, mode: 'hold' });
         assert.equal((await create(kind, pending[kind], 'nas-pending-' + kind)).status, 202);
       }
-      const state = await until(async () => { const state = await provider(); return state.calls.length === 6 && state; });
+      const state = await until(async () => { const state = await provider(); return state.calls.length === kinds.length * 2 && state; });
       assert.deepEqual(state.errors, []); beforeBackupCalls = state.calls;
       const raw = await readFile(path.join(getState(), snapshot), 'utf8'), disk = JSON.parse(raw);
-      assert.equal(disk.schema_version, 4);
-      for (const [kind, field] of [['speech', 'speech'], ['asr', 'transcriptions'], ['vision', 'visions']]) assert.equal(disk[field]['nas-pending-' + kind].status, 'running');
-      for (const value of [original.speech.text, pending.speech.text, prompt, original.vision.image_base64]) assert.equal(raw.includes(value), false);
+      assert.equal(disk.schema_version, 5);
+      for (const [kind, field] of [['speech', 'speech'], ['asr', 'transcriptions'], ['vision', 'visions'], ['text', 'texts']]) assert.equal(disk[field]['nas-pending-' + kind].status, 'running');
+      for (const value of [original.speech.text, pending.speech.text, prompt, original.vision.image_base64, original.text.messages[0].content, '"messages"', '"instructions"']) assert.equal(raw.includes(value), false);
       report.backup_snapshot_bytes = Buffer.byteLength(raw);
       return Buffer.from(raw);
     },
     async afterRestore() {
+      await verifyDirectory();
       await verifyResults();
-      for (const kind of Object.keys(routes)) {
+      for (const kind of kinds) {
         assert.equal((await finish(kind, 'nas-pending-' + kind)).status, 'unknown');
         const input = { ...pending[kind], expires_at: new Date(Date.now() + 60000).toISOString() };
         assert.equal((await create(kind, input, 'nas-blocked-' + kind)).status, 429);
@@ -198,26 +230,27 @@ export function nasMultimodalJourney({ configuration, call, compose, directory, 
       await grant(completed.speech.media_id, 'nas-restored-grant');
       report.restored_play_command = await play(completed.speech.media_id, 'nas-restored-play');
       state = await provider(); assert.equal(state.calls.length, 0); assert.equal(state.pulls[0].bytes, bytes.length); assert.equal(state.effects.length, 3);
-      for (const kind of Object.keys(routes)) assert.equal((await call(`${base}/${routes[kind]}/by-key/nas-pending-${kind}/discard`, { input: {} })).value.status, 'discarded');
+      for (const kind of kinds) assert.equal((await call(`${base}/${routes[kind]}/by-key/nas-pending-${kind}/discard`, { input: {} })).value.status, 'discarded');
       // ASR成功文本随源录音删除清除；discard只放弃未完成任务，视觉另有直接清文合同。
       const completedDiscard = await call(`${base}/${routes.asr}/by-key/nas-asr/discard`, { input: {} });
       assert.equal(completedDiscard.status, 409);
       assert.equal(completedDiscard.value.error.code, 'transcription_already_completed');
       assert.deepEqual((await finish('asr', 'nas-asr')).output, completed.asr.output);
       assert.equal((await call(`${base}/${routes.vision}/by-key/nas-vision/discard`, { input: {} })).status, 200);
+      assert.equal((await call(`${base}/${routes.text}/by-key/nas-text/discard`, { input: {} })).status, 200);
       for (const media of [report.source_media_id, completed.speech.media_id]) assert.equal((await mediaOperation({ type: 'media.delete', media_id: media }, 'nas-delete-' + media)).status, 200);
       report.pending_restored_unknown_without_resubmit = true; report.unknown_retains_budget = true;
       report.provider_calls_before_backup = beforeBackupCalls; report.provider_calls_after_restore = state.calls.length;
       report.restored_audio_range_bytes_verified = true;
     },
     async afterClearRestart() {
-      for (const kind of Object.keys(routes)) assert.equal((await finish(kind, 'nas-pending-' + kind)).status, 'discarded');
-      for (const kind of ['asr', 'vision']) assert.equal((await finish(kind, 'nas-' + kind)).output.text, null);
+      for (const kind of kinds) assert.equal((await finish(kind, 'nas-pending-' + kind)).status, 'discarded');
+      for (const kind of ['asr', 'vision', 'text']) assert.equal((await finish(kind, 'nas-' + kind)).output.text, null);
       const page = (await call(base + '/media')).value;
       for (const media of [report.source_media_id, completed.speech.media_id]) assert.equal(page.items.find(item => item.metadata.media_id === media).available, false);
       const state = await provider(); assert.equal(state.calls.length, 0); assert.equal(state.effects.length, 3); assert.deepEqual(state.errors, []);
       const raw = await readFile(path.join(getState(), snapshot), 'utf8');
-      assert.equal(raw.includes(texts.asr), false); assert.equal(raw.includes(texts.vision), false);
+      for (const text of Object.values(texts)) assert.equal(raw.includes(text), false);
       assert.equal((await stat(path.join(getState(), snapshot))).mode & 0o777, 0o600);
       report.clear_and_delete_survive_restart = true; report.snapshot_private = true; report.passed = true;
       await writeFile(path.join(directory, 'multimodal-result.json'), JSON.stringify(report, null, 2) + '\n', { mode: 0o600 });

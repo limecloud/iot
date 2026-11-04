@@ -1,0 +1,78 @@
+{
+  "observed_on": "2026-11-04",
+  "scope": "User-requested old TV app removal and restoring the retained current Agent connection",
+  "passed": true,
+  "device": {
+    "model": "MiTV4-ANSM0",
+    "api": 23
+  },
+  "application_cleanup": {
+    "old_package": {
+      "package": "run.limeai.iot.television",
+      "exit_code": 0,
+      "result": "Success\r\n",
+      "explicit_user_request": true
+    },
+    "old_test_packages": [
+      {
+        "package": "run.limeai.iot.tv.runtimeproof",
+        "exit_code": 0,
+        "result": "Success\r\n",
+        "reason": "obsolete test application installed by earlier TV debugging"
+      },
+      {
+        "package": "run.limeai.iot.tv.live20261104.test",
+        "exit_code": 0,
+        "result": "Success\r\n",
+        "reason": "obsolete test application installed by earlier TV debugging"
+      }
+    ],
+    "remaining_packages": [
+      "package:run.limeai.iot.tv.live20261104"
+    ],
+    "older_apk_and_encrypted_sqlite_archived_locally": true
+  },
+  "connection": {
+    "environment": "existing_computer_local_development_gateway",
+    "original_enrollment_reused": true,
+    "existing_mtls_broker_and_rust_gateway_restarted": true,
+    "owned_adb_reverse_restored": true,
+    "device_ready": true,
+    "broker_connected": true,
+    "television_ui_text": [
+      "●  已连接家庭网关",
+      "电视已连接"
+    ],
+    "same_boot_and_session_between_observations": true,
+    "first_observation": "2026-11-04T15:51:17+0800",
+    "last_observation": "2026-11-04T15:51:48+0800",
+    "heartbeat_seq_before": 37,
+    "heartbeat_seq_after": 53,
+    "last_seen": "2026-11-04T07:51:47.999324Z",
+    "services_left_running_for_user": true,
+    "requires_computer_gateway_and_adb_reverse": true,
+    "does_not_represent_nas_or_lan_direct_deployment": true
+  },
+  "preservation": {
+    "retained_package": "run.limeai.iot.tv.live20261104",
+    "enrollment_binding_unchanged": true,
+    "encrypted_credentials_unchanged": true,
+    "application_authorizations_unchanged": true,
+    "no_new_remote_commands_submitted": true,
+    "database_journal_may_change_from_live_session": true
+  },
+  "validation_limits": [
+    "No new remote application launch or audio action submitted",
+    "Short live heartbeat observations; no long-duration/standby claim",
+    "Existing local development gateway binary reused; no new product build in this task",
+    "Previous incomplete UI journey and screenshot instrumentation failures are not reclassified"
+  ],
+  "runtime_binary_sha256": {
+    "broker": "a7cd86a51f28543221b0a436bb5259c7c908b8630e3611e1afdcb1ed71072b5c",
+    "gateway": "0c6c7991c1c0b65e511a1ba1f20a4846149678049c96393dcf6ebfae1f80399e"
+  },
+  "private_artifact_root": ".dev/tv-connection-20261104",
+  "credentials_published": false,
+  "published": false,
+  "full_goal_completed": false
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "bindings": [],
+  "coordinators": [
+    {
+      "coordinator_id": "home-znp",
+      "serial": "/dev/ttyUSB0",
+      "coordinator_ieee": "0102030405060708",
+      "timeout_ms": 5000,
+      "poll_interval_ms": 2000
+    }
+  ]
+}

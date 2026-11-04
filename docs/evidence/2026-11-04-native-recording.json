@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-NATIVE-RECORDING-20261104-01",
+  "recorded_at": "2026-11-04T07:03:19.738281+00:00",
+  "status": "passed",
+  "scope": "Swift/Kotlin有限录音状态、独立WAV解码、明确上传及原键跨进程/网关恢复的软件检查",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "system_microphone": false,
+  "native_app_runtime": false,
+  "production_secure_store": false,
+  "ios_app_build": false,
+  "ios_sdk_available": false,
+  "native_voice_turn_composition": false,
+  "published": false,
+  "full_goal_completed": false,
+  "implementation": [
+    "本机采音适配器与状态层隔离，不持有模型或设备执行接口；未新增运行依赖、网关API或数据库变更。",
+    "输出16 kHz单声道PCM16 WAV，最多60秒、960000帧；完成关闭资源后交给媒体状态层独立内存选择，不自动上传。",
+    "权限拒绝/等待超时、取消、迟到授权/回调、后台/离页/离线与中断清理；手选同名文件不被误清。",
+    "明确上传复用既有媒体摘要账本；丢HTTP回执后只GET原键，新进程及网关重启不重录、重传或授权。"
+  ],
+  "checks": {
+    "android_tests": 28,
+    "android_failed": 0,
+    "android_skipped": 0,
+    "android_apk": true,
+    "android_lint_errors": 0,
+    "android_lint_existing_warnings": 17,
+    "swift_recording_groups": 8,
+    "swift_media_regression_groups": 8,
+    "independent_java_sound_decode": true,
+    "independent_avfoundation_decode": true,
+    "swift_kotlin_wav_byte_equal_to_js": true,
+    "apple_adapter_macos_typecheck": true,
+    "swiftui_syntax_and_project_structure": true,
+    "gateway_journeys": 2,
+    "host_processes_per_target": 2,
+    "gateway_restarts_per_target": 1,
+    "explicit_upload_posts_per_target": 1,
+    "model_tasks": 0,
+    "device_commands": 0,
+    "playback_grants": 0,
+    "client_audio_persistence": false,
+    "host_journal_mode": "0600",
+    "server_audio_bytes_equal_to_independent_encoding": true,
+    "unchanged_rust_inputs": 135,
+    "unchanged_gateway_binaries": 3,
+    "website_pages": 54,
+    "website_local_references": 2115,
+    "document_count": 8,
+    "checked_local_links": 632,
+    "diff_checks_both_repositories": true
+  },
+  "commands": [
+    "node tools/test-recording-native.mjs ios",
+    "node tools/test-recording-native.mjs android",
+    "node --test --test-concurrency=1 tests/recording-native.test.mjs",
+    "iotweb: npm run build"
+  ],
+  "available_combined_entry": "npm run test:recording:native",
+  "combined_entry_executed": false,
+  "manifests": [
+    {
+      "path": ".dev/native-recording-20261104/source-manifest.json",
+      "sha256": "14d20e883c578f356922747d9ab4cfa43e3ea5d0aa688aa6e989c8f5ce337b9d"
+    },
+    {
+      "path": ".dev/native-recording-20261104/artifact-manifest.json",
+      "sha256": "28662325a7bc193241beaea6c2e7dc655c2db26d390dda22040efc0d0541bdc9"
+    }
+  ],
+  "source_digest": "d2bb27f54bd14d03d86d7e0a4352f6844397074fc8a0fbf875d60941d8fb7276",
+  "source_file_count": 325,
+  "journeys": [
+    {
+      "target": "ios",
+      "path": ".dev/recording-native-ios-NXQo1I/recording-native-result.json",
+      "sha256": "d94f0e95db9d4cc98a73c285716eba499286c58c06a193fe0e16c84769430fe9"
+    },
+    {
+      "target": "android",
+      "path": ".dev/recording-native-android-Mebm3j/recording-native-result.json",
+      "sha256": "ad6f57f8e200a95f96fd4aaf4a1433260f765e3395d78da3766d1ec48c7237bb"
+    }
+  ],
+  "logs": [
+    {
+      "path": ".dev/recording-android-compile-attempt1-20261104.log",
+      "sha256": "781c6f79bfe6fa4c917616246297d3160e7ac80f3b6ea0ebb3333b3db48b83bf"
+    },
+    {
+      "path": ".dev/recording-android-tests-attempt1-20261104.log",
+      "sha256": "a1b3e0546a70cd3894cbaadfa5d1231b7d481be8745ec8a19150bab50b4c6f00"
+    },
+    {
+      "path": ".dev/recording-android-tests-attempt2-20261104.log",
+      "sha256": "f791c4f15df03bc8ae438fa8383695d5873a0ab46eba1f98b0aeab91e538f07c"
+    },
+    {
+      "path": ".dev/recording-android-entry-20261104.log",
+      "sha256": "60f28b568416f77c5af1712e4320b5325474653ae38905a95a9a035fe0e58d13"
+    },
+    {
+      "path": ".dev/recording-ios-attempt1-20261104.log",
+      "sha256": "232730d19a40cc6df6671f22cb5b1391b20e97009196345fb3d765324d93285b"
+    },
+    {
+      "path": ".dev/recording-ios-attempt2-20261104.log",
+      "sha256": "1d0095eb47c376761a40e18217ab37225316f7381f38d4867b3ad2e4ca77dc45"
+    },
+    {
+      "path": ".dev/recording-ios-journey-attempt1-20261104.log",
+      "sha256": "7cf30d303703b3195710faea974ca68a6dc26065c773562d60f166a56b4c157e"
+    },
+    {
+      "path": ".dev/recording-native-journey-20261104.log",
+      "sha256": "d948897d82bbd3db8ed419233e2c1fb811ad0d5e77ed201fb9598c5e401a927f"
+    },
+    {
+      "repository": "iotweb",
+      "path": ".dev/native-recording-docs-build-20261104.log",
+      "sha256": "ad194be67012a0db557a18bf2cfd80b06c9b1204700da062a25deb0979c3ee02"
+    }
+  ],
+  "failures_and_repairs": [
+    {
+      "failure": "Android App测试class path不含Java Sound，首次测试编译失败",
+      "repair": "App状态检查读取WAV字段；独立Java Sound解码保留在纯JVM core模块",
+      "result": "第二轮测试、APK/lint及最终入口通过"
+    },
+    {
+      "failure": "Apple采音适配器引用了跨模块不可访问的MediaError初始化器，首次编译失败",
+      "repair": "使用本机适配器错误枚举；转换器输入状态通过有锁的局部对象管理",
+      "result": "第二轮编译、状态检查及最终网关旅程通过"
+    }
+  ],
+  "limits": [
+    "采音输入为夹具，未调用系统麦克风；Apple适配器只以macOS SDK编译，iOS专属AVAudioSession/权限分支仍需iOS SDK验收。",
+    "宿主0600恢复文件不是Keychain或Keystore；完整App、系统权限、后台与设备音频行为未验收。",
+    "Android整包启动ANR与iOS缺完整Xcode/SDK保持既有阻塞，本轮未重试；实机跳过。",
+    "原生三阶段语音回合组合、真实模型质量、其他协议/品牌及既有AMD64/TV问题仍未全部完成。",
+    "NAS不包含原生App，本轮未重建NAS或更新官方云；旧冻结证据不改写。"
+  ],
+  "document_validation": {
+    "path": ".dev/native-recording-20261104/document-links.json",
+    "sha256": "bd3c5ce429e8feb10fdf2390e54ba413c6be5b160f52d0b56041089e74f94848"
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "first_party_znp_coordinator_neighbor_table_discovery",
+  "status": "software_serial_cli_stage_passed",
+  "archive": ".dev/znp-discovery-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "changes": {
+    "session_neighbors_api": true,
+    "explicit_expected_coordinator_ieee": true,
+    "coordinator_identity_checked_before_and_after": true,
+    "paged_neighbor_capacity": 64,
+    "same_deadline_and_notification_budget": true,
+    "duplicates_table_changes_and_no_progress_rejected": true,
+    "partial_stdout_on_failure": false,
+    "raw_flags_preserved": true,
+    "cli_request_and_cross_field_receipt_validation": true,
+    "schema_updated": true,
+    "af_or_network_writes": false,
+    "gateway_or_database_state_changed": false,
+    "new_dependencies": false
+  },
+  "reference": {
+    "repository": "TexasInstruments/simplelink-lowpower-f2-sdk",
+    "revision": "3615ad5d3f4f271258d18a2f5ce1785064ff9a58",
+    "verified_sources": [
+      {
+        "path": "source/ti/zstack/mt/mt_zdo.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_zdo.c",
+        "sha256": "c55081cd012540f64f157cde6bec63b6ca7d5606f018aa2c992eb1113a0ea432",
+        "bytes": 91814
+      },
+      {
+        "path": "source/ti/zstack/mt/mt.h",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt.h",
+        "sha256": "6d4ed5e2a5cda798bf24ac4b5cc98b1c18254f1f4006676f905746b2dc1b558e",
+        "bytes": 38606
+      },
+      {
+        "path": "source/ti/zstack/stack/zdo/zd_profile.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/stack/zdo/zd_profile.c",
+        "sha256": "81f772f26b7b32b50d255188d789101da429ff7ea7da6ca0743eb8982d9ee7ea",
+        "bytes": 69110
+      },
+      {
+        "path": "source/ti/zstack/stack/zdo/zd_profile.h",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/stack/zdo/zd_profile.h",
+        "sha256": "dd1a44697a560a2078d9f81db819766e7322af04a80b64ba0f448fd02378a581",
+        "bytes": 32796
+      }
+    ]
+  },
+  "verification": {
+    "new_pty_tests": 18,
+    "new_pty_failures": 0,
+    "new_pty_errors": 0,
+    "regression_pty_tests": 40,
+    "regression_pty_failures": 0,
+    "regression_pty_errors": 0,
+    "rust_session_checks": 10,
+    "js_contract_checks": 8,
+    "actual_capacity_exercised": 64,
+    "cancellation_releases_serial": true,
+    "environment_discovery_environment_session_continuity": true,
+    "current_legacy_receipts_match_schema": true,
+    "adapter_all_targets_clippy_zero_warnings": true,
+    "gateway_zigbee_only_feature_check": true,
+    "website": {
+      "checked_files": 48,
+      "errors": 0,
+      "warnings": 0,
+      "hints": 0,
+      "pages": 53,
+      "local_references": 2055,
+      "log": "website-build.log"
+    },
+    "document_links": {
+      "passed": true,
+      "files": 7,
+      "local_file_links": 285,
+      "broken": []
+    },
+    "format_check": true,
+    "both_repository_diff_checks": true,
+    "current_legacy_success_receipts": 14,
+    "current_legacy_error_receipts": 63
+  },
+  "history": [
+    {
+      "stage": "initial formatting check",
+      "result": "failed",
+      "reason": "new Rust wrapping and export ordering",
+      "fix": "format only zigbee-znp package; no business assertion changed",
+      "log": "fmt-initial.log"
+    },
+    {
+      "stage": "new behavior and existing regressions",
+      "result": "passed_on_first_execution"
+    }
+  ],
+  "not_implemented": [
+    "shared serial actor discovery scheduling in gateway",
+    "gateway API and webpage or native discovery entry",
+    "router traversal and complete network discovery",
+    "permit-join or Zigbee network commissioning",
+    "static source migration and new action mappings"
+  ],
+  "not_verified": [
+    "Zigbee radio and procurement hardware; skipped by user",
+    "Linux or NAS neighbors command runtime",
+    "full native application runtime",
+    "new NAS application image or current official cloud deployment",
+    "real model quality and whole-platform acceptance"
+  ],
+  "limits": [
+    "coordinator neighbor table only; may contain stale records or omit descendants",
+    "paging is not atomic; same-size table changes may be undetected",
+    "unauthenticated protocol evidence does not grant platform identity or binding",
+    "standalone CLI must not contend with gateway for the same NCP",
+    "previous NAS and native source manifests remain historical snapshots"
+  ],
+  "logs": {
+    "rust": "rust-test-initial.log",
+    "build": "build.log",
+    "new_pty": "pty-initial.log",
+    "old_pty_regression": "pty-regression.log",
+    "js": "js-contract.log",
+    "current_receipt_schema": "current-regression-schema.log",
+    "clippy": "clippy.log",
+    "gateway_check": "gateway-check.log"
+  },
+  "design": "Protocol discovery stays in its adapter; reuse single owned transport, CLI executor and strict schema without network mutation or a second gateway core.",
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "files": 31,
+    "manifest_sha256": "867d51f95fc98e4f08b00606378002e3e479ffe97080a79f0c1c77d4947e7237",
+    "copies": "source",
+    "final_current_files_and_copies_match": true,
+    "whole_workspace_frozen": false
+  },
+  "binary": {
+    "path": ".dev/znp-verification-20261103/target/debug/limeiot-znp",
+    "sha256": "721453ba6c52960a7c9cbaa0c3efc21c470e1d72385431842423c53464903153",
+    "bytes": 3388000,
+    "copy_archived": false
+  },
+  "reports": [
+    {
+      "path": "pty-results.json",
+      "sha256": "8d3ef54e9012f137544d433924eca4133e2b5f802713999bc912818dbb468169"
+    },
+    {
+      "path": "regression-results.json",
+      "sha256": "e690846f35742dbacbcb5420d6ec4152a48904c5587e2ebfc82f6c66d5b04517"
+    }
+  ]
+}

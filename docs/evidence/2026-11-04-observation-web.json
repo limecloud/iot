@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "local_family_web_managed_znp_observation_onboarding_and_original_request_recovery",
+  "status": "macos_browser_software_stage_passed",
+  "archive": ".dev/observation-web-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "changes": {
+    "gui_query_review_explicit_bind_revoke_and_fresh_rebind": true,
+    "existing_api_and_store_decision_reused": true,
+    "native_and_static_device_takeover_denied": true,
+    "query_never_creates_device": true,
+    "review_memory_only_and_invalidated_on_input_state_offline_or_hidden": true,
+    "candidate_ttl_seconds_unchanged": 60,
+    "query_client_timeout_ms": 35000,
+    "other_client_timeout_ms_unchanged": 12000,
+    "browser_original_request_limit_per_origin_and_space": 128,
+    "web_lock_before_read_save_and_post": true,
+    "storage_write_and_readback_before_post": true,
+    "unknown_blocks_same_device_or_source_alias": true,
+    "changed_or_removed_known_originals_block_writes": true,
+    "resolve_is_get_only_and_verifies_original": true,
+    "old_applied_cannot_restore_current_binding": true,
+    "source_panel_reuses_home_sse_instead_of_opening_another": true,
+    "new_dependencies": false,
+    "rust_changed": false,
+    "database_schema_changed": false
+  },
+  "verification": {
+    "final_runtime_journeys_passed": 6,
+    "new_browser_journeys": 3,
+    "existing_dynamic_source_journeys": 2,
+    "existing_model_installation_browser_journey": 1,
+    "final_log": "browser-final.log",
+    "additional_visual_preparation_rerun": 1,
+    "visual_log": "visual-final.log",
+    "additional_visual_rerun_not_added_as_unique_coverage": true,
+    "home_typescript_and_build": true,
+    "home_existing_dependency_warnings_preserved": true,
+    "website_astro_checked_files": 48,
+    "website_errors": 0,
+    "website_warnings": 0,
+    "website_pages": 53,
+    "website_local_references": 2054,
+    "web_journey_explicit_decision_posts": 3,
+    "confirmed_mqtt_threshold_commands": 2,
+    "viewport_width": 390,
+    "horizontal_overflow": false,
+    "screenshots_viewed": true,
+    "screenshots": [
+      {
+        "path": ".dev/observation-web-20261104/observation-bound-web.png",
+        "sha256": "40ea10fbac4961dbdc243259243bb85f1f3a63bca73c8f7e07a93e77bb07b070"
+      },
+      {
+        "path": ".dev/observation-web-20261104/observation-revoked-web.png",
+        "sha256": "fc43aa4bde52b4efc289e97ae96df7b16dc2ac2fbef1364ed3ff89812d42641c"
+      }
+    ],
+    "reports": [
+      {
+        "path": ".dev/observation-web-20261104/reports/browser-final-01-observation-runtime-report.json",
+        "source": ".dev/zigbee-gateway-journey-mrSW3O/observation-runtime-report.json",
+        "sha256": "e05688492a0fe923570864da760bb857193b29159f99bffa1e4fd740ffdc2e3b"
+      },
+      {
+        "path": ".dev/observation-web-20261104/reports/browser-final-03-observation-query-report.json",
+        "source": ".dev/zigbee-gateway-journey-9VP078/observation-query-report.json",
+        "sha256": "6210b82f60ddc1393750297db8aaec007aa2a3500c6eda11a53cdd6dd036405a"
+      },
+      {
+        "path": ".dev/observation-web-20261104/reports/browser-final-05-observation-web-report.json",
+        "source": ".dev/zigbee-gateway-journey-s7Ijpy/observation-web-report.json",
+        "sha256": "f38276a79d29b474902ae334492a9da5a75f7fa6b74ae9c129a30b63468329bf"
+      },
+      {
+        "path": ".dev/observation-web-20261104/reports/browser-final-07-observation-web-lock-report.json",
+        "source": ".dev/zigbee-gateway-journey-aksLjE/observation-web-lock-report.json",
+        "sha256": "6b775db6d631ca577b5ccc43df0e91adc362f268e43be5daa71122f37571c30b"
+      },
+      {
+        "path": ".dev/observation-web-20261104/reports/browser-final-09-observation-web-review-report.json",
+        "source": ".dev/zigbee-gateway-journey-gJUcIx/observation-web-review-report.json",
+        "sha256": "5e16d3f6d67151a6d4e9411c67320a3ae14a2d7be72af1594606ebca9cd790c7"
+      },
+      {
+        "path": ".dev/observation-web-20261104/reports/visual-final-00-observation-web-report.json",
+        "source": ".dev/zigbee-gateway-journey-jbO6ws/observation-web-report.json",
+        "sha256": "f38276a79d29b474902ae334492a9da5a75f7fa6b74ae9c129a30b63468329bf"
+      }
+    ],
+    "prior_rust_source_files_rechecked_unchanged": 7,
+    "prior_rust_evidence": "2026-11-04-observation-runtime.json",
+    "prior_core_runtime_clippy_and_feature_checks_not_repeated": true,
+    "checks": [
+      "cancel_zero_post",
+      "storage_failure_zero_post",
+      "lost_response_original_only",
+      "404_and_forged_receipt_stay_unknown",
+      "restart_and_old_applied_do_not_reactivate",
+      "fresh_rebind_and_no_first_sample_edge_replay",
+      "real_cross_tab_web_lock",
+      "pending_source_blocks_new_device_alias",
+      "changed_local_original_blocks_writes",
+      "native_device_id_denied",
+      "candidate_manifest_digest_mismatch_denied",
+      "late_hidden_read_does_not_restore_review",
+      "expired_review_button_disabled"
+    ],
+    "documentation": {
+      "documents": 9,
+      "local_file_links": 366,
+      "broken": [],
+      "anchors_checked": false
+    },
+    "logs_sha256": {
+      "browser-after-events.log": "ab7ea4911c506ada9ad0d2cc31b5e9cbd1aac3a0246d4dac7242e020cdb71a10",
+      "browser-final.log": "ee0b8704321e24994d6343b7826654bab2d12db229a6a0365958abd6aa0a64e6",
+      "browser-initial.log": "0bc3be895d448c4ed303345db3ae3b996724effd06c591229987a0708875cdb3",
+      "home-build-after-events.log": "60071d8ef416184629f1016ee3d3a73549e439ac329465e3d8ce23efc82e3a5a",
+      "home-build-initial.log": "94a6db646c34d2d72df59ae1a6bef37c77bea8872c41a74392acd4c690430f86",
+      "home-build.log": "df1ef5ffcada46813a205e83182fdfc0aaec6dc7694db93b275f8092264f75fe",
+      "review-final.log": "7cbbb7084b271a367243bee6c2bbe75b932a8d31125dd51b0bc5761b3aead49f",
+      "visual-final.log": "80207fca515f0cca55667c4634581620a8599bcc6791a26582fe59a090b1011e",
+      "website-build.log": "5f31566ba57af0be4df9bcfb60b5b9b37aa5f3ff396fb3fa0eaa2c7550832460"
+    },
+    "runtime_binary_sha256": "e58c723798212e72c9655c53aeb7b068aa39bc7763b4080204bf2e31553b5d70"
+  },
+  "history": {
+    "initial_home_build": {
+      "passed": false,
+      "log": "home-build-initial.log",
+      "cause": "extra JSX closing parenthesis",
+      "fix": "move revocation preparation/submission into named functions and correct JSX",
+      "final_passed": true
+    },
+    "initial_browser": {
+      "passed": 1,
+      "failed": 2,
+      "log": "browser-initial.log",
+      "causes": [
+        "new third SSE per page exhausted two-tab HTTP/1.1 connection capacity",
+        "late-response fixture unregistered its route before fulfillment"
+      ],
+      "fixes": [
+        "reuse Home event stream via revision invalidation",
+        "wait for original route fulfillment before unroute"
+      ]
+    },
+    "after_events": {
+      "passed": 2,
+      "failed": 1,
+      "log": "browser-after-events.log",
+      "cause": "test clock installed after application had already scheduled expiration timer",
+      "fix": "install browser clock before navigation",
+      "targeted_final_log": "review-final.log"
+    },
+    "final_browser": {
+      "passed": 6,
+      "failed": 0,
+      "log": "browser-final.log"
+    },
+    "screenshot_preparation": {
+      "fix": "blur controls and scroll to top before fullPage capture to avoid displaced sticky-header screenshot artifact",
+      "log": "visual-final.log",
+      "passed": 1
+    },
+    "assertions_relaxed": false,
+    "original_assertion_timeout_ms": 5000,
+    "pre_fix_source_frozen": false
+  },
+  "not_implemented": [
+    "swift_and_kotlin_source_onboarding",
+    "permit_join",
+    "automatic_discovery",
+    "static_source_migration",
+    "zigbee_execution"
+  ],
+  "not_verified": [
+    "full_native_apps",
+    "linux_or_nas_serial",
+    "new_nas_image_or_dynamic_v13_container_restore",
+    "amd64_multimodal_recovery",
+    "rf_and_hardware",
+    "new_official_cloud_deployment"
+  ],
+  "limits": [
+    "Software NCP and browser tests do not prove radio, purchased model support or real hardware.",
+    "Background behavior uses an explicit document visibility fixture; it is not Android/iOS operating-system scheduling.",
+    "Candidate expiration uses an accelerated browser clock; the real gateway TTL remains 60 seconds.",
+    "Cross-tab verification covers two pages of the current local model/onboarding view, not arbitrary numbers of all application views.",
+    "Browser localStorage is not a cryptographic ledger against complete same-origin script or browser compromise.",
+    "Other worktree edits exist; archived files are captured after checks without a whole-stage frozen build."
+  ],
+  "nas_source_input_review": {
+    "path": "tools/build-nas-artifacts.py",
+    "result": "recursive apps/home and packages/protocol collection already includes new files",
+    "new_image_built": false
+  },
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "copies": "source",
+    "captured_after_checks": true,
+    "whole_stage_inputs_frozen": false,
+    "files": 24,
+    "manifest_sha256": "3e09421f98360bae2c63e5d0c5eb12dcd97f2765ef4b5181da17786eea5dd0be"
+  }
+}

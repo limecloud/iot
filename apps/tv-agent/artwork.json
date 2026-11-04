@@ -1,0 +1,170 @@
+{
+  "generated_on": "2026-11-04",
+  "mode": "imagegen_bundled_cli",
+  "service": "https://img.aishenji.top",
+  "credentials_included": false,
+  "assets": [
+    {
+      "source": "limeiot-tv-ambient-flare.png",
+      "source_dimensions": [
+        1672,
+        941
+      ],
+      "asset": "apps/tv-agent/app/src/main/res/drawable-nodpi/tv_ambient.webp",
+      "asset_dimensions": [
+        1280,
+        720
+      ],
+      "asset_bytes": 6138,
+      "sha256": "2decbb18a6d130740f2b596355b13cf8f659d1f0446ad9324b5fd0a89a88977f",
+      "model": "gpt-image-2.5-flare",
+      "requested_size": "1536x1024",
+      "quality": "high",
+      "prompt": "Use case: stylized-concept\nAsset type: background artwork for the LimeIoT Android TV device agent, to be cropped to a 16:9 television screen.\nPrimary request: a quiet premium dark evergreen atmospheric background with a soft organic translucent glass ribbon and subtle film grain, like reflected light in a peaceful connected home at night.\nComposition: almost-black negative space across the left two thirds for a native sidebar and readable status interface. A restrained curved mint glass ribbon and diffused pale lime light concentrated at the far upper right, occupying at most a quarter of the image. Seamless gradual darkness at all edges.\nColor palette: deep green black #081715, dark evergreen #12382d, a very small pale mint #b5e7c6 highlight. Low contrast overall, calm and refined.\nMaterials: soft frosted glass, fine grain, cinematic diffuse illumination.\nConstraints: abstract ambient artwork only. No UI, no screens, no typography, no letters, no words, no logos, no icons, no people, no watermark. No bright neon, no network diagrams, no busy patterns. Dark background that can support accessible white native text.\n",
+      "status": "previous_visual_exploration_not_displayed_in_revision_3"
+    },
+    {
+      "source": "limeiot-tv-connection-sunburst.png",
+      "source_dimensions": [
+        1254,
+        1254
+      ],
+      "asset": "apps/tv-agent/app/src/main/res/drawable-nodpi/tv_connection.webp",
+      "asset_dimensions": [
+        480,
+        480
+      ],
+      "asset_bytes": 4998,
+      "sha256": "956f916edcff9b989a8854d362b76c564143af197c44a105361bb58fbf61e104",
+      "model": "gpt-image-2.5-sunburst",
+      "requested_size": "1024x1024",
+      "quality": "high",
+      "prompt": "Use case: stylized-concept\nAsset type: small welcome illustration for the LimeIoT television device agent connection page.\nPrimary request: a beautifully restrained 3D editorial illustration of a single thin matte dark-green television on a small pedestal, connected to one small frosted mint glass orb by a soft curved luminous filament. A peaceful, approachable connected-home feeling.\nComposition: centered sculptural object filling 65 percent of a square composition, broad negative space, three-quarter orthographic view, seamless extremely dark evergreen background #0a1b17, no room or floor clutter.\nColor palette: charcoal evergreen, frosted pale mint, very subtle warm ivory highlights. Soft studio lighting, high quality material detail, restrained ambient shadow.\nConstraints: illustration only, no interface, no text, no letters, no labels, no brand logos, no watermark, no humans, no robot faces, no gears, no clutter. Do not show a QR code or invented pairing credentials.\n",
+      "status": "previous_visual_exploration_not_displayed_in_revision_3"
+    },
+    {
+      "path": "output/imagegen/limeiot-tv-mountain-dusk-v3.png",
+      "model": "gpt-image-2.5-flare",
+      "mode": "imagegen_bundled_cli",
+      "command": "generate",
+      "requested_size": "1536x1024",
+      "quality": "high",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "sha256": "e3ee8a8ef9d25d4b49782f2955509a4f6d761af8139b1dc4bba87349f1434262",
+      "prompt": "Use case: photorealistic-natural\nAsset type: original full-screen ambient background for a 16:9 television control application.\nPrimary request: a quiet cinematic mountain lake at blue hour, layered blue-grey mountain silhouettes receding into mist, a restrained warm champagne strip of last sunset at the far right horizon and soft reflections on still water. Beautiful photographic realism and gentle atmospheric depth.\nComposition: landscape 16:9 composition. Left half is especially calm, dark, uncluttered lake and soft distant mountain shadows, reserved for large white native text. The visual interest is concentrated in the right third. The lower quarter remains dark and visually quiet for translucent control tiles. Broad gradients of natural light, not a flat black field.\nColor palette: charcoal navy #1B1D21, desaturated slate blue #2B3D54, mist blue-grey #697D91, small warm champagne #DFC2A2 highlights. No saturated green, no orange brand color, no neon, no bright white sky across the text area.\nLighting: dusk after sunset, soft filmic exposure, restrained highlights, elegant and believable.\nConstraints: scenery only. No interface, no words, no letters, no logos, no people, no buildings, no devices, no television frames, no decorative glass ribbons, no floating orbs, no diagrams, no watermark. Original image, not a reproduction of an existing brand wallpaper.\n",
+      "is_runtime_screenshot": false,
+      "asset": "apps/tv-agent/app/src/main/res/drawable-nodpi/tv_mountain_dusk.webp",
+      "asset_bytes": 53398,
+      "asset_sha256": "15c3b9eef08cfac5c445c79a801113b3c33ed3ac9b7db86d3d4f4c50ffc3b60d",
+      "asset_dimensions": [
+        1672,
+        941
+      ],
+      "status": "displayed_in_revision_3",
+      "conversion": {
+        "format": "webp",
+        "quality": 88
+      }
+    },
+    {
+      "path": "output/imagegen/limeiot-tv-cloud-dawn-v3.png",
+      "model": "gpt-image-2.5-sunburst",
+      "mode": "imagegen_bundled_cli",
+      "command": "generate",
+      "requested_size": "1536x1024",
+      "quality": "high",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "sha256": "8ad13b2561d0cedc6d4c217b673e424aa2aa3daeedc24002cc1359f440077382",
+      "prompt": "Use case: photorealistic-natural\nAsset type: alternative original cinematic background for a 16:9 television home-control interface.\nPrimary request: a serene high-altitude view over layered mountain ridges and a slow sea of clouds at dawn, a soft muted amber glow meeting blue and violet-grey mist near the right horizon. Refined photographic landscape, clear atmospheric depth, understated but rich natural color.\nComposition: wide 16:9. Darker negative space in the left half for white UI copy and low-contrast dark foreground along the bottom for native controls. Mountains and luminous clouds draw the eye towards the right. No dominant peak or bright object behind the text area.\nColor palette: graphite charcoal #1B1D21, deep indigo-grey, dusty steel blue, a very restrained champagne-gold glow #DFC2A2. Avoid pure black emptiness, avoid saturated teal or green, avoid strong red or orange.\nConstraints: landscape photograph only, no interface or typography, no humans, no architecture, no product mockups, no logos, no floating 3D shapes, no watermark. Calm original artwork suitable for a living-room television screen.\n",
+      "is_runtime_screenshot": false,
+      "status": "alternative_not_displayed"
+    }
+  ],
+  "current_ui": {
+    "revision": 3,
+    "palette": {
+      "background": "#1B1D21",
+      "focus": "#0072FF",
+      "text": "#F3F3F5",
+      "secondary_text": "#BEC9D7"
+    },
+    "generated_background_or_illustration_displayed": true,
+    "implementation": "Native Android Views with static original landscape, native dark gradients, horizontal navigation, blue focus, and three home shortcuts.",
+    "design_previews_only": true,
+    "packaged_background": "apps/tv-agent/app/src/main/res/drawable-nodpi/tv_mountain_dusk.webp"
+  },
+  "design_previews": [
+    {
+      "path": "output/imagegen/limeiot-tv-graphite-concept-v2.png",
+      "model": "gpt-image-2.5-flare",
+      "mode": "imagegen_bundled_cli",
+      "requested_size": "1536x1024",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "sha256": "e8f564046ebeb7c0cb637e5005b21abae5db56e5dcc369890e24f7e52ed5e9af",
+      "prompt": "Use case: ui-mockup\nAsset type: a flat, straight-on 16:9 Android TV application interface design, not a photograph of hardware.\nPrimary request: Design a refined television device companion app named LimeIoT. This app manages one television's secure connection to a home gateway and controls local app permissions. It is not a streaming catalog or a technical dashboard.\nStyle: disciplined graphite-black and warm-white interface, inspired by the clarity and spacing of Apple TV settings. Excellent 10-foot readability. No green, no neon, no gradients, no shiny illustrations, no glassmorphism, no charts, no metric-card grid.\nLayout: 1536 by 864 wide composition. Broad safe margins. A narrow left sidebar with small LimeIoT wordmark, five well spaced Chinese navigation items, and subtle bottom version text. Selected navigation is a white pill with black text; other items muted grey. Main content begins with a small eyebrow '电视终端', large title '客厅电视', compact status '连接已停止'. Below is one calm, generous horizontal device panel: a simple minimal outline TV glyph on the right and concise status plus a single solid white primary button '开始连接' on the left. Then two understated full-width settings rows with small line icons and chevrons: '应用授权' / '选择允许远程启动的应用' and '设备维护' / '管理能力与应用更新'. This is a settings product, not a marketing landing page. Bottom small unobtrusive remote-control hints.\nSidebar text exactly: '总览', '连接设置', '应用授权', '设备维护', '诊断信息'.\nTypography: crisp modern Chinese sans serif, clear 3-level hierarchy, large text, restrained weights, generous alignment. Background #101114, surfaces #1D1F23, text #F4F4F5, muted #999CA5. Focus ring thin white with subtle lift. Rounded corners 14 pixels maximum.\nConstraints: show one coherent complete screen only. Keep every text label on screen, no browser chrome, no phone or TV frame, no invented pairing codes or QR codes, no charts, no decorative artwork, no watermark. Native Android Views must be able to implement the design directly.\n",
+      "is_runtime_screenshot": false,
+      "status": "previous_visual_exploration"
+    },
+    {
+      "path": "output/imagegen/limeiot-tv-light-concept-v2.png",
+      "model": "gpt-image-2.5-sunburst",
+      "mode": "imagegen_bundled_cli",
+      "requested_size": "1536x1024",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "sha256": "842420c7929b3de7b78a1ecd52b6e3e33c4fde8e7841179be010ef5d476205e1",
+      "prompt": "Use case: ui-mockup\nAsset type: a flat, straight-on 16:9 television device settings interface, no hardware frame.\nPrimary request: Design the LimeIoT television companion app in a clean off-white and black visual direction, highly readable from a sofa. A calm and minimal appliance interface.\nLayout: broad safe margins, narrow soft-grey left sidebar with LimeIoT branding and five Chinese navigation items '总览', '连接设置', '应用授权', '设备维护', '诊断信息'. Selected navigation is near-black with white type. Main content has a small eyebrow '电视终端', a large title '客厅电视', and a small neutral status '连接已停止'. One spacious large white panel below contains short text '准备好连接你的家庭' and one black primary button '开始连接', with a minimal thin black outline television icon to the right. Beneath it, two quiet settings rows with chevrons: '应用授权' and '设备维护', each with short muted explanatory text. Small remote key hints at the bottom.\nStyle: editorial precision, simple appliance settings, generous whitespace, clear type hierarchy, graphite black text on #F3F3F4 background, true white panel, neutral grey secondary text. Native Chinese sans serif. No green or other accent colors, no gradients, no shiny images, no 3D illustrations, no metric cards, no charts, no shadows heavier than a subtle border.\nConstraints: one complete usable TV screen, no photos, no browser chrome, no extra screens, no fake QR or pairing credentials, no watermark. Everything must be reproducible in native Android Views.\n",
+      "is_runtime_screenshot": false,
+      "status": "previous_visual_exploration"
+    },
+    {
+      "path": "output/imagegen/limeiot-tv-xiaomi-inspired-overview-v3.png",
+      "model": "gpt-image-2.5-flare",
+      "mode": "imagegen_bundled_cli",
+      "command": "edit",
+      "requested_size": "1536x1024",
+      "quality": "high",
+      "dimensions": [
+        1672,
+        941
+      ],
+      "sha256": "e79e76b78c0eaa551c64422459d64ed90a3d7380b14de831ddefd389bd425c6a",
+      "prompt": "Use case: ui-mockup\nAsset type: flat full-screen 16:9 television application concept, not a photograph of hardware.\nInput images: Image 1 is the original mountain-lake background. Preserve this landscape, its photographic atmosphere and right-side sunset. Add a carefully designed native television interface over it.\nPrimary request: Redesign the LimeIoT television device agent using interaction and visual principles observed in Xiaomi TV: spacious horizontal navigation, large white type, clear azure-blue focus for device settings, broad television-safe margins, translucent dark surfaces over a rich photographic background. Also use the quiet landscape layering and low clutter seen in Projectivy Launcher.\nLayout: wide 16:9 screen. At the top left, a small white LimeIoT wordmark and the secondary label '电视终端'. At the top right, a compact quiet status '连接已停止'. Beneath that, five evenly spaced horizontal navigation tabs: '总览', '连接设置', '应用授权', '设备维护', '诊断信息'. '总览' is currently focused with a tasteful azure-blue #007FFF pill; other tabs use white text on the image. No left sidebar.\nMain content: generous open hero area on the left directly over the photograph, with large Chinese title '这台电视', a concise line '家庭网关已配置，连接已停止。', and one prominent white rounded button '开始连接'. The right half stays visually open so the mountain landscape is visible. Add a subtle dark gradient behind left-side copy, not a large opaque hero card.\nLower section: three horizontally arranged translucent charcoal feature tiles, with simple thin white line icons and clear Chinese type. Tile 1: '应用授权', smaller '选择允许远程启动的应用', current value '0 个已允许'. Tile 2: '连接设置', smaller '接入你的家庭网关', current value '已配置'. Tile 3: '设备维护', smaller '管理能力与应用更新'. Tiles have restrained 12-pixel corners and no bright border when unfocused. They are utility shortcuts, not charts or media posters.\nAt the very bottom, small unobtrusive text '方向键移动   确定键选择   返回键回总览'.\nVisual hierarchy: typography crisp, real Chinese sans serif, larger than a desktop dashboard and readable from across a living room. Avoid dense technical text. Background charcoal #1B1D21, translucent blue-grey panels, off-white text, secondary text #B9BEC8, azure-blue #007FFF only for keyboard focus. Natural warm champagne light belongs in the landscape, not a VIP gold theme.\nConstraints: one complete screen only. No sidebar. No fake QR code, pairing code, account avatar, room name, charts, numbers beyond the exact labels, cartoon device, glossy 3D orb, green accent, browser chrome, TV frame, brand logos other than LimeIoT, or watermark. This is a visual design reference; all controls will be implemented as real native Android Views.\n",
+      "is_runtime_screenshot": false,
+      "input_images": [
+        {
+          "path": "output/imagegen/limeiot-tv-mountain-dusk-v3.png",
+          "role": "edit_target_original_generated_landscape"
+        }
+      ],
+      "status": "revision_3_design_reference",
+      "implementation_difference": "Preview focus estimated #007FFF; native implementation uses precisely sampled #0072FF."
+    }
+  ],
+  "derived_assets": [
+    {
+      "asset": "apps/tv-agent/app/src/main/res/drawable-nodpi/tv_launcher_banner.webp",
+      "asset_dimensions": [
+        640,
+        360
+      ],
+      "asset_bytes": 12064,
+      "sha256": "cfed3200664e36e5b0f25b06690e6db5377204e0b3532ab4b9230af5a94c748d",
+      "mode": "deterministic_pillow_composition",
+      "source": "output/imagegen/limeiot-tv-mountain-dusk-v3.png",
+      "composition": "Center crop, native dark gradient, static LimeIoT / 电视终端 typography, simple blue television mark; no additional image API call.",
+      "dynamic_runtime_content": false
+    }
+  ]
+}

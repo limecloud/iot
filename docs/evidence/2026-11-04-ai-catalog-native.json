@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-AI-CATALOG-NATIVE-20261104-01",
+  "recorded_at": "2026-11-04T11:50:23.527999+00:00",
+  "status": "passed",
+  "scope": "Swift/Kotlin目录SDK、SwiftUI/Compose入口源码、实际目录状态层及独立原生宿主连接真实网关的只读发现",
+  "full_goal_completed": false,
+  "native_app_runtime": false,
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "cloud_updated": false,
+  "nas_image_rebuilt": false,
+  "implemented": [
+    "GatewayClient.aiCatalog复用认证会话",
+    "五类能力的严格目录解码及既有提供方限制复用",
+    "32KiB/8层/2048节点与重复键拒绝",
+    "设置中的AI服务目录和本地功能导航",
+    "刷新/后台/离页/离线清目录及迟到响应隔离",
+    "目录不持久保存、不探测模型、不创建推理或授权"
+  ],
+  "verification": {
+    "command": "npm run test:ai-catalog:native",
+    "exit_code": 0,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "log": {
+      "path": ".dev/ai-catalog-20261104/native-final-root-attempt2.log",
+      "sha256": "2e629b034afcbb52af024975257050941f53dff3603aa21af75ecb155b505bd2"
+    },
+    "checks_report": {
+      "path": ".dev/ai-catalog-native/checks.json",
+      "sha256": "067b3924971ac0b61277bed73f190f4e4a3399380af4f9549358a9048c23d495"
+    },
+    "shared_invalid_vectors": 28,
+    "invalid_raw_json_cases": 4,
+    "integer_valued_json_number_accepted": true,
+    "swift_contract_and_state": true,
+    "swift_home_groups": 6,
+    "swift_state_scenarios": [
+      "overlap",
+      "unconfigured",
+      "invalid_response",
+      "pause_late_result",
+      "fresh_query_after_pause",
+      "offline",
+      "authentication",
+      "closed"
+    ],
+    "swiftui_syntax_and_project": true,
+    "swiftui_full_typecheck": false,
+    "android_suites": {
+      "GatewayClientTest": {
+        "passed": 4,
+        "skipped": 0
+      },
+      "AiCatalogControllerTest": {
+        "passed": 8,
+        "skipped": 0
+      },
+      "HomeViewModelTest": {
+        "passed": 6,
+        "skipped": 0
+      }
+    },
+    "android_debug_apk": true,
+    "android_lint": {
+      "Warning": 17
+    }
+  },
+  "journeys": [
+    {
+      "report": {
+        "path": ".dev/run-1793792872363-4532060b/ai-catalog-native-result.json",
+        "sha256": "3517c40077bd1c69dfd2baebfbc5b7e03818322aa217bc39b32074c4bd0bb700"
+      },
+      "checks": {
+        "passed": true,
+        "target": "ios",
+        "host_ui_state": true,
+        "real_rust_gateway": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "native_processes": 2,
+        "gateway_restarts": 2,
+        "configured_capabilities": 5,
+        "removed_capabilities": 5,
+        "discovery_provider_calls": 0,
+        "discovery_business_posts": 0,
+        "explicit_manual_command": "confirmed",
+        "no_implicit_authorization_or_play": true,
+        "provider_fixture": true,
+        "native_app_runtime": false,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/run-1793792879873-f464650e/ai-catalog-native-result.json",
+        "sha256": "ae22f3e06a1c528179bec80b19de679abf4c173f7ddadea01b9d7c526c64507d"
+      },
+      "checks": {
+        "passed": true,
+        "target": "android",
+        "host_ui_state": true,
+        "real_rust_gateway": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "native_processes": 2,
+        "gateway_restarts": 2,
+        "configured_capabilities": 5,
+        "removed_capabilities": 5,
+        "discovery_provider_calls": 0,
+        "discovery_business_posts": 0,
+        "explicit_manual_command": "confirmed",
+        "no_implicit_authorization_or_play": true,
+        "provider_fixture": true,
+        "native_app_runtime": false,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    }
+  ],
+  "source_manifest": {
+    "path": ".dev/ai-catalog-20261104/native-source-manifest.json",
+    "sha256": "64ba7025f585967342c9e3589b06f11413bd67a09903dcfa8d05d77d89218b25"
+  },
+  "source_count": 338,
+  "artifact_count": 10,
+  "unit_results": [
+    {
+      "path": ".dev/ai-catalog-native/TEST-run.limeai.iot.core.GatewayClientTest.xml",
+      "sha256": "35eb7c8f49ee7992a5170216008cf1857476928a12b4a3490cd77854c2d811e9"
+    },
+    {
+      "path": ".dev/ai-catalog-native/TEST-run.limeai.iot.AiCatalogControllerTest.xml",
+      "sha256": "9b032f89554ecb984caeacc1a5fdde01a6eae92cdd5c4f3e983979ce21001e0b"
+    },
+    {
+      "path": ".dev/ai-catalog-native/TEST-run.limeai.iot.HomeViewModelTest.xml",
+      "sha256": "6a2fa2f110045ec9a1a4531612ef201efb234507856e2e98f521f93d4fcf74af"
+    }
+  ],
+  "lint_report": {
+    "path": ".dev/ai-catalog-native/android-lint.xml",
+    "sha256": "9eb5c4833b96e8886c7cbb3eb923681c80f9ffad784067828adae595d4e76b07"
+  },
+  "preserved_failures": [
+    {
+      "log": {
+        "path": ".dev/ai-catalog-20261104/native-swift-check-compile-attempt1.log",
+        "sha256": "d2b684c7adffed92e46ce1064aedfa12884e5e74bb5e110534e6dca7443f6b32"
+      },
+      "cause": "临时Swift直编译前创建输出目录使用了错误相对路径，链接找不到输出目录。统一入口负责创建正确目录后通过。",
+      "product_changed": false
+    },
+    {
+      "log": {
+        "path": ".dev/ai-catalog-20261104/native-checks-attempt1.log",
+        "sha256": "169d5f918ca127f549670db45c046d110e811e8d14769be257462f8dc446214f"
+      },
+      "cause": "测试误把JSON数字1.0当成非整数而期望拒绝；正式JS消费者确认1.0等于1。反例改为1.5，另保留1.0正例，未改变Schema或消费者数值语义。",
+      "targeted_repairs": 1
+    },
+    {
+      "log": {
+        "path": ".dev/ai-catalog-20261104/native-final-root-attempt1.log",
+        "sha256": "f422372001fb29135c2576d2c3b9663f27425d524ef5987f07b38bde2fbf6d7c"
+      },
+      "cause": "Swift已成功读取五能力，撤回时遗留TTS_VOICES导致invalid_speech_config；JVM已写出成功追踪，但OkHttp进程级空闲线程使宿主执行超时。",
+      "change": "完整撤回声音选项；独立JVM检查仅在全部断言与追踪落盘后退出，任何先前异常仍导致失败。原断言保留。",
+      "targeted_repairs": 1
+    }
+  ],
+  "documentation": [
+    {
+      "path": "contracts/ai-catalog.md",
+      "sha256": "27d58a880755263fb9bd4274bacdda64b6ecc9caa681578f7ad6152e28a25e79"
+    },
+    {
+      "path": "apps/ios/README.md",
+      "sha256": "ca9de92f96b8239043b1d6266673a42080e6f4a33ff045046c8a0b58b5d85de1"
+    },
+    {
+      "path": "apps/android/README.md",
+      "sha256": "7a9e84666ab55a4afe0861df2ec4e40ce46bbdd063a4054c3ba231aac7f75c9d"
+    },
+    {
+      "path": "llms.txt",
+      "sha256": "110f1e36558194bbf6a917be4163ca6224a1b7920c10de761a9311665fa787a7"
+    },
+    {
+      "path": "docs/24-实施计划与进度.md",
+      "sha256": "d35f6e182d6b8e60d6ae2af2de8da6eab438b23cf2bf1e9be89ce2129526863d"
+    },
+    {
+      "path": "docs/33-多模态模型与媒体服务.md",
+      "sha256": "3ee51acfcdc9efe4e6aa1c7e83b73568b437542877d1bfefb2cc2d274fa88b16"
+    }
+  ],
+  "website": {
+    "repository": "iotweb",
+    "sources": [
+      {
+        "path": "src/docs/content/multimodal.md",
+        "sha256": "a7f4b739a627c9826b2f6a796638308d6f7f0e8d18b2ff346205af50ecb3e5ab"
+      }
+    ],
+    "build_log": {
+      "path": "../iot/.dev/ai-catalog-20261104/native-docs-build.log",
+      "sha256": "8851c4f393345c2a46c2b95609875ac67229b6a92cf3891a095423f5bb36cf8c"
+    },
+    "pages": 54,
+    "local_references": 2116,
+    "exit_code": 0
+  },
+  "design": "复用现有GatewayClient、各模态校验器和功能页面；目录状态由页面持有并注入只读加载函数，家庭状态层只增加当前会话的读取方法，避免新增一套网络、会话或持久目录。",
+  "limits": [
+    "SwiftUI完成语法/工程检查，缺少iOS SDK，未完成页面完整类型检查或整包运行；Android APK可构建、lint通过，既有整包启动ANR未重试。本阶段没有原生UI截图或系统安全存储运行证据。",
+    "真实网关旅程验证实际原生状态层及客户端SDK，提供方为协议夹具；没有模型推理，也不证明模型健康、许可或真实质量。",
+    "两端各2个宿主进程、2次网关重启；发现阶段零业务POST，之后各有一次明确灯控confirmed，不把明确设备操作计为目录副作用。",
+    "本阶段不修改Rust、数据库或正式目录合同，不重建NAS，不提升AMD64、TV、同机真实模型或品牌生态范围；实机按用户要求跳过，完整目标仍未完成。",
+    "旧目录与NAS证据保持冻结输入和既有范围，本阶段原生改动不表示旧manifest与当前整个工作树相同。"
+  ]
+}

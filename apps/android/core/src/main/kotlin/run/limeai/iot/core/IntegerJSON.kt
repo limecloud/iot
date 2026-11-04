@@ -6,8 +6,8 @@ import java.security.MessageDigest
 // 媒体与OTA共用的有界安全整数JSON；领域字段仍由各自合同核对。
 internal object IntegerJSON {
     private fun fail(): Nothing = throw GatewayException("invalid_response")
-    fun parse(text: String, maxBytes: Int = 2_000_000, maxDepth: Int = 24, maxNodes: Int = 65536): JsonObject = Parser(text, maxBytes, maxDepth, maxNodes).parse() as? JsonObject ?: fail()
-    private class Parser(val text: String, maxBytes: Int, val depthLimit: Int, val nodeLimit: Int) {
+    fun parse(text: String, maxBytes: Int = 2_000_000, maxDepth: Int = 24, maxNodes: Int = 65536, allowFractionalNumbers: Boolean = false): JsonObject = Parser(text, maxBytes, maxDepth, maxNodes, allowFractionalNumbers).parse() as? JsonObject ?: fail()
+    private class Parser(val text: String, maxBytes: Int, val depthLimit: Int, val nodeLimit: Int, val allowFractionalNumbers: Boolean) {
         var p = 0; var nodes = 0
         init { if (text.toByteArray(Charsets.UTF_8).size > maxBytes) fail() }
         fun ws() { while (p < text.length && text[p] in " \t\r\n") p++ }
@@ -50,6 +50,15 @@ internal object IntegerJSON {
             return when (token) {
                 "true" -> JsonPrimitive(true); "false" -> JsonPrimitive(false); "null" -> JsonNull
                 else -> {
+                    if (allowFractionalNumbers) {
+                        if (!token.matches(Regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?"))) fail()
+                        val number = token.toDoubleOrNull()?.takeIf { it.isFinite() } ?: fail()
+                        if (number % 1.0 == 0.0) {
+                            if (kotlin.math.abs(number) > 9007199254740991.0) fail()
+                            return JsonPrimitive(number.toLong())
+                        }
+                        return JsonPrimitive(number)
+                    }
                     if (token.length > 32 || !token.matches(Regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?"))) fail()
                     val n = token.toBigDecimalOrNull() ?: fail()
                     if (n.scale() !in -4096..4096) fail()

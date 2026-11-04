@@ -58,3 +58,37 @@ test('缺少明确模型或缓存路径时拒绝启用，外部模型覆盖保�
   assert.equal(external.services.ollama, undefined);
   assert.equal(external.services.gateway.environment.LIMEIOT_OLLAMA_URL, 'http://192.168.1.30:11434');
 });
+
+const textEnv = { LIMEIOT_TEXT_MODEL: 'qwen2.5:1.5b-instruct', LIMEIOT_MEDIA_PORT: '18080', LIMEIOT_MEDIA_ORIGIN: 'http://127.0.0.1:18080', LIMEIOT_MEDIA_BIND_HOST: '127.0.0.1' };
+test('同机文字模型保留NAS与控制面入口，独立内网且没有设备秘密或公开推理端口', async () => {
+  for (const files of [['compose.yaml', 'compose.media.yaml', 'compose.text-local.yaml'], ['compose.yaml', 'compose.platform.yaml', 'compose.media.yaml', 'compose.text-local.yaml']]) {
+    const value = await config(files, textEnv), { gateway, text } = value.services;
+    assert.equal(gateway.environment.LIMEIOT_TEXT_URL, 'http://text:11434');
+    assert.equal(gateway.environment.LIMEIOT_TEXT_MODEL, textEnv.LIMEIOT_TEXT_MODEL);
+    assert.equal(gateway.environment.LIMEIOT_OLLAMA_URL, undefined);
+    assert.equal(gateway.environment.LIMEIOT_VISION_URL, undefined);
+    for (const name of ['local', 'media', 'text']) assert.ok(Object.hasOwn(gateway.networks, name));
+    if (files.includes('compose.platform.yaml')) {
+      assert.ok(Object.hasOwn(gateway.networks, 'platform-link'));
+      assert.ok(!Object.hasOwn(value.services.control.networks, 'text'));
+    }
+    assert.equal(gateway.depends_on?.text, undefined);
+    assert.deepEqual(Object.keys(text.networks), ['text']); assert.equal(value.networks.text.internal, true);
+    assert.equal(text.ports, undefined); assert.equal(text.read_only, true);
+    assert.notEqual(text.user.split(':')[0], '0'); assert.deepEqual(text.cap_drop, ['ALL']);
+    assert.deepEqual(text.security_opt, ['no-new-privileges:true']);
+    assert.equal(text.environment.OLLAMA_NO_CLOUD, '1'); assert.equal(text.environment.OLLAMA_NOPRUNE, '1');
+    assert.equal(text.volumes.length, 1); assert.equal(text.volumes[0].target, '/models');
+    assert.equal(text.volumes[0].bind.create_host_path, false);
+    assert.ok(!Object.keys(text.environment).some(key => /TOKEN|PASSWORD|MQTT|LIMEIOT/.test(key)));
+  }
+});
+
+test('文字同机覆盖缺模型或缓存时拒绝，外部文字覆盖不启动推理容器', async () => {
+  for (const key of ['LIMEIOT_TEXT_MODEL', 'LIMEIOT_OLLAMA_MODELS_DIR']) {
+    await assert.rejects(config(['compose.yaml', 'compose.media.yaml', 'compose.text-local.yaml'], { ...textEnv, [key]: undefined }));
+  }
+  const external = await config(['compose.yaml', 'compose.media.yaml', 'compose.text.yaml'], { ...textEnv, LIMEIOT_TEXT_URL: 'http://192.168.1.30:11434' });
+  assert.equal(external.services.text, undefined);
+  assert.equal(external.services.gateway.environment.LIMEIOT_TEXT_URL, 'http://192.168.1.30:11434');
+});

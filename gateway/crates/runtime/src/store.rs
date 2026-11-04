@@ -12,10 +12,22 @@ pub struct Store {
     pub data: Data,
     config_hash: String,
     snapshot_version: u32,
+    pub commissioning: commissioning::Journal,
 }
+#[path = "commissioning_store.rs"]
+mod commissioning;
 #[cfg(test)]
 #[path = "execution_plan_store_tests.rs"]
 mod execution_plan_store_tests;
+#[cfg(test)]
+#[path = "observation_binding_store_tests.rs"]
+mod observation_binding_store_tests;
+#[cfg(test)]
+#[path = "observation_store_tests.rs"]
+mod observation_store_tests;
+#[cfg(test)]
+#[path = "property_bridge_store_tests.rs"]
+mod property_bridge_store_tests;
 #[cfg(test)]
 #[path = "rule_condition_tests.rs"]
 mod rule_condition_tests;
@@ -24,9 +36,39 @@ mod rule_condition_tests;
 mod rule_schedule_tests;
 impl Store {
     pub fn open(path: &str, config: Config) -> Result<Self> {
+        Self::open_with_observation_sources(path, config, &[])
+    }
+    pub fn open_with_observation_sources(
+        path: &str,
+        config: Config,
+        sources: &[limeiot_core::observation::Policy],
+    ) -> Result<Self> {
+        Self::open_with_adapter_policies(path, config, sources, &[])
+    }
+    pub fn open_with_adapter_policies(
+        path: &str,
+        config: Config,
+        sources: &[limeiot_core::observation::Policy],
+        bridges: &[limeiot_core::property_bridge::Policy],
+    ) -> Result<Self> {
+        let mut sources = sources.to_vec();
+        sources.sort_by(|a, b| a.device_id.cmp(&b.device_id));
+        let mut bridges = bridges.to_vec();
+        bridges.sort_by(|a, b| a.observation.device_id.cmp(&b.observation.device_id));
+        Data::new(config.clone())?
+            .with_observation_sources(&sources)?
+            .with_property_bridges(&bridges)?;
+        let config_hash = if !bridges.is_empty() {
+            digest(
+                &json!({"config":config,"observation_sources":sources,"property_bridges":bridges}),
+            )?
+        } else if sources.is_empty() {
+            digest(&config)?
+        } else {
+            digest(&json!({"config":config,"observation_sources":sources}))?
+        };
         let connection = Connection::open(path).map_err(|_| err("storage_unavailable"))?;
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS snapshot (id INTEGER PRIMARY KEY CHECK(id=1), version INTEGER NOT NULL, config_hash TEXT NOT NULL, body TEXT NOT NULL); CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, data TEXT NOT NULL);").map_err(|_|err("storage_unavailable"))?;
-        let config_hash = digest(&config)?;
         let mut snapshot_version = 10;
         let data: Data = match connection.query_row(
             "SELECT version,config_hash,body FROM snapshot WHERE id=1",
@@ -42,7 +84,9 @@ impl Store {
             Ok((version, hash, body)) => {
                 snapshot_version = version.max(10);
                 ensure(
-                    matches!(version, 1..=12) && hash == config_hash,
+                    matches!(version, 1..=15)
+                        && hash == config_hash
+                        && (version != 14 || !bridges.is_empty()),
                     "storage_config_mismatch",
                 )?;
                 let value: Value =
@@ -54,7 +98,9 @@ impl Store {
                     "storage_corrupt",
                 )?;
                 ensure(
-                    value.get("execution_plans").is_some() == (version >= 12),
+                    (version >= 13 || value.get("execution_plans").is_some() == (version == 12))
+                        && (version >= 14
+                            || value.get("observation_registry").is_some() == (version >= 13)),
                     "storage_corrupt",
                 )?;
                 if version >= 3 {
@@ -175,12 +221,35 @@ impl Store {
                         "storage_corrupt",
                     )?;
                 }
-                serde_json::from_str(&body).map_err(|_| err("storage_corrupt"))?
+                let data: Data = serde_json::from_str(&body).map_err(|_| err("storage_corrupt"))?;
+                ensure(
+                    version != 13 || !data.observation_registry.is_empty(),
+                    "storage_corrupt",
+                )?;
+                let managed_bridges = data
+                    .observation_registry
+                    .bindings
+                    .values()
+                    .any(|binding| !binding.write_paths.is_empty());
+                ensure(
+                    (version >= 15 || !managed_bridges) && (version != 15 || managed_bridges),
+                    "storage_corrupt",
+                )?;
+                if version >= 14 {
+                    data.validate_persisted_property_bridges(&bridges)?;
+                }
+                ensure(version >= 14 || bridges.is_empty(), "storage_corrupt")?;
+                data
             }
             Err(rusqlite::Error::QueryReturnedNoRows) => Data::new(config)?,
             Err(_) => return Err(err("storage_unavailable")),
         };
-        let data = data.with_model_bundles(crate::model_bundles::catalog()?);
+        let data = data
+            .with_model_bundles(crate::model_bundles::catalog()?)
+            .with_observation_sources(&sources)?
+            .with_property_bridges(&bridges)?
+            .restore_observation_bindings()
+            .map_err(|_| err("storage_corrupt"))?;
         data.validate_model_registry(chrono::Utc::now())
             .map_err(|_| err("storage_corrupt"))?;
         data.validate_ota_registry()
@@ -191,6 +260,8 @@ impl Store {
             .map_err(|_| err("storage_corrupt"))?;
         data.validate_command_receipts()
             .map_err(|_| err("storage_corrupt"))?;
+        data.validate_property_bridge_receipts()
+            .map_err(|_| err("storage_corrupt"))?;
         data.validate_rule_graph()
             .map_err(|_| err("storage_corrupt"))?;
         data.validate_saved_conditions()
@@ -199,11 +270,13 @@ impl Store {
             .map_err(|_| err("storage_corrupt"))?;
         data.validate_execution_plan_registry()
             .map_err(|_| err("storage_corrupt"))?;
+        let commissioning = commissioning::load(&connection, &data.space_id)?;
         let mut store = Self {
             connection,
             data,
             config_hash,
             snapshot_version,
+            commissioning,
         };
         store.update("gateway.recovered", |data| {
             data.recover();
@@ -232,7 +305,19 @@ impl Store {
             .connection
             .transaction()
             .map_err(|_| err("storage_unavailable"))?;
-        let version = if !next.execution_plans.is_empty() || self.snapshot_version >= 12 {
+        let version = if self.snapshot_version >= 15
+            || next
+                .observation_registry
+                .bindings
+                .values()
+                .any(|binding| !binding.write_paths.is_empty())
+        {
+            15
+        } else if next.has_property_bridges() || self.snapshot_version >= 14 {
+            14
+        } else if !next.observation_registry.is_empty() || self.snapshot_version >= 13 {
+            13
+        } else if !next.execution_plans.is_empty() || self.snapshot_version >= 12 {
             12
         } else if next
             .deployments
@@ -527,7 +612,7 @@ mod tests {
         corrupt["model_registry"]["bindings"]["tv"]["bundle_id"] =
             json!(format!("bundle-{}", "0".repeat(64)));
         cases.push((8, corrupt, "storage_corrupt"));
-        cases.push((13, original, "storage_config_mismatch"));
+        cases.push((14, original, "storage_config_mismatch"));
         for (version, body, expected) in cases {
             let path = std::env::temp_dir().join(format!(
                 "limeiot-bundle-reject-{}.sqlite",
@@ -2004,7 +2089,7 @@ mod tests {
             assert!(serde_json::from_str::<Value>(&body).unwrap()["ota_registry"].is_object());
             store
                 .connection
-                .execute("UPDATE snapshot SET version=13", [])
+                .execute("UPDATE snapshot SET version=16", [])
                 .unwrap();
         }
         assert!(
@@ -2016,7 +2101,7 @@ mod tests {
                 .query_row("SELECT version FROM snapshot", [], |row| row
                     .get::<_, i64>(0))
                 .unwrap(),
-            13
+            16
         );
         drop(connection);
         std::fs::remove_file(file).unwrap();

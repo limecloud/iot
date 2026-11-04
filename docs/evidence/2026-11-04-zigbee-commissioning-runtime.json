@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "local_gateway_durable_zigbee_join_window_actor_api_cli_and_recovery",
+  "status": "software_stage_passed",
+  "archive": ".dev/commissioning-runtime-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "official_cloud_updated": false,
+  "new_nas_image": false,
+  "full_goal_completed": false,
+  "changes": {
+    "existing_actor_session_and_fairness_reused": true,
+    "intent_before_network_write": true,
+    "single_network_command_per_new_request": true,
+    "same_key_never_resends": true,
+    "unknown_open_blocks_new_key_until_bound": true,
+    "explicit_close_is_separate_request": true,
+    "http_disconnect_does_not_cancel_committed_intent": true,
+    "existing_sqlite_events_reused": true,
+    "database_tables_changed": false,
+    "snapshot_version_changed": false,
+    "protocol_types_in_domain_core": false,
+    "new_dependencies": false,
+    "web_or_native_commissioning_ui_added": false
+  },
+  "verification": {
+    "gateway_rust_tests": 87,
+    "combined_js_checks": 18,
+    "combined_failures": 0,
+    "combined_skipped": 0,
+    "new_commissioning_checks": 5,
+    "default_clippy_zero_warnings": true,
+    "minimal_clippy_zero_warnings": true,
+    "cargo_format": true,
+    "website": {
+      "checked_files": 48,
+      "errors": 0,
+      "warnings": 0,
+      "hints": 0,
+      "pages": 53,
+      "local_references": 2055
+    },
+    "journeys": [
+      {
+        "path": ".dev/zigbee-gateway-journey-PK1inT/commissioning-result.json",
+        "sha256": "dcbc8fe6db3d55d759861f276949b22cc9fb3c7565c9551cf00411fdef2ce22f",
+        "result": {
+          "passed": true,
+          "same_actor": true,
+          "polling_continued": true,
+          "confirmed_threshold": true,
+          "durable_original": true,
+          "restart_no_replay": true,
+          "sqlite_backup_restored": true,
+          "original_survives_removed_coordinator": true,
+          "stats": {
+            "type": "stats",
+            "id": 7,
+            "samples": {
+              "1122334455667788": 5,
+              "1122334455667789": 0
+            },
+            "host_checks": 2,
+            "session_samples": [
+              4,
+              1
+            ],
+            "timeout_requests": 0,
+            "neighbor_requests": 0,
+            "af_requests": 15,
+            "join_requests": [
+              60,
+              0
+            ],
+            "history": [
+              "interview",
+              "sample",
+              "interview",
+              "sample",
+              "interview",
+              "sample",
+              "coordinator",
+              "permit_join",
+              "interview",
+              "sample",
+              "interview",
+              "sample",
+              "coordinator",
+              "permit_join"
+            ],
+            "errors": [],
+            "termios_restored": true
+          },
+          "hardware": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-JCAsjn/commissioning-recovery.json",
+        "sha256": "0fae8c768174c505d1176b48b859d42cfcf34839c9c83175a9d45044c444b48d",
+        "result": {
+          "passed": true,
+          "unknown_preserved": true,
+          "explicit_close": true,
+          "crash_without_receipt": true,
+          "zero_replay": true,
+          "sigkill_does_not_restore_tty": true,
+          "fixture_tty_restored_explicitly_before_restart": true,
+          "hardware": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-SXibiB/commissioning-storage.json",
+        "sha256": "fbf0e692ae0bca47d4b5a7c17b3bb5528cf469ec77842dbe3f89575bab45018b",
+        "result": {
+          "passed": true,
+          "intent_failure_zero_effect": true,
+          "receipt_failure_remains_unknown": true,
+          "restart_zero_replay": true,
+          "hardware": false
+        }
+      }
+    ]
+  },
+  "source_sha256": {
+    "gateway/crates/runtime/src/commissioning.rs": "b363e69e5f3e3efbfd09281aaa494022411e9f1fc719588586383334206df136",
+    "gateway/crates/runtime/src/commissioning_store.rs": "8580fd13d2b435abed6de4add52a843c24bd1b40338de7e07ab8300efc23ecc1",
+    "gateway/crates/runtime/src/store.rs": "32e6a7602791afac52134195c1470f81f4cae08eb2a221a7488850aa71f2a5a5",
+    "gateway/crates/runtime/src/main.rs": "a1680f456a7065dc5362d6222a286d303c2fdd80f6c7bbed279208d11a197a9a",
+    "gateway/crates/runtime/src/observation_api.rs": "6581877c8fda604f1d28de6d1caef2acf188cce8bccf21081d984ce7f6bf7125",
+    "gateway/crates/runtime/src/integrations/mod.rs": "751fe7adb8b4c8f48b38413f18d5564343aadeb11e3f7e75a6f29c6fc5d630a2",
+    "gateway/crates/runtime/src/integrations/zigbee.rs": "d50e612384223ba926f576fcd46e8eda0ece05470c0c798371915fb0c1565fa4",
+    "gateway/crates/runtime/src/api.rs": "7492113841ae0e758fe1a2163e9cb6336ce34cba2ae3d11c24d6aac2dc1733f6",
+    "contracts/zigbee-operations.md": "f76e23914794b0ca91b48d3f8e02b5012d37103b4c08c063f7ca9199f17621c0",
+    "contracts/zigbee-operations.schema.json": "be426372bc7630d075e26b82c13d5116aa8d0422fe938e37a60d6b046673f389",
+    "contracts/tools/catalog.json": "95626fc8c7a0c83b93bb8f860011d3f1ce4bc6acee8b0a78941bfbf3773a2188",
+    "contracts/README.md": "97a89a6ee528535178469f5b00d5da14b8d9c602d6b2b345775a56e6626999ab",
+    "contracts/zigbee-diagnostics.md": "0538d0dd1e55ff3b60dba4b8f809c17548722a8704e05e68e919bd36cf81eb0e",
+    "contracts/observation-sources.md": "dfff6d6e25082303ba461623ef6818a1cfa55999fe7033587649e2198c40a65e",
+    "packages/protocol/zigbee-operations.mjs": "8eeda8e7571623886aac276c48ec03dc6bf2436696282d97c905933b604d6ced",
+    "packages/protocol/zigbee-operations.d.mts": "f9d1a38b07027eda42766536e1a701437307b09e6fbbd28b957872e7a279cb6b",
+    "packages/cli/src/registry.mjs": "4d30b86432ef384882f11dbe499aa6b8013e75fe01d75a5b3339b6191b37bd3b",
+    "packages/cli/src/main.mjs": "a7458cbb954bf526f07da93e9703b226dcc3fd3f6e99b07da00ec60cdcc1939a",
+    "packages/cli/README.md": "207ae49b2debf37e07d4a8dd161d30b5e229368971e0af67001a5e3149d800ef",
+    "tests/zigbee-operations.test.mjs": "aa0708267c66a4a928ebc732882360baa73230451e9415bad6f4bea85e0b9eda",
+    "tests/fixtures/zigbee/ncp.py": "752922cb4899c539ff48035bcbe954a63fae1078deab65e894622de79cedc130",
+    "tests/fixtures/zigbee/runtime.mjs": "4b59cb36f71eeb932c3d4adda8ad6512911b0d77ababf9264f6b1ff90e1748b0",
+    "package.json": "dcd4cec47dbf4d987cfc9e934241df2cf95c56a500c8bfa52a6132778b739700",
+    "docs/07-异构协议与适配器规范.md": "6a35f73c44441d809039f63ae86bdfb0dea76e0d10cb8b718824605e51e80ef3",
+    "gateway/adapters/zigbee-znp/README.md": "94af6f7aac139cd0835f4309110d30cbe561db6e2d0cc1cbab090fb15ece970a"
+  },
+  "website_source_sha256": {
+    "src/docs/content/zigbee.md": "94ead5190db01b29f02f678f262f35e7aa8324d98987c1a55abae5a098baa66d",
+    "public/llms.txt": "3c71bbbd593b49a78f052540bd1bb1c2f4dfed9fa38bd64460d50541c021a32f"
+  },
+  "logs_sha256": {
+    "rust-final.log": "41c882029879403be855db5a65875f544239de2dceb81a4ae78b2cdfe929c2df",
+    "format.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "clippy-final.log": "bcbd6390f9aa0cd62eaa5dabfa493244fa4df7c19dcb825be89535d1672de184",
+    "journeys-final.log": "743d01d2566c027e6d74673f2cdeec3ed601cf5ca8fdc313d58992ae0f9f4f50",
+    "website-build.log": "25df1ca38591f4c569aca6412f0588458c0260f478c30ccf905d101d2e9c14ad",
+    "clippy-retry1.log": "201f7e8eddfa7683ab693cd0a2dc4cc57df08622d4290845825569e0941ac912",
+    "build-final.log": "e328cbbd74aaa68b011973a77edc15408473f7d4c0b691d5638188a839876164",
+    "combined-final.log": "4c6f6fbc662f4bba0a5d0d75812e043d8941daf672eab95984060fc1afc557b2",
+    "minimal-final.log": "7e9398d8b57319e932af353ffe1a0ad14f5159b62900cac38ed21bdacdbcab00",
+    "minimal-feature.log": "18040e936f8dc06eb0cc75f0dea14cc665a78fde98deb81aa3d7f9e01fcaed68",
+    "journeys-retry1.log": "7cb6414a0a09294aeaacb4c05a02b0384d706f37f81125fa6d0eab8418a607ca",
+    "journeys-retry2.log": "f2e1b725cf320c076d34900f1a5e6980a7e448404f866ef99e795dc4f95e4565"
+  },
+  "history": [
+    {
+      "stage": "initial_new_journeys",
+      "passed": 3,
+      "failed": 2,
+      "log_saved": false,
+      "reason": "Missing post-deployment threshold baseline and assuming an initial unknown record could not acquire a later timeout reason; test steps corrected, product behavior unchanged."
+    },
+    {
+      "stage": "journeys-retry1.log",
+      "passed": 4,
+      "failed": 1,
+      "reason": "Existing PTY teardown correctly rejected SIGKILL leaving termios unrestored; crash test now observes that limitation and explicitly restores its own fixture before restart."
+    },
+    {
+      "stage": "journeys-retry2.log",
+      "passed": 4,
+      "failed": 1,
+      "reason": "Darwin pending input state remained after fixture tcsetattr; explicit TCIFLUSH added, matching existing serial destructor behavior; original restore assertion retained."
+    },
+    {
+      "stage": "journeys-final.log",
+      "passed": 5,
+      "failed": 0
+    },
+    {
+      "stage": "combined-final.log",
+      "passed": 18,
+      "failed": 0,
+      "added_scope": "SQLite backup restore, removed coordinator historical recovery, missing authorization and wrong space."
+    },
+    {
+      "stage": "initial_clippy",
+      "reason": "Test module placement rejected by Clippy; moved after production items, without suppressing lint."
+    },
+    {
+      "stage": "minimal-feature.log",
+      "reason": "Initial minimal-feature check warned about unused optional writer methods; methods and their imports now compile only with the integration or tests, without allowing dead code."
+    }
+  ],
+  "limitations": [
+    "Software Unix PTY and MQTT simulators do not validate radio, USB passthrough, NCP models, real joining or physical devices.",
+    "protocol_accepted is not proof of an open window, device enrollment, platform binding, identity or OTA authority.",
+    "SIGKILL cannot restore TTY settings; the crash test explicitly restores its own PTY and does not attribute that cleanup to the gateway.",
+    "Current delivery includes local HTTP and CLI/Agent tools; household web and native commissioning confirmation screens are still pending.",
+    "SQLite backup recovery is verified on the host; no new Linux/NAS image was built and the official cloud remains frozen.",
+    "Full native app runtime, prior AMD64 multimodal recovery and TV callback failures, other protocols/ecosystems, model quality and toy/robot samples remain incomplete."
+  ],
+  "design": "领域核心保持协议无关；复用串口actor、会话、slot、公平调度、SQLite事件和CLI私有原请求，不新增协议栈、数据表或重试框架。"
+}

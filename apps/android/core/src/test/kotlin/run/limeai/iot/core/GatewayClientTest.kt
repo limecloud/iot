@@ -66,6 +66,7 @@ class GatewayClientTest {
         repeat(50) { if (command.status != "confirmed") { delay(100); command = client.command(snapshot.space, accepted.commandId) } }
         assertEquals("confirmed", command.status)
         assertEquals(accepted.commandId, client.resolve(snapshot.space, intent.key).commandId)
+        assertEquals(accepted.commandId, client.resolve(snapshot.space, intent).commandId)
         val rule = Rule(id = "kotlin-rule", trigger = Trigger("device-button", "button.pressed"), actions = listOf(Action("device-lamp", SetValue("light.power", JsonPrimitive(true)))), cooldownMs = 0)
         val simulation = client.simulate(snapshot.space, rule, buildJsonObject { put("count", 1) }); assertTrue(simulation.matched); assertFalse(simulation.executed)
         val deployment = client.deploy(snapshot.space, rule); client.stop(snapshot.space, deployment)

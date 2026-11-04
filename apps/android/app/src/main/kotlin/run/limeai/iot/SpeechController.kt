@@ -22,6 +22,14 @@ class SpeechController(private val client: SpeechClient, val space: String, priv
         if (value.toByteArray(Charsets.UTF_8).size > 8192) { mutable.update { it.copy(message = "请填写 1000 字以内的文本") }; return }
         mutable.update { it.copy(text = value) }
     }
+    fun prepareAnswer(value: String): Boolean {
+        val state = mutable.value
+        if (!active || !state.writable || state.pending || state.capabilities?.configured != true) return false
+        if (value.isBlank() || value.codePointCount(0, value.length) > 1000 || value.toByteArray(Charsets.UTF_8).size > 4096) {
+            mutable.update { it.copy(message = "回答超出语音长度限制，请保留文字回答") }; return false
+        }
+        mutable.update { it.copy(text = value, message = "") }; return true
+    }
     fun selectVoice(value: String) { if (active && mutable.value.writable && !mutable.value.pending && mutable.value.capabilities?.voices?.contains(value) == true) mutable.update { it.copy(voice = value) } }
     fun setRetention(value: Int) { if (active && mutable.value.writable && !mutable.value.pending && value in listOf(600, 3600, 86400)) mutable.update { it.copy(retainSeconds = value) } }
     private suspend fun current(epoch: Int) { currentCoroutineContext().ensureActive(); if (!active || !mutable.value.online || epoch != generation) throw CancellationException() }

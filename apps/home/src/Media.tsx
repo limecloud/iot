@@ -5,9 +5,12 @@ import { verifyExecutionAdapters, verifyExecutionBinding, type AudioAdapter } fr
 import { parseBoundedJSON, sameJSON } from '../../../packages/protocol/products.mjs';
 import { Speech } from './Speech';
 import { Transcription } from './Transcription';
+import { VoiceTurn } from './VoiceTurn';
+import { Companion } from './Companion';
+import { Microphone } from './Microphone';
 
 type Target = { device_id: string; revision: string };
-export function Media({ prefix, session, online, devices, models, onError }: { prefix: string; session: Session; online: boolean; devices: Device[]; models: Record<string, Model>; onError: (error: unknown) => void }) {
+export function Media({ prefix, session, online, devices, models, onError, mode = 'audio' }: { prefix: string; session: Session; online: boolean; devices: Device[]; models: Record<string, Model>; onError: (error: unknown) => void; mode?: 'audio' | 'companion' }) {
   const space = decodeURIComponent(prefix.split('/').at(-1)!), storage = `limeiot.media-operation:${prefix}:`;
   const [page, setPage] = useState<MediaPage | null>(null), [targets, setTargets] = useState<Target[]>([]);
   const [file, setFile] = useState<File | null>(null), [retention, setRetention] = useState('600');
@@ -15,9 +18,15 @@ export function Media({ prefix, session, online, devices, models, onError }: { p
   const [originals, setOriginals] = useState<MediaOriginal[]>([]), [results, setResults] = useState<Record<string, MediaOperation>>({});
   const [busy, setBusy] = useState(false), [blocked, setBlocked] = useState(false), [message, setMessage] = useState('');
   const [deletion, setDeletion] = useState<string | null>(null);
+  const [capturing, setCapturing] = useState(false);
+  const recordedFile = useRef<File | null>(null), recordingEpoch = useRef(0), currentOnline = useRef(online); currentOnline.current = online;
   const active = useRef(true), sending = useRef(false), known = useRef<MediaOriginal[]>([]), received = useRef<Record<string, MediaOperation>>({}), rejected = useRef(new Set<string>()), input = useRef<HTMLInputElement>(null);
   const controller = useRef(new AbortController());
   const loadGeneration = useRef(0);
+  function clearRecording() {
+    recordingEpoch.current++; const previous = recordedFile.current; recordedFile.current = null;
+    if (previous) setFile(current => current === previous ? null : current);
+  }
   function readOriginals() {
     const found: MediaOriginal[] = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -35,7 +44,7 @@ export function Media({ prefix, session, online, devices, models, onError }: { p
     catch (error) {
       if (!active.current) return;
       if (error instanceof Error && error.message === 'media_record_unavailable') { setBlocked(true); setMessage('无法读取音频操作记录，请保留原记录后检查浏览器存储'); }
-      else { setMessage(error instanceof Error && error.message === 'invalid_media_audio' ? '音频须为 16 位 PCM WAV，最长 60 秒、最大 4 MiB' : error instanceof Error && error.message === 'pending_media_operation' ? '音频操作尚未核实，请先查询原操作' : error instanceof Error && error.message === 'invalid_media_response' ? '音频数据未通过校验，请重新读取' : errorText(error)); if (error instanceof ApiError && error.status === 401) onError(error); }
+      else { setMessage(error instanceof Error && error.message === 'recording_paused' ? '本机录音已清除，请重新录制' : error instanceof Error && error.message === 'invalid_media_audio' ? '音频须为 16 位 PCM WAV，最长 60 秒、最大 4 MiB' : error instanceof Error && error.message === 'pending_media_operation' ? '音频操作尚未核实，请先查询原操作' : error instanceof Error && error.message === 'invalid_media_response' ? '音频数据未通过校验，请重新读取' : errorText(error)); if (error instanceof ApiError && error.status === 401) onError(error); }
     } finally { sending.current = false; if (active.current) setBusy(false); }
   }
   function accept(operation: MediaOperation) { received.current = { ...received.current, [operation.idempotency_key]: operation }; if (active.current) setResults(received.current); }
@@ -70,13 +79,16 @@ export function Media({ prefix, session, online, devices, models, onError }: { p
     addEventListener('storage', changed);
     return () => { active.current = false; controller.current.abort(); removeEventListener('storage', changed); };
   }, []);
-  async function submit(change: MediaChange) {
+  async function submit(change: MediaChange, permitted: () => boolean = () => true) {
+    if (!permitted()) throw new Error('recording_paused');
     const records = readOriginals();
     if (blocked || records.length >= 128) throw new Error('media_record_unavailable');
     if (!['media.delete', 'media.revoke'].includes(change.type) && records.some(item => !received.current[item.idempotency_key] && !rejected.current.has(item.idempotency_key) && item.change.type === change.type)) throw new Error('pending_media_operation');
     const original = await createMediaOriginal(location.origin, space, crypto.randomUUID(), change), key = storage + original.idempotency_key, text = JSON.stringify(original);
+    if (!permitted()) throw new Error('recording_paused');
     try { if (localStorage.getItem(key) !== null) throw new Error(); localStorage.setItem(key, text); if (localStorage.getItem(key) !== text) throw new Error(); readOriginals(); }
     catch { setBlocked(true); setMessage('无法保存音频操作记录，尚未发送请求'); return; }
+    if (!permitted()) throw new Error('recording_paused');
     let operation: MediaOperation;
     try { operation = verifyMediaOperation(await request<unknown>(`${prefix}/media-operations`, session, change, { key: original.idempotency_key, signal: controller.current.signal }), space, original.idempotency_key, original); }
     catch (error) {
@@ -84,8 +96,12 @@ export function Media({ prefix, session, online, devices, models, onError }: { p
       return;
     }
     if (!active.current) return; accept(operation);
-    if (operation.result.type === 'uploaded') { setMediaID(operation.result.media.media_id); setFile(null); if (input.current) input.current.value = ''; }
+    if (operation.result.type === 'uploaded') { setMediaID(operation.result.media.media_id); recordedFile.current = null; setFile(null); if (input.current) input.current.value = ''; }
     setDeletion(null); await load(); setMessage(operation.kind === 'media.upload' ? '音频已上传' : operation.kind === 'media.grant' ? '播放授权已创建' : operation.kind === 'media.revoke' ? '播放授权已撤销' : '音频已删除');
+  }
+  function selectGenerated(id: string) {
+    setMediaID(id); setApproved(false);
+    void load().catch(error => { if (active.current) { setMessage(errorText(error)); if (error instanceof ApiError && error.status === 401) onError(error); } });
   }
   const available = page?.items.filter(item => item.available && Date.parse(item.metadata.expires_at) > Date.now()) ?? [], target = targets.find(item => item.device_id === deviceID);
   const disabled = !online || busy || blocked || !page?.configured;
@@ -94,17 +110,22 @@ export function Media({ prefix, session, online, devices, models, onError }: { p
     <div className="actions"><button disabled={!online || busy} onClick={() => void action(refresh)}>读取音频状态</button></div>
     {message && <p className="notice" role="status">{message}</p>}
     {page && !page.configured && <p className="notice">网关尚未启用音频服务</p>}
-    <Speech prefix={prefix} session={session} online={online} onError={onError} onGenerated={id => { setMediaID(id); setApproved(false); void load().catch(error => { if (active.current) { setMessage(errorText(error)); if (error instanceof ApiError && error.status === 401) onError(error); } }); }} />
-    <Transcription prefix={prefix} session={session} online={online} files={page?.items ?? []} onError={onError} />
-    <section className="rule-editor" aria-label="上传音频"><h2>上传音频</h2><form onSubmit={event => { event.preventDefault(); void action(async () => {
+    {mode === 'companion' ? <Companion prefix={prefix} session={session} online={online} files={page?.items ?? []} onError={onError} onGenerated={selectGenerated} /> : <>
+      <VoiceTurn prefix={prefix} session={session} online={online} files={page?.items ?? []} onError={onError} onGenerated={selectGenerated} />
+      <Speech prefix={prefix} session={session} online={online} onError={onError} onGenerated={selectGenerated} />
+      <Transcription prefix={prefix} session={session} online={online} files={page?.items ?? []} onError={onError} />
+    </>}
+    <section className="rule-editor" aria-label="上传音频"><h2>上传音频</h2><Microphone available={online && !blocked && page?.configured === true} disabled={disabled} onCaptureChange={setCapturing} onClear={clearRecording} onRecorded={recording => { recordingEpoch.current++; recordedFile.current = recording; setFile(recording); if (input.current) input.current.value = ''; }} /><form onSubmit={event => { event.preventDefault(); void action(async () => {
       if (!file || file.size > MAX_AUDIO_BYTES || file.size < 46) throw new Error('invalid_media_audio');
+      const recording = recordedFile.current === file, generation = recordingEpoch.current;
+      const permitted = () => !recording || active.current && currentOnline.current && !document.hidden && generation === recordingEpoch.current;
       const bytes = new Uint8Array(await file.arrayBuffer()); verifyPcmWav(bytes);
       let text = ''; for (let offset = 0; offset < bytes.length; offset += 32768) text += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
-      await submit({ type: 'media.upload', content_base64: btoa(text), retain_seconds: Number(retention) });
+      await submit({ type: 'media.upload', content_base64: btoa(text), retain_seconds: Number(retention) }, permitted);
     }); }}>
-      <label htmlFor="media-file">WAV 文件</label><div className="media-file-control"><button type="button" disabled={disabled} onClick={() => input.current?.click()}>选择文件</button><span>{file?.name ?? '未选择文件'}</span><input hidden ref={input} id="media-file" type="file" accept=".wav,audio/wav" disabled={disabled} onChange={event => setFile(event.target.files?.[0] ?? null)} /></div>
+      <label htmlFor="media-file">WAV 文件</label><div className="media-file-control"><button type="button" disabled={disabled || capturing} onClick={() => input.current?.click()}>选择文件</button><span>{file?.name ?? '未选择文件'}</span><input hidden ref={input} id="media-file" type="file" accept=".wav,audio/wav" disabled={disabled || capturing} onChange={event => { clearRecording(); setFile(event.target.files?.[0] ?? null); }} /></div>
       <label htmlFor="media-retention">保留时间</label><select id="media-retention" disabled={disabled} value={retention} onChange={event => setRetention(event.target.value)}><option value="600">10 分钟</option><option value="3600">1 小时</option><option value="86400">24 小时</option></select>
-      <button disabled={disabled || !file}>上传音频</button>
+      <button disabled={disabled || capturing || !file}>上传音频</button>
     </form></section>
     <section className="rule-editor" aria-label="播放授权"><h2>播放授权</h2><form onSubmit={event => { event.preventDefault(); if (target && approved) void action(() => submit({ type: 'media.grant', media_id: mediaID, device_id: target.device_id, expected_binding_revision: target.revision, valid_for_seconds: Number(duration) })); }}>
       <label htmlFor="media-object">音频</label><select id="media-object" value={mediaID} disabled={disabled} onChange={event => { setMediaID(event.target.value); setApproved(false); }}><option value="">选择音频</option>{available.map(item => <option key={item.metadata.media_id} value={item.metadata.media_id}>音频 {item.metadata.media_id.slice(-8)}，{(item.metadata.audio.frames / item.metadata.audio.sample_rate).toFixed(1)} 秒</option>)}</select>

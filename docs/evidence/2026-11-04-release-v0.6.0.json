@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-IOT-RELEASE-V060-20261104",
+  "recorded_at": "2026-11-04T15:56:56.156219+00:00",
+  "version": "0.6.0",
+  "source_ref": "v0.6.0",
+  "previous_revision": "e68950452e091449c8d65251839de9f562ba86f6",
+  "scope": "当前源码发行与版本元数据复验",
+  "status": "passed_with_known_product_gaps",
+  "checks": {
+    "commands": {
+      "rust-checks.json": [
+        {
+          "name": "format",
+          "exit_code": 0
+        },
+        {
+          "name": "clippy",
+          "exit_code": 0
+        },
+        {
+          "name": "rust-tests",
+          "exit_code": 0
+        }
+      ],
+      "frontend-checks.json": [
+        {
+          "name": "home",
+          "exit_code": 0
+        },
+        {
+          "name": "control",
+          "exit_code": 0
+        }
+      ],
+      "android-checks.json": [
+        {
+          "name": "android-phone",
+          "exit_code": 0
+        },
+        {
+          "name": "android-tv",
+          "exit_code": 0
+        }
+      ]
+    },
+    "rust_tests": {
+      "passed": 385,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered_out": 0,
+      "suites": 52
+    },
+    "rust_format": "passed",
+    "rust_clippy": "passed_with_warnings_denied",
+    "home_console_admin_build": "passed",
+    "ios_project_metadata": "plutil passed",
+    "version_consistency": "passed",
+    "android": {
+      "phone": {
+        "version_name": "0.6.0",
+        "version_code": 6,
+        "apk_sha256": "d201a402eb59484b858099606f4663b227baa33f018e988e3dffcfad3d7acff9",
+        "lint": {
+          "Error": 0,
+          "Fatal": 0,
+          "Warning": 17
+        },
+        "runtime_tested_this_release": false
+      },
+      "tv": {
+        "version_name": "0.4.0",
+        "version_code": 4,
+        "apk_sha256": "3a4018953c401864204a3866952696102ababfd29493cf3bc7aba537b5d808e3",
+        "lint": {
+          "Error": 0,
+          "Fatal": 0,
+          "Warning": 10
+        },
+        "runtime_tested_this_release": false
+      }
+    },
+    "iotweb": {
+      "version": "0.4.0",
+      "tests_passed": 30,
+      "tests_skipped": 12,
+      "tests_failed": 0,
+      "html_pages": 54,
+      "local_references": 2119,
+      "evidence_repository": "limecloud/iotweb",
+      "evidence_path": "docs/evidence/2026-11-04-release-v0.4.0.json"
+    }
+  },
+  "initial_failure": {
+    "name": "cargo fmt --all --check",
+    "reason": "main.rs新增模块声明未按格式化器排序，定向调整后复验通过",
+    "original_log": ".dev/release-v0.6.0/format-attempt1.log"
+  },
+  "hardware": false,
+  "production_deployed": false,
+  "container_images_distributed": false,
+  "firmware_rebuilt_this_release": false,
+  "full_goal_completed": false,
+  "limits": [
+    "原生组合包在线规划、部署、持久恢复及页面未完成",
+    "新组合版NAS完整安装受MySQL健康检查失败阻塞，未重复已达上限的尝试",
+    "完整iOS/Android运行、既有Android启动与AMD64多模态等阻塞保持",
+    "TV既有APK回调和端上验收未因本次构建提升为通过",
+    "更多协议、品牌生态、模型质量及玩具机器人样板仍有未完成范围",
+    "此前专项证据绑定各自冻结输入，当前版本号更新不追认其制品已重新构建"
+  ],
+  "artifacts": [
+    {
+      "path": "Cargo.toml",
+      "sha256": "0eae0b875a441ccb6699aeca562826d7a52cb2df8b4cde266606782809c9ce3f"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "58ad19ff58ebe7043705ba2fd35c80ae5e05b2be23eab135038865460966ec9b"
+    },
+    {
+      "path": "package.json",
+      "sha256": "1b0f755da6bf34a0f8ec4dc403e2bbef950e7dd2cdac2f0bfee7e7490edad2d9"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "953fc9d7dfc836df05d23637dc805d9debe5a68c8056f8359a9454c5897f728d"
+    },
+    {
+      "path": "apps/home/package.json",
+      "sha256": "ffd57a81c60d49468903bc8f158f1875fd773efb6388b151e7d932def02fdc13"
+    },
+    {
+      "path": "apps/console/package.json",
+      "sha256": "69743d340d74a7e4c2e698e47830e51ec794958042f4b327e47e927600fa5391"
+    },
+    {
+      "path": "apps/admin/package.json",
+      "sha256": "d2733ecff981451b46003fa7de65420602d3d8ca37e1a46dc56340c384c3c906"
+    },
+    {
+      "path": "packages/cli/package.json",
+      "sha256": "616a11f70dc84688619f31fabb465e9e2e5bba641f6d47528c3201656b15af61"
+    },
+    {
+      "path": "packages/control-ui/package.json",
+      "sha256": "a70518f071c40ec146cc3251396895409690bd5f01158d2f6d2f178f37aaeeb2"
+    },
+    {
+      "path": "apps/android/app/build.gradle.kts",
+      "sha256": "35a91459dbb7654bae8f002f622af4aa7b8a1dbf81ce15ac6af69963a41c5ec3"
+    },
+    {
+      "path": "apps/tv-agent/app/build.gradle.kts",
+      "sha256": "5324943879e01479a22f4dbe72bbd3e275c0350205473c99b82ccf748917203a"
+    },
+    {
+      "path": "apps/ios/LimeIoT.xcodeproj/project.pbxproj",
+      "sha256": "e971acf67a6104f30e5aca068bc403f674cdcd836a0f045d586498c3eb4a9e4c"
+    },
+    {
+      "path": "firmware/products/desk-node/CMakeLists.txt",
+      "sha256": "c70c520e3765f0084279cbd5d67b5900a5069349b085607820be713dadf14c37"
+    },
+    {
+      "path": "tools/build-firmware.py",
+      "sha256": "4166961b94a5f75936f3347e72f05f0fba5db83af2686c9a0b19e967e13b41a2"
+    },
+    {
+      "path": "docs/24-实施计划与进度.md",
+      "sha256": "de667c8ac54dca0a8f46562a5f11e252cfa9a48275030cd4acc4c6d5453a9d21"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "1f06abdbe76f37befcc6e19e0e1549f6e2d131c1aa5a2fc361686b8a9cb76c0f"
+    },
+    {
+      "path": ".dev/release-v0.6.0/format.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".dev/release-v0.6.0/format-attempt1.log",
+      "sha256": "6e8c6c7291a0aefe7f2e52732971b6c0378714ba27e8e3c7126069300c82bdd5"
+    },
+    {
+      "path": ".dev/release-v0.6.0/clippy.log",
+      "sha256": "d8ca6a72e07c86bb7d1d76726b1798c0d10249a55014c87184d5a483182afe12"
+    },
+    {
+      "path": ".dev/release-v0.6.0/rust-tests.log",
+      "sha256": "f9ec176c846822b7263cb3f9fb5e685607d4d702849609c343681f61bfa9dd3f"
+    },
+    {
+      "path": ".dev/release-v0.6.0/home.log",
+      "sha256": "377fbe3c841c355084a5809e20781275f50e8c7b5735b929cced0c6f3819f074"
+    },
+    {
+      "path": ".dev/release-v0.6.0/control.log",
+      "sha256": "e6565a6619f90c5895b00f086660b21d861e4a80ee97d52b92df021d587e6e98"
+    },
+    {
+      "path": ".dev/release-v0.6.0/android-phone.log",
+      "sha256": "7c68b2f8fd1fd0a4e1980b6c07fa39c27a7c189a451a93671bd9f9f3a0bebe6f"
+    },
+    {
+      "path": ".dev/release-v0.6.0/android-tv.log",
+      "sha256": "4d5fa1dc0632d0856aca31c780cfa5ae8f9d59b8d2f189270b7a053e324ab335"
+    },
+    {
+      "path": ".dev/release-v0.6.0/phone-apk-metadata.txt",
+      "sha256": "cc38cd001022d8ff320468ac9109cf8658ad16fbeaaff718bc18027d0da3c286"
+    },
+    {
+      "path": ".dev/release-v0.6.0/tv-apk-metadata.txt",
+      "sha256": "75f397b62ff2143673e7f5ab318c8d2b9487a056e57159198e71335c1a3a178e"
+    }
+  ],
+  "staged_diff_initial_failure": {
+    "path": "apps/ios/App/CompanionStore.swift",
+    "reason": "新文件末尾多余空行，移除后暂存区diff检查通过；未改变行为"
+  }
+}

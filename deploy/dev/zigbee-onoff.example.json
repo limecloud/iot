@@ -1,0 +1,26 @@
+{
+  "schema_version": 3,
+  "bindings": [],
+  "on_off_bindings": [
+    {
+      "device_id": "zigbee-light",
+      "adapter_id": "znp-light",
+      "model_revision": "sha256:a5ed590038c2d0c13e183a1cc7aeb166fbb9dc529d92366631978943c47433b0",
+      "serial": "/dev/ttyUSB0",
+      "target": {
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667789",
+        "endpoint": 1
+      },
+      "manufacturer_code": 4660,
+      "signature": {
+        "manufacturer": "LimeIoT",
+        "model": "Switch-1",
+        "application_version": 2,
+        "hardware_version": 1
+      },
+      "timeout_ms": 3000,
+      "poll_interval_ms": 1000
+    }
+  ]
+}

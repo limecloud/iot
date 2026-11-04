@@ -69,6 +69,9 @@ pub struct AdapterReceipt {
 }
 impl Device {
     pub(crate) fn native_ready(&self, now: DateTime<Utc>) -> bool {
+        self.observation_policy.is_none() && self.state_ready(now)
+    }
+    pub(crate) fn state_ready(&self, now: DateTime<Utc>) -> bool {
         self.ready
             && self.last_seen.is_some_and(|seen| {
                 let age = now - seen;
@@ -90,8 +93,10 @@ impl Data {
         self.schedule_resuming = true;
         self.reset_ota_approvals(None, "broker_disconnected");
         for device in self.devices.values_mut() {
-            device.ready = false;
-            device.device_info = None;
+            if device.observation_policy.is_none() {
+                device.ready = false;
+                device.device_info = None;
+            }
         }
         for command in self
             .commands
@@ -125,6 +130,10 @@ impl Data {
             .devices
             .get_mut(device)
             .ok_or_else(|| err("device_not_found"))?;
+        ensure(
+            device.property_bridge_policy.is_none(),
+            "property_bridge_session_required",
+        )?;
         ensure(
             device.routes.values().any(|bound| bound == route),
             "execution_route_mismatch",
@@ -174,6 +183,7 @@ impl Data {
             "execution_binding_revoked",
         )?;
         if let Some(route) = device.routes.get(path) {
+            self.check_property_bridge_session(device, path, now)?;
             ensure(device.adapter_ready(route, now), "device_offline")?;
             Ok(Some(
                 device.adapter_sessions[&route.adapter_id]
@@ -220,6 +230,7 @@ impl Data {
                 && current.request_digest == command.request_digest
                 && current.execution_route == command.execution_route
                 && current.execution_route.is_some()
+                && (current.request.operation.kind != "property.set" || current.evidence.is_none())
                 && current.request.expires_at > now,
             "execution_authorization_rejected",
         )?;
@@ -259,6 +270,10 @@ impl Data {
             .ok_or_else(|| err("command_not_found"))?
             .clone();
         ensure(
+            command.request.operation.kind == "action.invoke",
+            "unsupported_execution_route",
+        )?;
+        ensure(
             command.execution_route.as_ref() == Some(&route)
                 && command.envelope.session_id.as_deref() == Some(session_id.as_str())
                 && command.request_digest == request_digest,
@@ -285,17 +300,78 @@ impl Data {
                 .ok_or_else(|| err("model_mismatch"))?;
             for (path, route) in &device.routes {
                 route.validate()?;
-                let action = model.action(path)?;
-                ensure(supports_action(action), "unsupported_execution_route")?;
+                if let Some(policy) = &device.property_bridge_policy {
+                    policy.validate_model(model)?;
+                    ensure(
+                        policy.write_paths.contains(path) && policy.observation.source == *route,
+                        "unsupported_execution_route",
+                    )?;
+                } else {
+                    let action = model.action(path)?;
+                    ensure(supports_action(action), "unsupported_execution_route")?;
+                }
             }
         }
         for command in self.commands.values() {
             if let Some(route) = &command.execution_route {
                 route.validate()?;
-                ensure(
-                    command.request.operation.kind == "action.invoke",
-                    "unsupported_execution_route",
-                )?;
+                if command.request.operation.kind == "property.set" {
+                    let device = self
+                        .devices
+                        .get(&command.request.device_id)
+                        .ok_or_else(|| err("unsupported_execution_route"))?;
+                    ensure(
+                        device
+                            .property_bridge_policy
+                            .as_ref()
+                            .is_some_and(|policy| {
+                                policy.observation.model_revision == command.request.model_revision
+                                    && policy.write_paths.contains(&command.request.operation.path)
+                                    && (policy.observation.source == *route
+                                        || self.observation_registry.operations.values().any(
+                                            |operation| {
+                                                operation.status == "applied"
+                                                    && operation.result.as_ref().is_some_and(
+                                                        |view| {
+                                                            view.device_id
+                                                                == command.request.device_id
+                                                                && view
+                                                                    .binding
+                                                                    .as_ref()
+                                                                    .is_some_and(|binding| {
+                                                                        binding.active
+                                                                            && binding
+                                                                                .policy
+                                                                                .model_revision
+                                                                                == command
+                                                                                    .request
+                                                                                    .model_revision
+                                                                            && binding.policy.source
+                                                                                == *route
+                                                                            && binding
+                                                                                .write_paths
+                                                                                .contains(
+                                                                                    &command
+                                                                                        .request
+                                                                                        .operation
+                                                                                        .path,
+                                                                                )
+                                                                    })
+                                                        },
+                                                    )
+                                            },
+                                        ))
+                            }),
+                        "unsupported_execution_route",
+                    )?;
+                    self.models[&command.request.model_revision]
+                        .operation(&command.request.operation)?;
+                } else {
+                    ensure(
+                        command.request.operation.kind == "action.invoke",
+                        "unsupported_execution_route",
+                    )?;
+                }
             }
         }
         Ok(())

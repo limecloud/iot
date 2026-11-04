@@ -33,7 +33,7 @@ impl Store {
         let now = self.now()?;
         let task = Task::new(&self.state.space_id, &key, input, image, deployment, now)?;
         let mut next = self.state.clone();
-        next.schema_version = 4;
+        next.schema_version = next.schema_version.max(4);
         next.saved_at = now;
         next.visions.insert(key, task.clone());
         self.persist(next)?;

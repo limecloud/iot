@@ -1,0 +1,300 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "property_bridge_gateway_web_native_library_cloud_and_nas",
+  "status": "software_control_slice_passed",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "production_secure_store_runtime": false,
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "archive": ".dev/property-bridge-20261104",
+  "implementation": {
+    "contract": "contracts/property-bridges.md",
+    "model": "contracts/models/on-off-light.json",
+    "core": "gateway/crates/core/src/property_bridge.rs",
+    "runtime": "gateway/crates/runtime/src/integrations/zigbee.rs",
+    "snapshot_version": 14,
+    "static_configuration_version": 3,
+    "single_serial_actor": true,
+    "protocol_acceptance_does_not_change_reported": true,
+    "independent_readback_required": true,
+    "unknown_is_not_replayed_or_reconfirmed_after_restart": true,
+    "external_dependencies_added": false,
+    "remote_projection": "confirmed bridge evidence is projected to the existing device_result contract; internal token, route and baselines stay local"
+  },
+  "verification": {
+    "core_tests": 240,
+    "runtime_tests": 95,
+    "clippy": "passed_after_one_never_loop_correction",
+    "minimal_feature_check": "passed",
+    "standalone_zigbee_feature_check": "passed",
+    "web_journeys": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "log": "web-final.log",
+      "source_binary_rebuilt_after_clippy_correction": true,
+      "reports": [
+        ".dev/zigbee-gateway-journey-kw988g/report.json",
+        ".dev/zigbee-gateway-journey-qLU09H/onoff-report.json"
+      ]
+    },
+    "native_library": {
+      "ios": {
+        "passed": true,
+        "processes": 2,
+        "gateway_restarts": 1,
+        "report": ".dev/zigbee-gateway-journey-nz78Vi/onoff-native-report.json"
+      },
+      "android": {
+        "passed": true,
+        "processes": 2,
+        "gateway_restarts": 1,
+        "report": ".dev/zigbee-gateway-journey-7n4orm/onoff-native-report.json"
+      },
+      "lost_response_original_get": true,
+      "no_replay": true,
+      "transport": "loopback HTTP fixture",
+      "note": "Client library host integration; not complete SwiftUI/Compose application execution"
+    },
+    "cloud": {
+      "status": "passed",
+      "official_cloud": false,
+      "report": ".dev/zigbee-gateway-journey-8jszbF/onoff-cloud-report.json",
+      "log": "cloud-accepted.log",
+      "https_wss_mysql": true,
+      "confirmed_projection": true,
+      "unknown_preserved": true,
+      "gateway_and_control_restart": true,
+      "no_replay": true,
+      "go_test_race_and_vet_baseline": {
+        "passed": true,
+        "log": "cloud.log",
+        "note": "Completed before the initial new JS pairing fixture failed; subsequent targeted runs reuse this unchanged Go baseline."
+      }
+    },
+    "nas": {
+      "status": "passed",
+      "platform": "linux/arm64",
+      "emulated": false,
+      "report": ".dev/nas-onoff-8fe4d1ccbd05758f/report.json",
+      "log": "nas-journey.log",
+      "image": {
+        "id": "sha256:1a29fb411c4630cc014eab12d5683b4b68251b382ffd22232b70195b5fb9f68a",
+        "reference": "limeiot/verification:nas-arm64-onoff-20261104",
+        "platform": "linux/arm64"
+      },
+      "source_digest": "dae22e3d3183e56cc65b28e22e39521a0185e37613a54f44c9ce709640f0bdc8",
+      "source_inputs": 406,
+      "artifact_files": 92,
+      "linux_elfs": 4,
+      "source_inputs_match_after_all_changes": true,
+      "manifest_sha256": "1ed303b6bc284860a5667539f1f3b8d5b3072b8b046c5fa4253f756238dfe15d",
+      "non_root_read_only_cap_drop_all": true,
+      "https_verified_ca": true,
+      "packaged_mobile_web": true,
+      "web_response_loss_original_get": true,
+      "confirmed_threshold": true,
+      "unknown_preserved": true,
+      "recreate_and_restore_zero_replay": true,
+      "backup_snapshot": {
+        "integrity": "ok",
+        "version": 14,
+        "config_hash": "sha256:52877d9e98a7cf4f0c2886b04f1cb84eac70c950f240f960318a5f54380057ea",
+        "body_sha256": "440781b0d9c088277d0ee2176e60061f238e22797bba3d7d76c4408829d0635f"
+      },
+      "restored_snapshot": {
+        "integrity": "ok",
+        "version": 14,
+        "config_hash": "sha256:52877d9e98a7cf4f0c2886b04f1cb84eac70c950f240f960318a5f54380057ea",
+        "body_sha256": "440781b0d9c088277d0ee2176e60061f238e22797bba3d7d76c4408829d0635f"
+      },
+      "initial_control_requests": [
+        true,
+        false,
+        true,
+        true
+      ],
+      "restored_control_requests": [],
+      "containers_cleaned": true,
+      "physical_device_passthrough": false,
+      "screenshot": ".dev/nas-onoff-8fe4d1ccbd05758f/nas-onoff-mobile.png"
+    },
+    "website": {
+      "passed": true,
+      "pages": 53,
+      "local_references": 2055,
+      "log": "website-final-closure.log",
+      "scope": "final guide includes native/cloud commands and actual ARM64 v14 restore results"
+    },
+    "document_links": {
+      "passed": true,
+      "files": 11,
+      "local_file_links": 487,
+      "broken": []
+    },
+    "format_and_syntax": {
+      "cargo_fmt": true,
+      "new_javascript": true,
+      "python_fixture": true
+    },
+    "document_links_final": {
+      "passed": true,
+      "files": 6,
+      "local_file_links": 328,
+      "broken": []
+    },
+    "both_repository_diff_checks": true
+  },
+  "failures_and_fixes": [
+    {
+      "check": "Clippy",
+      "failure": "never_loop in execute_pending",
+      "fix": "select the first FIFO command with if let instead of a for loop that always returns",
+      "result": "passed"
+    },
+    {
+      "check": "Android restart journey",
+      "failure": "software PTY echoed a late NCP frame after the host closed, causing fixture byte assertions to fail",
+      "fix": "initialize only the runtime PTY fixture in raw mode and preserve its actual initial termios baseline",
+      "result": "passed; request and frame assertions unchanged"
+    },
+    {
+      "check": "cloud pairing journey",
+      "failure": "new test omitted the pairing idempotency header and expected synchronous HTTP 200",
+      "fix": "reuse the existing control request helper and assert the implemented HTTP 202 asynchronous contract",
+      "result": "passed"
+    },
+    {
+      "check": "cloud fixture readiness",
+      "failure": "targeted mode started migrations before isolated MySQL finished initializing",
+      "fix": "wait for SELECT 1 using the isolated database user before processSmoke",
+      "result": "passed"
+    }
+  ],
+  "limitations": [
+    "New On/Off devices use explicit static configuration; dynamic commissioning UI still supports environment sensors only.",
+    "Complete iOS App execution, Android startup ANR and production Keychain/Keystore runtime remain independent gaps.",
+    "ARM64 package validation does not cover AMD64 multimodal recovery or real NAS USB passthrough.",
+    "Official cloud remains on its previously frozen deployment; no production API or deployment was performed.",
+    "More protocols, brand ecosystems, real model quality, TV callbacks, toy and robot sample products are unfinished."
+  ],
+  "design": "Reuse the existing command ledger, model controls, client transports and formal NAS packaging/backup tools; keep protocol code behind the gateway adapter and add only targeted cross-layer checks.",
+  "freeze_scope": "NAS artifact inputs were checked against the current source after final code changes; documentation, test harnesses and host checks are recorded separately. This is not a complete dual-repository acceptance or production deployment.",
+  "source_sha256": {
+    "gateway/crates/core/src/property_bridge.rs": "2d01c68d173eb43392b84dd2e4d8c23eb4f86de23e303d93a26601d2dad6f475",
+    "gateway/crates/runtime/src/integrations/zigbee.rs": "d64172a729a55d23a6eaa88776159cc36e94f4912626d6e7dfd95d9dd2d45b68",
+    "gateway/crates/runtime/src/relay_rpc.rs": "2ffb983ffd280c2aaa578d46ed036a8cf058f170b0ae00788688c8b94a1c8733",
+    "gateway/crates/runtime/src/store.rs": "ca6d0e8d3301b71e34075a5b2cb738d5f2371c3d8d74615bc126ec1ab2cdfe99",
+    "tests/fixtures/zigbee/ncp.py": "4737e81090fee6a779a3e63845f697588299537b0b168688aee32408021a122d",
+    "tests/zigbee-onoff-native.test.mjs": "fe5454e26c4bdedc32bc2aea8c7e9a800f3b40f266687b464c8f14f10e43475b",
+    "tests/zigbee-onoff-cloud.test.mjs": "56777e7013b275ec30fc043298bbf7db8a82dc5bde0d4a3c56845f89c4f99fac",
+    "tools/test-nas-onoff.mjs": "b2f701edda02c7030cfc04023b461e16c3a36bb52bab45c34052c6f00ad3dd7b",
+    "tools/test-control.mjs": "d9c3611a830f0a08b2806d0cd3be9acbf8cdd6f186702ae9550c7d78d2dcf632",
+    "apps/ios/Tests/LimeIoTKitTests/PropertyBridgeChecks.swift": "6bafa8af2c198cd207760a2a890b20d9415f3c4a304354c2df43b1eab9b4f839",
+    "apps/android/core/src/test/kotlin/run/limeai/iot/core/PropertyBridgeJourneyTest.kt": "ecced9240894349f6cdedd169eb1a745b61fa550d4d0b0bb60c7b34d9b1cad66"
+  },
+  "log_sha256": {
+    "clippy-final.log": "e29e2275252e93531aa10b04184483d3a9ff963c1bd7ade5f3658b5947436231",
+    "clippy.log": "d69be517c8382d9fad886ede220b2687c300b918006eae31ba0ccf20250c6a71",
+    "cloud-accepted.log": "3d3cfd5374ce5991c220227c967be8ec79032b12babfdd3feae1b9ce45911a04",
+    "cloud-final.log": "42c3755f2385b154926d6f4a40a325939f7d35c2ae72a490f6f65007e4971f55",
+    "cloud-ready.log": "21ffeed379381572d0e13a0a9ab1b138a30959733b021b5c68054d1eec58488d",
+    "cloud.log": "555265a2cad8a25d3cc59d7f367b10ecd80e31ef5b69a5adaf8abee7e4de7c95",
+    "feature-minimal.log": "fae3a9a607665fbf7ea5efc4f7c56d008f9970513a682a4cf4e34e2183cbfa71",
+    "feature-zigbee.log": "5172ce83c9c49babb873be4d875c9230f6a75eb7eb3fababec1f7e6b242a2898",
+    "home-build.log": "0d2e66d98237943fbcf14acc0b7187c26f5ffceb60040ba2c17999ce668553be",
+    "journey.log": "22824cb3d9786d835b952ad8218b60ea2646084a595859e12a6b7e982ee23afb",
+    "nas-build.log": "dcc830f3e0cc9d479912490f25882395fe49fe682b39b9b29c7ce64a5009cc25",
+    "nas-image.log": "d8f62fcb44b103d1290f45d562c478ad203674a791dec5210081cdba96c8a038",
+    "nas-journey.log": "5d261ff4eeee58c9246919e4493331c80db9fd258ecfd3c8f5d9ff5a4bd1a0e3",
+    "native-android-final.log": "8851b5a57e837b541c389c064162d9fc7584337bd25ca0789e2d3cd8dfce2a6b",
+    "native.log": "1d21717c73703e3693db26ef4a9730e0eaabd166828e0f16c460d5063766139c",
+    "runtime-build.log": "1f4e40524ed4c433dc74b13c6e1524b20d12fbbcc3b155c9222a8d2cae7fd460",
+    "runtime-check.log": "335aa418abaf552ba6efd331cd03251d666d17d120eeb520027457edd0b8a97d",
+    "runtime-tests.log": "c6c9cdadbe121a0d9834ab20b4395e7df6865f441e7f66fb3f81b167d4218d5d",
+    "tests.log": "b8933e6ea6ba5269e2a2918867525460d235d161867e24cff58c2db845fff95c",
+    "web-final.log": "04d034a24a66e81410246263f1810a01ea49c79737bb47f04611a3f5b343c1a4",
+    "website-closure.log": "ffedb74731c7fbf2e9f9d4586f48dc8b4c5f4a0c5f79682ed64b6d4254800df1",
+    "website-final.log": "a625b1c7c42d232e6e2be6b619a3237fcd72ea2b8cff693ce3016d31d351d2ff",
+    "website.log": "6555758918fdbd82cf2b150cbb3aeea48c1b6fe9692889ba3b5996fa97886a0e",
+    "website-final-closure.log": "f1fc646473f880d6ad97948965e92251cc820e2bac3e2e7d6ffe55a82b7ea6b5"
+  },
+  "website_source_sha256": {
+    "src/docs/content/zigbee.md": "23e880af07ec2d9df4a06f3da8afb38a8d4ae72cb92ec158e42b642e6655f710"
+  },
+  "dynamic_binding": {
+    "status": "software_gateway_web_native_state_cloud_and_arm64_nas_passed",
+    "snapshot_version": 15,
+    "model": "contracts/models/on-off-light.json",
+    "query_profile": "on_off",
+    "write_paths": [
+      "light.power"
+    ],
+    "readonly_serialization_compatible": true,
+    "historical_routes_verify_only": true,
+    "web_reentry_original_get_only": true,
+    "core_tests": 241,
+    "runtime_tests": 96,
+    "clippy": "passed",
+    "contract_tests": 5,
+    "ios_state_report": ".dev/observation-native-checks/ios.json",
+    "android_state_apk_lint_report": ".dev/observation-native-checks/android.json",
+    "ios_journey": ".dev/zigbee-gateway-journey-x2uS2i/observation-native-result.json",
+    "android_journey": ".dev/zigbee-gateway-journey-eZyOnV/observation-native-result.json",
+    "cloud_journey": ".dev/zigbee-gateway-journey-qT6Sse/onoff-cloud-report.json",
+    "web_regression_reports": [
+      ".dev/zigbee-gateway-journey-PkKmJw/observation-web-report.json",
+      ".dev/zigbee-gateway-journey-Tg6Kbe/observation-web-lock-report.json",
+      ".dev/zigbee-gateway-journey-zPuxhQ/observation-web-review-report.json"
+    ],
+    "website": {
+      "pages": 53,
+      "local_references": 2055,
+      "log": ".dev/dynamic-binding-website.log"
+    },
+    "hardware": false,
+    "native_app_runtime": false,
+    "official_cloud_updated": false,
+    "published": false,
+    "full_goal_completed": false,
+    "web_journey": ".dev/zigbee-gateway-journey-8mNNZ9/dynamic-switch-report.json",
+    "nas": {
+      "passed": true,
+      "platform": "linux/arm64",
+      "image": "limeiot/verification:nas-arm64-dynamic-switch-20261104",
+      "image_id": "sha256:cda6d99ae7b5c70c03d2888cb12fe3ae4fc22d359c78493a49b30f614a23c40b",
+      "source_digest": "dabd8f88393130b980f9bd3134708998f7d4814cdba20a147685ab59d92f0769",
+      "input_files": 406,
+      "artifact_files": 92,
+      "linux_binaries": 4,
+      "artifact_directory": ".dev/nas-arm64-dynamic-switch-20261104",
+      "report": ".dev/nas-onoff-946729e54cb30d81/report.json",
+      "packaged_dynamic_switch_binding": true,
+      "packaged_mobile_control": true,
+      "threshold": true,
+      "unknown_preserved": true,
+      "recreate_and_restore_zero_replay": true,
+      "snapshot_version": 15,
+      "backup_and_restore_body_sha256": "0b0db8e1fd9a4adfa6ca338a7fbbeaf76e7ab3f81d180414fb05e7010a551cc2",
+      "containers_cleaned": true,
+      "initial_freeze_invalidated_by_required_web_navigation_fix": true,
+      "final_build_log": ".dev/dynamic-binding-nas-final-build.log",
+      "runtime_log": ".dev/dynamic-binding-nas-runtime.log"
+    },
+    "logs": {
+      "rust": ".dev/dynamic-binding-rust-final.log",
+      "contract": ".dev/dynamic-binding-contract.log",
+      "web_regression": ".dev/dynamic-binding-web-closure.log",
+      "web_final": ".dev/dynamic-binding-web-final.log",
+      "ios_state": ".dev/dynamic-binding-ios-state.log",
+      "android_state": ".dev/dynamic-binding-android-state.log",
+      "ios_journey": ".dev/dynamic-binding-ios-journey.log",
+      "android_journey": ".dev/dynamic-binding-android-journey.log",
+      "cloud": ".dev/dynamic-binding-cloud.log"
+    }
+  }
+}

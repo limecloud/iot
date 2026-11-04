@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-COMPOSITION-20261104-01",
+  "recorded_at": "2026-11-04T12:13:42.185891+00:00",
+  "status": "passed",
+  "scope": "源码CLI声明式事件/set组合包、模型预检查、现有规则编译与真实网关软件样板",
+  "full_goal_completed": false,
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "cloud_updated": false,
+  "nas_image_rebuilt": false,
+  "native_app_runtime": false,
+  "implemented": [
+    "正式组合Schema与有界JSON/角色绑定编译",
+    "离线schema/compile不读取凭据",
+    "在线plan核对实际模型、复用原规则验证/预演并再次核对",
+    "从规则派生审阅清单，不授予权限",
+    "两模块触摸伴读灯样板及明确部署/查询/停用教程"
+  ],
+  "verification": {
+    "command": "npm run test:composition",
+    "exit_code": 0,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "log": {
+      "path": ".dev/composition-20261104/final-review.log",
+      "sha256": "8f84052af34bdf83a993c9724185cfab531be2805da6932621ce3e23292b98f9"
+    },
+    "schema_invalid_cases": 23,
+    "boundary_report": {
+      "path": ".dev/composition-boundaries-y59LUT/result.json",
+      "sha256": "1518076dc0a43ea0f7da8313f9adf4abee93977dab355cd8f17eeab5a454d855"
+    },
+    "contract_recheck": {
+      "path": ".dev/composition-20261104/contract-attempt2.log",
+      "sha256": "49f03ae89d922c06ef525fa1f5244d70eb6222bb817a78862dabe3a4c1cf4471"
+    },
+    "initial_pass_log": {
+      "path": ".dev/composition-20261104/full-attempt1.log",
+      "sha256": "c88a9c2a91893d5b8c89af2f24924e6d958f5cbc08783287a5fcb73f9a7042d6"
+    },
+    "documentation_integrity": {
+      "path": ".dev/composition-20261104/document-integrity-final.json",
+      "sha256": "63a508e0776927d979ff26873799abec9a44c6b51178f2916f234b2b11d698b5"
+    },
+    "review": "首轮完整入口通过后移除一个未使用的测试辅助函数；源码语法检查与完整入口再次通过，所有断言保持。"
+  },
+  "journeys": [
+    {
+      "report": {
+        "path": ".dev/run-1793794341925-015bdf5e/composition-result.json",
+        "sha256": "d19a5310587d127b5141b9896755f582b3a907fd6bef092c736c76a415e3cc6a"
+      },
+      "checks": {
+        "passed": true,
+        "real_rust_gateway": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "cli": true,
+        "package_digest": "sha256:036573d9c6b2c4068288e07e47e51f3b5d8cc26ce7831f43f7987091c589277a",
+        "bindings_digest": "sha256:d153ca9d57b8225542e8a3ed6b465a3e69ce8b4953672fbc00bea221b5efb604",
+        "rule_revision": "sha256:33aa953d04a7299d34243c748d3c2a263a446b0f2c792b68cb1fd14683d3eba6",
+        "package_modules": 2,
+        "generated_actions": 2,
+        "planning_device_commands": 0,
+        "planning_deployments": 0,
+        "explicit_deployment": true,
+        "gateway_restarts": 1,
+        "device_restarts": 1,
+        "command_statuses": [
+          "confirmed",
+          "confirmed"
+        ],
+        "lost_receipt": false,
+        "original_queries_preserved": true,
+        "duplicate_event_no_replay": true,
+        "explicit_stop_blocks_new_event": true,
+        "hardware": false,
+        "toy_firmware": false,
+        "multimodal_companion": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/run-1793794352736-0e65be25/composition-result.json",
+        "sha256": "4537b8c28e46c306f5fb39138be5b7ca508fb493f66f5e85b7e6faeed18f304f"
+      },
+      "checks": {
+        "passed": true,
+        "real_rust_gateway": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "cli": true,
+        "package_digest": "sha256:036573d9c6b2c4068288e07e47e51f3b5d8cc26ce7831f43f7987091c589277a",
+        "bindings_digest": "sha256:d153ca9d57b8225542e8a3ed6b465a3e69ce8b4953672fbc00bea221b5efb604",
+        "rule_revision": "sha256:71c4ec3e54bf168cdcb432c39e8faf5d99b329f4e99b26de5f0f52381fd1930d",
+        "package_modules": 2,
+        "generated_actions": 2,
+        "planning_device_commands": 0,
+        "planning_deployments": 0,
+        "explicit_deployment": true,
+        "gateway_restarts": 1,
+        "device_restarts": 1,
+        "command_statuses": [
+          "unknown",
+          "expired"
+        ],
+        "lost_receipt": true,
+        "original_queries_preserved": true,
+        "duplicate_event_no_replay": true,
+        "explicit_stop_blocks_new_event": true,
+        "hardware": false,
+        "toy_firmware": false,
+        "multimodal_companion": false,
+        "full_goal_completed": false
+      }
+    }
+  ],
+  "source_manifest": {
+    "path": ".dev/composition-20261104/source-manifest-final.json",
+    "sha256": "cdff8e97033b855f30d3633e31b233972fac4e5db94270962c9c6d34f4c4b713"
+  },
+  "source_count": 259,
+  "artifact_count": 2,
+  "preserved_failures": [
+    {
+      "record": {
+        "path": ".dev/composition-20261104/contract-attempt1.json",
+        "sha256": "8dbf20050a8c99d8ad96e201fb351235880c0d130c21c9f32730b36627ca311f"
+      },
+      "cause": "allOf的事件/set子约束required项未在同一子约束声明properties，AJV strictRequired拒绝。补齐属性声明后通过，未降低严格模式或改变规则语义。",
+      "targeted_repairs": 1
+    },
+    {
+      "record": {
+        "path": ".dev/composition-20261104/document-integrity.json",
+        "sha256": "045bd5fa3ddc54af1312f91fe742335f9f2f32fd73973d72e4512ec7b8d50203"
+      },
+      "cause": "临时链接检查把官网llms.txt与catalog.json静态文件按目录index.html查找；补充实际静态文件路径检查后通过，未改产品或链接。",
+      "targeted_repairs": 1
+    }
+  ],
+  "documentation": [
+    {
+      "path": "contracts/composition.md",
+      "sha256": "a25bc28a3a5ff5e68f8fdb42161dd2d0268646a7faf017ad99de671078ce7b5e"
+    },
+    {
+      "path": "contracts/README.md",
+      "sha256": "9c2bb5454916d7b500d6c4951f19b4e3b0942df10f29b2d550d05bb758f828cd"
+    },
+    {
+      "path": "examples/compositions/reading-companion/README.md",
+      "sha256": "b259faa3ab6a7071ba3518a35354b2a3e4b8ea16fdfcaa8ea07610f77af25573"
+    },
+    {
+      "path": "packages/cli/README.md",
+      "sha256": "f81bd3e3ce3915221286d1db76c74e19775a4b08017524f2378d0ebe2ed26122"
+    },
+    {
+      "path": "docs/32-能力组合与场景应用.md",
+      "sha256": "2b877e82a706f2e95950717e9770b45fc2e0241223aed8ebca9c0a9667931baf"
+    },
+    {
+      "path": "docs/24-实施计划与进度.md",
+      "sha256": "acc8c5c0311e1c43aa5f9b15d1e507d3d24e14efa3f958cfa12de203033b2b9d"
+    },
+    {
+      "path": "llms.txt",
+      "sha256": "e7fb12b19c78edc73572a05246b2d28303475c6927d103cd41a0361f5764c62b"
+    }
+  ],
+  "website": {
+    "repository": "iotweb",
+    "source": {
+      "path": "src/docs/content/agent-development.md",
+      "sha256": "226f5f9b3da529f5adea3ebad44d288fed4f197b9754fe64cd74bed656eb8289"
+    },
+    "build_log": {
+      "path": "../iot/.dev/composition-20261104/website-build.log",
+      "sha256": "06efbb0b0d2083809cbc5f60da789733e69235bc1b56d1d44d546e0047552de1"
+    },
+    "pages": 54,
+    "local_references": 2117,
+    "exit_code": 0
+  },
+  "design": "复用正式rule.schema.json、规范JSON摘要、完整预演证据检查和现有规则/命令/SQLite恢复；编译器只替换角色，没有第二套执行器或授权系统。",
+  "limits": [
+    "源码CLI首版仅支持事件、空条件和静态set，不新增HTTP工具或持久包安装对象。模型修订检查是规划时快照，不是部署后精确模型锁定。",
+    "摘要不证明签名信任、硬件兼容或物理归属；审阅清单不授予权限。",
+    "真实Rust/MQTT/SQLite使用设备模拟器；按键合同不等于触摸驱动。无玩具固件、模型调用、多模态陪伴或运动机器人验收。",
+    "unknown旅程的第二条命令为expired，沿原FIFO和期限，不算两步成功或物理效果。",
+    "没有修改Rust、数据库或核心依赖，未重建NAS或发布官网/云。旧原生及NAS证据保持各自冻结输入，不宣称与后续CLI/文档工作树完全一致。"
+  ]
+}

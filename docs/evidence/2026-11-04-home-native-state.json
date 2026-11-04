@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-04T03:23:47.355363+00:00",
+  "scope": "原生家庭状态层的宿主恢复验证与Android调试包",
+  "status": "passed",
+  "hardware": false,
+  "hardware_status": "用户要求跳过",
+  "native_app_runtime": false,
+  "production_secure_store_runtime": false,
+  "published": false,
+  "full_goal_completed": false,
+  "changes": [
+    "HomeStore和HomeViewModel通过既有存储、网络及地址偏好接口注入，生产继续使用原安全存储",
+    "保存完整原请求并回读失败时零POST；错误回执与404保留原记录，恢复只查询原键",
+    "修正iOS未发送时的本地存储错误提示",
+    "两端HTTP传输实例仍在连接时创建，避免依赖注入提前创建启动资源"
+  ],
+  "checks": {
+    "ios": {
+      "status": "passed",
+      "command": "node tools/test-home-native-state.mjs ios",
+      "exit_code": 0,
+      "swift_build": true,
+      "actual_home_store_compiled_and_executed": true,
+      "home_state_groups": 6,
+      "storage_failure_modes": 2,
+      "swiftui_parse": true,
+      "report": {
+        "path": ".dev/home-native-state/ios.json",
+        "sha256": "d313c340ea2d4e55d411d1cb9367b2e7ec00d4c95612208ce43d47357ce7b29d"
+      },
+      "log": {
+        "path": ".dev/home-native-state-ios-lazy-20261104.log",
+        "sha256": "c11a07593f355c1bc3e0444b4dc934626e238b6cd2e4a5494f39c7d766c8ae8a"
+      },
+      "executable": {
+        "path": ".dev/home-native-state/ios-home-state",
+        "sha256": "84a557654b401afbf7029a000eb538d3ac1df2d0b3441a81bcdb1878d1e390e8"
+      }
+    },
+    "android": {
+      "status": "passed",
+      "command": "node tools/test-home-native-state.mjs android",
+      "exit_code": 0,
+      "tests": 11,
+      "suites": [
+        {
+          "name": "HomeViewModelTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "timestamp": "2026-11-04T03:13:19.340Z",
+          "result": {
+            "path": ".dev/home-native-state/TEST-HomeViewModelTest.xml",
+            "sha256": "984e422c80cbba6edf1bb590666f61898e7f208fac061104bc32ddba874f1e83"
+          }
+        },
+        {
+          "name": "CloudViewModelTest",
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "timestamp": "2026-11-04T03:13:17.099Z",
+          "result": {
+            "path": ".dev/home-native-state/TEST-CloudViewModelTest.xml",
+            "sha256": "fea034f7c17bf87da8c8ec2559d3ea09a26704c25596c1b7442456fd65ee388c"
+          }
+        }
+      ],
+      "debug_apk": {
+        "path": "apps/android/app/build/outputs/apk/debug/app-debug.apk",
+        "sha256": "7e8d8626fbb9f7e0538b58c7c0ef2fc5bc1a2bc2baa0a5963cc783e663083e67"
+      },
+      "lint": {
+        "errors": 0,
+        "warnings": 17,
+        "result": {
+          "path": ".dev/home-native-state/android-lint.xml",
+          "sha256": "9eb5c4833b96e8886c7cbb3eb923681c80f9ffad784067828adae595d4e76b07"
+        }
+      },
+      "report": {
+        "path": ".dev/home-native-state/android.json",
+        "sha256": "8504958286b664f463863bbce784a024f73072d055b4c9308df6a1150a3f83f5"
+      },
+      "log": {
+        "path": ".dev/home-native-state-android-lazy-20261104.log",
+        "sha256": "075cc5d34bba1d943f79c5c1a22a614b8530117a7a221313d73dfd362df359cc"
+      }
+    }
+  },
+  "source_manifest": {
+    "path": ".dev/home-native-state/source-manifest.json",
+    "sha256": "c8c43cba933d4c865fff9ced5c901aa4213519f5b8fdb6e5bf54403048de624d",
+    "inputs": 147,
+    "matches_current_sources": true
+  },
+  "changed_or_added_sources": [
+    {
+      "path": "apps/ios/App/HomeStore.swift",
+      "sha256": "5ac57c865cb1c3110ed0eaf3be8f8441de314189fd7d46be6790f1cefdaf9790"
+    },
+    {
+      "path": "apps/android/app/src/main/kotlin/run/limeai/iot/HomeViewModel.kt",
+      "sha256": "fed22f6b51e3016804a3d429857ef5fce5e6d84162fd429bec02bf85cd367dd3"
+    },
+    {
+      "path": "apps/android/app/src/main/kotlin/run/limeai/iot/MainActivity.kt",
+      "sha256": "c7b9b9c476ce85293b89aaad4c358794e1a5dd3ef6e7d393b6e6c6ff714f940e"
+    },
+    {
+      "path": "apps/ios/Checks/HomeStoreChecks.swift",
+      "sha256": "a9f5edb0ca61dacc5a41f3bd05cf2426f81a5ab47740e8efef6f72753210ebcb"
+    },
+    {
+      "path": "apps/android/app/src/test/kotlin/run/limeai/iot/HomeViewModelTest.kt",
+      "sha256": "0ce7a412719ce7a9538474b504e57ce99464831b554e9c32581eb7fb50f48e24"
+    },
+    {
+      "path": "tools/test-home-native-state.mjs",
+      "sha256": "5dc94c15c19274a43c19ae6b6c811c6704c30a9eb61ec0fb23e313da6b0b4b12"
+    }
+  ],
+  "earlier_phase_checks": {
+    "description": "延迟创建传输实例前的同入口检查已通过；最终结果以上方源码及日志为准",
+    "android_log": {
+      "path": ".dev/home-native-state-android-20261104.log",
+      "sha256": "f2a8014df2b92fa2c9ae051b7089baf94ca44303ab25caad75fd094dfd9da85a"
+    },
+    "ios_log": {
+      "path": ".dev/home-native-state-ios-final-20261104.log",
+      "sha256": "47ea0ed7d95596d30a5ab86005d53ec01b287f7a011ca27c80e7a78ad0cabd65"
+    }
+  },
+  "boundaries": [
+    "HTTP与存储为宿主夹具；不证明生产Keychain、Keystore、系统TLS或手机生命周期",
+    "SwiftUI仅语法检查；缺少完整Xcode与iOS SDK，未构建或运行完整iOS App",
+    "Android未启动模拟器或实机；既有启动ANR阻塞未重试",
+    "上一阶段Android SDK实际网关联调的测试编译超时仍保留，不由本轮状态测试替代",
+    "NAS、网关与官网源码本轮未改动，复用此前各自冻结范围的结果，未重建或发布",
+    "AMD64多模态恢复、TV回调、真实模型质量及后续协议生态和玩具机器人范围不由本轮验收"
+  ],
+  "previous_evidence": "docs/evidence/2026-11-04-command-recovery.json"
+}

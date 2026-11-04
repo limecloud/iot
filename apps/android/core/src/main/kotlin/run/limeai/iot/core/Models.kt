@@ -10,7 +10,8 @@ import java.util.UUID
 @Serializable data class Session(val authenticated: Boolean, @SerialName("csrf_token") val csrfToken: String, @SerialName("expires_at") val expiresAt: String)
 @Serializable data class Space(@SerialName("space_id") val spaceId: String)
 @Serializable data class Observation(val value: JsonElement, @SerialName("observed_at") val observedAt: String, val quality: String, val source: String)
-@Serializable data class Device(@SerialName("device_id") val deviceId: String, @SerialName("model_revision") val modelRevision: String, val ready: Boolean, @SerialName("last_seen") val lastSeen: String? = null, val reported: Map<String, Observation> = emptyMap())
+@Serializable data class Device(@SerialName("device_id") val deviceId: String, @SerialName("model_revision") val modelRevision: String, val ready: Boolean, @SerialName("last_seen") val lastSeen: String? = null, val reported: Map<String, Observation> = emptyMap(), @SerialName("observation_source") val observationSource: ObservationSource? = null)
+@Serializable data class ObservationSource(@SerialName("adapter_id") val adapterId: String, val revision: String, val ready: Boolean)
 @Serializable data class ValueSchema(val type: String, val minimum: Double? = null, val maximum: Double? = null, val properties: Map<String, ValueSchema> = emptyMap(), val required: List<String> = emptyList(), @SerialName("enum") val enumValues: List<JsonElement> = emptyList(), val minLength: Int? = null, val maxLength: Int? = null) {
     fun sample(): JsonElement = enumValues.firstOrNull() ?: when (type) {
         "boolean" -> JsonPrimitive(true)

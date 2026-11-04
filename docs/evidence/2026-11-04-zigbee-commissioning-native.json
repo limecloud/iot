@@ -1,0 +1,324 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "swift_kotlin_explicit_zigbee_commissioning_clients_ui_state_original_recovery_and_real_host_journeys",
+  "status": "software_stage_passed",
+  "archive": ".dev/commissioning-native-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "production_secure_store_runtime": false,
+  "published": false,
+  "official_cloud_updated": false,
+  "new_nas_image": false,
+  "full_goal_completed": false,
+  "changes": {
+    "independent_commissioning_clients_and_records": true,
+    "existing_session_csrf_integer_json_and_secure_store_reused": true,
+    "intent_saved_and_read_back_before_post": true,
+    "same_key_only_get": true,
+    "cross_instance_mutual_exclusion": true,
+    "unknown_blocks_new_open_key": true,
+    "explicit_close_separate": true,
+    "terminal_receipt_immutable": true,
+    "other_clients_history_lookup_without_local_original": true,
+    "lifecycle_owned_and_cancelled": true,
+    "rust_or_database_or_firmware_changes": false,
+    "new_dependencies": false
+  },
+  "verification": {
+    "swift": {
+      "commissioning_contract_groups": 5,
+      "commissioning_state_groups": 4,
+      "existing_observation_contract_groups": 9,
+      "existing_observation_state_groups": 12,
+      "home_typecheck": true,
+      "swiftui_parse": true,
+      "project_structure": true,
+      "full_ios_build": false
+    },
+    "android": {
+      "unit_tests": 48,
+      "commissioning_tests": 9,
+      "existing_related_tests": 39,
+      "debug_apk": true,
+      "lint_errors": 0,
+      "lint_warnings": 17,
+      "suites": [
+        {
+          "class": "run.limeai.iot.ObservationControllerTest",
+          "tests": 11,
+          "failed": 0,
+          "skipped": 0,
+          "sha256": "d22b1de01e98cfbfd60d8b0c188854a2ecb0ee3aef47bceb832fb8abcebceb16"
+        },
+        {
+          "class": "run.limeai.iot.VisionControllerTest",
+          "tests": 9,
+          "failed": 0,
+          "skipped": 0,
+          "sha256": "b5515df3f73f5f0d992280fed4a4046899d72db1fdc5acc70af5fd8bafdf9d85"
+        },
+        {
+          "class": "run.limeai.iot.ZigbeeControllerTest",
+          "tests": 9,
+          "failed": 0,
+          "skipped": 0,
+          "sha256": "c0fa411057dcbd55f9bbd6526112bcb7f2cc15b3256a3280819c6bf39e20f3d1"
+        },
+        {
+          "class": "run.limeai.iot.core.GatewayClientTest",
+          "tests": 4,
+          "failed": 0,
+          "skipped": 0,
+          "sha256": "a05e3b73fc5653b641ad1b67bc26be89a94e8484bc80174ab28ff22662eb21e2"
+        },
+        {
+          "class": "run.limeai.iot.core.ObservationClientTest",
+          "tests": 8,
+          "failed": 0,
+          "skipped": 0,
+          "sha256": "5ce7bb668615da85d6b4a494262dfcb72c31e094b96fe7031dfd9c2a93975e40"
+        },
+        {
+          "class": "run.limeai.iot.core.OtaClientTest",
+          "tests": 7,
+          "failed": 0,
+          "skipped": 0,
+          "sha256": "5fa4583cc6199c69c7d65da8e51c3d1ec10b91e1b640aac05e514135ad981304"
+        }
+      ],
+      "complete_app_startup": false
+    },
+    "shared_invalid_vectors": 20,
+    "full_256_record_history_capacity": true,
+    "latest_web_journeys": 3,
+    "shared_js_contract_check": 1,
+    "native_host_journeys": 2,
+    "native_processes_per_target": 2,
+    "gateway_restarts_per_target": 2,
+    "confirmed_threshold_commands_per_target": 2,
+    "journeys": [
+      {
+        "path": ".dev/zigbee-gateway-journey-TNDaZG/commissioning-native-result.json",
+        "sha256": "e71f0104a9ba57784d258a70dfa86ddc547af08e90e258a6b85f6942ffd9e7a8",
+        "result": {
+          "passed": true,
+          "target": "ios",
+          "native_host_state": true,
+          "native_processes": 2,
+          "gateway_restarts": 2,
+          "commissioning_posts": 3,
+          "response_loss_and_original_get": true,
+          "explicit_close_preserves_prior_operations": true,
+          "native_discovery_endpoint_and_explicit_bind": true,
+          "confirmed_threshold_commands": 2,
+          "no_replay_after_restart": true,
+          "real_rust_sqlite_mqtt": true,
+          "software_pty_ncp": true,
+          "transport": "loopback HTTP fixture",
+          "production_secure_store_runtime": false,
+          "native_app_runtime": false,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-Xr34uL/commissioning-native-result.json",
+        "sha256": "1365d443a21dc528230d393195cc77a60583fd2e88ad21d9bc022635a06bb205",
+        "result": {
+          "passed": true,
+          "target": "android",
+          "native_host_state": true,
+          "native_processes": 2,
+          "gateway_restarts": 2,
+          "commissioning_posts": 3,
+          "response_loss_and_original_get": true,
+          "explicit_close_preserves_prior_operations": true,
+          "native_discovery_endpoint_and_explicit_bind": true,
+          "confirmed_threshold_commands": 2,
+          "no_replay_after_restart": true,
+          "real_rust_sqlite_mqtt": true,
+          "software_pty_ncp": true,
+          "transport": "loopback HTTP fixture",
+          "production_secure_store_runtime": false,
+          "native_app_runtime": false,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-DC0ACD/commissioning-web-flow.json",
+        "sha256": "a88078cb390f964a95473c2a7bb571e891bf9c2df1bc3dc9f94832712158b3c7",
+        "result": {
+          "passed": true,
+          "cancel_and_storage_failure_zero_post": true,
+          "original_readback_before_post": true,
+          "missing_forged_duplicate_key_receipts_remain_unknown": true,
+          "explicit_open_and_close": true,
+          "refresh_and_gateway_restart_zero_replay": true,
+          "commissioning_posts": 2,
+          "discovery_explicit_binding_and_confirmed_threshold": true,
+          "confirmed_commands": 1,
+          "responsive_390px": true,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-ffnheD/commissioning-web-lock.json",
+        "sha256": "ad7b819d89f431c1d62e5b53be685152b19b53290d962448df10a0d1ed1550fd",
+        "result": {
+          "passed": true,
+          "real_cross_tab_lock": true,
+          "busy_zero_save_and_post": true,
+          "unknown_blocks_replacement_open": true,
+          "separate_explicit_close": true,
+          "original_unknown_preserved": true,
+          "removed_original_blocks_further_write": true,
+          "commissioning_posts": 2,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-Rv1WCn/commissioning-web-review.json",
+        "sha256": "fdfc560f337fa65b9bf0c72d94db2f09c79080882763bec1d720acbc0af8c876",
+        "result": {
+          "passed": true,
+          "changed_input_and_expiry_invalidate": true,
+          "coordinator_revision_rechecked_before_write": true,
+          "late_background_response_does_not_restore_review": true,
+          "offline_invalidates": true,
+          "commissioning_posts": 0,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      }
+    ],
+    "home_build": true,
+    "home_build_warnings_retained": [
+      "npm disturl configuration",
+      "lucide-react use client directives"
+    ],
+    "website": {
+      "checked_files": 48,
+      "errors": 0,
+      "warnings": 0,
+      "hints": 0,
+      "pages": 53,
+      "local_references": 2055
+    },
+    "node_syntax": true,
+    "both_repository_diff_checks": true,
+    "rust_tests_rerun": false
+  },
+  "artifact_sha256": {
+    "android_debug_apk": "262379317fe1d38d6cfa468afafd1b534dfe795167be8c24fc87ea0639ce41fc",
+    "swift_host_checker": "db8e1dd45ccd6f4998e6dc7db95f8491b6b0b128c4d01e682bb8fd59ee64e30b",
+    "gateway_used": "53601ab091b207fe0808606897f66e6f4d52d3f72f24592b693427f7ec08b7f1"
+  },
+  "source_sha256": {
+    "apps/ios/Sources/LimeIoTKit/ZigbeeCommissioning.swift": "2e23b1764d3fdd8639aece32cfbba5710f346db0882cee9c9839cea853741194",
+    "apps/ios/App/ZigbeeStore.swift": "89837f74155f9e76b8bf70766dcc392e0798ec13c9a49c5074bc621b49e4b1b6",
+    "apps/ios/App/ZigbeeViews.swift": "ea3a614fbbaab0407cb56514f2582ec2ff13603dca387b0e9b6d3184a687a076",
+    "apps/ios/App/ObservationStore.swift": "c4fc0ffbe8d36943dc0ba43a6e0ed3211f63b9c85f397d6e6c68f90cefa2a63b",
+    "apps/ios/App/ObservationViews.swift": "af8acdbb33d40581e13d589b98748f043715fae47d4756ced97e26484a484c1f",
+    "apps/ios/App/HomeStore.swift": "e7db8469e53e2f4607d3354e4b8caa66b8e304ddcb13ee7d529684124315e4a1",
+    "apps/ios/LimeIoT.xcodeproj/project.pbxproj": "e0e0966ce01a2eb4f0748437ba33e5361edaef92833c1ab5b8fc92d22b69b3c0",
+    "apps/ios/Checks/ZigbeeStoreChecks.swift": "e99677c5e14c1564690b4b1662d408971ba354ea24be38463f62fc876ad25029",
+    "apps/ios/Checks/ZigbeeLiveChecks.swift": "29caa7983062f3271a44075efe6e01da3a78cbfa3b75707167593d82f29fb6f9",
+    "apps/ios/README.md": "aec85e970b6b276df048ba3a7bdc7aa1eff2c42b4c31f9dedbabc84e263cb4f1",
+    "apps/android/core/src/main/kotlin/run/limeai/iot/core/ZigbeeCommissioning.kt": "8637ea597122d24836a7eb972e994a561821ceabdc472dd17a324ec5826b64bb",
+    "apps/android/app/src/main/kotlin/run/limeai/iot/ZigbeeController.kt": "70330985c3ca53041d2330cfd5ef1bab887bd42c549488c00018c05fb9e11df4",
+    "apps/android/app/src/main/kotlin/run/limeai/iot/ZigbeeViews.kt": "bc3c539eb3e16121131a7f8a13fe30dbd56f34da9761890474273f8c20de1b40",
+    "apps/android/app/src/main/kotlin/run/limeai/iot/ObservationController.kt": "94fd5f4ead6587efa9e30e97f01dce74568cb601e4723815ef9ecb857efe5749",
+    "apps/android/app/src/main/kotlin/run/limeai/iot/ObservationViews.kt": "4257475232be432bc34e8c569715b4f0624452ff605089e112aad8d3c302213d",
+    "apps/android/app/src/main/kotlin/run/limeai/iot/HomeViewModel.kt": "de590e00d050c636b6770134bf9a6218a4863d3ac25955670c39e4ab94d421d3",
+    "apps/android/app/src/test/kotlin/run/limeai/iot/ZigbeeControllerTest.kt": "a80133738311607e784428705eba5a2b4f95c89d800f3948c2146593eda1f4ee",
+    "apps/android/app/src/test/kotlin/run/limeai/iot/ZigbeeJourneyTest.kt": "90e7b8152f82a043b19eb78f225d5641b246023f32b39284d4b9787ffbddca57",
+    "apps/android/README.md": "978ee13b7524052e08286018ba3dc4d363841a7f7c0f6d50cc1b56abf788daf0",
+    "apps/home/src/ZigbeeCommissioning.tsx": "e94110d28c00ade77ee984cf5acff7f6f18c1775e9e6504f143740e7b553cc0b",
+    "tests/fixtures/zigbee/commissioning-native.json": "e17d3458be195e83947ca0f85c38e36c4905d9b53f34e629d8a55803bf922308",
+    "tests/zigbee-native-contract.test.mjs": "4b6066a327908fc7e8bc7bca1d390747ca76cfc701e953e46a1d6d8be38c1093",
+    "tests/zigbee-commissioning-native.test.mjs": "fc68e8219fef0509c45cd325c97d0b3dbb610ae257af042915d620e93c2a3c1e",
+    "tests/zigbee-commissioning-web.test.mjs": "d459699675f57f0d3b140553183fb88f6ff3ee4048e339a6561f33401a69248a",
+    "tools/test-observation-native.mjs": "c9fa629d3f24394d3bbbda05009f3b4f830e75613b470e5ae01c6ffa5956f4cb",
+    "package.json": "4d405565f0d336ea2aa8c836096deb85865fb207d5358b8207689a57174094c1",
+    "contracts/README.md": "8d7e0c439aa365b39ec9f000c324c0aaf20383d24306b859d565bb8f51c95b27",
+    "contracts/zigbee-operations.md": "22c3fa1d4f54769ed0ecf6b6be56e0c494e61d2db4fd7245a0ab62d75227f785",
+    "docs/07-异构协议与适配器规范.md": "38d31f90f51c13319d25ec663341e9b69ea16f7023e76e47e3846ce20bf449a3",
+    "docs/15-客户端与交互设计.md": "1bebd23f65ff25dc9021a94e76300a51fe4a9a2d0517acf9416b75550e8162e8",
+    "docs/24-实施计划与进度.md": "48d3eee7c916932eda2672aba984f53c0e334a80f680f9655b78662826414253",
+    "gateway/adapters/zigbee-znp/README.md": "584eb72fc09599eabb6da8d4555656aec66f6895420a9df6fd93a6f353562b81",
+    "packages/cli/README.md": "b5215bab0cabee37f02e43ba74b4d62e4f8857ac32136a743b3ef8601d12f7cb"
+  },
+  "website_source_sha256": {
+    "src/docs/content/zigbee.md": "9f19e52a85451fbe204455952b623d5ec13bbdb90112dbcf4680bc69a29c97e6"
+  },
+  "log_sha256": {
+    "commissioning-native-swift-first.log": "20cc4e56fb5b8d486b15d7a997949b8229bb8fa8bf73895e8763a52d5ae5db95",
+    "commissioning-native-android-first.log": "c10f3efb24d61df1b2a81873a5336198ce14d2bf44b5bfe36ece5f3f907358ec",
+    "commissioning-native-website-build.log": "fb6a22dc78181228e50889925b0b6377559ca8deee8e8b388b0714728a9c96c7",
+    "commissioning-native-swift-retry2.log": "0ab25ec37246ac47acb09f7f910546950376739c6e79886e50ac34c9c1b73891",
+    "zigbee-gateway-journey-Xr34uL-create-join.log": "183a9016c2b0dd1dbc1b09014eb83c0b43aa83fda69955e77cb756d4f8cdd019",
+    "zigbee-gateway-journey-Xr34uL-restore-join.log": "f0c6df7cb470ad63aa009ae933a1fb7585b068487498bab714e0f4f9e87f2f9d",
+    "commissioning-native-swift-retry1.log": "a37dc550085e94cd3e290a0bfd16fa16a5709e358fa02598c98060ecc251201a",
+    "zigbee-gateway-journey-TNDaZG-restore-join.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "commissioning-native-ios-journey-first.log": "ca3b44c7b4f68c39d9659c1ff0f39a57da74295d05ed32bcda9a418455e11913",
+    "commissioning-native-shared-final.log": "422748dc283ec39d27eba8c3296dc995df0c88ae4d63d990cfe912b97e92b518",
+    "commissioning-native-android-core-first.log": "2278d4419f15dd5e58efba3e34f8ffee7ec25e41e18e3aa9400e2e15d8d5808a",
+    "commissioning-native-home-build.log": "0eef6533387ce45ef14578c5d93332aa759e2143e9a80444501b609251d0e58b",
+    "commissioning-native-shared-first.log": "4e13cd02800d1f65a65ec1833c29eedd00b8935524f3d2a98702d83313b22fc7",
+    "commissioning-native-web-final.log": "ea61e988bc426e2b285e409cb55f23ef7d625ce85aaddb4d55782709079854de",
+    "commissioning-native-android-journey-first.log": "8f72416c8421602b03a6c67fcc2783ccd83cb794462db1a305dcd8c2e353661c",
+    "commissioning-native-home-final.log": "533f918e35a1892953fb4abfc304179693ec3a70773711a7d61cffaf5f27da0f",
+    "zigbee-gateway-journey-TNDaZG-create-join.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "commissioning-native-android-retry1.log": "c92daa4ab6332fdd8c44cd7fc2a50dc6321eaaf8bc91938c99414430f970c961",
+    "commissioning-native-swift-final.log": "1333d709cdd677bbb745606c4630d5f2b277b10eaea90d39100498d1ec3d7161",
+    "commissioning-native-android-final.log": "0a8182e4daa0c3b338c33097db4a6b0a8d5df748b359f39fb2702a06167d3d60",
+    "commissioning-native-web-confirmation-final.log": "aef451d17839959e7b438d2b11d28eea99814b9e8cd14ddbad33ae4ae879e3b4",
+    "commissioning-native-swift-build-first.log": "dff0a8262cfabc8a72bc6b86cd9c91f85f66d02a13b4d6f4e3e6f33b5731739a"
+  },
+  "history": [
+    {
+      "stage": "swift_first_compile",
+      "result": "failed",
+      "reason": "New main-actor test closures used a nonisolated rejection helper; helper now explicitly stays on the main actor without weakening Swift concurrency checks."
+    },
+    {
+      "stage": "swift_retry1_and_android_first",
+      "result": "failed_before_new_cases",
+      "android_failed": 9,
+      "reason": "The vector container deliberately includes an invalid fractional number; parsing the entire test container through the production integer parser rejected it before per-case assertions. Test-only generic JSON decoding now loads the container, and every invalid document is still passed to production validators."
+    },
+    {
+      "stage": "swift_retry2_android_retry1",
+      "result": "passed"
+    },
+    {
+      "stage": "final_native_checks",
+      "result": "passed",
+      "added_case": "Remote history lookup with an empty local store returns the original without inventing a local request."
+    },
+    {
+      "stage": "new_native_host_journeys_first_run",
+      "passed": 2,
+      "failed": 0
+    }
+  ],
+  "design": "独立入网客户端与状态层保留协议边界，复用既有会话、CSRF、有界整数JSON、生产存储接口和接入页面生命周期；原请求与来源绑定分开，无新增框架、依赖或数据库结构。",
+  "limitations": [
+    "本阶段Swift为macOS宿主库、实际状态层、HomeStore类型和SwiftUI语法检查，未取得完整Xcode/iOS SDK构建或完整App运行证据。",
+    "Android Debug APK和宿主JVM检查不证明完整App启动；既有模拟器启动ANR保持未解决。",
+    "宿主文件和内存存储为夹具，Keychain/Keystore的生产运行仍未验收。",
+    "软件PTY NCP与MQTT模拟灯不证明真实无线设备加入、硬件型号、空口窗口或USB透传。",
+    "现有NAS镜像与正式云未同步；AMD64多模态恢复和TV回调超时仍未解决。",
+    "更多协议、品牌生态、真实模型质量与玩具机器人样板仍未完成；全目标继续进行。"
+  ]
+}

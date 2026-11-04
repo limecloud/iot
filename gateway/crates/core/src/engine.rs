@@ -52,6 +52,13 @@ pub struct Device {
     // 由本次认证设备会话声明；重启不能从旧快照恢复能力证明。
     #[serde(skip)]
     pub native_actions: Option<BTreeSet<String>>,
+    #[serde(skip)]
+    pub(crate) observation_policy: Option<crate::observation::Policy>,
+    #[serde(skip)]
+    pub(crate) observation_session: Option<crate::observation::Session>,
+    // 写属性授权只来自宿主装配，客户端和耐久快照不能授予权限。
+    #[serde(skip)]
+    pub(crate) property_bridge_policy: Option<crate::property_bridge::Policy>,
 }
 impl Device {
     pub(crate) fn new_binding(device_id: String, model_revision: String) -> Self {
@@ -72,6 +79,9 @@ impl Device {
             device_info: None,
             receipt_ledger: false,
             native_actions: None,
+            observation_policy: None,
+            observation_session: None,
+            property_bridge_policy: None,
         }
     }
 }
@@ -144,6 +154,11 @@ pub struct Data {
     pub execution_registry: crate::execution_binding::Registry,
     #[serde(
         default,
+        skip_serializing_if = "crate::observation_binding::Registry::is_empty"
+    )]
+    pub observation_registry: crate::observation_binding::Registry,
+    #[serde(
+        default,
         skip_serializing_if = "crate::execution_plans::Registry::is_empty"
     )]
     pub execution_plans: crate::execution_plans::Registry,
@@ -190,6 +205,7 @@ impl Data {
             model_registry: crate::model_registry::Registry::default(),
             ota_registry: crate::ota_tasks::Registry::default(),
             execution_registry: crate::execution_binding::Registry::default(),
+            observation_registry: crate::observation_binding::Registry::default(),
             execution_plans: crate::execution_plans::Registry::default(),
         };
         data.validate_execution_routes()?;
@@ -230,6 +246,7 @@ impl Data {
             device.native_actions = None;
             device.device_info = None;
             device.adapter_sessions.clear();
+            device.observation_session = None;
         }
         for command in self.commands.values_mut() {
             if command.status == "accepted" {
@@ -248,14 +265,20 @@ impl Data {
                 let mut view = serde_json::to_value(device).expect("device serialization");
                 let native_ready = device.native_ready(now)
                     && self.check_model_authority(&device.device_id).is_ok();
+                let state_ready = device.state_ready(now)
+                    && self.check_model_authority(&device.device_id).is_ok();
                 let ready = !self.execution_blocked(&device.device_id)
-                    && (native_ready
+                    && (state_ready
                         || self.check_model_authority(&device.device_id).is_ok()
                             && device
                                 .routes
                                 .values()
                                 .any(|route| device.adapter_ready(route, now)));
                 view["ready"] = json!(ready);
+                if let Some(policy) = &device.observation_policy {
+                    view["observation_source"] = json!({"adapter_id":policy.source.adapter_id,
+                        "revision":policy.source.revision,"ready":state_ready});
+                }
                 view["device_info"] = device
                     .device_info
                     .as_ref()
@@ -310,7 +333,7 @@ impl Data {
                         .property(path)
                         .map(|p| age >= 0 && age <= p.max_age_ms as i64)
                         .unwrap_or(false);
-                    if !fresh || !native_ready {
+                    if !fresh || !state_ready {
                         view["reported"][path]["quality"] = json!("stale");
                     }
                 }
@@ -477,6 +500,10 @@ impl Data {
             .get(&message.device_id)
             .ok_or_else(|| err("device_not_found"))?
             .clone();
+        ensure(
+            current.observation_policy.is_none(),
+            "observation_source_mismatch",
+        )?;
         ensure(
             current.model_revision == message.model_revision,
             "model_mismatch",

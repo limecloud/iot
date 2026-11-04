@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -21,17 +22,19 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import run.limeai.iot.core.*
 
-@Composable fun MediaPanel(controller: MediaController, names: Map<String, String>, online: Boolean, speech: SpeechController? = null, transcription: TranscriptionController? = null) {
+@Composable fun MediaPanel(controller: MediaController, names: Map<String, String>, online: Boolean, speech: SpeechController? = null, transcription: TranscriptionController? = null, conversation: TextGenerationController? = null, voiceTurn: VoiceTurnController? = null, companion: CompanionController? = null) {
     val state by controller.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val recorder = remember(controller, scope, context) { RecordingController(scope, { AndroidRecordingInput.create(context.applicationContext) }, controller::selectRecording, controller::clearRecording) }
+    val recording by recorder.state.collectAsStateWithLifecycle()
     var reading by remember { mutableStateOf(false) }
     var fileJob by remember { mutableStateOf<Job?>(null) }
     var fileGeneration by remember { mutableIntStateOf(0) }
     fun stopReading() { fileGeneration++; fileJob?.cancel(); fileJob = null; reading = false }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
+        if (uri != null && !recording.busy) {
             stopReading(); reading = true; val epoch = fileGeneration
             fileJob = scope.launch {
                 try {
@@ -58,19 +61,33 @@ import run.limeai.iot.core.*
             finally { stopReading(); controller.pause() }
         }
     }
-    DisposableEffect(controller) { onDispose { stopReading(); controller.pause() } }
-    val writable = state.writable && online && !reading
+    DisposableEffect(recorder, lifecycle, online, state.online, state.page?.configured) {
+        val available = online && state.online && state.page?.configured == true
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) recorder.setAvailable(false)
+            else if (event == Lifecycle.Event.ON_START) recorder.setAvailable(available)
+        }
+        recorder.setAvailable(available && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer); recorder.setAvailable(false) }
+    }
+    DisposableEffect(controller, recorder) { onDispose { recorder.close(); stopReading(); controller.pause() } }
+    val writable = state.writable && online && !reading && !recording.busy
     if (state.message.isNotEmpty()) Text(state.message, fontSize = 14.sp, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("media-message"))
-    OutlinedButton(onClick = controller::refresh, enabled = !state.busy && online && !reading, border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)) { Text(if (state.busy) "正在读取" else "读取音频状态") }
+    OutlinedButton(onClick = controller::refresh, enabled = !state.busy && online && !reading && !recording.busy, border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)) { Text(if (state.busy) "正在读取" else "读取音频状态") }
     if (state.page?.configured == false) Text("此网关未启用音频服务", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    if (speech != null) SpeechPanel(speech, online)
-    if (transcription != null) TranscriptionPanel(transcription, online)
     Text("上传音频", fontSize = 16.sp)
+    RecordingButtons(recorder, recording, writable, ::stopReading)
     OutlinedButton(onClick = { picker.launch(arrayOf("audio/wav", "audio/x-wav", "audio/vnd.wave", "application/octet-stream")) }, enabled = writable, border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)) { Text(if (reading) "正在读取文件" else "选择 WAV 文件") }
     if (state.fileName.isNotEmpty()) Text(state.fileName, fontSize = 14.sp)
     Text("16 位 PCM，最多 4 MiB、60 秒", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     MediaPicker("保留时间", state.retainSeconds.toString(), listOf("600" to "10 分钟", "3600" to "1 小时", "86400" to "24 小时"), writable) { controller.setRetention(it.toInt()) }
     Button(onClick = controller::upload, enabled = writable && state.fileName.isNotEmpty(), modifier = Modifier.testTag("media-upload")) { Text("上传音频") }
+    if (voiceTurn != null) { HorizontalDivider(thickness = 0.5.dp); VoiceTurnPanel(voiceTurn, controller, online && !reading && !recording.busy) }
+    if (companion != null) { HorizontalDivider(thickness = 0.5.dp); CompanionPanel(companion, controller, online && !reading && !recording.busy) }
+    if (transcription != null) { HorizontalDivider(thickness = 0.5.dp); TranscriptionPanel(transcription, online, conversation) }
+    if (conversation != null) { HorizontalDivider(thickness = 0.5.dp); Text("本地对话", fontSize = 16.sp); TextGenerationPanel(conversation, online, speech) }
+    if (speech != null) { HorizontalDivider(thickness = 0.5.dp); SpeechPanel(speech, online) }
     HorizontalDivider(thickness = 0.5.dp); Text("音频", fontSize = 16.sp)
     if (state.page?.items.isNullOrEmpty()) Text("暂无音频", fontSize = 14.sp)
     state.page?.items?.forEach { item ->
@@ -105,7 +122,7 @@ import run.limeai.iot.core.*
         var expanded by remember(record.key) { mutableStateOf(false) }
         TextButton(onClick = { expanded = !expanded }) { Text("原操作详情") }
         if (expanded) Text(OtaJSON.canonical(buildJsonObject { put("original", record.original); put("result", record.result ?: JsonNull) }), fontSize = 12.sp)
-        TextButton(onClick = { controller.recover(record.key) }, enabled = !state.busy && online && !reading) { Text("查询音频原操作") }
+        TextButton(onClick = { controller.recover(record.key) }, enabled = !state.busy && online && !reading && !recording.busy) { Text("查询音频原操作") }
     }
     state.deletion?.let { id -> AlertDialog(onDismissRequest = controller::cancelDelete, title = { Text("删除此音频及其授权？") }, text = { Text(id, fontSize = 12.sp) }, confirmButton = { TextButton(onClick = controller::confirmDelete, enabled = writable) { Text("删除音频") } }, dismissButton = { TextButton(onClick = controller::cancelDelete) { Text("取消") } }) }
 }

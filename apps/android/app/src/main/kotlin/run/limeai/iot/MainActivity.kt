@@ -26,6 +26,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
@@ -56,10 +58,12 @@ class MainActivity : ComponentActivity() {
         setContent { MaterialTheme(colorScheme = colors) { HomeApp() } }
     }
 }
-@Composable private fun HomeApp(vm: HomeViewModel = viewModel()) {
-    val state by vm.state.collectAsStateWithLifecycle()
+@Composable private fun HomeApp() {
     val context = LocalContext.current.applicationContext
     val preferences = remember(context) { context.getSharedPreferences("home", android.content.Context.MODE_PRIVATE) }
+    val factory = remember(context) { viewModelFactory { initializer { HomeViewModel(SecureStore(context), preferences.getString("origin", "").orEmpty(), { preferences.edit().putString("origin", it).apply() }) } } }
+    val vm: HomeViewModel = viewModel(factory = factory)
+    val state by vm.state.collectAsStateWithLifecycle()
     var cloud by remember { mutableStateOf(preferences.getString("connection.mode", "nas") == "cloud") }
     fun selectCloud(value: Boolean) { cloud = value; preferences.edit().putString("connection.mode", if (value) "cloud" else "nas").apply() }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -78,8 +82,17 @@ class MainActivity : ComponentActivity() {
     var firmwareOpen by remember { mutableStateOf(false) }
     var mediaOpen by remember { mutableStateOf(false) }
     var visionOpen by remember { mutableStateOf(false) }
+    var textOpen by remember { mutableStateOf(false) }
+    var observationOpen by remember { mutableStateOf(false) }
+    var aiOpen by remember { mutableStateOf(false) }
+    val observationController = state.observation
+    val observationBusy = observationController?.state?.collectAsStateWithLifecycle()?.value?.busy == true
     val visionController = state.vision
     val visionBusy = visionController?.state?.collectAsStateWithLifecycle()?.value?.busy == true
+    val textController = state.textGeneration
+    val companionBusy = state.companion?.state?.collectAsStateWithLifecycle()?.value?.busy == true
+    val voiceTurnBusy = state.voiceTurn?.state?.collectAsStateWithLifecycle()?.value?.busy == true
+    val textBusy = textController?.state?.collectAsStateWithLifecycle()?.value?.busy == true
     val firmwareController = state.firmware
     val firmwareBusy = firmwareController?.state?.collectAsStateWithLifecycle()?.value?.busy == true
     val mediaController = state.media
@@ -88,28 +101,48 @@ class MainActivity : ComponentActivity() {
     val speechBusy = state.speech?.state?.collectAsStateWithLifecycle()?.value?.busy == true
     Scaffold(bottomBar = { NavigationBar(containerColor = Sand1, tonalElevation = 0.dp) { listOf("设备", "自动化", "执行记录", "设置").forEachIndexed { index, label -> NavigationBarItem(modifier = Modifier.testTag("nas-tab-$index"), selected = tab == index, onClick = { tab = index }, icon = {}, label = { Text(label, fontSize = 14.sp) }) } } }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            Text(if (tab == 3 && firmwareOpen) "固件升级" else if (tab == 3 && mediaOpen) "音频" else if (tab == 3 && visionOpen) "图片观察" else listOf("我的设备", "自动化", "执行记录", "设置")[tab], fontSize = 28.sp)
+            Text(if (tab == 3 && aiOpen) "AI 服务" else if (tab == 3 && observationOpen) "Zigbee 设备" else if (tab == 3 && firmwareOpen) "固件升级" else if (tab == 3 && mediaOpen) "音频" else if (tab == 3 && visionOpen) "图片观察" else if (tab == 3 && textOpen) "本地对话" else listOf("我的设备", "自动化", "执行记录", "设置")[tab], fontSize = 28.sp)
             if (!state.online) Text("连接中断，当前显示上次观测", fontSize = 12.sp, color = Amber11)
             if (state.message.isNotEmpty()) Text(state.message, fontSize = 14.sp, color = Amber11)
             when (tab) {
                 0 -> Devices(state, vm)
                 1 -> Automations(state, vm)
                 2 -> Activity(state)
-                else -> if (firmwareOpen && firmwareController != null) {
+                else -> if (aiOpen) {
+                    TextButton(onClick = { aiOpen = false }) { Text("返回设置") }
+                    AiCatalogPanel(vm, state.origin + "/" + state.snapshot?.space, state.online && !state.busy) { kind ->
+                        aiOpen = false; firmwareOpen = false; mediaOpen = false; visionOpen = false; textOpen = false; observationOpen = false
+                        when (kind) {
+                            AiCapability.RULE_DRAFT -> tab = 1
+                            AiCapability.TEXT -> textOpen = true
+                            AiCapability.VISION -> visionOpen = true
+                            AiCapability.TRANSCRIPTION, AiCapability.SPEECH -> mediaOpen = true
+                        }
+                    }
+                } else if (observationOpen && observationController != null) {
+                    TextButton(onClick = { observationOpen = false }) { Text("返回设置") }
+                    ObservationPanel(observationController, state.online && !state.busy)
+                } else if (firmwareOpen && firmwareController != null) {
                     TextButton(onClick = { firmwareOpen = false }) { Text("返回设置") }
                     FirmwarePanel(firmwareController, state.snapshot?.devices.orEmpty(), state.online && !state.busy)
                 } else if (mediaOpen && mediaController != null) {
                     TextButton(onClick = { mediaOpen = false }) { Text("返回设置") }
-                    MediaPanel(mediaController, state.snapshot?.let { snapshot -> snapshot.devices.associate { it.deviceId to snapshot.name(it) } }.orEmpty(), state.online && !state.busy, state.speech, state.transcription)
+                    MediaPanel(mediaController, state.snapshot?.let { snapshot -> snapshot.devices.associate { it.deviceId to snapshot.name(it) } }.orEmpty(), state.online && !state.busy, state.speech, state.transcription, state.textGeneration, state.voiceTurn, state.companion)
                 } else if (visionOpen && visionController != null) {
                     TextButton(onClick = { visionOpen = false }) { Text("返回设置") }
                     VisionPanel(visionController, state.online && !state.busy)
+                } else if (textOpen && textController != null) {
+                    TextButton(onClick = { textOpen = false }) { Text("返回设置") }
+                    TextGenerationPanel(textController, state.online && !state.busy)
                 } else {
                     Text(state.origin, fontSize = 14.sp); Text(if (state.online) "本地已连接" else "连接中断", fontSize = 14.sp)
-                    if (state.firmware != null) TextButton(onClick = { firmwareOpen = true; mediaOpen = false; visionOpen = false }, modifier = Modifier.testTag("nas-firmware")) { Text("固件升级") }
-                    if (mediaController != null) TextButton(onClick = { mediaOpen = true; firmwareOpen = false; visionOpen = false }, modifier = Modifier.testTag("nas-media")) { Text("音频") }
-                    if (visionController != null) TextButton(onClick = { visionOpen = true; firmwareOpen = false; mediaOpen = false }, modifier = Modifier.testTag("nas-vision")) { Text("图片观察") }
-                    TextButton(onClick = vm::logout, enabled = !state.busy && !firmwareBusy && !mediaBusy && !speechBusy && !transcriptionBusy && !visionBusy) { Text("退出登录") }
+                    TextButton(onClick = { aiOpen = true; firmwareOpen = false; mediaOpen = false; visionOpen = false; textOpen = false; observationOpen = false }, modifier = Modifier.testTag("nas-ai-services")) { Text("AI 服务") }
+                    if (observationController != null) TextButton(onClick = { observationOpen = true; firmwareOpen = false; mediaOpen = false; visionOpen = false; textOpen = false }, modifier = Modifier.testTag("nas-observation")) { Text("Zigbee 设备") }
+                    if (state.firmware != null) TextButton(onClick = { firmwareOpen = true; mediaOpen = false; visionOpen = false; textOpen = false; observationOpen = false }, modifier = Modifier.testTag("nas-firmware")) { Text("固件升级") }
+                    if (mediaController != null) TextButton(onClick = { mediaOpen = true; firmwareOpen = false; visionOpen = false; textOpen = false; observationOpen = false }, modifier = Modifier.testTag("nas-media")) { Text("音频") }
+                    if (visionController != null) TextButton(onClick = { visionOpen = true; firmwareOpen = false; mediaOpen = false; textOpen = false; observationOpen = false }, modifier = Modifier.testTag("nas-vision")) { Text("图片观察") }
+                    if (textController != null) TextButton(onClick = { textOpen = true; firmwareOpen = false; mediaOpen = false; visionOpen = false; observationOpen = false }, modifier = Modifier.testTag("nas-text")) { Text("本地对话") }
+                    TextButton(onClick = vm::logout, enabled = !state.busy && !firmwareBusy && !mediaBusy && !speechBusy && !transcriptionBusy && !visionBusy && !textBusy && !voiceTurnBusy && !companionBusy && !observationBusy) { Text("退出登录") }
                 }
             }
             TextButton(onClick = vm::refreshNow) { Text("刷新") }

@@ -54,8 +54,10 @@ public struct Device: Decodable, Sendable, Identifiable {
     public let ready: Bool
     public let lastSeen: String?
     public let reported: [String: Observation]
+    public let observationSource: ObservationSource?
     public var id: String { deviceId }
 }
+public struct ObservationSource: Decodable, Sendable { public let adapterId: String; public let revision: String; public let ready: Bool }
 public struct ValueSchema: Codable, Sendable {
     public let type: String
     public let minimum: Double?

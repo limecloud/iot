@@ -38,6 +38,15 @@
       "space_required": true
     },
     {
+      "operation_id": "ai-catalog.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/ai-catalog",
+      "space_required": true,
+      "output_schema": "ai-catalog",
+      "local_only": true,
+      "side_effects": "none"
+    },
+    {
       "operation_id": "models.get",
       "method": "GET",
       "path": "/api/v1/model-releases/{id}",
@@ -482,6 +491,133 @@
       "space_required": true,
       "output_schema": "vision#/$defs/task",
       "description": "耐久放弃未完成的输出，或清除已完成观察的文本；不证明模型已停止。响应丢失后查询原任务。"
+    },
+    {
+      "operation_id": "text-generations.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/text-generations",
+      "space_required": true,
+      "input_schema": "text",
+      "idempotency_required": true,
+      "original_request": true,
+      "recovery_operation": "text-generations.resolve",
+      "output_schema": "text#/$defs/task"
+    },
+    {
+      "operation_id": "text-generations.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/text-generations/by-key/{id}",
+      "space_required": true,
+      "output_schema": "text#/$defs/task"
+    },
+    {
+      "operation_id": "text-generations.discard",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/text-generations/by-key/{id}/discard",
+      "space_required": true,
+      "output_schema": "text#/$defs/task",
+      "description": "明确清除已完成文字或放弃未完成输出；不证明提供方停止。响应丢失后查询原任务。"
+    },
+    {
+      "operation_id": "observation-candidates.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/observation-candidates",
+      "space_required": true,
+      "output_schema": "observation-change#/$defs/candidates"
+    },
+    {
+      "operation_id": "observation-candidates.query",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/observation-candidates",
+      "space_required": true,
+      "input_schema": "observation-query",
+      "output_schema": "observation-change#/$defs/candidate",
+      "side_effects": "bounded_protocol_reads_without_device_binding",
+      "device_execution": false,
+      "request_timeout_ms": 35000
+    },
+    {
+      "operation_id": "observation-discoveries.query",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/observation-discoveries",
+      "space_required": true,
+      "input_schema": "observation-discovery#/$defs/query",
+      "output_schema": "observation-discovery#/$defs/neighbors",
+      "side_effects": "bounded_protocol_reads_without_device_binding",
+      "device_execution": false,
+      "request_timeout_ms": 35000
+    },
+    {
+      "operation_id": "observation-endpoints.query",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/observation-endpoints",
+      "space_required": true,
+      "input_schema": "observation-discovery#/$defs/endpointQuery",
+      "output_schema": "observation-discovery#/$defs/endpoints",
+      "side_effects": "bounded_protocol_reads_without_device_binding",
+      "device_execution": false,
+      "request_timeout_ms": 35000
+    },
+    {
+      "operation_id": "observation-bindings.get",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/devices/{id}/observation-binding",
+      "space_required": true,
+      "output_schema": "observation-change#/$defs/view"
+    },
+    {
+      "operation_id": "observation-changes.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/observation-operations",
+      "space_required": true,
+      "input_schema": "observation-change",
+      "output_schema": "observation-change#/$defs/operation",
+      "idempotency_required": true,
+      "original_request": true,
+      "recovery_operation": "observation-changes.resolve"
+    },
+    {
+      "operation_id": "observation-changes.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/observation-operations/by-key/{id}",
+      "space_required": true,
+      "output_schema": "observation-change#/$defs/operation"
+    },
+    {
+      "operation_id": "zigbee-coordinators.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/zigbee-coordinators",
+      "space_required": true,
+      "output_schema": "zigbee-change#/$defs/coordinators"
+    },
+    {
+      "operation_id": "zigbee-operations.list",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/zigbee-operations",
+      "space_required": true,
+      "output_schema": "zigbee-change#/$defs/operations"
+    },
+    {
+      "operation_id": "zigbee-changes.create",
+      "method": "POST",
+      "path": "/api/v1/spaces/{space_id}/zigbee-operations",
+      "space_required": true,
+      "output_schema": "zigbee-change#/$defs/operation",
+      "input_schema": "zigbee-change",
+      "idempotency_required": true,
+      "original_request": true,
+      "recovery_operation": "zigbee-changes.resolve",
+      "request_timeout_ms": 35000,
+      "network_write_requested": true,
+      "device_execution": false,
+      "side_effects": "finite_coordinator_join_window_without_platform_binding"
+    },
+    {
+      "operation_id": "zigbee-changes.resolve",
+      "method": "GET",
+      "path": "/api/v1/spaces/{space_id}/zigbee-operations/by-key/{id}",
+      "space_required": true,
+      "output_schema": "zigbee-change#/$defs/operation"
     }
   ],
   "schemas": {
@@ -8643,6 +8779,2467 @@
               }
             }
           ]
+        }
+      }
+    },
+    "observation-change": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://iot.limeai.run/contracts/observation-bindings.schema.json",
+      "title": "明确授权的观测与属性桥接接入",
+      "$ref": "#/$defs/change",
+      "$defs": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "not": {
+            "pattern": "\\s"
+          }
+        },
+        "digest": {
+          "type": "string",
+          "minLength": 71,
+          "maxLength": 71,
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ieee": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$",
+          "not": {
+            "enum": [
+              "0000000000000000",
+              "ffffffffffffffff"
+            ]
+          },
+          "minLength": 16,
+          "maxLength": 16
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "adapter_id": {
+              "$ref": "#/$defs/id"
+            },
+            "revision": {
+              "$ref": "#/$defs/digest"
+            }
+          },
+          "required": [
+            "adapter_id",
+            "revision"
+          ],
+          "additionalProperties": false
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            },
+            "ieee_address": {
+              "$ref": "#/$defs/ieee"
+            },
+            "endpoint": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 240
+            }
+          },
+          "required": [
+            "coordinator_ieee",
+            "ieee_address",
+            "endpoint"
+          ],
+          "additionalProperties": false
+        },
+        "signature": {
+          "type": "object",
+          "properties": {
+            "manufacturer": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^(?=.*\\S)[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^(?=.*\\S)[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+            },
+            "application_version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "hardware_version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "required": [
+            "manufacturer",
+            "model",
+            "application_version",
+            "hardware_version"
+          ],
+          "additionalProperties": false
+        },
+        "query": {
+          "type": "object",
+          "properties": {
+            "coordinator_id": {
+              "$ref": "#/$defs/id"
+            },
+            "ieee_address": {
+              "$ref": "#/$defs/ieee"
+            },
+            "endpoint": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 240
+            },
+            "profile": {
+              "const": "on_off"
+            }
+          },
+          "required": [
+            "coordinator_id",
+            "ieee_address",
+            "endpoint"
+          ],
+          "additionalProperties": false
+        },
+        "change": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "sources.bind"
+                },
+                "device_id": {
+                  "$ref": "#/$defs/id"
+                },
+                "source": {
+                  "$ref": "#/$defs/source"
+                },
+                "expected_binding_revision": {
+                  "$ref": "#/$defs/digest"
+                },
+                "expected_model_revision": {
+                  "$ref": "#/$defs/digest"
+                }
+              },
+              "required": [
+                "type",
+                "device_id",
+                "source",
+                "expected_binding_revision",
+                "expected_model_revision"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "sources.revoke"
+                },
+                "device_id": {
+                  "$ref": "#/$defs/id"
+                },
+                "expected_binding_revision": {
+                  "$ref": "#/$defs/digest"
+                }
+              },
+              "required": [
+                "type",
+                "device_id",
+                "expected_binding_revision"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "candidate": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "$ref": "#/$defs/source"
+            },
+            "model_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "target": {
+              "$ref": "#/$defs/target"
+            },
+            "manufacturer_code": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "signature": {
+              "$ref": "#/$defs/signature"
+            },
+            "observed_at": {
+              "$ref": "#/$defs/time"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "protocol": {
+              "const": "zigbee-znp"
+            },
+            "evidence": {
+              "const": "unauthenticated_protocol"
+            },
+            "write_paths": {
+              "$ref": "#/$defs/write_paths"
+            }
+          },
+          "required": [
+            "source",
+            "model_revision",
+            "target",
+            "manufacturer_code",
+            "signature",
+            "observed_at",
+            "expires_at",
+            "protocol",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        "binding": {
+          "type": "object",
+          "properties": {
+            "policy": {
+              "type": "object",
+              "properties": {
+                "device_id": {
+                  "$ref": "#/$defs/id"
+                },
+                "model_revision": {
+                  "$ref": "#/$defs/digest"
+                },
+                "source": {
+                  "$ref": "#/$defs/source"
+                }
+              },
+              "required": [
+                "device_id",
+                "model_revision",
+                "source"
+              ],
+              "additionalProperties": false
+            },
+            "manifest": {
+              "type": "object",
+              "minProperties": 1
+            },
+            "active": {
+              "type": "boolean"
+            },
+            "generation": {
+              "type": "string",
+              "pattern": "^observationop-[A-Za-z0-9_-]+$",
+              "maxLength": 128,
+              "not": {
+                "pattern": "\\s"
+              }
+            },
+            "changed_at": {
+              "$ref": "#/$defs/time"
+            },
+            "write_paths": {
+              "$ref": "#/$defs/write_paths"
+            }
+          },
+          "required": [
+            "policy",
+            "manifest",
+            "active",
+            "generation",
+            "changed_at"
+          ],
+          "additionalProperties": false
+        },
+        "view": {
+          "type": "object",
+          "properties": {
+            "device_id": {
+              "$ref": "#/$defs/id"
+            },
+            "revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "binding": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/binding"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "device_id",
+            "revision",
+            "binding"
+          ],
+          "additionalProperties": false
+        },
+        "operation": {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "type": "string",
+              "pattern": "^observationop-[A-Za-z0-9_-]+$",
+              "maxLength": 128,
+              "not": {
+                "pattern": "\\s"
+              }
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256
+            },
+            "request": {
+              "type": "object",
+              "properties": {
+                "space_id": {
+                  "$ref": "#/$defs/id"
+                },
+                "idempotency_key": {
+                  "$ref": "#/$defs/id"
+                },
+                "change": {
+                  "$ref": "#/$defs/change"
+                }
+              },
+              "required": [
+                "space_id",
+                "idempotency_key",
+                "change"
+              ],
+              "additionalProperties": false
+            },
+            "request_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "status": {
+              "enum": [
+                "applied",
+                "rejected",
+                "conflict"
+              ]
+            },
+            "reason": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 64
+            },
+            "result": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/view"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            }
+          },
+          "required": [
+            "operation_id",
+            "sequence",
+            "request",
+            "request_digest",
+            "status",
+            "reason",
+            "result",
+            "created_at"
+          ],
+          "additionalProperties": false
+        },
+        "candidates": {
+          "type": "object",
+          "properties": {
+            "coordinators": {
+              "type": "array",
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "coordinator_id": {
+                    "$ref": "#/$defs/id"
+                  },
+                  "coordinator_ieee": {
+                    "$ref": "#/$defs/ieee"
+                  },
+                  "timeout_ms": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 30000
+                  },
+                  "protocol": {
+                    "const": "zigbee-znp"
+                  }
+                },
+                "required": [
+                  "coordinator_id",
+                  "coordinator_ieee",
+                  "timeout_ms",
+                  "protocol"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "items": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "$ref": "#/$defs/candidate"
+              }
+            },
+            "next_cursor": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "coordinators",
+            "items",
+            "next_cursor"
+          ],
+          "additionalProperties": false
+        },
+        "write_paths": {
+          "type": "array",
+          "items": {
+            "const": "light.power"
+          },
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "observation-discovery": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://iot.limeai.run/contracts/observation-discovery.schema.json",
+      "title": "只读协调器邻居发现与端点访谈",
+      "$ref": "#/$defs/query",
+      "$defs": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "not": {
+            "pattern": "\\s"
+          }
+        },
+        "ieee": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 16,
+          "pattern": "^[0-9a-f]{16}$",
+          "not": {
+            "enum": [
+              "0000000000000000",
+              "ffffffffffffffff"
+            ]
+          }
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "query": {
+          "type": "object",
+          "properties": {
+            "coordinator_id": {
+              "$ref": "#/$defs/id"
+            }
+          },
+          "required": [
+            "coordinator_id"
+          ],
+          "additionalProperties": false
+        },
+        "endpointQuery": {
+          "type": "object",
+          "properties": {
+            "coordinator_id": {
+              "$ref": "#/$defs/id"
+            },
+            "ieee_address": {
+              "$ref": "#/$defs/ieee"
+            }
+          },
+          "required": [
+            "coordinator_id",
+            "ieee_address"
+          ],
+          "additionalProperties": false
+        },
+        "neighbor": {
+          "type": "object",
+          "properties": {
+            "extended_pan_id": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 16,
+              "pattern": "^[0-9a-f]{16}$"
+            },
+            "ieee_address": {
+              "$ref": "#/$defs/ieee"
+            },
+            "network_address": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65527
+            },
+            "device_type": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3
+            },
+            "rx_on_when_idle": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3
+            },
+            "relationship": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 7
+            },
+            "flags": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "permit_joining": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "depth": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "link_quality": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "required": [
+            "extended_pan_id",
+            "ieee_address",
+            "network_address",
+            "device_type",
+            "rx_on_when_idle",
+            "relationship",
+            "flags",
+            "permit_joining",
+            "depth",
+            "link_quality"
+          ],
+          "additionalProperties": false
+        },
+        "endpoint": {
+          "type": "object",
+          "properties": {
+            "endpoint": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 240
+            },
+            "profile_id": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "device_id": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "device_version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15
+            },
+            "input_clusters": {
+              "type": "array",
+              "maxItems": 32,
+              "uniqueItems": true,
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65535
+              }
+            },
+            "output_clusters": {
+              "type": "array",
+              "maxItems": 32,
+              "uniqueItems": true,
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65535
+              }
+            }
+          },
+          "required": [
+            "endpoint",
+            "profile_id",
+            "device_id",
+            "device_version",
+            "input_clusters",
+            "output_clusters"
+          ],
+          "additionalProperties": false
+        },
+        "neighbors": {
+          "type": "object",
+          "properties": {
+            "coordinator_id": {
+              "$ref": "#/$defs/id"
+            },
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            },
+            "observed_at": {
+              "$ref": "#/$defs/time"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "protocol": {
+              "const": "zigbee-znp"
+            },
+            "evidence": {
+              "const": "unauthenticated_protocol"
+            },
+            "scope": {
+              "const": "coordinator_neighbors"
+            },
+            "items": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "$ref": "#/$defs/neighbor"
+              }
+            }
+          },
+          "required": [
+            "coordinator_id",
+            "coordinator_ieee",
+            "observed_at",
+            "expires_at",
+            "protocol",
+            "evidence",
+            "scope",
+            "items"
+          ],
+          "additionalProperties": false
+        },
+        "endpoints": {
+          "type": "object",
+          "properties": {
+            "coordinator_id": {
+              "$ref": "#/$defs/id"
+            },
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            },
+            "observed_at": {
+              "$ref": "#/$defs/time"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "protocol": {
+              "const": "zigbee-znp"
+            },
+            "evidence": {
+              "const": "unauthenticated_protocol"
+            },
+            "ieee_address": {
+              "$ref": "#/$defs/ieee"
+            },
+            "network_address": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65527
+            },
+            "manufacturer_code": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "endpoints": {
+              "type": "array",
+              "maxItems": 16,
+              "items": {
+                "$ref": "#/$defs/endpoint"
+              }
+            }
+          },
+          "required": [
+            "coordinator_id",
+            "coordinator_ieee",
+            "observed_at",
+            "expires_at",
+            "protocol",
+            "evidence",
+            "ieee_address",
+            "network_address",
+            "manufacturer_code",
+            "endpoints"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "observation-query": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://iot.limeai.run/contracts/observation-query.schema.json",
+      "title": "明确只读观测来源接入",
+      "$ref": "#/$defs/query",
+      "$defs": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "not": {
+            "pattern": "\\s"
+          }
+        },
+        "digest": {
+          "type": "string",
+          "minLength": 71,
+          "maxLength": 71,
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ieee": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$",
+          "not": {
+            "enum": [
+              "0000000000000000",
+              "ffffffffffffffff"
+            ]
+          },
+          "minLength": 16,
+          "maxLength": 16
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "adapter_id": {
+              "$ref": "#/$defs/id"
+            },
+            "revision": {
+              "$ref": "#/$defs/digest"
+            }
+          },
+          "required": [
+            "adapter_id",
+            "revision"
+          ],
+          "additionalProperties": false
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            },
+            "ieee_address": {
+              "$ref": "#/$defs/ieee"
+            },
+            "endpoint": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 240
+            }
+          },
+          "required": [
+            "coordinator_ieee",
+            "ieee_address",
+            "endpoint"
+          ],
+          "additionalProperties": false
+        },
+        "signature": {
+          "type": "object",
+          "properties": {
+            "manufacturer": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^(?=.*\\S)[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32,
+              "pattern": "^(?=.*\\S)[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+            },
+            "application_version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "hardware_version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "required": [
+            "manufacturer",
+            "model",
+            "application_version",
+            "hardware_version"
+          ],
+          "additionalProperties": false
+        },
+        "query": {
+          "type": "object",
+          "properties": {
+            "coordinator_id": {
+              "$ref": "#/$defs/id"
+            },
+            "ieee_address": {
+              "$ref": "#/$defs/ieee"
+            },
+            "endpoint": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 240
+            },
+            "profile": {
+              "const": "on_off"
+            }
+          },
+          "required": [
+            "coordinator_id",
+            "ieee_address",
+            "endpoint"
+          ],
+          "additionalProperties": false
+        },
+        "change": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "sources.bind"
+                },
+                "device_id": {
+                  "$ref": "#/$defs/id"
+                },
+                "source": {
+                  "$ref": "#/$defs/source"
+                },
+                "expected_binding_revision": {
+                  "$ref": "#/$defs/digest"
+                },
+                "expected_model_revision": {
+                  "$ref": "#/$defs/digest"
+                }
+              },
+              "required": [
+                "type",
+                "device_id",
+                "source",
+                "expected_binding_revision",
+                "expected_model_revision"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "sources.revoke"
+                },
+                "device_id": {
+                  "$ref": "#/$defs/id"
+                },
+                "expected_binding_revision": {
+                  "$ref": "#/$defs/digest"
+                }
+              },
+              "required": [
+                "type",
+                "device_id",
+                "expected_binding_revision"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "candidate": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "$ref": "#/$defs/source"
+            },
+            "model_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "target": {
+              "$ref": "#/$defs/target"
+            },
+            "manufacturer_code": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "signature": {
+              "$ref": "#/$defs/signature"
+            },
+            "observed_at": {
+              "$ref": "#/$defs/time"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "protocol": {
+              "const": "zigbee-znp"
+            },
+            "evidence": {
+              "const": "unauthenticated_protocol"
+            },
+            "write_paths": {
+              "$ref": "#/$defs/write_paths"
+            }
+          },
+          "required": [
+            "source",
+            "model_revision",
+            "target",
+            "manufacturer_code",
+            "signature",
+            "observed_at",
+            "expires_at",
+            "protocol",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        "binding": {
+          "type": "object",
+          "properties": {
+            "policy": {
+              "type": "object",
+              "properties": {
+                "device_id": {
+                  "$ref": "#/$defs/id"
+                },
+                "model_revision": {
+                  "$ref": "#/$defs/digest"
+                },
+                "source": {
+                  "$ref": "#/$defs/source"
+                }
+              },
+              "required": [
+                "device_id",
+                "model_revision",
+                "source"
+              ],
+              "additionalProperties": false
+            },
+            "manifest": {
+              "type": "object",
+              "minProperties": 1
+            },
+            "active": {
+              "type": "boolean"
+            },
+            "generation": {
+              "type": "string",
+              "pattern": "^observationop-[A-Za-z0-9_-]+$",
+              "maxLength": 128,
+              "not": {
+                "pattern": "\\s"
+              }
+            },
+            "changed_at": {
+              "$ref": "#/$defs/time"
+            },
+            "write_paths": {
+              "$ref": "#/$defs/write_paths"
+            }
+          },
+          "required": [
+            "policy",
+            "manifest",
+            "active",
+            "generation",
+            "changed_at"
+          ],
+          "additionalProperties": false
+        },
+        "view": {
+          "type": "object",
+          "properties": {
+            "device_id": {
+              "$ref": "#/$defs/id"
+            },
+            "revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "binding": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/binding"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "device_id",
+            "revision",
+            "binding"
+          ],
+          "additionalProperties": false
+        },
+        "operation": {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "type": "string",
+              "pattern": "^observationop-[A-Za-z0-9_-]+$",
+              "maxLength": 128,
+              "not": {
+                "pattern": "\\s"
+              }
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256
+            },
+            "request": {
+              "type": "object",
+              "properties": {
+                "space_id": {
+                  "$ref": "#/$defs/id"
+                },
+                "idempotency_key": {
+                  "$ref": "#/$defs/id"
+                },
+                "change": {
+                  "$ref": "#/$defs/change"
+                }
+              },
+              "required": [
+                "space_id",
+                "idempotency_key",
+                "change"
+              ],
+              "additionalProperties": false
+            },
+            "request_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "status": {
+              "enum": [
+                "applied",
+                "rejected",
+                "conflict"
+              ]
+            },
+            "reason": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 64
+            },
+            "result": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/view"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            }
+          },
+          "required": [
+            "operation_id",
+            "sequence",
+            "request",
+            "request_digest",
+            "status",
+            "reason",
+            "result",
+            "created_at"
+          ],
+          "additionalProperties": false
+        },
+        "candidates": {
+          "type": "object",
+          "properties": {
+            "coordinators": {
+              "type": "array",
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "coordinator_id": {
+                    "$ref": "#/$defs/id"
+                  },
+                  "coordinator_ieee": {
+                    "$ref": "#/$defs/ieee"
+                  },
+                  "timeout_ms": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 30000
+                  },
+                  "protocol": {
+                    "const": "zigbee-znp"
+                  }
+                },
+                "required": [
+                  "coordinator_id",
+                  "coordinator_ieee",
+                  "timeout_ms",
+                  "protocol"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "items": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "$ref": "#/$defs/candidate"
+              }
+            },
+            "next_cursor": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "coordinators",
+            "items",
+            "next_cursor"
+          ],
+          "additionalProperties": false
+        },
+        "write_paths": {
+          "type": "array",
+          "items": {
+            "const": "light.power"
+          },
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "zigbee-change": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://iot.limeai.run/contracts/zigbee-operations.schema.json",
+      "title": "有限协调器入网与原请求记录",
+      "$ref": "#/$defs/change",
+      "$defs": {
+        "identifier": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "minLength": 71,
+          "maxLength": 71
+        },
+        "ieee": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{16}$",
+          "minLength": 16,
+          "maxLength": 16,
+          "not": {
+            "enum": [
+              "0000000000000000",
+              "ffffffffffffffff"
+            ]
+          }
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "change": {
+          "type": "object",
+          "properties": {
+            "coordinator_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "expected_revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "duration_seconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 120
+            }
+          },
+          "required": [
+            "coordinator_id",
+            "expected_revision",
+            "duration_seconds"
+          ],
+          "additionalProperties": false
+        },
+        "coordinator": {
+          "type": "object",
+          "properties": {
+            "coordinator_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            },
+            "revision": {
+              "$ref": "#/$defs/digest"
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 30000
+            }
+          },
+          "required": [
+            "coordinator_id",
+            "coordinator_ieee",
+            "revision",
+            "timeout_ms"
+          ],
+          "additionalProperties": false
+        },
+        "request": {
+          "type": "object",
+          "properties": {
+            "space_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "idempotency_key": {
+              "$ref": "#/$defs/identifier"
+            },
+            "change": {
+              "$ref": "#/$defs/change"
+            }
+          },
+          "required": [
+            "space_id",
+            "idempotency_key",
+            "change"
+          ],
+          "additionalProperties": false
+        },
+        "receipt": {
+          "type": "object",
+          "properties": {
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            },
+            "duration_seconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 120
+            },
+            "observed_at": {
+              "$ref": "#/$defs/timestamp"
+            }
+          },
+          "required": [
+            "coordinator_ieee",
+            "duration_seconds",
+            "observed_at"
+          ],
+          "additionalProperties": false
+        },
+        "operation": {
+          "type": "object",
+          "properties": {
+            "operation_id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "sequence": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 256
+            },
+            "request": {
+              "$ref": "#/$defs/request"
+            },
+            "request_digest": {
+              "$ref": "#/$defs/digest"
+            },
+            "coordinator": {
+              "$ref": "#/$defs/coordinator"
+            },
+            "status": {
+              "enum": [
+                "unknown",
+                "protocol_accepted"
+              ]
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_]{1,64}$",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "result": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/receipt"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "created_at": {
+              "$ref": "#/$defs/timestamp"
+            },
+            "blocked_until": {
+              "$ref": "#/$defs/timestamp"
+            },
+            "completed_at": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/timestamp"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "operation_id",
+            "sequence",
+            "request",
+            "request_digest",
+            "coordinator",
+            "status",
+            "reason",
+            "result",
+            "created_at",
+            "blocked_until",
+            "completed_at"
+          ],
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "properties": {
+                "status": {
+                  "const": "unknown"
+                },
+                "reason": {
+                  "type": "string"
+                },
+                "result": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "status": {
+                  "const": "protocol_accepted"
+                },
+                "reason": {
+                  "type": "null"
+                },
+                "result": {
+                  "$ref": "#/$defs/receipt"
+                },
+                "completed_at": {
+                  "$ref": "#/$defs/timestamp"
+                }
+              }
+            }
+          ]
+        },
+        "coordinators": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "maxItems": 4,
+              "items": {
+                "$ref": "#/$defs/coordinator"
+              }
+            },
+            "next_cursor": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "items",
+            "next_cursor"
+          ],
+          "additionalProperties": false
+        },
+        "operations": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "maxItems": 256,
+              "items": {
+                "$ref": "#/$defs/operation"
+              }
+            },
+            "next_cursor": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "items",
+            "next_cursor"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "text": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://limeiot.dev/contracts/text.schema.json",
+      "title": "Local bounded text generation",
+      "$ref": "#/$defs/request",
+      "$defs": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "output": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "content_digest",
+            "expires_at",
+            "cleared_at"
+          ],
+          "properties": {
+            "text": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 2048,
+              "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$",
+              "minLength": 1
+            },
+            "content_digest": {
+              "$ref": "#/$defs/hash"
+            },
+            "expires_at": {
+              "$ref": "#/$defs/time"
+            },
+            "cleared_at": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "oneOf": [
+            {
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "cleared_at": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "text": {
+                  "type": "null"
+                },
+                "cleared_at": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "adapter",
+            "revision",
+            "model",
+            "data_location"
+          ],
+          "properties": {
+            "adapter": {
+              "const": "ollama-text-v1"
+            },
+            "revision": {
+              "$ref": "#/$defs/hash"
+            },
+            "model": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_:./-]{1,128}$"
+            },
+            "data_location": {
+              "const": "local"
+            }
+          }
+        },
+        "request_time": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,3})?(?:Z|[+-]\\d\\d:\\d\\d)$"
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "instructions",
+            "messages",
+            "retain_seconds",
+            "expires_at"
+          ],
+          "properties": {
+            "instructions": {
+              "type": "string",
+              "maxLength": 1024,
+              "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$"
+            },
+            "messages": {
+              "$ref": "#/$defs/messages"
+            },
+            "retain_seconds": {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 3600
+            },
+            "expires_at": {
+              "$ref": "#/$defs/request_time"
+            }
+          }
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "context_digest",
+            "context_bytes",
+            "message_count",
+            "retain_seconds",
+            "expires_at"
+          ],
+          "properties": {
+            "context_digest": {
+              "$ref": "#/$defs/hash"
+            },
+            "context_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "message_count": {
+              "enum": [
+                1,
+                3,
+                5,
+                7,
+                9,
+                11,
+                13,
+                15
+              ]
+            },
+            "retain_seconds": {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 3600
+            },
+            "expires_at": {
+              "$ref": "#/$defs/request_time"
+            }
+          }
+        },
+        "task": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text_id",
+            "space_id",
+            "idempotency_key",
+            "request_digest",
+            "input",
+            "deployment",
+            "created_at",
+            "updated_at",
+            "status",
+            "output",
+            "error_code",
+            "usage"
+          ],
+          "properties": {
+            "text_id": {
+              "type": "string",
+              "pattern": "^text-[A-Za-z0-9_-]{1,123}$"
+            },
+            "space_id": {
+              "$ref": "#/$defs/id"
+            },
+            "idempotency_key": {
+              "$ref": "#/$defs/id"
+            },
+            "request_digest": {
+              "$ref": "#/$defs/hash"
+            },
+            "input": {
+              "$ref": "#/$defs/input"
+            },
+            "deployment": {
+              "$ref": "#/$defs/deployment"
+            },
+            "created_at": {
+              "$ref": "#/$defs/time"
+            },
+            "updated_at": {
+              "$ref": "#/$defs/time"
+            },
+            "status": {
+              "enum": [
+                "running",
+                "succeeded",
+                "failed",
+                "unknown",
+                "discarded"
+              ]
+            },
+            "output": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/output"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "error_code": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "usage": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/usage"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "oneOf": [
+            {
+              "properties": {
+                "status": {
+                  "const": "running"
+                },
+                "output": {
+                  "type": "null"
+                },
+                "error_code": {
+                  "type": "null"
+                },
+                "usage": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "status": {
+                  "const": "succeeded"
+                },
+                "output": {
+                  "$ref": "#/$defs/output"
+                },
+                "error_code": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "status": {
+                  "const": "failed"
+                },
+                "output": {
+                  "type": "null"
+                },
+                "error_code": {
+                  "enum": [
+                    "text_provider_rejected",
+                    "invalid_text_output",
+                    "text_output_too_large",
+                    "text_origin_not_local",
+                    "text_provider_unavailable"
+                  ]
+                },
+                "usage": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "status": {
+                  "const": "unknown"
+                },
+                "output": {
+                  "type": "null"
+                },
+                "error_code": {
+                  "enum": [
+                    "text_provider_unknown",
+                    "text_deadline_exceeded",
+                    "text_interrupted"
+                  ]
+                },
+                "usage": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "properties": {
+                "status": {
+                  "const": "discarded"
+                },
+                "output": {
+                  "type": "null"
+                },
+                "error_code": {
+                  "enum": [
+                    "text_output_discarded"
+                  ]
+                },
+                "usage": {
+                  "type": "null"
+                }
+              }
+            }
+          ]
+        },
+        "message": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "role",
+            "content"
+          ],
+          "properties": {
+            "role": {
+              "enum": [
+                "user",
+                "assistant"
+              ]
+            },
+            "content": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048,
+              "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$"
+            }
+          }
+        },
+        "userMessage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "role",
+            "content"
+          ],
+          "properties": {
+            "role": {
+              "const": "user"
+            },
+            "content": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048,
+              "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$"
+            }
+          }
+        },
+        "assistantMessage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "role",
+            "content"
+          ],
+          "properties": {
+            "role": {
+              "const": "assistant"
+            },
+            "content": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048,
+              "pattern": "^[^\\u0000-\\u0008\\u000b-\\u001f\\u007f-\\u009f]*$"
+            }
+          }
+        },
+        "messages": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/userMessage"
+                }
+              ],
+              "items": false
+            },
+            {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                }
+              ],
+              "items": false
+            },
+            {
+              "type": "array",
+              "minItems": 5,
+              "maxItems": 5,
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                }
+              ],
+              "items": false
+            },
+            {
+              "type": "array",
+              "minItems": 7,
+              "maxItems": 7,
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                }
+              ],
+              "items": false
+            },
+            {
+              "type": "array",
+              "minItems": 9,
+              "maxItems": 9,
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                }
+              ],
+              "items": false
+            },
+            {
+              "type": "array",
+              "minItems": 11,
+              "maxItems": 11,
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                }
+              ],
+              "items": false
+            },
+            {
+              "type": "array",
+              "minItems": 13,
+              "maxItems": 13,
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                }
+              ],
+              "items": false
+            },
+            {
+              "type": "array",
+              "minItems": 15,
+              "maxItems": 15,
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                },
+                {
+                  "$ref": "#/$defs/assistantMessage"
+                },
+                {
+                  "$ref": "#/$defs/userMessage"
+                }
+              ],
+              "items": false
+            }
+          ]
+        },
+        "usage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input_tokens",
+            "output_tokens"
+          ],
+          "properties": {
+            "input_tokens": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65536
+            },
+            "output_tokens": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1024
+            }
+          }
+        }
+      }
+    },
+    "ai-catalog": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://limeiot.dev/contracts/ai-catalog.schema.json",
+      "title": "Local AI capability catalog",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "space_id",
+        "definitions",
+        "deployments",
+        "health",
+        "routing"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "space_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "definitions": {
+          "const": [
+            {
+              "capability_id": "automation.rule_draft",
+              "input_modalities": [
+                "text",
+                "device_context"
+              ],
+              "output_modalities": [
+                "rule"
+              ],
+              "input_schema": "draft-request",
+              "task_schema": null,
+              "create_operation": "drafts.create",
+              "resolve_operation": "drafts.resolve",
+              "streaming": false,
+              "tool_calling": false,
+              "structured_output": true,
+              "device_execution": false
+            },
+            {
+              "capability_id": "text.generate",
+              "input_modalities": [
+                "text"
+              ],
+              "output_modalities": [
+                "text"
+              ],
+              "input_schema": "text",
+              "task_schema": "text#/$defs/task",
+              "create_operation": "text-generations.create",
+              "resolve_operation": "text-generations.resolve",
+              "streaming": false,
+              "tool_calling": false,
+              "structured_output": false,
+              "device_execution": false
+            },
+            {
+              "capability_id": "vision.understand",
+              "input_modalities": [
+                "image",
+                "text"
+              ],
+              "output_modalities": [
+                "text"
+              ],
+              "input_schema": "vision",
+              "task_schema": "vision#/$defs/task",
+              "create_operation": "vision-observations.create",
+              "resolve_operation": "vision-observations.resolve",
+              "streaming": false,
+              "tool_calling": false,
+              "structured_output": false,
+              "device_execution": false
+            },
+            {
+              "capability_id": "audio.transcribe",
+              "input_modalities": [
+                "audio"
+              ],
+              "output_modalities": [
+                "text"
+              ],
+              "input_schema": "transcription",
+              "task_schema": "transcription#/$defs/task",
+              "create_operation": "audio-transcriptions.create",
+              "resolve_operation": "audio-transcriptions.resolve",
+              "streaming": false,
+              "tool_calling": false,
+              "structured_output": false,
+              "device_execution": false
+            },
+            {
+              "capability_id": "audio.synthesize",
+              "input_modalities": [
+                "text"
+              ],
+              "output_modalities": [
+                "audio"
+              ],
+              "input_schema": "speech",
+              "task_schema": "speech#/$defs/task",
+              "create_operation": "speech-syntheses.create",
+              "resolve_operation": "speech-syntheses.resolve",
+              "streaming": false,
+              "tool_calling": false,
+              "structured_output": false,
+              "device_execution": false
+            }
+          ]
+        },
+        "deployments": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/deployment"
+          }
+        },
+        "health": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/health"
+          }
+        },
+        "routing": {
+          "const": {
+            "selection": "fixed_configuration",
+            "automatic_fallback": false
+          }
+        }
+      },
+      "$defs": {
+        "capability_id": {
+          "enum": [
+            "automation.rule_draft",
+            "text.generate",
+            "vision.understand",
+            "audio.transcribe",
+            "audio.synthesize"
+          ]
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "adapter",
+            "revision",
+            "model",
+            "data_location"
+          ],
+          "properties": {
+            "adapter": {
+              "enum": [
+                "ollama",
+                "ollama-text-v1",
+                "ollama-vision-v1",
+                "local-http-transcription-v1",
+                "local-http-speech-v1"
+              ]
+            },
+            "revision": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^sha256:[a-f0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "model": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_:./-]{1,128}$"
+            },
+            "data_location": {
+              "const": "local"
+            }
+          }
+        },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "capability_id",
+            "identity",
+            "configuration",
+            "license",
+            "cost_policy",
+            "resource_requirements",
+            "quality"
+          ],
+          "properties": {
+            "capability_id": {
+              "$ref": "#/$defs/capability_id"
+            },
+            "identity": {
+              "$ref": "#/$defs/identity"
+            },
+            "configuration": {
+              "type": "object",
+              "minProperties": 1,
+              "maxProperties": 24,
+              "propertyNames": {
+                "enum": [
+                  "concurrency",
+                  "max_output_tokens",
+                  "max_messages",
+                  "max_context_bytes",
+                  "max_instructions_characters",
+                  "max_text_bytes",
+                  "max_characters",
+                  "max_deadline_seconds",
+                  "max_retain_seconds",
+                  "streaming",
+                  "provider_cancellation",
+                  "input_storage",
+                  "server_memory",
+                  "device_execution",
+                  "content_types",
+                  "max_image_bytes",
+                  "max_edge",
+                  "max_prompt_characters",
+                  "languages",
+                  "max_audio_bytes",
+                  "max_audio_seconds",
+                  "voices",
+                  "max_output_bytes"
+                ]
+              },
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 16777216
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  {
+                    "type": "array",
+                    "maxItems": 32,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 64
+                    }
+                  }
+                ]
+              }
+            },
+            "license": {
+              "type": "null"
+            },
+            "cost_policy": {
+              "type": "null"
+            },
+            "resource_requirements": {
+              "type": "null"
+            },
+            "quality": {
+              "type": "null"
+            }
+          }
+        },
+        "health": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "capability_id",
+            "status",
+            "checked_at"
+          ],
+          "properties": {
+            "capability_id": {
+              "$ref": "#/$defs/capability_id"
+            },
+            "status": {
+              "enum": [
+                "unknown",
+                "not_configured"
+              ]
+            },
+            "checked_at": {
+              "type": "null"
+            }
+          }
         }
       }
     }

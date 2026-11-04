@@ -8,7 +8,7 @@ android {
     buildFeatures { buildConfig = true }
     defaultConfig {
         applicationId = "run.limeai.iot.television"
-        minSdk = 23; targetSdk = 36; versionCode = 3; versionName = "0.3.0"
+        minSdk = 23; targetSdk = 36; versionCode = 4; versionName = "0.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_1_8; targetCompatibility = JavaVersion.VERSION_1_8 }

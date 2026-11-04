@@ -1,5 +1,27 @@
 # LimeIoT
 
+有限陪伴会话通过`node packages/cli/src/main.mjs companion schema/start/reply/resolve/continue/stop`发现及使用，[政策Schema](contracts/companion.schema.json)和[合同](contracts/companion.md)为事实源。固定角色、ASR/文字/TTS修订、轮数和总期限；每次明确已有录音，原任务不重推。历史正文由调用方持有，仅显式--emit-context输出，账本保存摘要和嵌套v2回合；旧v1单回合与原生消费者不隐式接管v2。resolve只GET，continue要求原政策和准确历史，stop无需正文并先存停止事实。源码[积木小狗](examples/companions/block-puppy/README.md)及npm run test:companion提供软件样板，生成零音箱授权/设备执行；Swift/Kotlin CompanionClient与本地音频页陪伴入口已实现，使用origin#companion:space_id，后台/离页清内存上下文，恢复只GET，stop无需历史；test:companion:native验证共享账本、状态层与真实网关三进程恢复。完整原生页面运行、生产安全存储、真实质量、儿童/监护政策另验，实机跳过。
+
+家庭网页“陪伴”入口为`/?view=companion`，行为见[网页会话合同](contracts/companion.md#家庭网页)。默认角色/预算来自积木小狗政策，也可开始前设置自定义角色；每轮明确已有录音，沿共享CompanionClient推进。Web Locks和独立localStorage只保存摘要，历史正文仅在页面内存；重载/离页/断线后不重建问答，未知不替代，恢复只查询、停止无需历史。生成沿原媒体独立授权播放。`npm run test:companion:web`验证网页旅程与旧v1回归，未自动重建NAS镜像或发布云。
+
+声明式事件组合包使用`node packages/cli/src/main.mjs composition schema/compile/plan`，正式[合同](contracts/composition.md)和[Schema](contracts/composition.schema.json)为输入事实源。schema/compile离线且不读凭据；plan核对实际模型修订并沿原规则验证/预演，零部署和设备命令。首版1–8角色、事件与1–16个set操作，权限从规则派生但不授予；生成rule交原规则工具明确部署/查询/停用，不引入第二套执行队列。首个[触摸伴读灯](examples/compositions/reading-companion/README.md)由`npm run test:composition`验证真实网关软件链路；完整包信任、持久安装、精确模型锁定、模型调用、玩具固件和运动另验。
+
+本地AI发现使用`ai-catalog.list`，合同见[AI能力目录](contracts/ai-catalog.md)。API、CLI、家庭/NAS网页及SwiftUI/Compose“设置 → AI 服务”统一发现五类能力；部署与健康分开，发现零推理，未知许可/质量不推定通过。原生GatewayClient.aiCatalog复用认证会话与既有各模态校验，32KiB/8层/2048节点，后台/离页/离线清目录，调用仍遵循各任务原键恢复和授权。检查入口`npm run test:ai-catalog:native`，完整App运行另验。
+
+NAS同机文字模型使用`compose.text-local.yaml`与`npm run test:nas:text:live`，外部模型使用`compose.text.yaml`，二选一。4项配置检查与浏览器叶证书SPKI预检通过；官方Linux归档下载经两轮恢复仍不完整，未核验整包、构建推理镜像或执行同机模型旅程。当前状态见[同机阶段记录](docs/evidence/2026-11-04-text-local-nas.json)，不要将其他部署方式或协议夹具通过结果提升为同机真实模型通过。
+
+NAS外部本地真实文字模型已由同一入口加`--ollama-executable`验证：Linux ARM64网关连接Darwin ARM64专用Ollama进程，正式外部覆盖、网页/CLI/API固定样本、4次真实推理、v5原字节恢复、恢复后零新增推理、unknown占用、清文后重启和实际停模型后的明确灯控通过；首次退出0且临时进程/容器已清理。见[外部本地模型证据](docs/evidence/2026-11-04-text-external-nas.json)。外部宿主进程无同机容器资源限制，不提升Linux推理容器、AMD64、完整原生App或真实语音验收。
+
+真实文字的显式入口为`npm run test:text:live`，配置已安装模型的`LIMEIOT_TEXT_URL`和`LIMEIOT_TEXT_MODEL`，可用`LIMEIOT_BROWSER_EXECUTABLE`指定Chrome。Ollama 0.40.14与qwen2.5:1.5b-instruct的三个固定样本、390px网页、CLI、三次网关重启、清文、unknown不重推及模型连接故障下明确灯控已通过；原失败保留。见[真实文字证据](docs/evidence/2026-11-04-text-local-model.json)和[合同](contracts/text.md#真实模型验收)。不自动下载或改写输出，不提升全面质量、原规则意图、语音、NAS容器或完整原生App验收。
+
+已有录音的有限ASR→文字→TTS组合见[语音回合合同](contracts/voice-turns.md)和[输入Schema](contracts/voice-turns.schema.json)，通过`node packages/cli/src/main.mjs voice-turns schema`离线发现。这是客户端工作流，非新增网关HTTP工具；resolve只查询，continue明确推进未创建阶段，stop保存停止事实，不自动授权或播放。
+
+家庭网页的有限采音见同一[语音回合合同](contracts/voice-turns.md#网页有限录音)：明确开始、最长60秒、16kHz单声道PCM16 WAV，仅内存保存；后台/离线/离页停止并放弃未上传录音，发送前核对录音代次。上传、模型回合与播放分别明确触发。检查入口`npm run test:recording`，可用`LIMEIOT_BROWSER_EXECUTABLE`指定支持模拟麦克风的浏览器；SwiftUI/Compose有限采音源码及宿主状态/网关恢复检查见[原生采音合同](contracts/voice-turns.md#原生有限录音)和`npm run test:recording:native`，系统采音与完整App另验。
+
+Swift/Kotlin统一`VoiceTurnClient`及原生“设置 → 音频 → 语音对话”遵循[原生统一回合](contracts/voice-turns.md#原生统一回合)。三端v1账本及checksum一致，origin#voice-turns:space_id存储只含摘要；恢复只查询、明确继续才推进，停止先持久化，生成不授权或播放。检查入口`npm run test:voice-turns:native`；真实模型质量与完整App另验。
+
+SwiftUI/Compose原生分步语音见[分步组合合同](contracts/voice-turns.md#原生分步组合)：识别结果通过prepareQuestion准备新问题，文字回答经prepareAnswer准备完整语音草稿，带入零POST、各次发送仍明确。超长回答不截断，未决/离线禁替换，后台清文；恢复各独立原键，不自动衔接或重播。`npm run test:voice-handoff:native`验证三模型协议与独立授权播放的软件闭环，系统采音、真实模型和完整App另验。
+
 原生云生命周期：CloudStore/CloudViewModel持有当前云任务，后台或离开云入口取消按钮任务和轮询，异步返回复查取消；iOS scenePhase/连接模式另有显式pause，旧循环不继续刷新。保存prepare期间暂停零提交，前台只恢复原记录；ControlCommandRecord.isPrepared为!attempted且无result/rejection，canForget共用SDK清理资格，计算字段不入持久JSON。“放弃未发送操作”只清理这种准备记录；attempted的unknown/accepted/dispatched仍不能删除或重发，取消不撤回已发出的请求。正式合同[control-native.md](contracts/control-native.md)，现有入口test:clients:state与Swift ClientChecks/Kotlin ControlClientTest覆盖，完整App/系统浏览器另验。
 
 独立控制面终端：`node packages/cli/src/main.mjs control tui schema`离线发现25项工具和正式请求，`control tui --session-file /absolute/private/session.json`进入菜单，增加`--stdio`使用NDJSON。合同[control-terminal-tasks.md](contracts/control-terminal-tasks.md)与[Schema](contracts/control-terminal-tasks.schema.json)。catalog/state/read/prepare/commit/cancel共用CLI执行器和原日志；prepare零业务写，60秒核对绑定原会话，commit精确ID/摘要只消费一次，逐行检查exit_code。核对仅存内存，关闭终端后原请求仍由私有日志恢复；命令/草稿/发布同键只GET，空间/配对沿用原幂等POST，明确reconcile只核实原命令。配对码仅私有文件；不同于本地`tui`格式，不是通用自主Agent。软件检查入口test:control:cli，模拟设备及正式云/完整平台分开验收。

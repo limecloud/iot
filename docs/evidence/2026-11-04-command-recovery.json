@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "ordinary_device_command_original_request_verification_and_durable_recovery",
+  "status": "software_web_nas_and_swift_verified_android_additional_live_compile_timeout",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "changes": {
+    "complete_original_input_checked_on_create_and_resolve": true,
+    "native_pending_saved_and_read_back_before_post": true,
+    "web_complete_input_persisted_in_local_storage": true,
+    "web_locks_serialize_tabs": true,
+    "invalid_storage_blocks_new_commands": true,
+    "invalid_receipts_preserve_original": true,
+    "new_dependencies": false,
+    "database_schema_changed": false,
+    "protocol_schema_changed": false
+  },
+  "shared_contract": {
+    "fixture": {
+      "path": "tests/fixtures/commands/recovery.json",
+      "sha256": "79d40567eaa1815f7d753763df4ce843300766fa7fbce82f80f0fc178dab288b"
+    },
+    "cases": 30,
+    "valid": 8,
+    "invalid": 22,
+    "js": "passed",
+    "swift": "passed",
+    "kotlin": "passed",
+    "native_digest_boundary": "SDK validates digest format; Rust owns authoritative JCS digest. JS recomputes JCS digests."
+  },
+  "checks": {
+    "web": {
+      "status": "passed",
+      "report": {
+        "path": ".dev/run-1793758181988-f0cf7bbc/command-recovery-web.json",
+        "sha256": "310f61302617e81a2af418bb7cb18ca28583e8ea55f687598a69a5a377458e79"
+      },
+      "real_http_sqlite_mqtt": true,
+      "persistent_browser_profile_reopened": true,
+      "wrong_post_and_get_preserve_original": true,
+      "not_found_does_not_repost": true,
+      "two_tabs_including_delayed_storage_event": true,
+      "storage_failure_zero_posts": true,
+      "corrupt_storage_blocks": true,
+      "commands_created": 2,
+      "actions_regression": "passed"
+    },
+    "swift": {
+      "contract": "passed",
+      "real_gateway_full_intent_resolution": "passed",
+      "home_store_typecheck": "passed",
+      "swiftui_parse": "passed",
+      "full_ios_app": "not_run_missing_full_xcode_ios_sdk",
+      "keychain_failure_home_store_journey": "not_run"
+    },
+    "android": {
+      "shared_contract": "passed",
+      "junit": {
+        "path": "apps/android/core/build/test-results/test/TEST-run.limeai.iot.core.CommandRecoveryTest.xml",
+        "sha256": "2f4e22c27dd623c030ffb289ffbf6938a1ecb8511801e98a6ec9db324ab3f909"
+      },
+      "debug_apk": "passed",
+      "lint_debug": "passed",
+      "additional_live_full_intent_journey": "not_run_test_compilation_timed_out_after_240_seconds",
+      "additional_live_failure_did_not_reach_http_test": true,
+      "full_app": "existing_startup_anr_not_retried",
+      "keystore_failure_home_view_model_journey": "not_run"
+    },
+    "nas": {
+      "status": "passed",
+      "platform": "linux/arm64",
+      "report": {
+        "path": ".dev/nas-platform-a854d77935e9ebea/result.json",
+        "sha256": "e2bff31e54c4f45df50a2e666eda493cc533cf28c0746e207b7652db06baeb35"
+      },
+      "manifest": {
+        "path": ".dev/nas-arm64-command-recovery-20261104/build.json",
+        "sha256": "791ad44f796849be89578b0fa2c6fe5a4fa41c2a69600d3f20ba4dc756564ef3"
+      },
+      "source_digest": "a7a668b0dce0bfd6bb158a7a57b5e14d9d5c2f0fd398fe9a57c92e565c1aa77d",
+      "source_inputs": 407,
+      "snapshot_matches_current_runtime_sources": true,
+      "gateway_image": "limeiot/verification:nas-arm64-command-recovery-20261104",
+      "images": {
+        "gateway": "sha256:30b0da9322fea39850ffe9379d39cafee6631cb38f7c8483895be79198725c94",
+        "control": "sha256:51ff3e7c5754e6ea529ebc97b1627343988f1ccd034aedb3d8e352761f8e836d"
+      },
+      "reused_control_image": "limeiot/verification:control-arm64-workspace-20261104",
+      "unchanged_rust_binaries": [
+        "limeiot-gateway",
+        "limeiot-simulator",
+        "limeiot-model-validator",
+        "limeiot-ota"
+      ],
+      "same_document_menus": 13,
+      "complete_original_command_recovery": true,
+      "runtime_account_cannot_migrate": true,
+      "non_root_readonly": true,
+      "product_validation_and_signed_publication": true,
+      "explicit_pairing_wss": true,
+      "optional_services_local_context": true,
+      "control_failure_local_maintenance": true,
+      "backup_restored_products_rules_commands_identity": true,
+      "containers_cleaned": true
+    },
+    "website": {
+      "status": "passed",
+      "html_pages": 53,
+      "local_references": 2055,
+      "astro_errors": 0,
+      "astro_warnings": 0,
+      "astro_hints": 0
+    }
+  },
+  "test_scripts": [
+    {
+      "path": "tests/command-recovery.test.mjs",
+      "sha256": "0b378840ee674a271138825853ebaeec7befce3d02ab39d47c5190e41b8a9e4e"
+    },
+    {
+      "path": "tests/command-recovery-web.test.mjs",
+      "sha256": "0f8e1b38fed2d0188b2dc3b697d0d3ae976d0ab807c6020bc333d501ecbc1dc9"
+    },
+    {
+      "path": "tests/actions-web.test.mjs",
+      "sha256": "43ca5c6185e09f2706cf89545b54af9145514352d4247c27339095389939ad06"
+    },
+    {
+      "path": "tests/helpers/actions.mjs",
+      "sha256": "e04569aba80c412ab004346726f7fb309bec1cd1f62306dfa8e804f729070a02"
+    },
+    {
+      "path": "apps/ios/Tests/LimeIoTKitTests/CommandRecoveryChecks.swift",
+      "sha256": "c02d6dda924126107f8f829552451e0f7ef42e01d41686bc1ddcccabb026b6ee"
+    },
+    {
+      "path": "apps/ios/Tests/LimeIoTKitTests/GatewayClientTests.swift",
+      "sha256": "1fcead9f0dec8a89671c8d2eaf1d5e788f7e0d1381193c491041d63f01d55c7d"
+    },
+    {
+      "path": "apps/android/core/src/test/kotlin/run/limeai/iot/core/CommandRecoveryTest.kt",
+      "sha256": "7803b2ef42197ceb9d483760c683156cd1b911c6e0c23e5d9630064a8b9cc78c"
+    },
+    {
+      "path": "apps/android/core/src/test/kotlin/run/limeai/iot/core/GatewayClientTest.kt",
+      "sha256": "225d7365b49fa2ac34ca506d6dee610d01cdd4275df910df108440382e97143e"
+    },
+    {
+      "path": "tools/test-nas-platform.mjs",
+      "sha256": "ed29df8f031ed862fdf70addf3a0b2abcea515115b5a7a268a1fda78b170439a"
+    }
+  ],
+  "logs": [
+    {
+      "path": ".dev/command-recovery-js-20261104.log",
+      "sha256": "b05aa29b0687766b3b79cca1e798274f7b528012252aa3de706ac50efb132f74"
+    },
+    {
+      "path": ".dev/command-recovery-web-20261104-r1.log",
+      "sha256": "53b83ac4c03dfe965654aed667d476142566284f7635dea69f25598ee9139520"
+    },
+    {
+      "path": ".dev/command-recovery-actions-web-20261104-r2.log",
+      "sha256": "298b85129e70e1c7e42c2a003f05be5f1ff0827dfd7ffcc198dc3376df8f4ed3"
+    },
+    {
+      "path": ".dev/command-recovery-ios-live-full-20261104.log",
+      "sha256": "bf93113915aae22bfd0c92760b921057686782752686296b69fb158d38330cae"
+    },
+    {
+      "path": ".dev/command-recovery-ios-typecheck-20261104.log",
+      "sha256": "8d3fb062b064df50bae6a87be719014d4f6d8be885d73fb6449bd9ab4f8b5c28"
+    },
+    {
+      "path": ".dev/command-recovery-android-20261104.log",
+      "sha256": "87d7524ee8472768edd0c31d9d8011d19b18c1f8f4e59785322562726a81d6ba"
+    },
+    {
+      "path": ".dev/command-recovery-android-live-20261104.log",
+      "sha256": "b416d8a3374b585c8500c993e9db515ff76606fd9d087d0b8614996747c6335b"
+    },
+    {
+      "path": ".dev/command-recovery-validator-build-20261104.log",
+      "sha256": "b947552fd93384be119c2639eaec0add6dbbac1c5075c9ff0956385c48843d1c"
+    },
+    {
+      "path": ".dev/command-recovery-nas-build-20261104.log",
+      "sha256": "8410077a3b664317e41f8d83f764d160be3dd4fbed1f7a639973b99853c63034"
+    },
+    {
+      "path": ".dev/command-recovery-nas-image-20261104.log",
+      "sha256": "17fd6b339bc438216d654d96603f7b952d2e20fd62992d936e81c933ac5db8f9"
+    },
+    {
+      "path": ".dev/command-recovery-nas-closure-20261104-r2.log",
+      "sha256": "ec2c7f9ff274380797577f156ce0679e4c46599a3b7803f53c5dc96a808a5d2a"
+    },
+    {
+      "path": ".dev/command-recovery-website-final-20261104.log",
+      "sha256": "e65cab31300dbe3556361fe9797781f41a168159d0a85ae21f8f7680e6d1359f"
+    }
+  ],
+  "superseded_nas_harness_failures": [
+    {
+      "report": {
+        "path": ".dev/nas-platform-0d853c0451eccc6e/result.json",
+        "sha256": "b1af65911fa95f427a5a645e3420525863563c074bdfdc3619570d5c552e935c"
+      },
+      "reason": "route_fetch_did_not_use_browser_hostname_resolver",
+      "containers_cleaned": true
+    },
+    {
+      "report": {
+        "path": ".dev/nas-platform-ed13268ff193dd0d/result.json",
+        "sha256": "4fb43c21183fd529b76917b778c09a2ae782ad51a04f51c19dcab6faa7407367"
+      },
+      "reason": "page_reloaded_before_request_forwarding_completed",
+      "containers_cleaned": true
+    }
+  ],
+  "not_covered": [
+    "full_ios_app_build_and_runtime",
+    "latest_android_full_app_startup",
+    "additional_android_live_full_intent_test_after_compile_timeout",
+    "native_home_state_storage_failure_journeys",
+    "amd64_multimodal_backup_restore",
+    "tv_callback",
+    "real_model_quality",
+    "production_cloud_update",
+    "physical_hardware",
+    "complete_additional_protocols_brand_ecosystems_and_toy_robot_samples"
+  ]
+}

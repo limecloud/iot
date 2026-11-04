@@ -1,0 +1,1282 @@
+{
+  "now": 1793785627661,
+  "input": {
+    "turn_id": "native-shared",
+    "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+    "language": "zh",
+    "voice": "local"
+  },
+  "capabilities": {
+    "inference": {
+      "concurrency": 1,
+      "configured": false,
+      "data_location": "local",
+      "max_output_tokens": 1024,
+      "model": null,
+      "provider": "ollama"
+    },
+    "limits": {
+      "commands": 4096,
+      "dedup_events": 4096,
+      "devices": 64,
+      "model_installations": 128,
+      "model_operations": 1024,
+      "model_trusts": 32,
+      "rule_drafts": 128,
+      "rules": 64,
+      "runs": 1024
+    },
+    "mode": "loopback_simulation",
+    "models": {
+      "sha256:0f0e838376778c2c482137af23bbc06ed89c5d8dc9821a93ff26a059545c500f": {
+        "model_id": "urn:limeiot:model:dlna-speaker:1",
+        "model_version": "1.0.0",
+        "schema_version": 2,
+        "services": [
+          {
+            "actions": [
+              {
+                "completion": "submitted",
+                "id": "play",
+                "idempotent": false,
+                "input": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "media_id": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "media_id"
+                  ],
+                  "type": "object"
+                },
+                "output": {
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "risk": "low",
+                "semantic_id": "urn:limeiot:action:audio-play:1"
+              },
+              {
+                "completion": "submitted",
+                "id": "stop",
+                "idempotent": false,
+                "input": {
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "output": {
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "risk": "low",
+                "semantic_id": "urn:limeiot:action:audio-stop:1"
+              },
+              {
+                "completion": "submitted",
+                "id": "set_volume",
+                "idempotent": false,
+                "input": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "volume": {
+                      "maximum": 30,
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "volume"
+                  ],
+                  "type": "object"
+                },
+                "output": {
+                  "additionalProperties": false,
+                  "type": "object"
+                },
+                "risk": "low",
+                "semantic_id": "urn:limeiot:action:audio-set-volume:1"
+              }
+            ],
+            "events": [],
+            "id": "playback",
+            "properties": [],
+            "semantic_id": "urn:limeiot:service:audio-playback:1"
+          }
+        ]
+      },
+      "sha256:c557e81af48798cd354c4a3558e822aed3d732f78ecdfb481d46883d13a7366d": {
+        "model_id": "urn:limeiot:model:demo-button:1",
+        "model_version": "1.0.0",
+        "schema_version": 1,
+        "services": [
+          {
+            "actions": [],
+            "events": [
+              {
+                "id": "pressed",
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "count": {
+                      "maximum": 3,
+                      "minimum": 1,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "count"
+                  ],
+                  "type": "object"
+                },
+                "semantic_id": "urn:limeiot:event:button-pressed:1"
+              }
+            ],
+            "id": "button",
+            "properties": [],
+            "semantic_id": "urn:limeiot:service:button:1"
+          }
+        ]
+      }
+    },
+    "operations": [
+      {
+        "method": "GET",
+        "operation_id": "spaces.list",
+        "path": "/api/v1/spaces",
+        "space_required": false
+      },
+      {
+        "method": "GET",
+        "operation_id": "devices.list",
+        "path": "/api/v1/spaces/{space_id}/devices",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "devices.get",
+        "path": "/api/v1/spaces/{space_id}/devices/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "capabilities.list",
+        "path": "/api/v1/spaces/{space_id}/capabilities",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "models.get",
+        "path": "/api/v1/model-releases/{id}",
+        "space_required": false
+      },
+      {
+        "input_schema": "command-request",
+        "method": "POST",
+        "operation_id": "commands.create",
+        "path": "/api/v1/spaces/{space_id}/commands",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "commands.list",
+        "path": "/api/v1/spaces/{space_id}/commands",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "commands.get",
+        "path": "/api/v1/spaces/{space_id}/commands/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "commands.resolve",
+        "path": "/api/v1/spaces/{space_id}/commands/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "input_schema": "rule",
+        "method": "POST",
+        "operation_id": "rules.validate",
+        "path": "/api/v1/spaces/{space_id}/rules:validate",
+        "space_required": true
+      },
+      {
+        "input_schema": "simulation",
+        "method": "POST",
+        "operation_id": "rules.simulate",
+        "path": "/api/v1/spaces/{space_id}/rules:simulate",
+        "space_required": true
+      },
+      {
+        "conditional_headers": {
+          "If-Match": "quoted_current_revision",
+          "If-None-Match": "*",
+          "conflict_error": "revision_conflict",
+          "mutually_exclusive": true
+        },
+        "input_schema": "rule",
+        "method": "POST",
+        "operation_id": "rules.deploy",
+        "path": "/api/v1/spaces/{space_id}/rule-deployments",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "rules.list",
+        "path": "/api/v1/spaces/{space_id}/rule-deployments",
+        "space_required": true
+      },
+      {
+        "input_schema": "revision",
+        "method": "POST",
+        "operation_id": "rules.stop",
+        "path": "/api/v1/spaces/{space_id}/rule-deployments/{id}/stop",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "runs.list",
+        "path": "/api/v1/spaces/{space_id}/runs",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "events.list",
+        "path": "/api/v1/spaces/{space_id}/events",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "events.stream",
+        "path": "/api/v1/spaces/{space_id}/events/stream",
+        "space_required": true
+      },
+      {
+        "input_schema": "draft-request",
+        "method": "POST",
+        "operation_id": "drafts.create",
+        "path": "/api/v1/spaces/{space_id}/rule-drafts",
+        "recovery_operation": "drafts.resolve",
+        "side_effects": "local_inference_only",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "drafts.list",
+        "path": "/api/v1/spaces/{space_id}/rule-drafts",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "drafts.get",
+        "path": "/api/v1/spaces/{space_id}/rule-drafts/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "drafts.resolve",
+        "path": "/api/v1/spaces/{space_id}/rule-drafts/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "input_schema": "control-pairing-request",
+        "method": "POST",
+        "operation_id": "control-pairings.create",
+        "path": "/api/v1/spaces/{space_id}/control-pairings",
+        "recovery_operation": "control-pairings.resolve",
+        "side_effects": "review_only",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "control-pairings.list",
+        "path": "/api/v1/spaces/{space_id}/control-pairings",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "control-pairings.get",
+        "path": "/api/v1/spaces/{space_id}/control-pairings/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "control-pairings.resolve",
+        "path": "/api/v1/spaces/{space_id}/control-pairings/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "input_schema": "control-pairing-approval",
+        "method": "POST",
+        "operation_id": "control-pairings.approve",
+        "path": "/api/v1/spaces/{space_id}/control-pairings/{id}/approve",
+        "recovery_operation": "control-pairings.reconcile",
+        "requires_explicit_local_owner_approval": true,
+        "side_effects": "approves_gateway_binding",
+        "space_required": true
+      },
+      {
+        "method": "POST",
+        "operation_id": "control-pairings.reconcile",
+        "path": "/api/v1/spaces/{space_id}/control-pairings/{id}/reconcile",
+        "side_effects": "queries_original_pairing_only",
+        "space_required": true
+      },
+      {
+        "method": "POST",
+        "operation_id": "control-pairings.revoke",
+        "path": "/api/v1/spaces/{space_id}/control-pairings/{id}/revoke",
+        "space_required": true
+      },
+      {
+        "description": "读取随网关交付的固定模型目录；可用不代表设备已绑定或获准执行。",
+        "method": "GET",
+        "operation_id": "model-bundles.list",
+        "path": "/api/v1/spaces/{space_id}/model-bundles",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-bundles.get",
+        "path": "/api/v1/spaces/{space_id}/model-bundles/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-trusts.list",
+        "path": "/api/v1/spaces/{space_id}/model-trusts",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-trusts.get",
+        "path": "/api/v1/spaces/{space_id}/model-trusts/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-installations.list",
+        "pagination": "after",
+        "path": "/api/v1/spaces/{space_id}/model-installations",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-installations.get",
+        "path": "/api/v1/spaces/{space_id}/model-installations/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "device-models.get",
+        "path": "/api/v1/spaces/{space_id}/devices/{id}/model-binding",
+        "space_required": true
+      },
+      {
+        "description": "本地明确核对密钥指纹、安装签名模型、绑定安装或内置模型、撤销信任。请求先落盘，未知只查原键，404不补发；applied/conflict/rejected必须分别处理。",
+        "idempotency_header": true,
+        "input_schema": "model-change",
+        "method": "POST",
+        "operation_id": "model-changes.create",
+        "original_request": true,
+        "path": "/api/v1/spaces/{space_id}/model-operations",
+        "recovery_operation": "model-changes.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "model-changes.resolve",
+        "path": "/api/v1/spaces/{space_id}/model-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "firmware-trusts.list",
+        "path": "/api/v1/spaces/{space_id}/firmware-trusts",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "firmware-trusts.get",
+        "path": "/api/v1/spaces/{space_id}/firmware-trusts/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "ota-tasks.list",
+        "pagination": {
+          "page_size": 16,
+          "parameter": "after"
+        },
+        "path": "/api/v1/spaces/{space_id}/ota-tasks",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "ota-tasks.get",
+        "path": "/api/v1/spaces/{space_id}/ota-tasks/{id}",
+        "space_required": true
+      },
+      {
+        "device_execution": true,
+        "idempotency_required": true,
+        "input_schema": "ota-change",
+        "method": "POST",
+        "operation_id": "ota-changes.create",
+        "output_schema": "ota-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/ota-operations",
+        "recovery_operation": "ota-changes.resolve",
+        "side_effects": "explicit_local_trust_plan_approval_install_or_query",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "ota-changes.resolve",
+        "output_schema": "ota-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/ota-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "execution-adapters.list",
+        "path": "/api/v1/spaces/{space_id}/execution-adapters",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "execution-bindings.get",
+        "path": "/api/v1/spaces/{space_id}/devices/{id}/execution-binding",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "device-applications.list",
+        "path": "/api/v1/spaces/{space_id}/devices/{id}/applications",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "execution-change",
+        "method": "POST",
+        "operation_id": "execution-changes.create",
+        "original_request": true,
+        "output_schema": "execution-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/execution-operations",
+        "recovery_operation": "execution-changes.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "execution-changes.resolve",
+        "output_schema": "execution-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/execution-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "media.list",
+        "output_schema": "media#/$defs/page",
+        "path": "/api/v1/spaces/{space_id}/media",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "media",
+        "method": "POST",
+        "operation_id": "media-changes.create",
+        "original_request": true,
+        "output_schema": "media#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/media-operations",
+        "recovery_operation": "media-changes.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "media-changes.resolve",
+        "output_schema": "media#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/media-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "local_only": true,
+        "method": "GET",
+        "operation_id": "execution-plans.list",
+        "pagination": "after",
+        "path": "/api/v1/spaces/{space_id}/execution-plans",
+        "space_required": true
+      },
+      {
+        "local_only": true,
+        "method": "GET",
+        "operation_id": "execution-plans.get",
+        "path": "/api/v1/spaces/{space_id}/execution-plans/{id}",
+        "space_required": true
+      },
+      {
+        "input_schema": "execution-plan-change",
+        "local_only": true,
+        "method": "POST",
+        "operation_id": "execution-plan-changes.create",
+        "path": "/api/v1/spaces/{space_id}/execution-plan-operations",
+        "recovery_operation": "execution-plan-changes.resolve",
+        "requires_explicit_local_owner_approval": true,
+        "side_effects": "explicit_plan_start_only",
+        "space_required": true
+      },
+      {
+        "local_only": true,
+        "method": "GET",
+        "operation_id": "execution-plan-changes.resolve",
+        "path": "/api/v1/spaces/{space_id}/execution-plan-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "speech",
+        "method": "POST",
+        "operation_id": "speech-syntheses.create",
+        "original_request": true,
+        "output_schema": "speech#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/speech-syntheses",
+        "recovery_operation": "speech-syntheses.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "speech-syntheses.resolve",
+        "output_schema": "speech#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/speech-syntheses/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "description": "耐久放弃尚未完成的本地输出；不证明提供方已经取消。响应丢失后查询原任务。",
+        "method": "POST",
+        "operation_id": "speech-syntheses.discard",
+        "output_schema": "speech#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/speech-syntheses/by-key/{id}/discard",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "transcription",
+        "method": "POST",
+        "operation_id": "audio-transcriptions.create",
+        "original_request": true,
+        "output_schema": "transcription#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/audio-transcriptions",
+        "recovery_operation": "audio-transcriptions.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "audio-transcriptions.resolve",
+        "output_schema": "transcription#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/audio-transcriptions/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "description": "耐久放弃未完成的转写输出，不证明提供方已停止；响应丢失后查询原任务。",
+        "method": "POST",
+        "operation_id": "audio-transcriptions.discard",
+        "output_schema": "transcription#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/audio-transcriptions/by-key/{id}/discard",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "vision",
+        "method": "POST",
+        "operation_id": "vision-observations.create",
+        "original_request": true,
+        "output_schema": "vision#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/vision-observations",
+        "recovery_operation": "vision-observations.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "vision-observations.resolve",
+        "output_schema": "vision#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/vision-observations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "description": "耐久放弃未完成的输出，或清除已完成观察的文本；不证明模型已停止。响应丢失后查询原任务。",
+        "method": "POST",
+        "operation_id": "vision-observations.discard",
+        "output_schema": "vision#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/vision-observations/by-key/{id}/discard",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "text",
+        "method": "POST",
+        "operation_id": "text-generations.create",
+        "original_request": true,
+        "output_schema": "text#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/text-generations",
+        "recovery_operation": "text-generations.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "text-generations.resolve",
+        "output_schema": "text#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/text-generations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "description": "明确清除已完成文字或放弃未完成输出；不证明提供方停止。响应丢失后查询原任务。",
+        "method": "POST",
+        "operation_id": "text-generations.discard",
+        "output_schema": "text#/$defs/task",
+        "path": "/api/v1/spaces/{space_id}/text-generations/by-key/{id}/discard",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "observation-candidates.list",
+        "output_schema": "observation-change#/$defs/candidates",
+        "path": "/api/v1/spaces/{space_id}/observation-candidates",
+        "space_required": true
+      },
+      {
+        "device_execution": false,
+        "input_schema": "observation-query",
+        "method": "POST",
+        "operation_id": "observation-candidates.query",
+        "output_schema": "observation-change#/$defs/candidate",
+        "path": "/api/v1/spaces/{space_id}/observation-candidates",
+        "request_timeout_ms": 35000,
+        "side_effects": "bounded_protocol_reads_without_device_binding",
+        "space_required": true
+      },
+      {
+        "device_execution": false,
+        "input_schema": "observation-discovery#/$defs/query",
+        "method": "POST",
+        "operation_id": "observation-discoveries.query",
+        "output_schema": "observation-discovery#/$defs/neighbors",
+        "path": "/api/v1/spaces/{space_id}/observation-discoveries",
+        "request_timeout_ms": 35000,
+        "side_effects": "bounded_protocol_reads_without_device_binding",
+        "space_required": true
+      },
+      {
+        "device_execution": false,
+        "input_schema": "observation-discovery#/$defs/endpointQuery",
+        "method": "POST",
+        "operation_id": "observation-endpoints.query",
+        "output_schema": "observation-discovery#/$defs/endpoints",
+        "path": "/api/v1/spaces/{space_id}/observation-endpoints",
+        "request_timeout_ms": 35000,
+        "side_effects": "bounded_protocol_reads_without_device_binding",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "observation-bindings.get",
+        "output_schema": "observation-change#/$defs/view",
+        "path": "/api/v1/spaces/{space_id}/devices/{id}/observation-binding",
+        "space_required": true
+      },
+      {
+        "idempotency_required": true,
+        "input_schema": "observation-change",
+        "method": "POST",
+        "operation_id": "observation-changes.create",
+        "original_request": true,
+        "output_schema": "observation-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/observation-operations",
+        "recovery_operation": "observation-changes.resolve",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "observation-changes.resolve",
+        "output_schema": "observation-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/observation-operations/by-key/{id}",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "zigbee-coordinators.list",
+        "output_schema": "zigbee-change#/$defs/coordinators",
+        "path": "/api/v1/spaces/{space_id}/zigbee-coordinators",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "zigbee-operations.list",
+        "output_schema": "zigbee-change#/$defs/operations",
+        "path": "/api/v1/spaces/{space_id}/zigbee-operations",
+        "space_required": true
+      },
+      {
+        "device_execution": false,
+        "idempotency_required": true,
+        "input_schema": "zigbee-change",
+        "method": "POST",
+        "network_write_requested": true,
+        "operation_id": "zigbee-changes.create",
+        "original_request": true,
+        "output_schema": "zigbee-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/zigbee-operations",
+        "recovery_operation": "zigbee-changes.resolve",
+        "request_timeout_ms": 35000,
+        "side_effects": "finite_coordinator_join_window_without_platform_binding",
+        "space_required": true
+      },
+      {
+        "method": "GET",
+        "operation_id": "zigbee-changes.resolve",
+        "output_schema": "zigbee-change#/$defs/operation",
+        "path": "/api/v1/spaces/{space_id}/zigbee-operations/by-key/{id}",
+        "space_required": true
+      }
+    ],
+    "space_id": "space-demo",
+    "speech": {
+      "capability": "audio.synthesize",
+      "concurrency": 1,
+      "configured": true,
+      "deployment": {
+        "adapter": "local-http-speech-v1",
+        "data_location": "local",
+        "model": "fixture/tts",
+        "revision": "sha256:04c22350e3b69f5f176b7c03361d727715c6d7f654cee2426de166236b1a836e"
+      },
+      "max_audio_seconds": 60,
+      "max_characters": 1000,
+      "max_deadline_seconds": 90,
+      "max_output_bytes": 4194304,
+      "max_text_bytes": 4096,
+      "provider_cancellation": false,
+      "streaming": false,
+      "voices": [
+        "local"
+      ]
+    },
+    "text": {
+      "capability": "text.generate",
+      "concurrency": 1,
+      "configured": true,
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "data_location": "local",
+        "model": "fixture:text",
+        "revision": "sha256:17399b3bd39eee8e296fbb6d4614dfae63fd64e5d5a2506caee8cf1c18bae0af"
+      },
+      "device_execution": false,
+      "input_storage": "digest_only",
+      "max_characters": 2048,
+      "max_context_bytes": 8192,
+      "max_deadline_seconds": 90,
+      "max_instructions_characters": 1024,
+      "max_messages": 15,
+      "max_output_tokens": 1024,
+      "max_retain_seconds": 3600,
+      "max_text_bytes": 8192,
+      "provider_cancellation": false,
+      "server_memory": false,
+      "streaming": false
+    },
+    "transcription": {
+      "capability": "audio.transcribe",
+      "concurrency": 1,
+      "configured": true,
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "data_location": "local",
+        "model": "fixture/asr",
+        "revision": "sha256:b6e116c2fd99994a731276b03c4a1bc0b18697508bb740555094f2fc8bcf1c6b"
+      },
+      "languages": [
+        "auto",
+        "zh",
+        "en"
+      ],
+      "max_audio_bytes": 4194304,
+      "max_audio_seconds": 60,
+      "max_characters": 2048,
+      "max_deadline_seconds": 90,
+      "max_text_bytes": 8192,
+      "provider_cancellation": false,
+      "streaming": false
+    },
+    "vision": {
+      "capability": "vision.understand",
+      "configured": false
+    }
+  },
+  "media": {
+    "configured": true,
+    "grants": [],
+    "items": [
+      {
+        "available": true,
+        "deleted_at": null,
+        "metadata": {
+          "actor": "local_owner",
+          "audio": {
+            "bits_per_sample": 16,
+            "channels": 1,
+            "frames": 16000,
+            "sample_rate": 8000
+          },
+          "byte_length": 32044,
+          "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+          "content_type": "audio/wav",
+          "created_at": "2026-11-04T09:47:07.636758750Z",
+          "expires_at": "2026-11-04T09:57:07.636758750Z",
+          "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+          "purpose": "device_playback",
+          "space_id": "space-demo"
+        }
+      }
+    ],
+    "next_cursor": null,
+    "space_id": "space-demo"
+  },
+  "tasks": {
+    "transcription": {
+      "transcription_id": "transcription-c4f6ed2a-844e-4742-a878-09e240739677",
+      "space_id": "space-demo",
+      "idempotency_key": "native-shared-transcription",
+      "request_digest": "sha256:7f6110ce1d2be74c8d9ca8537e10f4f8dce4d489ba49422c234136f77eb56caf",
+      "input": {
+        "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+        "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+        "language": "zh",
+        "expires_at": "2026-11-04T09:48:32.661Z"
+      },
+      "deployment": {
+        "adapter": "local-http-transcription-v1",
+        "revision": "sha256:b6e116c2fd99994a731276b03c4a1bc0b18697508bb740555094f2fc8bcf1c6b",
+        "model": "fixture/asr",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T09:47:07.857324124Z",
+      "updated_at": "2026-11-04T09:47:07.960727750Z",
+      "status": "succeeded",
+      "output": {
+        "text": "我想搭一个会说话的积木小狗。",
+        "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+        "expires_at": "2026-11-04T09:57:07.636758750Z",
+        "cleared_at": null
+      },
+      "error_code": null
+    },
+    "text": {
+      "text_id": "text-1112561b-f01f-40a2-805b-4a4600858546",
+      "space_id": "space-demo",
+      "idempotency_key": "native-shared-text",
+      "request_digest": "sha256:e73f839f952c34ec69b29084d87e23eac0142fb4af1c1a473c99e53d3f736663",
+      "input": {
+        "context_digest": "sha256:174d503773446e2f1fe7803b2ec22d1aff91e2737643220696b89407d2eff705",
+        "context_bytes": 153,
+        "message_count": 1,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T09:48:32.661Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:17399b3bd39eee8e296fbb6d4614dfae63fd64e5d5a2506caee8cf1c18bae0af",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T09:47:08.120461835Z",
+      "updated_at": "2026-11-04T09:47:08.149207293Z",
+      "status": "succeeded",
+      "output": {
+        "text": "先搭一个稳固的底座，再给小狗装上灯和扬声器。",
+        "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+        "expires_at": "2026-11-04T09:57:08.149207293Z",
+        "cleared_at": null
+      },
+      "usage": {
+        "input_tokens": 25,
+        "output_tokens": 8
+      },
+      "error_code": null
+    },
+    "speech": {
+      "synthesis_id": "speech-eced1efc-d671-49d8-8f4e-7a3f4026bacf",
+      "space_id": "space-demo",
+      "idempotency_key": "native-shared-speech",
+      "request_digest": "sha256:c880921a89a14c5ac1a602a2a90755c780d024945eb0fffc9a486b24035b6e4b",
+      "input_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+      "input_characters": 22,
+      "voice": "local",
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T09:48:32.661Z",
+      "deployment": {
+        "adapter": "local-http-speech-v1",
+        "revision": "sha256:04c22350e3b69f5f176b7c03361d727715c6d7f654cee2426de166236b1a836e",
+        "model": "fixture/tts",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T09:47:08.283566Z",
+      "updated_at": "2026-11-04T09:47:08.336775Z",
+      "status": "succeeded",
+      "media_id": "media-d193bb53-eb8d-495f-9a97-4f3fd672e159",
+      "error_code": null
+    }
+  },
+  "succeeded": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "turn_id": "native-shared",
+    "created_at": "2026-11-04T09:47:07.661Z",
+    "expires_at": "2026-11-04T09:52:07.661Z",
+    "source": {
+      "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+      "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+      "expires_at": "2026-11-04T09:57:07.636Z"
+    },
+    "language": "zh",
+    "voice": "local",
+    "retain_seconds": 600,
+    "deployments": {
+      "transcription": "sha256:b6e116c2fd99994a731276b03c4a1bc0b18697508bb740555094f2fc8bcf1c6b",
+      "text": "sha256:17399b3bd39eee8e296fbb6d4614dfae63fd64e5d5a2506caee8cf1c18bae0af",
+      "speech": "sha256:04c22350e3b69f5f176b7c03361d727715c6d7f654cee2426de166236b1a836e"
+    },
+    "jobs": {
+      "transcription": {
+        "original": {
+          "version": 1,
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "idempotency_key": "native-shared-transcription",
+          "input": {
+            "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+            "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "language": "zh",
+            "expires_at": "2026-11-04T09:48:32.661Z"
+          },
+          "request_digest": "sha256:7f6110ce1d2be74c8d9ca8537e10f4f8dce4d489ba49422c234136f77eb56caf"
+        },
+        "observation": {
+          "identity_digest": "sha256:b0b1ca209ed5ca2d5bd451156e33b316397dee175430712939ff76c7b36f30aa",
+          "terminal_digest": "sha256:47b47d7b6cb02cce5819a8178c4619a30f2250bd1411f04e1400e2715e05540c",
+          "status": "succeeded",
+          "updated_at": "2026-11-04T09:47:07.960Z",
+          "output": {
+            "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+            "expires_at": "2026-11-04T09:57:07.636Z",
+            "cleared_at": null
+          },
+          "media_id": null
+        },
+        "rejected_code": null,
+        "discard_attempted": false
+      },
+      "text": {
+        "original": {
+          "version": 1,
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "idempotency_key": "native-shared-text",
+          "input": {
+            "context_digest": "sha256:174d503773446e2f1fe7803b2ec22d1aff91e2737643220696b89407d2eff705",
+            "context_bytes": 153,
+            "message_count": 1,
+            "retain_seconds": 600,
+            "expires_at": "2026-11-04T09:48:32.661Z"
+          },
+          "request_digest": "sha256:e73f839f952c34ec69b29084d87e23eac0142fb4af1c1a473c99e53d3f736663"
+        },
+        "observation": {
+          "identity_digest": "sha256:f5b1fa12c0da12a77de7d5b83c5d170a87511f6d5411bc3426672861a73fe79d",
+          "terminal_digest": "sha256:aec3c6f83b7f8acf9eec1b68e19bca9361ee64550d881158f7d69e791c2fc1c3",
+          "status": "succeeded",
+          "updated_at": "2026-11-04T09:47:08.149Z",
+          "output": {
+            "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+            "expires_at": "2026-11-04T09:57:08.149Z",
+            "cleared_at": null
+          },
+          "media_id": null
+        },
+        "rejected_code": null,
+        "discard_attempted": false
+      },
+      "speech": {
+        "original": {
+          "version": 1,
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "idempotency_key": "native-shared-speech",
+          "request_digest": "sha256:c880921a89a14c5ac1a602a2a90755c780d024945eb0fffc9a486b24035b6e4b",
+          "input_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+          "input_characters": 22,
+          "voice": "local",
+          "retain_seconds": 600,
+          "expires_at": "2026-11-04T09:48:32.661Z"
+        },
+        "observation": {
+          "identity_digest": "sha256:7602071b61f9f7cff3353b9780c563ae96a473e230f512d1e9d5b31c763d4691",
+          "terminal_digest": "sha256:f4be9db5fc1a70ca0c3d25fed8b25d5c86cdeea37f1f2f763d515cef61535856",
+          "status": "succeeded",
+          "updated_at": "2026-11-04T09:47:08.336Z",
+          "output": null,
+          "media_id": "media-d193bb53-eb8d-495f-9a97-4f3fd672e159"
+        },
+        "rejected_code": null,
+        "discard_attempted": false
+      }
+    },
+    "stopped": false,
+    "checksum": "sha256:b6215ff038b8386c2aa8d15c0a91f6c2562024d58a5b660f008f346733961cff"
+  },
+  "stopped": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "turn_id": "native-shared",
+    "created_at": "2026-11-04T09:47:07.661Z",
+    "expires_at": "2026-11-04T09:52:07.661Z",
+    "source": {
+      "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+      "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+      "expires_at": "2026-11-04T09:57:07.636Z"
+    },
+    "language": "zh",
+    "voice": "local",
+    "retain_seconds": 600,
+    "deployments": {
+      "transcription": "sha256:b6e116c2fd99994a731276b03c4a1bc0b18697508bb740555094f2fc8bcf1c6b",
+      "text": "sha256:17399b3bd39eee8e296fbb6d4614dfae63fd64e5d5a2506caee8cf1c18bae0af",
+      "speech": "sha256:04c22350e3b69f5f176b7c03361d727715c6d7f654cee2426de166236b1a836e"
+    },
+    "jobs": {
+      "transcription": {
+        "original": {
+          "version": 1,
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "idempotency_key": "native-shared-transcription",
+          "input": {
+            "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+            "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "language": "zh",
+            "expires_at": "2026-11-04T09:48:32.661Z"
+          },
+          "request_digest": "sha256:7f6110ce1d2be74c8d9ca8537e10f4f8dce4d489ba49422c234136f77eb56caf"
+        },
+        "observation": {
+          "identity_digest": "sha256:b0b1ca209ed5ca2d5bd451156e33b316397dee175430712939ff76c7b36f30aa",
+          "terminal_digest": "sha256:47b47d7b6cb02cce5819a8178c4619a30f2250bd1411f04e1400e2715e05540c",
+          "status": "succeeded",
+          "updated_at": "2026-11-04T09:47:07.960Z",
+          "output": {
+            "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+            "expires_at": "2026-11-04T09:57:07.636Z",
+            "cleared_at": null
+          },
+          "media_id": null
+        },
+        "rejected_code": null,
+        "discard_attempted": false
+      },
+      "text": {
+        "original": {
+          "version": 1,
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "idempotency_key": "native-shared-text",
+          "input": {
+            "context_digest": "sha256:174d503773446e2f1fe7803b2ec22d1aff91e2737643220696b89407d2eff705",
+            "context_bytes": 153,
+            "message_count": 1,
+            "retain_seconds": 600,
+            "expires_at": "2026-11-04T09:48:32.661Z"
+          },
+          "request_digest": "sha256:e73f839f952c34ec69b29084d87e23eac0142fb4af1c1a473c99e53d3f736663"
+        },
+        "observation": {
+          "identity_digest": "sha256:f5b1fa12c0da12a77de7d5b83c5d170a87511f6d5411bc3426672861a73fe79d",
+          "terminal_digest": "sha256:aec3c6f83b7f8acf9eec1b68e19bca9361ee64550d881158f7d69e791c2fc1c3",
+          "status": "succeeded",
+          "updated_at": "2026-11-04T09:47:08.149Z",
+          "output": {
+            "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+            "expires_at": "2026-11-04T09:57:08.149Z",
+            "cleared_at": "2026-11-04T09:47:08.481Z"
+          },
+          "media_id": null
+        },
+        "rejected_code": null,
+        "discard_attempted": true
+      },
+      "speech": {
+        "original": {
+          "version": 1,
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "idempotency_key": "native-shared-speech",
+          "request_digest": "sha256:c880921a89a14c5ac1a602a2a90755c780d024945eb0fffc9a486b24035b6e4b",
+          "input_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+          "input_characters": 22,
+          "voice": "local",
+          "retain_seconds": 600,
+          "expires_at": "2026-11-04T09:48:32.661Z"
+        },
+        "observation": {
+          "identity_digest": "sha256:7602071b61f9f7cff3353b9780c563ae96a473e230f512d1e9d5b31c763d4691",
+          "terminal_digest": "sha256:f4be9db5fc1a70ca0c3d25fed8b25d5c86cdeea37f1f2f763d515cef61535856",
+          "status": "succeeded",
+          "updated_at": "2026-11-04T09:47:08.336Z",
+          "output": null,
+          "media_id": "media-d193bb53-eb8d-495f-9a97-4f3fd672e159"
+        },
+        "rejected_code": null,
+        "discard_attempted": false
+      }
+    },
+    "stopped": true,
+    "checksum": "sha256:a57568c04e729e15d8f7a1c00f3efb16fa68dddf2bc7e4e2570f279824a3d868"
+  },
+  "cleared_text": {
+    "text_id": "text-1112561b-f01f-40a2-805b-4a4600858546",
+    "space_id": "space-demo",
+    "idempotency_key": "native-shared-text",
+    "request_digest": "sha256:e73f839f952c34ec69b29084d87e23eac0142fb4af1c1a473c99e53d3f736663",
+    "input": {
+      "context_digest": "sha256:174d503773446e2f1fe7803b2ec22d1aff91e2737643220696b89407d2eff705",
+      "context_bytes": 153,
+      "message_count": 1,
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T09:48:32.661Z"
+    },
+    "deployment": {
+      "adapter": "ollama-text-v1",
+      "revision": "sha256:17399b3bd39eee8e296fbb6d4614dfae63fd64e5d5a2506caee8cf1c18bae0af",
+      "model": "fixture:text",
+      "data_location": "local"
+    },
+    "created_at": "2026-11-04T09:47:08.120461835Z",
+    "updated_at": "2026-11-04T09:47:08.149207293Z",
+    "status": "succeeded",
+    "output": {
+      "text": null,
+      "content_digest": "sha256:797abbd3afc625dbb940faada8b06e6ae7ef7334444e316afbd61df1ab8fcdbe",
+      "expires_at": "2026-11-04T09:57:08.149207293Z",
+      "cleared_at": "2026-11-04T09:47:08.481152Z"
+    },
+    "usage": {
+      "input_tokens": 25,
+      "output_tokens": 8
+    },
+    "error_code": null
+  },
+  "prepared": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "turn_id": "native-shared",
+    "created_at": "2026-11-04T09:47:07.661Z",
+    "expires_at": "2026-11-04T09:52:07.661Z",
+    "source": {
+      "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+      "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+      "expires_at": "2026-11-04T09:57:07.636Z"
+    },
+    "language": "zh",
+    "voice": "local",
+    "retain_seconds": 600,
+    "deployments": {
+      "transcription": "sha256:b6e116c2fd99994a731276b03c4a1bc0b18697508bb740555094f2fc8bcf1c6b",
+      "text": "sha256:17399b3bd39eee8e296fbb6d4614dfae63fd64e5d5a2506caee8cf1c18bae0af",
+      "speech": "sha256:04c22350e3b69f5f176b7c03361d727715c6d7f654cee2426de166236b1a836e"
+    },
+    "jobs": {
+      "transcription": {
+        "original": {
+          "version": 1,
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "idempotency_key": "native-shared-transcription",
+          "input": {
+            "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+            "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "language": "zh",
+            "expires_at": "2026-11-04T09:48:32.661Z"
+          },
+          "request_digest": "sha256:7f6110ce1d2be74c8d9ca8537e10f4f8dce4d489ba49422c234136f77eb56caf"
+        },
+        "observation": null,
+        "rejected_code": null,
+        "discard_attempted": false
+      },
+      "text": null,
+      "speech": null
+    },
+    "stopped": false,
+    "checksum": "sha256:48d39586b21055c6d5cabd3422b3e175ed9c8d5269c66ce4e4bc345f12a20a88"
+  },
+  "ready": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "turn_id": "native-shared",
+    "created_at": "2026-11-04T09:47:07.661Z",
+    "expires_at": "2026-11-04T09:52:07.661Z",
+    "source": {
+      "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+      "content_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+      "expires_at": "2026-11-04T09:57:07.636Z"
+    },
+    "language": "zh",
+    "voice": "local",
+    "retain_seconds": 600,
+    "deployments": {
+      "transcription": "sha256:b6e116c2fd99994a731276b03c4a1bc0b18697508bb740555094f2fc8bcf1c6b",
+      "text": "sha256:17399b3bd39eee8e296fbb6d4614dfae63fd64e5d5a2506caee8cf1c18bae0af",
+      "speech": "sha256:04c22350e3b69f5f176b7c03361d727715c6d7f654cee2426de166236b1a836e"
+    },
+    "jobs": {
+      "transcription": {
+        "original": {
+          "version": 1,
+          "origin": "https://nas.local",
+          "space_id": "space-demo",
+          "idempotency_key": "native-shared-transcription",
+          "input": {
+            "media_id": "media-dd162f80-fd9e-4d15-ba9f-4b48a79c1404",
+            "media_digest": "sha256:5c5ba2ef709f5bd4de97524627ef011905c680cbab6811d1ea4208dab41df57b",
+            "language": "zh",
+            "expires_at": "2026-11-04T09:48:32.661Z"
+          },
+          "request_digest": "sha256:7f6110ce1d2be74c8d9ca8537e10f4f8dce4d489ba49422c234136f77eb56caf"
+        },
+        "observation": {
+          "identity_digest": "sha256:b0b1ca209ed5ca2d5bd451156e33b316397dee175430712939ff76c7b36f30aa",
+          "terminal_digest": "sha256:47b47d7b6cb02cce5819a8178c4619a30f2250bd1411f04e1400e2715e05540c",
+          "status": "succeeded",
+          "updated_at": "2026-11-04T09:47:07.960Z",
+          "output": {
+            "content_digest": "sha256:ba74ba3f94a6da2e68ea8306a98d94940bc04eea540c517cd91efe9674f19ce2",
+            "expires_at": "2026-11-04T09:57:07.636Z",
+            "cleared_at": null
+          },
+          "media_id": null
+        },
+        "rejected_code": null,
+        "discard_attempted": false
+      },
+      "text": null,
+      "speech": null
+    },
+    "stopped": false,
+    "checksum": "sha256:92b66f596efda8221e61a442fee34d2d16aa9cbcbe72e3ebcc0c25012cb6a3d6"
+  }
+}

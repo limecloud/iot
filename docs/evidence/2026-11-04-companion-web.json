@@ -1,0 +1,312 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-COMPANION-WEB-20261104-01",
+  "recorded_at": "2026-11-04T13:22:32.773116+00:00",
+  "status": "passed",
+  "scope": "家庭陪伴网页、完整私有工作台菜单源码装配及旧v1语音页面回归",
+  "full_goal_completed": false,
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "published": false,
+  "cloud_updated": false,
+  "nas_image_rebuilt": false,
+  "nas_full_container_acceptance": false,
+  "implemented": [
+    "家庭导航与独立陪伴页面，默认积木小狗或自定义角色及实际声音",
+    "同一有限会话客户端，默认四轮十分钟，每轮明确已有录音后自动衔接ASR/文字/TTS",
+    "角色/历史仅内存，摘要localStorage与Web Locks，重载/离页/断线清历史、恢复只查询",
+    "unknown不替代，停止无需角色/历史并清各轮文字；复用原媒体授权与播放",
+    "完整私有工作台增加同页本地菜单与中英导航，独立维护页复用Home；官方云菜单没有新增入口",
+    "正式会话合同、NAS说明、Agent入口和官网文档同步，NAS整包检查入口更新菜单清单"
+  ],
+  "verification": {
+    "web": {
+      "command": "npm run test:companion:web",
+      "exit_code": 0,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "log": {
+        "path": ".dev/companion-20261104/web-full-attempt2.log",
+        "sha256": "2e4f1d34c0ee25b030bc3eef9cfbaeaa3dc6640286bf5d40c3c23232548876b5"
+      },
+      "scope": "三条新陪伴网页旅程与两条旧v1网页回归；之后仅增加工作台导航/翻译，工作台另验。"
+    },
+    "workspace": {
+      "command": "npm run test:companion:workspace",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "log": {
+        "path": ".dev/companion-20261104/web-workspace-attempt2.log",
+        "sha256": "1e37a5a7e9104e0a90f13db2362470d957e544f1169d2c7a8d197e27733300ec"
+      },
+      "builds": [
+        "Home TypeScript/Vite",
+        "Console TypeScript/Vite",
+        "Admin TypeScript/Vite"
+      ],
+      "control_identity_and_spaces": "explicit_read_only_fixtures",
+      "real_gateway_and_provider_protocol": true
+    },
+    "capture_recheck": {
+      "command": "node --test tests/companion-workspace.test.mjs",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "log": {
+        "path": ".dev/companion-20261104/web-workspace-capture.log",
+        "sha256": "e88e4d103f0a50f73c46b0c3bc715cf93aeef56a2bafbf78a0137697d8713d6c"
+      },
+      "reason": "仅在截图前回到顶部，修正滚动状态下全页截图的固定栏位置；业务断言不变，不计为额外独立旅程。"
+    },
+    "distinct_checks": 6
+  },
+  "journeys": [
+    {
+      "report": {
+        "path": ".dev/voice-turn-l9Os2s/companion-web.json",
+        "sha256": "8a3bdd9deede03c541365664b9d68617c9634f5a9645c48b22001e03fdf1b9d6"
+      },
+      "checks": {
+        "passed": true,
+        "browser": true,
+        "viewport": 390,
+        "real_gateway": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "provider_fixture": true,
+        "turns": 2,
+        "provider_calls": 6,
+        "role_and_exact_history": true,
+        "summary_only_storage": true,
+        "reload_no_new_post": true,
+        "lost_history_blocks_reply": true,
+        "query_reveals_only_current_result": true,
+        "context_free_stop_clears_both_answers": true,
+        "gateway_restart": true,
+        "zero_grants_or_commands": true,
+        "hardware": false,
+        "native_app_runtime": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/voice-turn-PAYjEJ/companion-web-faults.json",
+        "sha256": "5735f123f3a17f6c61ce33b782ce216bc466d75dea999f80642c204cd0d8b0ab"
+      },
+      "checks": {
+        "passed": true,
+        "browser": true,
+        "save_failure_zero_inference": true,
+        "lost_response_get_only": true,
+        "hidden_no_next_stage": true,
+        "visible_get_only_until_explicit_continue": true,
+        "corrupt_record_blocks": true,
+        "provider_calls": 3,
+        "provider_fixture": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/voice-turn-oh5SUe/companion-web-unknown.json",
+        "sha256": "7ce4e213834a238f4dfe5b72609cb574c2eba8a0410d13123f59327c3ce59aae"
+      },
+      "checks": {
+        "passed": true,
+        "browser": true,
+        "cross_tab_exclusion": true,
+        "reauthenticated_after_restart": true,
+        "gateway_restart_unknown": true,
+        "unknown_blocks_replacement": true,
+        "original_query_only": true,
+        "context_free_stop": true,
+        "provider_calls": 2,
+        "provider_fixture": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/voice-turn-zPRqRA/companion-workspace.json",
+        "sha256": "91b4ff1f3a803b68b468a801582e190f04c8dd60996c762eec8ea43b47294c19"
+      },
+      "checks": {
+        "passed": true,
+        "browser": true,
+        "viewport": 390,
+        "workspace_control_identity_mocked": true,
+        "real_gateway": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "provider_fixture": true,
+        "same_document_navigation": true,
+        "gateway_home_entry": true,
+        "nas_nginx_maintenance_route_retested": false,
+        "role_bound": true,
+        "explicit_turn": true,
+        "leave_clears_history": true,
+        "recovery_zero_new_inference": true,
+        "context_free_stop": true,
+        "provider_calls": 3,
+        "zero_grants_or_commands": true,
+        "nas_image_rebuilt": false,
+        "published": false,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    }
+  ],
+  "legacy_regression": [
+    {
+      "path": ".dev/voice-turn-oGfkqO/voice-turn-web.json",
+      "sha256": "6caf5aa117f9e2c7f9859854120f40b8f539d1df084522fbc773aaaa394736a6"
+    },
+    {
+      "path": ".dev/voice-turn-BlSDse/voice-turn-web-faults.json",
+      "sha256": "f33057c589c50c4d2d8535370171b1abf41fd5dddce116993114e80db51a5f26"
+    }
+  ],
+  "screenshots": [
+    {
+      "image": {
+        "path": ".dev/voice-turn-5Frelj/companion-mobile-light.png",
+        "sha256": "da639c09166e8cd470053ca42973fe922b4c93a3b3d61946d1501666807f831d"
+      },
+      "reviewed": true,
+      "state": "390px双轮浅色，后续暂停/锁错误文案及工作台导航改动不影响此状态"
+    },
+    {
+      "image": {
+        "path": ".dev/voice-turn-5Frelj/companion-mobile-dark.png",
+        "sha256": "9c902c83099ac066ef426d289f42f227c286cdd8c51c85ef10241ef2d7e848fa"
+      },
+      "reviewed": true,
+      "state": "390px双轮深色"
+    },
+    {
+      "image": {
+        "path": ".dev/voice-turn-zPRqRA/companion-private-workspace.png",
+        "sha256": "c9af8a985ac3d3fa5dec2aa92a2f5b402d84cbaf57d371bab1f373e10c6ca9d2"
+      },
+      "reviewed": true,
+      "state": "390px私有工作台，截图前返回顶部"
+    }
+  ],
+  "source_manifest": {
+    "path": ".dev/companion-20261104/web-source-manifest-final.json",
+    "sha256": "9d66dd2d6f7077a3cffe9305823d96a866a00ea1e7073c7b7bfc2884b3d3dcb1"
+  },
+  "source_count": 354,
+  "artifact_count": 197,
+  "preserved_failures": [
+    {
+      "log": {
+        "path": ".dev/companion-20261104/web-full-attempt1.log",
+        "sha256": "1a9ebe603b8d5642318e478146d974c5fdfb76e7aaadd91faaecae3be48c1fdf"
+      },
+      "passed": 4,
+      "failed": 1,
+      "cause": "网关重启使浏览器会话失效，测试仍在旧页面点击查询。补齐明确重新登录并严格核对unknown、原键、零新增推理；另将锁竞争错误映射为面向用户的中文文案。",
+      "targeted_repairs": 1
+    },
+    {
+      "log": {
+        "path": ".dev/companion-20261104/web-workspace-attempt1.log",
+        "sha256": "f4816bf4989f1d78167f9bfbca2f6386aa4869d96e5ae0741cb1172f53e76cf5"
+      },
+      "passed": 0,
+      "failed": 1,
+      "cause": "测试把NAS Nginx的/local/维护路由用于仅提供根静态页的宿主Rust服务，首次导航失败。改用宿主真实根入口登录，所有后续工作台导航、回合与恢复断言保持；本轮不声明复验NAS Nginx维护路由。",
+      "targeted_repairs": 1
+    }
+  ],
+  "documentation": [
+    {
+      "path": "contracts/companion.md",
+      "sha256": "48a28e8536e14f072e9756729228e1e018decfdb7e1f79f446e4027b45b87b66"
+    },
+    {
+      "path": "contracts/README.md",
+      "sha256": "f374030ba401fbfed2052f871a68218e13a85c90e8ebe54cac64f6af8695a178"
+    },
+    {
+      "path": "contracts/voice-turns.md",
+      "sha256": "0b12adb493e28bf0e2db448943ff96fb0c4e668dfc8dc56d47f88c0c60606d88"
+    },
+    {
+      "path": "examples/companions/block-puppy/README.md",
+      "sha256": "7c1300e80d542ac4d0fed175e971c5ccfa124e96f3c1d434a6924077640ded84"
+    },
+    {
+      "path": "packages/cli/README.md",
+      "sha256": "b9f9092f24fa455bbbc8026511fb8aa2eae4c176b73a205187ee1662ff3bbd11"
+    },
+    {
+      "path": "llms.txt",
+      "sha256": "029b121ff1b8428ccdf68be5e6a8a8927cd71bf76b4b2c4564c20f95b9df2f83"
+    },
+    {
+      "path": "deploy/nas/README.md",
+      "sha256": "1d8b6569ffe874bab21d247cc82bc789ff6eebed53fc36702e974e4cbf5daa1c"
+    },
+    {
+      "path": "docs/15-客户端与交互设计.md",
+      "sha256": "3c5f69bc86b1b5dfb5ca52582f76534dd87f670a013090be02c7770b8a5dea26"
+    },
+    {
+      "path": "docs/24-实施计划与进度.md",
+      "sha256": "f1efc306ff8415997881eb3b2ac11236b66d0523bbfffca85ffab8aff0245aa8"
+    },
+    {
+      "path": "docs/32-能力组合与场景应用.md",
+      "sha256": "e191f4be0e7fe553ec3029bb1788085e3db22a7b339a5c84402f2d8078af29f0"
+    },
+    {
+      "path": "docs/33-多模态模型与媒体服务.md",
+      "sha256": "04919418c2c85fd718293f661597b357eb47bae65d5adbcc72f58e1bc6597a3c"
+    }
+  ],
+  "website": {
+    "repository": "iotweb",
+    "sources": [
+      {
+        "path": "src/docs/content/agent-development.md",
+        "sha256": "056cc5f26f11f8449acefe541d0c614807c8e7122e624c51121f5ee392601de6"
+      },
+      {
+        "path": "src/docs/content/multimodal.md",
+        "sha256": "16613c743d8e7721ed8093b4b9336db162753ee2c3767e340578ba4599a9c1af"
+      }
+    ],
+    "build_log": {
+      "path": "../iot/.dev/companion-20261104/web-website-build.log",
+      "sha256": "41023fd7a2161861be2d745adada0df1aa8742f7abda4e4493f263a8a60364d5"
+    },
+    "pages": 54,
+    "local_references": 2119,
+    "exit_code": 0
+  },
+  "design": "复用CompanionClient、既有录音上传/媒体授权和播放；只增加网页表现及本地工作台导航，没有新Rust/HTTP/数据库/依赖或设备执行权限。Media共用生成音频选择函数，保留旧单回合入口。",
+  "limits": [
+    "所有ASR/文字/TTS是固定协议夹具，未验证真实质量、儿童适龄内容或完整监护政策。",
+    "工作台身份与空间接口明确模拟，推理及媒体使用真实Rust/MQTT/SQLite；未运行新Go/MySQL安装或新NAS容器恢复。",
+    "同源锁竞争由同一测试页持有Web Lock模拟，并未运行第二标签的完整业务接管。",
+    "完整私有工作台菜单只对local部署开放；云控制台和官方云服务仍为原冻结版本。",
+    "没有专用原生陪伴页面；系统采音、生产安全存储、完整原生App、玩具固件及真实发声另验。",
+    "家庭网页角色和历史仅在内存；临时后台清屏并取消推进，但仍保留当前页面内存至离页/到期。重载缺历史不隐式重建。",
+    "停止清各轮文字但不删除调用者保存的副本、原录音或生成媒体，不证明模型计算停止或撤回已授权播放。",
+    "NAS检查脚本已增加菜单清单，现有镜像仍冻结在此前AI目录阶段，本轮未重建、发布、提交或推送。"
+  ],
+  "build_warnings": [
+    "Vite提示已有大于500kB的入口块",
+    "lucide-react use client模块指令提示；构建退出0"
+  ]
+}

@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "household_web_explicit_zigbee_commissioning_original_request_recovery_and_existing_page_regressions",
+  "status": "software_stage_passed",
+  "archive": ".dev/commissioning-web-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "new_nas_image": false,
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "verification": {
+    "new_web_journeys": 3,
+    "existing_web_regressions": 5,
+    "failed": 0,
+    "skipped": 0,
+    "home_typecheck_and_build": {
+      "passed": true,
+      "completed_exec_session": 27756,
+      "warnings_retained": [
+        "npm disturl configuration",
+        "lucide-react module-level use client directives"
+      ]
+    },
+    "website": {
+      "passed": true,
+      "pages": 53,
+      "local_references": 2055
+    },
+    "node_syntax": true,
+    "both_repository_diff_checks": true,
+    "journeys": [
+      {
+        "path": ".dev/zigbee-gateway-journey-8pyIoG/commissioning-web-flow.json",
+        "sha256": "a88078cb390f964a95473c2a7bb571e891bf9c2df1bc3dc9f94832712158b3c7",
+        "result": {
+          "passed": true,
+          "cancel_and_storage_failure_zero_post": true,
+          "original_readback_before_post": true,
+          "missing_forged_duplicate_key_receipts_remain_unknown": true,
+          "explicit_open_and_close": true,
+          "refresh_and_gateway_restart_zero_replay": true,
+          "commissioning_posts": 2,
+          "discovery_explicit_binding_and_confirmed_threshold": true,
+          "confirmed_commands": 1,
+          "responsive_390px": true,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-2IGTX8/commissioning-web-lock.json",
+        "sha256": "ad7b819d89f431c1d62e5b53be685152b19b53290d962448df10a0d1ed1550fd",
+        "result": {
+          "passed": true,
+          "real_cross_tab_lock": true,
+          "busy_zero_save_and_post": true,
+          "unknown_blocks_replacement_open": true,
+          "separate_explicit_close": true,
+          "original_unknown_preserved": true,
+          "removed_original_blocks_further_write": true,
+          "commissioning_posts": 2,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-Ubp12v/commissioning-web-review.json",
+        "sha256": "fdfc560f337fa65b9bf0c72d94db2f09c79080882763bec1d720acbc0af8c876",
+        "result": {
+          "passed": true,
+          "changed_input_and_expiry_invalidate": true,
+          "coordinator_revision_rechecked_before_write": true,
+          "late_background_response_does_not_restore_review": true,
+          "offline_invalidates": true,
+          "commissioning_posts": 0,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-5g8wLU/discovery-web-report.json",
+        "sha256": "b89e6bb92aa5e7fc25ac96feaeb1e7086859df551d4023fa845d30866f6f7abf",
+        "result": {
+          "passed": true,
+          "discovery_interview_review_explicit_bind": true,
+          "csrf_required": true,
+          "readonly_discovery_af_requests": 0,
+          "binding_posts": 1,
+          "confirmed_commands": 1,
+          "restart_no_replay_or_stale_discovery": true,
+          "responsive_390px": true,
+          "hardware": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-DBpJup/discovery-web-boundaries-report.json",
+        "sha256": "7f4535508816c7ff919cbb605f53e699184ba96245c345a062f798c39467259f",
+        "result": {
+          "passed": true,
+          "bad_context_rejected": true,
+          "unsupported_endpoint_disabled": true,
+          "input_change_and_background_invalidate": true,
+          "expired_results_removed_without_retry": true,
+          "discovery_not_persisted": true,
+          "binding_posts": 0,
+          "hardware": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-goWgdj/observation-web-report.json",
+        "sha256": "f38276a79d29b474902ae334492a9da5a75f7fa6b74ae9c129a30b63468329bf",
+        "result": {
+          "passed": true,
+          "real_gateway_sqlite_serial_and_mqtt": true,
+          "software_ncp": true,
+          "binding_posts": 3,
+          "cancel_zero_write": true,
+          "storage_failure_zero_post": true,
+          "lost_response_original_only": true,
+          "missing_and_forged_original_remain_unknown": true,
+          "restart_and_old_applied_cannot_reactivate": true,
+          "revoke_and_explicit_rebind": true,
+          "confirmed_threshold_commands": 2,
+          "responsive_390px": true,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-Gqwpw0/observation-web-lock-report.json",
+        "sha256": "6b775db6d631ca577b5ccc43df0e91adc362f268e43be5daa71122f37571c30b",
+        "result": {
+          "passed": true,
+          "real_cross_tab_web_lock": true,
+          "busy_zero_save_and_post": true,
+          "pending_source_blocks_alias": true,
+          "rewritten_original_detected": true,
+          "binding_posts": 1,
+          "hardware": false,
+          "full_goal_completed": false
+        }
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-jiEXxx/observation-web-review-report.json",
+        "sha256": "5e16d3f6d67151a6d4e9411c67320a3ae14a2d7be72af1594606ebca9cd790c7",
+        "result": {
+          "passed": true,
+          "native_device_not_taken_over": true,
+          "candidate_digest_mismatch_rejected": true,
+          "late_background_read_does_not_restore_review": true,
+          "expired_candidate_disabled_using_browser_clock": true,
+          "binding_posts": 0,
+          "hardware": false,
+          "full_goal_completed": false
+        }
+      }
+    ],
+    "screenshots": [
+      {
+        "path": ".dev/zigbee-gateway-journey-8pyIoG/commissioning-review-390.png",
+        "sha256": "f8839fe98413310576e493c7b11bb29ebdedf5995c38fa8a64d9560a76ade1a0",
+        "visually_reviewed": true
+      },
+      {
+        "path": ".dev/zigbee-gateway-journey-8pyIoG/commissioning-history-390.png",
+        "sha256": "26f8ccbd4af5ef3b0e85ab576ead16562f24ed5dba7a80b691e055bdfe4c501b",
+        "visually_reviewed": true
+      }
+    ]
+  },
+  "source_sha256": {
+    "apps/home/src/ZigbeeCommissioning.tsx": "e94110d28c00ade77ee984cf5acff7f6f18c1775e9e6504f143740e7b553cc0b",
+    "apps/home/src/original-records.ts": "79007e7d1b06bb6d8e1f68b86fae46989392339317de2d338197ac2d80c8b187",
+    "apps/home/src/observation-records.ts": "dcef4ec4768513c1e6179435d4c7460006f161baa7ee5690b4797644daef0dd5",
+    "apps/home/src/api.ts": "1d916bb0e3decbabb2fe4181e0c1a5ab8d3047abb676f6b1f987dfb6f4161897",
+    "apps/home/src/App.tsx": "105784fc5654b65fcef08f7672ec2226da7c243129396cf8a055fa0920ad4571",
+    "packages/protocol/zigbee-operations.mjs": "8eeda8e7571623886aac276c48ec03dc6bf2436696282d97c905933b604d6ced",
+    "packages/protocol/zigbee-operations.d.mts": "f9d1a38b07027eda42766536e1a701437307b09e6fbbd28b957872e7a279cb6b",
+    "tests/zigbee-commissioning-web.test.mjs": "d459699675f57f0d3b140553183fb88f6ff3ee4048e339a6561f33401a69248a",
+    "tests/observation-web.test.mjs": "78758b80031004d1c8e5de1efcc3a7b57f177ad910dcb4fc3f2f5a0a56ae9433",
+    "tests/observation-discovery-web.test.mjs": "cde550cfa7d341f6dd3a7449bfee2253d957f26a1c9be9553b5ee905b2d8a13a",
+    "tests/fixtures/zigbee/runtime.mjs": "4b59cb36f71eeb932c3d4adda8ad6512911b0d77ababf9264f6b1ff90e1748b0",
+    "tests/fixtures/zigbee/ncp.py": "752922cb4899c539ff48035bcbe954a63fae1078deab65e894622de79cedc130",
+    "package.json": "2741f554bf66103719edb6e80c365bfb495befb6c9a90d34c1f9038933fb0665",
+    "contracts/zigbee-operations.md": "63fcee81991527ff0c6108de6975cac5603896f3c18e36416ad74104f31badae",
+    "docs/24-实施计划与进度.md": "284272374d0e5c8eff085ef6d27b50ec632fabb56113542b0c7fb2d244dbc97f"
+  },
+  "website_source_sha256": {
+    "src/docs/content/zigbee.md": "9c48790c8fb118509aff02ce175d4870e8ecf6452a31445b902456cefaa9e840"
+  },
+  "log_sha256": {
+    "commissioning-web-first.log": "93f439577e849a043965ec337d2d44307787275946119a19f90c3acc64dbfc09",
+    "commissioning-web-observation-regression.log": "faa474572a32584f5344a45a96ff3690dc8c218a9ee48ef39a5d00980093eb54",
+    "commissioning-web-website-build.log": "2c0ac1564da5c12fc1599f30c0b3baf3963f8132aeec99edf505b62ec1205062"
+  },
+  "history": [
+    {
+      "stage": "new_browser_tests_first_run",
+      "passed": 3,
+      "failed": 0
+    },
+    {
+      "stage": "existing_browser_regressions",
+      "passed": 5,
+      "failed": 0
+    }
+  ],
+  "design": "复用正式合同、原鉴权、Web Locks及原请求存储；独立入网组件负责核对与生命周期，没有新增Rust状态机、数据库结构或依赖。",
+  "limitations": [
+    "软件PTY NCP不证明真实设备加入、空口效果或硬件窗口计时。",
+    "protocol_accepted仅为协议受理，仍需发现、查询候选并明确添加。",
+    "浏览器存储不提供密码学防篡改保证；本阶段核对已观察的原记录变化。",
+    "网页变化尚未进入历史NAS镜像或正式云，Swift/Kotlin入网确认仍待接入。",
+    "完整iOS构建/运行、Android启动ANR、AMD64多模态恢复和TV回调超时仍未解决。",
+    "更多协议/品牌生态、真实模型质量与玩具机器人样板仍未完成。"
+  ]
+}

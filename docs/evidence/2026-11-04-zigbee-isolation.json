@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "two_target_znp_source_lifecycle_isolation_and_85_read_transport_rotation",
+  "status": "bounded_macos_software_scenarios_passed",
+  "archive": ".dev/zigbee-isolation-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "linux_serial_runtime_verified": false,
+  "nas_serial_container_verified": false,
+  "official_cloud_updated": false,
+  "published": false,
+  "full_goal_completed": false,
+  "changes": {
+    "source_token_sequence_and_due_per_device": true,
+    "unavailable_source_begin_does_not_stop_loop": true,
+    "target_failure_preserves_other_sources": true,
+    "shared_failure_ends_all_sources": true,
+    "normal_capacity_rotation_preserves_source_epoch": true,
+    "new_dependency": false,
+    "database_or_snapshot_version_changed": false,
+    "config_fields_changed": false
+  },
+  "verification": {
+    "gateway_simulator_build": true,
+    "runtime_tests": 71,
+    "clippy_gateway_all_targets_warnings_denied": true,
+    "rustfmt_changed_file": true,
+    "config_contract_groups": 2,
+    "final_affected_journeys_entry": "node --test --test-concurrency=1 --test-name-pattern=ZNP属性|同NCP异常 tests/zigbee-gateway.test.mjs tests/zigbee-isolation.test.mjs",
+    "final_affected_journeys_passed": 2,
+    "normal_capacity_rotation_journeys_passed": 1,
+    "normal_capacity_rotation_entry": "node --test --test-name-pattern=85次正常读取 tests/zigbee-isolation.test.mjs",
+    "original_500ms_read_deadline_retained": true,
+    "original_60s_rotation_wait_retained": true,
+    "complete_source_close_event_audit": true,
+    "ncp_clean_exit_and_exact_termios_restore": true,
+    "reports": {
+      "single_target": {
+        "path": ".dev/zigbee-gateway-journey-TVx9k4/report.json",
+        "sha256": "430801a9386209a86cc946f620f86434cfed3ef95cd9ad8fb0d23f6947d8ffc6",
+        "result": {
+          "passed": true,
+          "real_gateway_sqlite_mqtt": true,
+          "real_serial_component_with_software_ncp": true,
+          "external_source_without_native_identity": true,
+          "threshold_and_condition": true,
+          "gateway_restart_no_replay": true,
+          "signature_failure_offline": true,
+          "timeout_recovery": true,
+          "responsive_browser": true,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false,
+          "commands": [
+            {
+              "command_id": "c1-2-845b5202-fa81-49aa-abdd-49a5a20370a5",
+              "status": "confirmed"
+            },
+            {
+              "command_id": "c1-1-07238d98-be5c-4f1a-a776-c0e3ea91c4d4",
+              "status": "confirmed"
+            }
+          ]
+        }
+      },
+      "two_target_isolation": {
+        "path": ".dev/zigbee-gateway-journey-iOol72/isolation-report.json",
+        "sha256": "0031b7084d14aff49c51d3dbf0da121362a84099800de886b1fb22818ff5f789",
+        "result": {
+          "passed": true,
+          "real_gateway_sqlite_mqtt": true,
+          "targets": 2,
+          "one_serial_ncp": true,
+          "phases": [
+            {
+              "mode": "timeout",
+              "healthy_before": 2,
+              "healthy_after": 5,
+              "confirmed_commands": 1
+            },
+            {
+              "mode": "wrong_signature",
+              "healthy_before": 6,
+              "healthy_after": 9,
+              "confirmed_commands": 2
+            },
+            {
+              "mode": "reset",
+              "both_offline": true,
+              "recovery_no_replay": true
+            },
+            {
+              "mode": "invalid_frame",
+              "both_offline": true,
+              "recovery_no_replay": true
+            }
+          ],
+          "target_recovery_baseline": true,
+          "shared_failure_resets_all": true,
+          "gateway_restart_no_replay": true,
+          "confirmed_commands": 3,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      "normal_capacity_rotation": {
+        "path": ".dev/zigbee-gateway-journey-ZVxFpv/rotation-report.json",
+        "sha256": "c2f75d5c99d9fe81de401e90f3ee64dac14901d3c364fd1399060ee0640d2800",
+        "result": {
+          "passed": true,
+          "real_gateway_sqlite_mqtt": true,
+          "targets": 2,
+          "initial": {
+            "type": "stats",
+            "id": 1,
+            "samples": {
+              "1122334455667788": 1,
+              "1122334455667789": 1
+            },
+            "host_checks": 1,
+            "session_samples": [
+              2
+            ]
+          },
+          "rotated": {
+            "type": "stats",
+            "id": 211,
+            "samples": {
+              "1122334455667788": 43,
+              "1122334455667789": 43
+            },
+            "host_checks": 2,
+            "session_samples": [
+              85,
+              1
+            ]
+          },
+          "both_threshold_baselines_preserved": true,
+          "durable_source_closes": 0,
+          "confirmed_commands": 2,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      }
+    },
+    "website": {
+      "astro_errors": 0,
+      "astro_warnings": 0,
+      "astro_hints": 0,
+      "html_pages": 53,
+      "local_references": 2053
+    },
+    "documentation": {
+      "documents": 2,
+      "local_file_links": 214,
+      "broken": []
+    },
+    "logs_sha256": {
+      "affected-journeys-final.log": "18bcbf1b3275459948ff36866b0fd28ca6206e1d083688f2c5e53c112d653672",
+      "build-final.log": "7241353758e6086d2e4671ca2cdd264585e60a0c9cb28142313f69842851ea65",
+      "build-initial.log": "a4dc6dd6264fb3daef4d29b214a6e5b3bc64e04aa344e976678ffab77064fe9b",
+      "clippy.log": "bd416dacad7d130711de95ac3d5268c078d7d494233dcd582130cc7034aa09bd",
+      "journeys-final.log": "fd1a95f45baab0c7a6ac855e6986e960fcf92d596f6d6ee64204c54e235286e6",
+      "journeys-initial.log": "1a0fb346fd123b8309bb9f311daca9ee0ee058105ffa6474245326127cdd32b7",
+      "journeys-repair-1.log": "9f85ffa8b7ed54200ec36fad650c85413843854f87545fa640c61ba37d774aab",
+      "rotation-repair-1.log": "9fa1422bed4522e7275cb1ff5da391961851fb5b476dca72fdeeb03d502841e4",
+      "runtime-tests.log": "847b4658514dafbf2e7ae00daa6d37c41d6e6358df7286d9912f6b55fd9f05e3",
+      "single-target-final.log": "5992dd2af68ec77f3dc3b75d89896b32f6ac02718ee24615489b14ed20578b30",
+      "website-build.log": "a4fc3e9e085d058a33ceaa5be14abc78e64f7ae0f486d51b11edfe1f7d8934f7"
+    },
+    "source_manifest_sha256": "fe3daca4df999446eed0b68310445c063025b38c637691ec455b1dcc5d73337c"
+  },
+  "history": {
+    "initial_fixture_request_format_failure": {
+      "passed": false,
+      "reason": "IEEE address request suffix is request_type/start_index, not a repeated short address.",
+      "repair_rounds": 1,
+      "strict_request_shape_preserved": true
+    },
+    "browser_cleanup_failure": {
+      "passed": false,
+      "business_report_did_not_prove_cleanup": true,
+      "reason": "SSE client remained open while gateway was stopped, causing test SIGKILL and a raw termios state.",
+      "repair": "Close browser before gateway; assert NCP exit code and exact termios restoration.",
+      "repair_rounds": 1,
+      "stalled_owned_test_and_browser_processes_terminated": true,
+      "open_sse_gateway_shutdown_still_unresolved": true
+    },
+    "rotation_combined_suite_failure": {
+      "passed": false,
+      "log": "journeys-final.log",
+      "suite_passed": 4,
+      "suite_failed": 1,
+      "observed_gateway_error": "znp_timeout",
+      "unexpected_timeout_root_cause_confirmed": false,
+      "repair": "Record per-session completed reads and AF IDs; replace repeated full device HTTP polling with a complete durable source-close audit. Keep all production deadlines and the no-close invariant.",
+      "repair_rounds": 1,
+      "targeted_recheck_passed": true
+    },
+    "historical_failed_combined_commands_not_relabelled": true
+  },
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "files": 23,
+    "captured_after_checks": true,
+    "whole_stage_inputs_frozen": false
+  },
+  "limits": [
+    "Tests cover exactly two software Zigbee targets sharing macOS PTY with 500ms per-read deadlines and 1000ms poll intervals.",
+    "A 30000ms target deadline can still make peers exceed 15s freshness; lifecycle isolation does not remove serial queue contention.",
+    "A spontaneous 500ms timeout occurred in the earlier combined run; its lower-level latency cause was not confirmed. This is not a latency guarantee.",
+    "Runtime revoked-model source-begin isolation is implemented but lacks its own end-to-end acceptance scenario.",
+    "Live SSE clients can delay existing gateway shutdown beyond the dev script budget; final serial cleanup tests close clients first. Bounded shutdown with live clients remains outstanding.",
+    "Dynamic binding, join, source migration, Linux/NAS serial, RF, fixed firmware and procurement compatibility remain unverified.",
+    "Final results compose targeted checks on the recorded inputs; no final single green whole-platform command or frozen whole-worktree pass is claimed."
+  ],
+  "next": [
+    "bounded_gateway_shutdown_with_live_sse_and_serial_release",
+    "revoked_source_runtime_isolation_journey",
+    "managed_binding_pairing_and_join"
+  ]
+}

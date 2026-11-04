@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "bindings": [
+    {
+      "device_id": "device-zigbee-environment",
+      "adapter_id": "znp-environment",
+      "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348",
+      "serial": "/dev/ttyUSB0",
+      "target": {
+        "coordinator_ieee": "0102030405060708",
+        "ieee_address": "1122334455667788",
+        "endpoint": 1
+      },
+      "manufacturer_code": 4660,
+      "signature": {
+        "manufacturer": "LimeIoT",
+        "model": "Environment-1",
+        "application_version": 2,
+        "hardware_version": 1
+      },
+      "timeout_ms": 5000,
+      "poll_interval_ms": 2000
+    }
+  ]
+}

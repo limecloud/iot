@@ -11,8 +11,9 @@ export const post = (body, key) => ({ method: 'POST', headers: { 'Content-Type':
 export async function startActionStack(options = {}) {
   const directory = options.directory ?? await mkdtemp(path.join(root, '.dev/actions-'));
   const modelPath = options.modelPath ?? path.join(root, 'contracts/models/android-tv.json');
+  const validator = process.env.LIMEIOT_MODEL_VALIDATOR ?? path.join(process.env.LIMEIOT_TEST_TARGET_DIR ?? path.join(root, 'target/debug'), 'limeiot-model-validator');
   const result = await exec(process.execPath, ['packages/cli/src/main.mjs', 'model', 'validate', '--input', modelPath], {
-    cwd: root, env: { ...process.env, LIMEIOT_MODEL_VALIDATOR: path.join(root, 'target/debug/limeiot-model-validator') }, timeout: 5000,
+    cwd: root, env: { ...process.env, LIMEIOT_MODEL_VALIDATOR: validator }, timeout: 5000,
   });
   const report = JSON.parse(result.stdout); assert.equal(report.valid, true);
   const config = JSON.parse(await readFile(path.join(root, 'deploy/dev/config.json'), 'utf8'));

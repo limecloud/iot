@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "gateway_sigint_sigterm_sse_drain_and_owned_background_serial_shutdown",
+  "status": "macos_host_software_scenarios_passed",
+  "archive": ".dev/gateway-shutdown-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "linux_container_shutdown_verified": false,
+  "linux_serial_shutdown_verified": false,
+  "official_cloud_updated": false,
+  "published": false,
+  "full_goal_completed": false,
+  "changes": {
+    "unix_sigint_and_sigterm": true,
+    "irreversible_process_watch_shutdown": true,
+    "sse_ends_on_shutdown": true,
+    "http_drain_budget_seconds": 3,
+    "explicit_http_drain_timeout_log": true,
+    "mqtt_dispatch_owned_by_parent_future": true,
+    "integration_children_cancelled_and_awaited": true,
+    "serial_raii_before_exit": true,
+    "no_database_or_snapshot_version_change": true,
+    "no_new_production_dependency": true,
+    "no_business_event_or_command_semantics_change": true
+  },
+  "verification": {
+    "entry": "npm run test:gateway:shutdown",
+    "gateway_simulator_build": true,
+    "runtime_tests": 71,
+    "gateway_all_targets_clippy_warnings_denied": true,
+    "minimal_feature_check": true,
+    "zigbee_only_feature_check": true,
+    "final_network_journeys": 6,
+    "final_network_command": "node --test --test-concurrency=1 tests/gateway-shutdown.test.mjs tests/e2e.test.mjs tests/device-events.test.mjs",
+    "network_cases": [
+      "committed_device_events_sse_poll_and_restart",
+      "mqtt_cli_idempotency_rules_and_restart",
+      "lost_results_remain_unknown",
+      "cookie_origin_csrf_session_revocation",
+      "SIGINT_live_sse_and_pending_serial",
+      "SIGTERM_incomplete_http_body_live_sse_and_pending_serial"
+    ],
+    "shutdown_reports": {
+      "SIGINT": {
+        "path": ".dev/zigbee-gateway-journey-GqetNr/shutdown-report.json",
+        "sha256": "0f2749577fc5ec1a0c6f660150a35e74330d8ab2640cce0dfc6a36d9bdc2a50a",
+        "result": {
+          "passed": true,
+          "signal": "SIGINT",
+          "exit": {
+            "code": 0,
+            "signal": null,
+            "elapsed_ms": 9
+          },
+          "sse_clients": 2,
+          "browser_session_and_bearer": true,
+          "server_ended_streams": true,
+          "serial_restored_before_restart": true,
+          "http_drained": true,
+          "pending_znp_timeout_ms": 30000,
+          "stalled_http_body": false,
+          "incomplete_request_not_committed": true,
+          "gateway_restart_no_replay": true,
+          "previous_browser_session_rejected": true,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      },
+      "SIGTERM": {
+        "path": ".dev/zigbee-gateway-journey-Vv81Sa/shutdown-report.json",
+        "sha256": "135aa0347703768c4faf42d1036b82a98fa008135f912028de02d28e163c05c3",
+        "result": {
+          "passed": true,
+          "signal": "SIGTERM",
+          "exit": {
+            "code": 0,
+            "signal": null,
+            "elapsed_ms": 3004
+          },
+          "sse_clients": 2,
+          "browser_session_and_bearer": true,
+          "server_ended_streams": true,
+          "serial_restored_before_restart": true,
+          "http_drained": false,
+          "pending_znp_timeout_ms": 30000,
+          "stalled_http_body": true,
+          "incomplete_request_not_committed": true,
+          "gateway_restart_no_replay": true,
+          "previous_browser_session_rejected": true,
+          "hardware": false,
+          "published": false,
+          "full_goal_completed": false
+        }
+      }
+    },
+    "gateway_binary_sha256": "24d89de369b11c83f26c7da20a3f9f109e321bfee752425145a26ee2d89b949c",
+    "default_target_directory": ".dev/znp-verification-20261103/target",
+    "website": {
+      "astro_errors": 0,
+      "astro_warnings": 0,
+      "astro_hints": 0,
+      "html_pages": 53,
+      "local_references": 2054
+    },
+    "documentation": {
+      "documents": 7,
+      "local_file_links": 279,
+      "broken": []
+    },
+    "logs_sha256": {
+      "build-final.log": "0c33b06aef19ec2d7df060b9362986f0a613ff77b6378655a4a5fcd69eaf3892",
+      "build-initial.log": "31383e5013ec53655f8c37da7388df99a6e3836fe5e7786c1165e5aae3164c29",
+      "clippy.log": "5c20ddf1dc3943553a8d4d66547b148b31636b3e34e173ef8406545a2b6d4222",
+      "journeys-final.log": "f4a92bcdbfa66a5d8f7b55fc8e19aff636f0a956d69d4da101eaa8327f9bdd23",
+      "journeys-initial.log": "a5df2c2783185b87fd333255b7bb0e46770ab1f3cfa3f60c48326241387995a2",
+      "minimal-check.log": "2a092b16359071891e79ae751b656993e4295d4cc7dcca9e44d4cd4d155431ce",
+      "reproduction.log": "14f25bb9d02ed96a3314608529ccb5f9050f64378f9095a89299a33c9a01e699",
+      "runtime-tests.log": "d818dfce66801181f1cb5559c08d271575da0f65c8451db9c306860574f3410c",
+      "website-build-final.log": "5679be9d80b7d684627433d9815fd63ff79d310dcd4fe3b9c3f50c43ee2e6814",
+      "website-build.log": "46b84897da56bc05210e92e568e5352df89050b867bee8ec43c9930a87812a28",
+      "zigbee-feature-check.log": "a769b00545a5b6395c35e084cba17cb50c3ffaa8a9a2d0a4467fc8b338978fd6"
+    },
+    "source_manifest_sha256": "ffd14a1b019525f230b28a81ec8240e47f1d562e41470955c1c5a29215112cf9"
+  },
+  "history": {
+    "old_gateway_reproduction": {
+      "passed": false,
+      "reason": "With two live SSE clients and a 30-second pending serial read, SIGINT exceeded the original 4000ms shutdown deadline.",
+      "binary": {
+        "sha256": "4e76d16d964d74c2371f64187cfd1b54b738a9cf8cd5abc2cc1bf03fc8cb8dd2"
+      },
+      "log": "reproduction.log"
+    },
+    "initial_fixed_shutdown_journeys_passed": 2,
+    "final_stream_implementation": "StreamExt::take_until",
+    "assertions_or_deadlines_relaxed": false
+  },
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "copies": "source",
+    "files": 28,
+    "captured_after_checks": true,
+    "whole_stage_inputs_frozen": false
+  },
+  "limits": [
+    "This is macOS host evidence with PTY software NCP and MQTT simulators; Linux serial, RF and NAS supervisor shutdown are not verified.",
+    "HTTP drain has a 3-second asynchronous budget. Blocking storage/system calls cannot be preempted by this timer; exit times are observations, not a universal latency promise.",
+    "http_drained=false and exit code zero describe planned process shutdown after drain timeout, not completed requests or device effects.",
+    "Cancellation cannot retract already-sent commands or stop external inference providers. SIGKILL and power loss cannot guarantee termios restoration.",
+    "TV and DLNA child ownership compiles, but in-flight real ADB/DLNA shutdown scenarios are not part of the new journey.",
+    "The prior two-target and 85-read rotation suites were not rerun in this stage; their historical results are not a final whole-Zigbee pass.",
+    "Unrelated worktree changes are present; captured input copies are after checks and do not claim a whole-stage frozen build."
+  ],
+  "next": [
+    "managed_zigbee_binding_pairing_and_join",
+    "revoked_source_runtime_isolation",
+    "linux_nas_supervisor_shutdown_when_software_environment_is_available"
+  ]
+}

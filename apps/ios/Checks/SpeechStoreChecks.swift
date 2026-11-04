@@ -109,6 +109,9 @@ private actor LiveWire: HTTPTransport {
             speech.refresh(); await speech.waitForIdle(); return (speech, media)
         }
         let (speech, media) = try await connect()
+        try expect(speech.prepareAnswer("完整回答🍋") && speech.text == "完整回答🍋", "explicit answer handoff")
+        for invalid in [" ", String(repeating: "字", count: 1001), String(repeating: "🍋", count: 1001)] { try expect(!speech.prepareAnswer(invalid) && speech.text == "完整回答🍋", "handoff never truncates or replaces draft") }
+        try expect(await wire.posts == 0, "handoff zero POST")
         speech.setText("青柠🍋萌宠"); speech.selectVoice("other"); speech.setRetention(3600)
         try expect(speech.ready && speech.canGenerate && speech.voice == "other", "local input ready")
         try expect(await wire.posts == 0, "selection zero POST")
@@ -122,6 +125,7 @@ private actor LiveWire: HTTPTransport {
         try expect(speech.text.isEmpty && !speech.ready && speech.confirmation == nil, "offline clears text")
         speech.setOnline(true); speech.refresh(); await speech.waitForIdle(); speech.setText("后台正文"); speech.pause()
         try expect(speech.text.isEmpty && !speech.ready, "background clears text")
+        try expect(!speech.prepareAnswer("后台"), "paused handoff refused")
 
         let (unknown, _) = try await connect(); await wire.configure(drop: true)
         unknown.setText("丢失响应"); unknown.generate(); await unknown.waitForIdle()
@@ -129,6 +133,7 @@ private actor LiveWire: HTTPTransport {
         let posts = await wire.posts
         await wire.configure(state: "unknown"); let (restored, _) = try await connect()
         try expect(restored.ready && restored.pending && !restored.canGenerate, "restored unknown occupies budget")
+        try expect(!restored.prepareAnswer("替换未决输出"), "unknown handoff refused")
         let key = restored.records.last!.id
         restored.requestDiscard(key); restored.cancelDiscard(); restored.confirmDiscard()
         try expect(await wire.posts == posts, "cancel discard zero POST")
@@ -161,7 +166,7 @@ private actor LiveWire: HTTPTransport {
         await wire.configure(status: 401); readable.refresh(); await readable.waitForIdle(); try expect(authFailures == 1 && readable.text.isEmpty, "401 clears text and reaches session handler")
         readable.close(); readable.setOnline(true); readable.refresh(); readable.setText("closed"); readable.generate()
         try expect(readable.text.isEmpty && !readable.ready, "closed store rejects work")
-        print("{\"speech_state_contract_groups\":7}")
+        print("{\"speech_state_contract_groups\":8}")
     }
     @MainActor static func live() async throws {
         let env = ProcessInfo.processInfo.environment, phase = env["LIMEIOT_SPEECH_PHASE"]!, space = "space-demo"

@@ -7,7 +7,7 @@ use chrono::{DateTime, Utc};
 use limeiot_core::protocol::{Envelope, MAX_PACKET};
 use rumqttc::v5::{
     mqttbytes::{v5::Packet, QoS},
-    AsyncClient, Event, MqttOptions,
+    AsyncClient, Event, EventLoop, MqttOptions,
 };
 use std::{sync::atomic::Ordering, time::Duration};
 
@@ -29,8 +29,15 @@ pub async fn run(app: App) {
     options.set_keep_alive(Duration::from_secs(5));
     options.set_max_packet_size(Some((MAX_PACKET + 512) as u32));
     options.set_credentials("gateway", setting("LIMEIOT_MQTT_PASSWORD", ""));
-    let (client, mut eventloop) = AsyncClient::new(options, 32);
-    let _dispatcher = tokio::spawn(dispatch(app.clone(), client.clone(), space.clone()));
+    let (client, eventloop) = AsyncClient::new(options, 32);
+    // 接收和派发由同一父future拥有；取消父任务时两者一起释放，不留下游离派发器。
+    tokio::select! {
+        _ = dispatch(app.clone(), client.clone(), space.clone()) => {},
+        _ = receive(app, client, space, eventloop) => {},
+    }
+}
+
+async fn receive(app: App, client: AsyncClient, space: String, mut eventloop: EventLoop) {
     loop {
         match eventloop.poll().await {
             Ok(Event::Incoming(Packet::ConnAck(_))) => {

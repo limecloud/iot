@@ -19,7 +19,7 @@ test('网页遥控动作、执行阶段与丢响应恢复：存储失败零发�
   await expect(tv.getByRole('group', { name: '遥控器' })).toBeVisible();
   await page.evaluate(() => { const set = Storage.prototype.setItem; Storage.prototype.setItem = function (key, value) { if (key === 'limeiot.pending') throw new DOMException('denied', 'QuotaExceededError'); return set.call(this, key, value); }; });
   await tv.getByRole('button', { name: '主页', exact: true }).click();
-  await expect(page.getByText('无法保存本地操作记录，请检查浏览器存储设置', { exact: true })).toBeVisible();
+  await expect(page.getByText('无法核对本地操作记录，尚未发送请求', { exact: true })).toBeVisible();
   assert.equal(posts.length, 0);
   assert.equal((await stack.request(base + '/commands')).value.items.length, 0);
   await page.reload();

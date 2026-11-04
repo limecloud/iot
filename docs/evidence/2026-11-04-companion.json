@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-COMPANION-20261104-01",
+  "recorded_at": "2026-11-04T12:59:51.300051+00:00",
+  "status": "passed",
+  "scope": "源码CLI与共享JS的有限角色语音会话、双轮上下文、摘要恢复及旧v1网页/CLI回归",
+  "full_goal_completed": false,
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "published": false,
+  "cloud_updated": false,
+  "nas_image_rebuilt": false,
+  "implemented": [
+    "有界政策Schema、角色/声音/ASR文字TTS部署修订固定及会话预算",
+    "显式v2上下文回合，默认v1合同及消费者保持兼容",
+    "调用者持有问答正文，独立0600账本只保存摘要和原任务",
+    "先保存轮次占用，unknown/失败不替代、不退款，缺政策/历史不推进",
+    "独立companion CLI发现、明确每轮、只查询恢复、无历史停止及SIGINT释放锁",
+    "积木小狗四轮十分钟样板及完整开发文档"
+  ],
+  "verification": {
+    "command": "npm run test:companion",
+    "exit_code": 0,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "log": {
+      "path": ".dev/companion-20261104/full-attempt1.log",
+      "sha256": "64711e7e9c3f52b8e14bb8583b16304f70ec1a6c27bf8808c723420be58edd11"
+    },
+    "final_change": "完整入口通过后仅将共享层voice_turn_paused映射为companion_paused；未重新运行整个完整入口。",
+    "targeted_recheck": {
+      "command": "node --test --test-concurrency=1 --test-name-pattern=\"陪伴CLI在未知文字请求期间中断\" tests/companion-cli.test.mjs",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "log": {
+        "path": ".dev/companion-20261104/cli-interrupt-attempt3.log",
+        "sha256": "e4f1f514e1a8f78ff030114c831da9549728e4b11d1e1fee7d3d1da16cce7a63"
+      }
+    },
+    "additional_logs": [
+      {
+        "path": ".dev/companion-20261104/context-attempt2.log",
+        "sha256": "073d83c4f2af8781ae792fdcab2fe518f866eabc5f0c5f416e73330256b77692"
+      },
+      {
+        "path": ".dev/companion-20261104/session-attempt1.log",
+        "sha256": "cdcff6bbdcb69f5e60feea287dc4cdce4a51b218782357a9192305316fa83266"
+      }
+    ]
+  },
+  "journeys": [
+    {
+      "report": {
+        "path": ".dev/voice-turn-S5uX72/companion-cli-result.json",
+        "sha256": "4cb84821dcc3442e86942b6c2b7189135b55e053e36e3984f332cfa64e8c1ee2"
+      },
+      "checks": {
+        "passed": true,
+        "independent_cli_processes": 7,
+        "turns": 2,
+        "real_gateway": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "model_calls": 6,
+        "private_summary_only": true,
+        "explicit_context_export": true,
+        "restart_query_only": true,
+        "context_free_stop": true,
+        "no_grants_or_commands": true,
+        "provider_fixture": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/voice-turn-3UE083/companion-interrupt-result.json",
+        "sha256": "e7ee130bf0cf2d127a69a3d361c222fe8e53ba71f5107ef636f746e2a0292b02"
+      },
+      "checks": {
+        "passed": true,
+        "interrupted_exit": 6,
+        "lock_released": true,
+        "real_gateway": true,
+        "gateway_restarts": 1,
+        "original_query_only": true,
+        "model_calls": 2,
+        "stopped_without_history": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/voice-turn-dZMvXF/companion-result.json",
+        "sha256": "9407a30ab5612eaf9ecc4b14b0348034f94b6f2ffceecf2f4c0bee24ac3fa55c"
+      },
+      "checks": {
+        "passed": true,
+        "real_gateway": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "turns": 2,
+        "model_calls": 6,
+        "role_and_history_bound": true,
+        "model_change_rejected": true,
+        "summary_only": true,
+        "history_loss_no_next_turn": true,
+        "budget_enforced": true,
+        "gateway_restarts": 3,
+        "recovery_get_only": true,
+        "stop_clears_both_answers": true,
+        "zero_grants_or_commands": true,
+        "provider_fixture": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/voice-turn-0LbzPT/companion-unknown.json",
+        "sha256": "5ea67e45860218451e88457f24ef52373cf65f7daa99ecd9b4bb655c1e1808f4"
+      },
+      "checks": {
+        "passed": true,
+        "original_tasks_only": true,
+        "lost_response": true,
+        "unknown_blocks_replacement": true,
+        "stop_persisted": true,
+        "stop_without_context": true,
+        "gateway_restarts": 1,
+        "model_calls": 2,
+        "no_late_revival": true,
+        "old_session_id_rejected": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/voice-turn-3GQxjK/voice-context-result.json",
+        "sha256": "f0ab0f79c973044bb1a84cdcb757915449d4dfbb10ab043ece117863ed0ad136"
+      },
+      "checks": {
+        "passed": true,
+        "real_gateway": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "turns": 2,
+        "provider_calls": 6,
+        "second_turn_messages": 3,
+        "role_bound": true,
+        "summary_only": true,
+        "restart_get_only": true,
+        "legacy_parser_rejects_context": true,
+        "zero_play_or_device_commands": true,
+        "provider_fixture": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "report": {
+        "path": ".dev/voice-turn-ELqYcA/companion-interrupt-result.json",
+        "sha256": "e7ee130bf0cf2d127a69a3d361c222fe8e53ba71f5107ef636f746e2a0292b02"
+      },
+      "checks": {
+        "passed": true,
+        "interrupted_exit": 6,
+        "lock_released": true,
+        "real_gateway": true,
+        "gateway_restarts": 1,
+        "original_query_only": true,
+        "model_calls": 2,
+        "stopped_without_history": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    }
+  ],
+  "legacy_regression": [
+    {
+      "path": ".dev/voice-turn-sAfuM7/voice-turn-web.json",
+      "sha256": "6caf5aa117f9e2c7f9859854120f40b8f539d1df084522fbc773aaaa394736a6"
+    },
+    {
+      "path": ".dev/voice-turn-Rhbuvr/voice-turn-web-faults.json",
+      "sha256": "f33057c589c50c4d2d8535370171b1abf41fd5dddce116993114e80db51a5f26"
+    },
+    {
+      "path": ".dev/voice-turn-0lyQ37/voice-turn-result.json",
+      "sha256": "3da498fde867c8344604fd93b72dc63ab39c73b17f52246f0f4ad7aa53062194"
+    },
+    {
+      "path": ".dev/voice-turn-ckGnOO/voice-turn-faults.json",
+      "sha256": "4587172d09ddf0349f2497a7de216b013e2d6bb55d2cb50dc9515c2c99126746"
+    },
+    {
+      "path": ".dev/voice-turn-oYrxd4/voice-turn-cli.json",
+      "sha256": "8350edf0816d30eb1e378a4b418558cd1e75ba06f8529eafb13fd2399a77f15e"
+    }
+  ],
+  "source_manifest": {
+    "path": ".dev/companion-20261104/source-manifest-final.json",
+    "sha256": "6b5b7a1ed3bbf943c73ead860393960cc1119ea20f332da6ad118ef11b0779a1"
+  },
+  "source_count": 310,
+  "artifact_count": 75,
+  "preserved_failures": [
+    {
+      "record": {
+        "path": ".dev/companion-20261104/context-attempt1.log",
+        "sha256": "0140abb732b785f79c03e399c3e35251930eb8cc7b3fff0fa40cb56ae86af926"
+      },
+      "cause": "测试将角色提示误当提供方首条system消息；网关固定的无设备执行权提示在前。修正测试以严格验证两条system消息及准确历史，原v1断言保持。",
+      "targeted_repairs": 1
+    },
+    {
+      "record": {
+        "path": ".dev/companion-20261104/cli-attempt1.log",
+        "sha256": "a82cab4defe9167585562ac2dceb82b27656b7f1e58132be9f129e114a55043a"
+      },
+      "cause": "中断旅程未处理unknown的约定非零退出码6；同时严格断言exit=6及phase=unknown。",
+      "targeted_repairs": 1
+    },
+    {
+      "record": {
+        "path": ".dev/companion-20261104/cli-interrupt-attempt2.log",
+        "sha256": "d39332883534a0b7461bc434398f12372739b3e71b78f3d0994ab3a87ad47848"
+      },
+      "cause": "不同中断时序返回共享层voice_turn_paused；第二轮修复生产CLI暂停码映射，最终定向复验通过。",
+      "targeted_repairs_for_interruption_total": 2
+    }
+  ],
+  "documentation": [
+    {
+      "path": "contracts/companion.md",
+      "sha256": "8529d1c3002126c0a7a99b75b3a7a8803562957fc764b182b4bc65a4421e6b60"
+    },
+    {
+      "path": "contracts/README.md",
+      "sha256": "f374030ba401fbfed2052f871a68218e13a85c90e8ebe54cac64f6af8695a178"
+    },
+    {
+      "path": "contracts/voice-turns.md",
+      "sha256": "0b12adb493e28bf0e2db448943ff96fb0c4e668dfc8dc56d47f88c0c60606d88"
+    },
+    {
+      "path": "examples/companions/block-puppy/README.md",
+      "sha256": "9a4e36158723b34a1a639ca774aee4bfa8d58025d18c9b2611fbfc20bd1f921f"
+    },
+    {
+      "path": "packages/cli/README.md",
+      "sha256": "c62c5dfe0bd9fedb2387454d80b8be497c0b2cc6356d62d1c36e758026aaff84"
+    },
+    {
+      "path": "llms.txt",
+      "sha256": "37f2f7a47d6eb5a33d0eaec2ac165663dec7498637172d58ff70d384a0c66729"
+    },
+    {
+      "path": "docs/24-实施计划与进度.md",
+      "sha256": "731548cb54f80c07291c7d1e8cd6ff4b46f1342958ed691a42d49dd45cbceb5d"
+    },
+    {
+      "path": "docs/32-能力组合与场景应用.md",
+      "sha256": "769602e64de161cb60c0005387258258b66262434be9e7647c3842624866b2d1"
+    },
+    {
+      "path": "docs/33-多模态模型与媒体服务.md",
+      "sha256": "e93b62b4e1ec7696e8008229ccba9923acb38ec8a81c16cbba446a5463a86519"
+    }
+  ],
+  "website": {
+    "repository": "iotweb",
+    "sources": [
+      {
+        "path": "src/docs/content/agent-development.md",
+        "sha256": "17b7b8d2518af61d2201c1b3fa99b5649d75f46a2c7560fd5faa1722fce0bb27"
+      },
+      {
+        "path": "src/docs/content/multimodal.md",
+        "sha256": "9f2f5f0475095156c2ed54d90c7ff8f399876e2a3461a2d4617110e3753ba2e3"
+      }
+    ],
+    "build_log": {
+      "path": "../iot/.dev/companion-20261104/website-build.log",
+      "sha256": "0a58ccfc0d2ecd412361c5a2eb2d9b62ccd8d9ec057222306aab5e2ff2d9df32"
+    },
+    "pages": 54,
+    "local_references": 2119,
+    "exit_code": 0
+  },
+  "design": "复用VoiceTurnClient、现有ASR/文字/TTS合同及原键恢复，抽取CLI共用认证/私有文件/锁；不引入第二套网关执行器、数据库或设备权限。",
+  "limits": [
+    "模型提供方是固定协议夹具；未验证真实回答质量、儿童适龄内容与监护授权。",
+    "本阶段只有源码CLI与共享JS，没有专用陪伴网页或原生页面，原v1网页回归不代表新会话UI。",
+    "生成不自动授权/播放音箱或发设备命令；停止不证明外部模型计算终止或撤回既有播放，源媒体和生成音频按原TTL/删除合同。",
+    "历史正文不自动落会话账本；显式--emit-context可能将明文交给调用者终端或文件，调用者保存的副本另行管理。",
+    "摘要不提供签名信任、旧备份防回退、跨设备全局配额或长期记忆。",
+    "实机、玩具固件、自动唤醒、持续流及运动控制未验；旧原生/NAS证据按各阶段输入冻结，本轮未重建NAS、发布官网或更新云。"
+  ]
+}

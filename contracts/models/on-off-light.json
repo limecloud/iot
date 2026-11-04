@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "model_id": "urn:limeiot:model:on-off-light:1",
+  "model_version": "1.0.0",
+  "services": [{
+    "id": "light",
+    "semantic_id": "urn:limeiot:service:light:1",
+    "properties": [{
+      "id": "power",
+      "semantic_id": "urn:limeiot:property:power:1",
+      "schema": { "type": "boolean" },
+      "access": ["read", "write", "notify"],
+      "max_age_ms": 15000
+    }],
+    "actions": [],
+    "events": []
+  }]
+}

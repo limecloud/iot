@@ -1,0 +1,300 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-COMPANION-NATIVE-20261104-01",
+  "recorded_at": "2026-11-04T14:04:23.816273+00:00",
+  "status": "passed",
+  "scope": "Swift/Kotlin有限陪伴SDK、原生页面源码、实际状态层及真实网关宿主恢复",
+  "full_goal_completed": false,
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "native_app_runtime": false,
+  "production_secure_store_runtime": false,
+  "published": false,
+  "cloud_updated": false,
+  "nas_image_rebuilt": false,
+  "implementation": [
+    "同一政策与外层摘要账本，显式v2上下文、默认v1拒绝及独立存储键",
+    "开始零推理，每轮明确录音，角色/准确历史/三类修订/期限/预算约束",
+    "保存与回读后提交、原键恢复、unknown不替代、准备占位不自动重建",
+    "SwiftUI/Compose本地音频页、原生状态层、Home连接/空间/退出/401接线",
+    "后台与离页取消推进、清文和历史，等待原操作后再次清上下文，迟到结果不创建下一阶段",
+    "停止无需历史，先耐久保存停止事实，清两轮成功文字，丢回执只查询",
+    "合同、客户端说明、样板、AI入口、同站官网指南和验证入口同步"
+  ],
+  "verification": {
+    "swift": {
+      "sdk_groups": 5,
+      "state_groups": 2,
+      "home_groups": 6,
+      "v1_regression_passed": true,
+      "swiftui_syntax": true,
+      "xcode_project_syntax": true,
+      "full_ios_app_build": false,
+      "report": {
+        "path": ".dev/companion-native-20261104/ios-report.json",
+        "sha256": "dfcc9bb2ea80d9fb0d24b859aff6ebcce6f5514b5390d5636a54083cdd2b60e8"
+      }
+    },
+    "android": {
+      "junit": {
+        "CompanionClientTest": {
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "result": {
+            "path": ".dev/companion-native-20261104/TEST-CompanionClientTest.xml",
+            "sha256": "0913ed1626a474727a4fb7d203eaa715f8cea41c2742f20d3b03dc8c6ff9d6b3"
+          }
+        },
+        "VoiceTurnClientTest": {
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "result": {
+            "path": ".dev/companion-native-20261104/TEST-VoiceTurnClientTest.xml",
+            "sha256": "6d0e4eebef6e6c2ba5aabb900667aae06829d662aedbe805ddb645e78477b353"
+          }
+        },
+        "CompanionControllerTest": {
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "result": {
+            "path": ".dev/companion-native-20261104/TEST-CompanionControllerTest.xml",
+            "sha256": "1df8e399e5bd34bf01ce9ebbede56c0e52df44f5ac9c4a09efc7eb2106891a31"
+          }
+        },
+        "VoiceTurnControllerTest": {
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "result": {
+            "path": ".dev/companion-native-20261104/TEST-VoiceTurnControllerTest.xml",
+            "sha256": "00158be6813d72076c8113b2232e0ead815cc401f6a36903f6a57841dfac5dd5"
+          }
+        },
+        "HomeViewModelTest": {
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "result": {
+            "path": ".dev/companion-native-20261104/TEST-HomeViewModelTest.xml",
+            "sha256": "7759fc396a3fc6d097a9852a5307db45ad7e3e326b8464c99a3289e3eeb6a256"
+          }
+        }
+      },
+      "total": 20,
+      "debug_apk_build": true,
+      "lint_errors": 0,
+      "lint_warnings": 17,
+      "lint": {
+        "path": ".dev/companion-native-20261104/android-lint-final.xml",
+        "sha256": "9eb5c4833b96e8886c7cbb3eb923681c80f9ffad784067828adae595d4e76b07"
+      },
+      "report": {
+        "path": ".dev/companion-native-20261104/android-report.json",
+        "sha256": "9c3046ba02fd449b1d410dccac76ecfbf3dbaddc9aa079189966de16c2465b6d"
+      }
+    },
+    "live": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "journeys": [
+        {
+          "report": {
+            "path": ".dev/voice-turn-tkKDAC/companion-native-result.json",
+            "sha256": "b8211e1843e9f0a94c3166699bec89c59be4803604a927e818c312b0447528e6"
+          },
+          "checks": {
+            "passed": true,
+            "target": "ios",
+            "real_rust_gateway": true,
+            "real_sqlite": true,
+            "real_mqtt": true,
+            "host_ui_state": true,
+            "native_processes": 3,
+            "gateway_restarts": 2,
+            "lost_discard_receipts": 1,
+            "inference_posts": 6,
+            "discard_posts": 2,
+            "exact_second_round_history": true,
+            "shared_js_ledger": true,
+            "pause_and_restart_forget_context": true,
+            "no_implicit_authorization_or_playback": true,
+            "summary_only_persistence": true,
+            "synthetic_providers": true,
+            "native_app_runtime": false,
+            "production_secure_store_runtime": false,
+            "hardware": false,
+            "hardware_status": "用户要求跳过",
+            "full_goal_completed": false
+          }
+        },
+        {
+          "report": {
+            "path": ".dev/voice-turn-5TAIhT/companion-native-result.json",
+            "sha256": "55efab2d20dfbb55d2208a4781ba64a2bf022b8b9111983267e95b646b399f18"
+          },
+          "checks": {
+            "passed": true,
+            "target": "android",
+            "real_rust_gateway": true,
+            "real_sqlite": true,
+            "real_mqtt": true,
+            "host_ui_state": true,
+            "native_processes": 3,
+            "gateway_restarts": 2,
+            "lost_discard_receipts": 1,
+            "inference_posts": 6,
+            "discard_posts": 2,
+            "exact_second_round_history": true,
+            "shared_js_ledger": true,
+            "pause_and_restart_forget_context": true,
+            "no_implicit_authorization_or_playback": true,
+            "summary_only_persistence": true,
+            "synthetic_providers": true,
+            "native_app_runtime": false,
+            "production_secure_store_runtime": false,
+            "hardware": false,
+            "hardware_status": "用户要求跳过",
+            "full_goal_completed": false
+          }
+        }
+      ],
+      "synthetic_providers": true,
+      "real_rust_sqlite_mqtt": true
+    },
+    "website": {
+      "pages": 54,
+      "local_references": 2119,
+      "build_passed": true
+    },
+    "rust": {
+      "locked_build_passed": true,
+      "tested_binary_hashes_unchanged": true,
+      "check": {
+        "path": ".dev/companion-native-20261104/rust-binaries-after.json",
+        "sha256": "93f760cd302ad9c0b3699b2d8977320846f4b2690c3708e6e26a234ce8ef131d"
+      }
+    },
+    "logs": [
+      {
+        "path": ".dev/companion-native-20261104/fixture-final.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".dev/companion-native-20261104/ios-final-policy.log",
+        "sha256": "b5067d8c678009d38a6e8ac8c1d0a7feb817fb040e6420ab4f030b2a3d1de911"
+      },
+      {
+        "path": ".dev/companion-native-20261104/android-final-policy.log",
+        "sha256": "bb6827d3273bd8138b9080cd60426a18d67cd0a5bf5054a73a84a0817da44a90"
+      },
+      {
+        "path": ".dev/companion-native-20261104/ios-v1-regression.log",
+        "sha256": "7f47a73d0828b298142aa65b5a743b354ab10295bf4ad6271cd08f8e255304f5"
+      },
+      {
+        "path": ".dev/companion-native-20261104/live-final.log",
+        "sha256": "154ad28c8544cce2bbcbdef7bff98a38b0854c1683a5f06f5227e241e62f863d"
+      },
+      {
+        "path": ".dev/companion-native-20261104/website-build.log",
+        "sha256": "96b8b1bbac298b682100361eb47ef52d8c713d4c95aba29f8a29d720d6d7362a"
+      },
+      {
+        "path": ".dev/companion-native-20261104/rust-build.log",
+        "sha256": "1aa6bef404dd8ffaa73d761d688d7a65439e3e099d3856b19d60cc894141c32c"
+      }
+    ]
+  },
+  "artifacts": {
+    "android_apk": {
+      "path": ".dev/companion-native-20261104/LimeIoT-debug.apk",
+      "sha256": "542b567f2508f736251d358c982904388093c800f249577c1fba6ad9424d8135"
+    },
+    "swift_host_executable": {
+      "path": ".dev/companion-native-20261104/ios-companion-checks-final",
+      "sha256": "6708665da84780baedfa5c08f922148195c8dac643de598f2a40e66485a21b09"
+    },
+    "source_manifest": {
+      "path": ".dev/companion-native-20261104/source-manifest-final.json",
+      "sha256": "59cfbd1d530483e5a3904f336dc7de599a366f33882d0a9fccfeda7a3d6bfdd0"
+    }
+  },
+  "diagnostics": [
+    {
+      "reason": "首轮缺少JRE；定位已有JDK21后进入编译",
+      "log": {
+        "path": ".dev/companion-native-20261104/android-context-build.log",
+        "sha256": "23531437063d4675e9d6b7036fbf4e19978f0e25a90279babf75c40d496d637f"
+      }
+    },
+    {
+      "reason": "Kotlin上下文初始化的换行语法错误，修正后编译与测试通过",
+      "log": {
+        "path": ".dev/companion-native-20261104/android-context-build-jdk.log",
+        "sha256": "2c313daa03cc1f86607c310839d2e509274529b106e12aaffc35e79207c11663"
+      }
+    },
+    {
+      "reason": "Swift测试程序异步布尔断言不支持await，随后暴露Actor隔离要求；分别修复后通过，未降低断言",
+      "logs": [
+        {
+          "path": ".dev/companion-native-20261104/ios-sdk-attempt1.log",
+          "sha256": "d8e2758a9fc9817b7049093c742ac8d8797d65c4419edee397b967f72026ef21"
+        },
+        {
+          "path": ".dev/companion-native-20261104/ios-sdk-attempt2.log",
+          "sha256": "8af634582649408801ebc049957e9fe5446340c6fa382b113d620067417ede5f"
+        }
+      ]
+    },
+    {
+      "reason": "Swift状态测试预算漏计第二轮ASR；改为核对完整5次推理POST及后续2次清除，业务与期限未放宽",
+      "log": {
+        "path": ".dev/companion-native-20261104/ios-state-attempt1.log",
+        "sha256": "15d82f10ce56cf7d9505ec641c1803a1176aa9457ffb7d851e7d5ae92864cb1e"
+      }
+    },
+    {
+      "reason": "最终收紧纯BOM角色与损坏/重复字段拒绝，并在Android暂停时立即清上下文；最终检查和两端真实旅程均在该源码上通过",
+      "logs": [
+        {
+          "path": ".dev/companion-native-20261104/ios-final-policy.log",
+          "sha256": "b5067d8c678009d38a6e8ac8c1d0a7feb817fb040e6420ab4f030b2a3d1de911"
+        },
+        {
+          "path": ".dev/companion-native-20261104/android-final-policy.log",
+          "sha256": "bb6827d3273bd8138b9080cd60426a18d67cd0a5bf5054a73a84a0817da44a90"
+        },
+        {
+          "path": ".dev/companion-native-20261104/live-final.log",
+          "sha256": "154ad28c8544cce2bbcbdef7bff98a38b0854c1683a5f06f5227e241e62f863d"
+        }
+      ]
+    }
+  ],
+  "toolchain": {
+    "node": "24.21.0",
+    "jdk": "existing JDK21",
+    "android_sdk": "项目本地API36与Build Tools36.0.0，官方归档摘要核对",
+    "global_install": false,
+    "system_configuration_changed": false
+  },
+  "limitations": [
+    "Swift仅macOS宿主SDK/状态与SwiftUI语法，缺少完整Xcode/iOS SDK构建与页面运行证据",
+    "Android构建/lint与JVM状态层通过；未安装/启动完整App，既有整包ANR不重复尝试",
+    "本机文件与内存存储为夹具，不证明生产Keychain/Keystore、系统麦克风或手机生命周期",
+    "模型协议提供方为夹具，不证明真实模型质量、儿童适龄内容或监护授权；提示词不能替代产品政策",
+    "进程内互斥与CAS不提供跨进程并发写保证，旅程按顺序启动独立进程",
+    "未重建NAS镜像、更新正式云或发布；其他既有阻塞及硬件适配不由此阶段覆盖"
+  ],
+  "design": "外层会话管理预算/上下文，内层复用VoiceTurnClient与媒体服务；存储适配器隔离，无新增Rust/数据库/设备队列或依赖。"
+}

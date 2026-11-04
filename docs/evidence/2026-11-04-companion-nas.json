@@ -1,0 +1,371 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-COMPANION-NAS-20261104-01",
+  "recorded_at": "2026-11-04T14:42:44.965148+00:00",
+  "status": "passed",
+  "scope": "ARM64可复验控制面/网关制品、16菜单私有安装与空数据库恢复、恢复后HTTPS两轮陪伴及清文重启",
+  "full_goal_completed": false,
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "cloud_updated": false,
+  "website_published": false,
+  "platform": "linux/arm64",
+  "emulated": false,
+  "provider_fixture": true,
+  "microphone_fixture": true,
+  "renderer_fixture": true,
+  "real_microphone": false,
+  "real_model_quality": false,
+  "builds": {
+    "gateway": {
+      "manifest": {
+        "path": ".dev/nas-arm64-companion-20261104/build.json",
+        "sha256": "347bc6148738750ada55668efedc7437e7ce186a63673ee40ef970a8244eac97"
+      },
+      "source_digest": "e09475f44bc8c922718f5125f9a66c50f5de7c8e4fdfbe9bcefaf43aeb794729",
+      "source_files": 439,
+      "artifact_files": 93,
+      "rust_reuse": {
+        "source_digest": "7287585433b3efdeb79e0a72a880f963fa9a0c0daa516e43f57a7c8ecade9f12",
+        "binary_files": {
+          "limeiot-gateway": "8e620995a018fe8f829f4593dae4c87bf4b660839681e80a3ee71adb54382297",
+          "limeiot-simulator": "9a11e3bd62834e8e2e8fb702479bf49d727f5162cfada8da91edbcea4ece0efd",
+          "limeiot-model-validator": "8a46cba1260a4e10c85ee34ab5ab6f437ada6eb7b153739cb00e75ab7f9d1bc3",
+          "limeiot-ota": "f998eed0fb01f3f9110e9ca6410d0de1a3fb4c82a52ef921d0ed3e31073bae1c"
+        }
+      },
+      "image": "limeiot/verification:nas-arm64-companion-20261104",
+      "id": "sha256:994f216e844253f93b876bf613ce00d4f22d43e8eaa76b26d9e9cea234a884cd",
+      "platform": "linux/arm64",
+      "verified_files": 91
+    },
+    "control": {
+      "manifest": {
+        "path": ".dev/control-arm64-companion-20261104/build.json",
+        "sha256": "69c8c1e4e702e87ed40741959d1b4029e4c107e123be1cdb3ecb344f730dc4a4"
+      },
+      "source_digest": "8eb9706c725a14426ed4fede1e486d2e1083182d789944e08af50c4333eec692",
+      "source_files": 445,
+      "artifact_files": 128,
+      "rust_reuse": {
+        "source_digest": "7287585433b3efdeb79e0a72a880f963fa9a0c0daa516e43f57a7c8ecade9f12",
+        "binary_files": {
+          "limeiot-model-validator": "8a46cba1260a4e10c85ee34ab5ab6f437ada6eb7b153739cb00e75ab7f9d1bc3"
+        }
+      },
+      "image": "limeiot/verification:control-arm64-companion-20261104",
+      "id": "sha256:e5d8601caf8fc43ba2eaa71ca0af9460a48384fe09e7290676c35391386d2a1c",
+      "platform": "linux/arm64",
+      "verified_files": 126
+    }
+  },
+  "image_file_integrity": {
+    "path": ".dev/companion-nas-20261104/image-integrity.json",
+    "sha256": "b2d4c82367d20c8744d5c6581c39e46eb1bcf2de3267381ff9bfe114736c3021"
+  },
+  "construction": {
+    "control_builder": "tools/build-control-artifacts.py",
+    "commands": [
+      "build",
+      "verify",
+      "image"
+    ],
+    "go_and_web_rebuilt": true,
+    "rust_rebuilt": false,
+    "rust_reuse_requires_source_embedded_contract_and_toolchain_equality": true,
+    "role_policy_in_docker_context_and_source_digest": true,
+    "no_new_dependency_or_database_migration": true
+  },
+  "checks": [
+    {
+      "command": "python3 tests/test_nas_artifacts.py; python3 tests/test_control_artifacts.py",
+      "exit_code": 0,
+      "test_groups": 15,
+      "log": {
+        "path": ".dev/companion-nas-20261104/artifact-tests-final.log",
+        "sha256": "e2584785c96f0bc5bc4688b6a11c1c1ea518b0dd7ea17cff5b1aa7c19734c7dc"
+      }
+    },
+    {
+      "command": "python3 tests/test_nas_companion_fixture.py",
+      "exit_code": 0,
+      "test_groups": 4,
+      "log": {
+        "path": ".dev/companion-nas-20261104/fixture-tests.log",
+        "sha256": "7190b6aa230c96ab82513317abd6c5493046ae82b54cd78f015a778e5d8a057b"
+      }
+    },
+    {
+      "command": "node tools/test-nas-platform.mjs --platform linux/arm64 --no-build",
+      "exit_code": 0,
+      "log": {
+        "path": ".dev/companion-nas-20261104/nas-platform.log",
+        "sha256": "c2a92829b21fed8a0f794fbe3e5020809c6bd9d0195e6bcb37e0fb83a04a1d60"
+      }
+    },
+    {
+      "command": "node tools/test-nas-container.mjs --platform linux/arm64 --no-build --image limeiot/verification:nas-arm64-companion-20261104 --multimodal --companion",
+      "exit_code": 0,
+      "log": {
+        "path": ".dev/companion-nas-20261104/nas-container-attempt2.log",
+        "sha256": "4ab7052eaba518c91dd26ce4ed8129dea11864c1fd9948d3e862ba512ec23d72"
+      }
+    },
+    {
+      "command": "npm run build",
+      "working_directory": "../iotweb",
+      "exit_code": 0,
+      "html_pages": 54,
+      "local_references": 2119,
+      "log": {
+        "path": ".dev/companion-nas-20261104/website-build.log",
+        "sha256": "a7f60c37e26b573d54cb115d8dc8e63076ccc281156838dbe35a30b38150cc39"
+      }
+    }
+  ],
+  "private_workspace": {
+    "report": {
+      "path": ".dev/nas-platform-d0273cb9135f0229/result.json",
+      "sha256": "a97f398589aa4b9c61793131ceba86d62725a43a0c8f7fa4b751c9a282cec355"
+    },
+    "same_document_menus": 16,
+    "checks": {
+      "passed": true,
+      "real_containers": true,
+      "hardware": false,
+      "runtime_account_cannot_migrate": true,
+      "non_root_readonly_no_database_port": true,
+      "companion_unconfigured_local_context": true,
+      "ai_catalog_local_context": true,
+      "complete_original_command_recovery": true,
+      "local_product_validation_signed_publication": true,
+      "explicit_pairing_wss": true,
+      "optional_services_local_context": true,
+      "local_and_managed_space_tasks": true,
+      "control_failure_local_maintenance": true,
+      "backup_restored_products_rules_commands_identity": true,
+      "ai_catalog_after_full_restore": true,
+      "companion_unconfigured_after_full_restore": true,
+      "containers_cleaned": true
+    }
+  },
+  "gateway_package": {
+    "report": {
+      "path": ".dev/nas-container-5bba3ac6e56dcc3e/report.json",
+      "sha256": "a42f7b16fe20d1025de8375ac7161b77c54604f1280d91afbe5fbcea3f8ddf93"
+    },
+    "multimodal_report": {
+      "path": ".dev/nas-container-5bba3ac6e56dcc3e/multimodal-result.json",
+      "sha256": "4b7884ccdecfc7bfe51efb11c930550e974cc3a1526bdd83c70a5fbba829144c"
+    },
+    "companion_report": {
+      "path": ".dev/nas-container-5bba3ac6e56dcc3e/companion-result.json",
+      "sha256": "97c2f4d8dbbe4ba6f7afd1ef8fef620ed3245fabcec40c25eec96ed3ad3fb770"
+    },
+    "companion": {
+      "passed": true,
+      "provider_fixture": true,
+      "microphone_fixture": true,
+      "real_microphone": false,
+      "real_model_quality": false,
+      "hardware": false,
+      "completed_after_full_install_restore": true,
+      "https_packaged_worklet": true,
+      "turns": 2,
+      "inference_posts": 6,
+      "role_and_exact_history": true,
+      "sources": [
+        {
+          "media_id": "media-8b303dfd-b96e-4d13-b95c-237121c330e6",
+          "digest": "sha256:6244bdf82a5a23efd2d534c0e685f8b58074361b541307e13cf48f840d784437",
+          "bytes": 46892
+        },
+        {
+          "media_id": "media-8e2f2213-d52b-4c19-9e17-b112aedd1cb1",
+          "digest": "sha256:dbbe1e4df6f16ae570f7c3371b6117629ee5b3c98d315892c2f3ec094058b403",
+          "bytes": 43564
+        }
+      ],
+      "media_tracks_ended": true,
+      "audio_context_closed": true,
+      "no_pre_upload_inference": true,
+      "summary_only_storage": true,
+      "reload_and_query_zero_inference": true,
+      "context_free_stop_clears_both_answers": true,
+      "cleared_answers_survive_gateway_restart": true,
+      "no_new_grants_commands_or_play": true,
+      "horizontal_overflow": false,
+      "csp_violations": 0
+    },
+    "checks": {
+      "passed": true,
+      "real_containers": true,
+      "hardware": false,
+      "emulated": false,
+      "installation_scoped_to_verification_directory": true,
+      "https_verified_ca": true,
+      "non_root_read_only_internal_network": true,
+      "inference_container_isolated_without_device_or_owner_secrets": true,
+      "mqtt_command_confirmed": true,
+      "browser_home_and_model_entry": true,
+      "gateway_recreation_routed": true,
+      "device_mtls_acl_revocation": true,
+      "session_reauthenticated_after_gateway_restart": true,
+      "simulators_rejoined_gateway_network_after_restart": true,
+      "consistent_backup_restore": true,
+      "revocation_restored": true,
+      "no_command_replay": true,
+      "containers_cleaned": true
+    }
+  },
+  "preserved_failures": [
+    {
+      "report": {
+        "path": ".dev/nas-container-c2c9b021e11648e2/report.json",
+        "sha256": "98c55202b488ca9f7d380e23820334d053afc9f1a8def94f81c3c3ae746ae48b"
+      },
+      "companion_report": {
+        "path": ".dev/nas-container-c2c9b021e11648e2/companion-result.json",
+        "sha256": "8c62dfb91bbcadb425cea71bdcfc9041d5728fbfc462f7ff3b857d84d7e08330"
+      },
+      "log": {
+        "path": ".dev/companion-nas-20261104/nas-container.log",
+        "sha256": "4f74d13659f421c40ae3122df22edb1c0f59d9858b9afa07f18fc49c4cab82b6"
+      },
+      "cause": "首次测试误要求上传完成后按钮仍可用；产品按设计清空录音并禁用上传。",
+      "repair": "核对上传按钮禁用、文件选择已清空、唯一上传原回执及媒体摘要；未改产品或降低推理/权限断言。",
+      "targeted_repairs": 1,
+      "final_passed": true
+    }
+  ],
+  "preparation": {
+    "path": ".dev/companion-nas-20261104/preparation-notes.json",
+    "sha256": "b6cbe46eec65b923b74efe25078d9bf74e370227a4876ddc9369a78cfa920848"
+  },
+  "build_logs": [
+    {
+      "path": ".dev/companion-nas-20261104/gateway-build-reuse.log",
+      "sha256": "edaaaa933cb86cc2f5c5fce22d8cd9c301bd2125adc05a5d6e20dd05314b7f30"
+    },
+    {
+      "path": ".dev/companion-nas-20261104/control-build-reuse.log",
+      "sha256": "5a9b45430fabf9e32af0c7ffdf9b75c26e15cc6b1fa3722256deb40a2909efd0"
+    },
+    {
+      "path": ".dev/companion-nas-20261104/gateway-image.log",
+      "sha256": "2fd75bc83dcbbf44b4014db639b100df38a18e5a9bc95c610150897fe0d4596c"
+    },
+    {
+      "path": ".dev/companion-nas-20261104/control-image.log",
+      "sha256": "c25341a1e5632d40bf08cf1c8ceec92500d500e212e3ded26d3fe050033aeddc"
+    }
+  ],
+  "verification_sources": [
+    {
+      "path": "package.json",
+      "sha256": "437df80cdc77c014e0f2575533acf072d5ee78ba126807242e9d93656eb70b4d"
+    },
+    {
+      "path": "deploy/nas/Dockerfile",
+      "sha256": "1867282d0bf817bc8628f5b405418d3002f546409f9a00f179d5d6faf7e87d41"
+    },
+    {
+      "path": "tools/build-nas-artifacts.py",
+      "sha256": "1d1c924e4c2ef50c8393bbd7d46256dd1596a4f2b6a480d729239dade5783746"
+    },
+    {
+      "path": "tools/build-control-artifacts.py",
+      "sha256": "74ce4e004d25211db0ebac43dc7dbbc938f47f814aec7973de109e8251e5f903"
+    },
+    {
+      "path": "tests/test_nas_artifacts.py",
+      "sha256": "577f66ecb2b2bca9335d93d24b775bbb8f46ac2c1d145dc3467933a21eda07f0"
+    },
+    {
+      "path": "tests/test_control_artifacts.py",
+      "sha256": "4ceb299a6cb81ab96b403027c1378281aebfd3347d02b110c0524fdcc2c4bc36"
+    },
+    {
+      "path": "tests/test_nas_companion_fixture.py",
+      "sha256": "c6cbb6fd4140a459a28e663b6ed0cdc5076c06d6c2d47f325e879d9db31a3812"
+    },
+    {
+      "path": "tools/test-nas-platform.mjs",
+      "sha256": "2be6f0f0c5c1848902aa4c4417b11c36aa85d953b0450ceca01387cd89874720"
+    },
+    {
+      "path": "tools/test-nas-container.mjs",
+      "sha256": "d1e1e29f1cf6a669c90561663f41f14fc849680d11e972dd7215eccc4bb0beea"
+    },
+    {
+      "path": "tools/nas-companion-journey.mjs",
+      "sha256": "f47dc7d9edf9d5c2576ff091b531c3965c522ee12b94589f4ca9a431144b2d23"
+    },
+    {
+      "path": "tools/nas-multimodal-journey.mjs",
+      "sha256": "290100493a18a2c4e10a942f0ac53e72ef3c0dd5bba626d264943e855d59c691"
+    },
+    {
+      "path": "tools/nas-recording-journey.mjs",
+      "sha256": "bc0d0d0d230483c6d65766703310677f35a69b484823054c2e9e22ba3e29136e"
+    },
+    {
+      "path": "tests/fixtures/nas/multimodal.py",
+      "sha256": "1b73bc8382d267efe539bf0fe17dba74949b315b1d9f12254ffce01d0d047ca9"
+    }
+  ],
+  "documentation": [
+    {
+      "path": "deploy/nas/README.md",
+      "sha256": "d68f524af304ae1de6f5e3b44394a1a8a5c508f9dd1f41cd66ca7a4306fbedc8"
+    },
+    {
+      "path": "deploy/control/README.md",
+      "sha256": "3bc1324b9d8ed2098587ec1e212f78b78cd98f41671dfc6cf0a027dacf004206"
+    },
+    {
+      "path": "docs/24-实施计划与进度.md",
+      "sha256": "c4c88caa8ded7ef3ade1f2d584a874adddaa47bc0d817a295b9c3790d03cc15a"
+    },
+    {
+      "path": "docs/33-多模态模型与媒体服务.md",
+      "sha256": "9b004d69e711447658045abfd4821059987adcf1ebda7e6737a5f86536b499a5"
+    }
+  ],
+  "website": {
+    "repository": "iotweb",
+    "sources": [
+      {
+        "path": "src/docs/content/deployment.md",
+        "sha256": "34228e2fddd29b229c931d8c218fb0246640ce6abdcb3e3385a3e03ca3c4a358"
+      },
+      {
+        "path": "src/docs/content/multimodal.md",
+        "sha256": "cce50e481bca2fd125bf891d96380b10b9e0b5c59136ab505107e8ac7be6b983"
+      }
+    ],
+    "html_pages": 54,
+    "local_references": 2119,
+    "published": false
+  },
+  "screenshots": [
+    {
+      "path": ".dev/nas-platform-d0273cb9135f0229/companion-restored-mobile.png",
+      "sha256": "cfde792f396b8b668369cc3ddedeede987aa915daa0931d5ea7f3b80e257c6cf",
+      "visually_reviewed": true
+    },
+    {
+      "path": ".dev/nas-container-5bba3ac6e56dcc3e/nas-companion-mobile.png",
+      "sha256": "168031b809972c52485d9a3c174ac4b95e90152c6bc3bcc559d7b1f88c429d09",
+      "visually_reviewed": true
+    }
+  ],
+  "design": "复用正式Dockerfile运行层、现有Rust交叉工具链和校验函数、原NAS安装/备份/恢复工具及陪伴客户端；控制面构建独立负责Go与Web打包，不新增推理内核、权限或依赖。",
+  "limits": [
+    "完整工作台在未配置推理服务下验收；两轮陪伴运行于同版独立网关基础包。",
+    "提供方、麦克风与音箱为软件夹具，不代表中文质量、真实发声或儿童/监护政策通过。",
+    "本轮未验证AMD64、完整手机App、生产安全存储或官方云部署。",
+    "Rust复用不是重新编译，也不替代独立发布签名。"
+  ]
+}

@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iot.limeai.run/contracts/observation-discovery.schema.json",
+  "title": "只读协调器邻居发现与端点访谈",
+  "$ref": "#/$defs/query",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "not": {
+        "pattern": "\\s"
+      }
+    },
+    "ieee": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 16,
+      "pattern": "^[0-9a-f]{16}$",
+      "not": {
+        "enum": [
+          "0000000000000000",
+          "ffffffffffffffff"
+        ]
+      }
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "query": {
+      "type": "object",
+      "properties": {
+        "coordinator_id": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "coordinator_id"
+      ],
+      "additionalProperties": false
+    },
+    "endpointQuery": {
+      "type": "object",
+      "properties": {
+        "coordinator_id": {
+          "$ref": "#/$defs/id"
+        },
+        "ieee_address": {
+          "$ref": "#/$defs/ieee"
+        }
+      },
+      "required": [
+        "coordinator_id",
+        "ieee_address"
+      ],
+      "additionalProperties": false
+    },
+    "neighbor": {
+      "type": "object",
+      "properties": {
+        "extended_pan_id": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 16,
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "ieee_address": {
+          "$ref": "#/$defs/ieee"
+        },
+        "network_address": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65527
+        },
+        "device_type": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "rx_on_when_idle": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "relationship": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7
+        },
+        "flags": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "permit_joining": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "link_quality": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      },
+      "required": [
+        "extended_pan_id",
+        "ieee_address",
+        "network_address",
+        "device_type",
+        "rx_on_when_idle",
+        "relationship",
+        "flags",
+        "permit_joining",
+        "depth",
+        "link_quality"
+      ],
+      "additionalProperties": false
+    },
+    "endpoint": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240
+        },
+        "profile_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "device_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "device_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 15
+        },
+        "input_clusters": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          }
+        },
+        "output_clusters": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          }
+        }
+      },
+      "required": [
+        "endpoint",
+        "profile_id",
+        "device_id",
+        "device_version",
+        "input_clusters",
+        "output_clusters"
+      ],
+      "additionalProperties": false
+    },
+    "neighbors": {
+      "type": "object",
+      "properties": {
+        "coordinator_id": {
+          "$ref": "#/$defs/id"
+        },
+        "coordinator_ieee": {
+          "$ref": "#/$defs/ieee"
+        },
+        "observed_at": {
+          "$ref": "#/$defs/time"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/time"
+        },
+        "protocol": {
+          "const": "zigbee-znp"
+        },
+        "evidence": {
+          "const": "unauthenticated_protocol"
+        },
+        "scope": {
+          "const": "coordinator_neighbors"
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/neighbor"
+          }
+        }
+      },
+      "required": [
+        "coordinator_id",
+        "coordinator_ieee",
+        "observed_at",
+        "expires_at",
+        "protocol",
+        "evidence",
+        "scope",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "endpoints": {
+      "type": "object",
+      "properties": {
+        "coordinator_id": {
+          "$ref": "#/$defs/id"
+        },
+        "coordinator_ieee": {
+          "$ref": "#/$defs/ieee"
+        },
+        "observed_at": {
+          "$ref": "#/$defs/time"
+        },
+        "expires_at": {
+          "$ref": "#/$defs/time"
+        },
+        "protocol": {
+          "const": "zigbee-znp"
+        },
+        "evidence": {
+          "const": "unauthenticated_protocol"
+        },
+        "ieee_address": {
+          "$ref": "#/$defs/ieee"
+        },
+        "network_address": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65527
+        },
+        "manufacturer_code": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "endpoints": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/endpoint"
+          }
+        }
+      },
+      "required": [
+        "coordinator_id",
+        "coordinator_ieee",
+        "observed_at",
+        "expires_at",
+        "protocol",
+        "evidence",
+        "ieee_address",
+        "network_address",
+        "manufacturer_code",
+        "endpoints"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

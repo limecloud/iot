@@ -1,6 +1,6 @@
 export interface Session { authenticated: true; csrf_token: string; expires_at: string }
 export interface Observation { value: unknown; observed_at: string; quality: string; source: string }
-export interface Device { device_id: string; model_revision: string; ready: boolean; last_seen: string | null; reported: Record<string, Observation>; action_availability?: Record<string, boolean> }
+export interface Device { device_id: string; model_revision: string; ready: boolean; last_seen: string | null; reported: Record<string, Observation>; action_availability?: Record<string, boolean>; observation_source?: { adapter_id: string; revision: string; ready: boolean } }
 import type { Condition } from '../../../packages/protocol/condition-form.mjs';
 import type { ConditionEvaluation } from '../../../packages/protocol/rule-simulation.mjs';
 export interface Property { id: string; semantic_id: string; schema: Schema; access: string[]; unit?: string }
@@ -42,7 +42,7 @@ export class ApiError extends Error {
   constructor(public code: string, public status: number) { super(code); }
   get definitiveRejection() { return this.status >= 400 && this.status < 500 && this.status !== 408 && !['idempotency_conflict', 'request_failed'].includes(this.code); }
 }
-export async function request<T>(path: string, session?: Session, input?: unknown, options: { method?: string; signal?: AbortSignal; key?: string } = {}): Promise<T> {
+export async function request<T>(path: string, session?: Session, input?: unknown, options: { method?: string; signal?: AbortSignal; key?: string; timeoutMs?: number; parse?: (text: string) => unknown; createOnly?: boolean } = {}): Promise<T> {
   const response = await fetch(path, {
     method: options.method ?? (input === undefined ? 'GET' : 'POST'),
     credentials: 'same-origin', cache: 'no-store', redirect: 'error',
@@ -50,12 +50,13 @@ export async function request<T>(path: string, session?: Session, input?: unknow
       ...(input === undefined ? {} : { 'Content-Type': 'application/json' }),
       ...(session ? { 'X-CSRF-Token': session.csrf_token } : {}),
       ...(options.key ? { 'Idempotency-Key': options.key } : {}),
+      ...(options.createOnly ? { 'If-None-Match': '*' } : {}),
     },
     body: input === undefined ? undefined : JSON.stringify(input),
-    signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(12000)]) : AbortSignal.timeout(12000),
+    signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(options.timeoutMs ?? 12000)]) : AbortSignal.timeout(options.timeoutMs ?? 12000),
   });
   if (response.status === 204) return undefined as T;
-  const value = await response.json();
+  const value = options.parse ? options.parse(await response.text()) : await response.json();
   if (!response.ok) throw new ApiError(value.error?.code ?? 'request_failed', response.status);
   return value as T;
 }
@@ -72,6 +73,11 @@ const messages: Record<string, string> = {
   vision_provider_unknown: '模型结果未知，请查询原任务或明确放弃输出', vision_deadline_exceeded: '观察已超时，模型可能仍在计算', vision_interrupted: '网关已重启，未重新发送此图片',
   vision_output_discarded: '此任务不会再发布观察结果', vision_provider_rejected: '本地模型未接受请求', invalid_vision_output: '观察结果格式无效', vision_output_too_large: '观察结果超出长度限制',
   vision_origin_not_local: '视觉模型地址须位于本地网络', vision_provider_unavailable: '无法连接本地视觉模型',
+  text_not_configured: '网关尚未配置本地文字模型', text_busy: '已有文字任务待完成或核实', text_capacity: '文字任务记录容量已满',
+  text_not_found: '暂未查到原文字任务，请保留记录后再次查询', invalid_text_request: '消息超出上下文限制或格式无效，请缩短消息或开始新对话', invalid_text_deadline: '生成期限无效，请检查时间',
+  text_provider_unknown: '模型结果未知，请查询原任务或明确放弃输出', text_deadline_exceeded: '生成已超时，模型可能仍在计算', text_interrupted: '网关已重启，未重新发送消息',
+  text_output_discarded: '此任务不会再发布回答', text_provider_rejected: '本地模型未接受请求', invalid_text_output: '模型回答格式无效', text_output_too_large: '模型回答超出长度限制',
+  text_origin_not_local: '文字模型地址须位于本地网络', text_provider_unavailable: '无法连接本地文字模型',
   speech_not_configured: '网关尚未配置本地语音服务', speech_busy: '已有语音任务待完成或核实', speech_capacity: '语音任务记录容量已满',
   speech_not_found: '暂未查到原语音任务，请保留记录后再次查询', speech_voice_unavailable: '所选声音不可用，请重新读取语音状态',
   invalid_speech_request: '语音参数不正确，请检查文本和声音', invalid_speech_deadline: '生成期限无效，请检查网关和浏览器时间',

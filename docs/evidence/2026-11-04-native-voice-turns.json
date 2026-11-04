@@ -1,0 +1,206 @@
+{
+  "date": "2026-11-04",
+  "status": "passed_with_scope_limits",
+  "full_goal_completed": false,
+  "scope": "Swift/Kotlin unified finite voice-turn SDK, host UI state, Android APK/lint, shared JS journal, real gateway process recovery",
+  "entry": {
+    "command": "npm run test:voice-turns:native",
+    "exit_code": 0,
+    "log": ".dev/voice-turn-native-20261104/final-root-attempt1.log"
+  },
+  "implementation": {
+    "sdk": [
+      "apps/ios/Sources/LimeIoTKit/VoiceTurnClient.swift",
+      "apps/android/core/src/main/kotlin/run/limeai/iot/core/VoiceTurnClient.kt"
+    ],
+    "state": [
+      "apps/ios/App/VoiceTurnStore.swift",
+      "apps/android/app/src/main/kotlin/run/limeai/iot/VoiceTurnController.kt"
+    ],
+    "ui": [
+      "apps/ios/App/VoiceTurnViews.swift",
+      "apps/android/app/src/main/kotlin/run/limeai/iot/VoiceTurnViews.kt"
+    ],
+    "storage_key": "origin#voice-turns:space_id",
+    "journal_version": 1,
+    "shared_js_checksum": true,
+    "no_persisted_body": true,
+    "fixed_deployment_revisions": true,
+    "milliseconds_match_js_without_tolerance": true,
+    "gateway_api_added": false,
+    "dependencies_added": false,
+    "database_changed": false
+  },
+  "checks": {
+    "sdk_state": {
+      "passed": true,
+      "real_gateway_fixture": true,
+      "swift_sdk_and_state": true,
+      "swift_home_state": true,
+      "swiftui_parse": true,
+      "android_sdk": true,
+      "android_state": true,
+      "android_home_state": true,
+      "android_apk": true,
+      "android_lint": true,
+      "synthetic_providers": true,
+      "native_app_runtime": false,
+      "hardware": false,
+      "full_goal_completed": false
+    },
+    "android_suites": [
+      {
+        "suite": "run.limeai.iot.core.VoiceTurnClientTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "run.limeai.iot.VoiceTurnControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "run.limeai.iot.HomeViewModelTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "swift_home_groups": 6,
+    "android_lint_errors": 0,
+    "android_lint_warnings": 17,
+    "android_apk": true,
+    "swiftui_parse_and_project": true,
+    "website": {
+      "passed": true,
+      "pages": 54,
+      "local_references": 2115,
+      "log": ".dev/voice-turn-native-20261104/iotweb-build.log"
+    },
+    "final_integrity": {
+      "passed": true,
+      "source_files": 35,
+      "artifacts": 6,
+      "document_files": 6,
+      "local_links": 510,
+      "unexpected_changes": 0,
+      "report": ".dev/voice-turn-native-20261104/final-integrity.json"
+    }
+  },
+  "journeys": [
+    {
+      "path": ".dev/voice-turn-eVWAG5/voice-turn-native-result.json",
+      "passed": true,
+      "target": "ios",
+      "real_rust_gateway": true,
+      "real_sqlite": true,
+      "real_mqtt": true,
+      "host_ui_state": true,
+      "native_processes": 4,
+      "gateway_restarts": 3,
+      "lost_receipts": 2,
+      "exact_stage_posts": 3,
+      "discard_posts": 1,
+      "provider_calls": [
+        "transcription",
+        "text",
+        "speech"
+      ],
+      "shared_js_ledger": true,
+      "no_implicit_authorization_or_playback": true,
+      "summary_only_persistence": true,
+      "synthetic_providers": true,
+      "native_app_runtime": false,
+      "hardware": false,
+      "hardware_status": "用户要求跳过",
+      "full_goal_completed": false
+    },
+    {
+      "path": ".dev/voice-turn-fJPqW4/voice-turn-native-result.json",
+      "passed": true,
+      "target": "android",
+      "real_rust_gateway": true,
+      "real_sqlite": true,
+      "real_mqtt": true,
+      "host_ui_state": true,
+      "native_processes": 4,
+      "gateway_restarts": 3,
+      "lost_receipts": 2,
+      "exact_stage_posts": 3,
+      "discard_posts": 1,
+      "provider_calls": [
+        "transcription",
+        "text",
+        "speech"
+      ],
+      "shared_js_ledger": true,
+      "no_implicit_authorization_or_playback": true,
+      "summary_only_persistence": true,
+      "synthetic_providers": true,
+      "native_app_runtime": false,
+      "hardware": false,
+      "hardware_status": "用户要求跳过",
+      "full_goal_completed": false
+    }
+  ],
+  "recovery_assertions": [
+    "durable original before POST",
+    "write/readback failure and post-save cancellation: zero POST",
+    "lost receipt and 404: same-key GET only",
+    "unknown prevents progression/replacement",
+    "identity/usage/configuration/source drift rejected",
+    "stop fact and discard intent saved before POST",
+    "lost discard response queried without another POST",
+    "cleared answer cannot reappear",
+    "foreground restoration never starts next stage",
+    "no implicit grants or device commands"
+  ],
+  "artifacts": {
+    "manifest": ".dev/voice-turn-native-20261104/source-manifest-final.json",
+    "source_files": 35,
+    "binary_files": 6
+  },
+  "retained_attempts": [
+    {
+      "log": ".dev/voice-turn-native-20261104/swift-build-attempt1.log",
+      "cause": "Swift Optional and throwing expression compile errors; corrected before SDK build passed"
+    },
+    {
+      "log": ".dev/voice-turn-native-20261104/capture-attempt1.log",
+      "cause": "capture helper used an absent fixture counter; corrected to effects; fixture/report filename collision also corrected"
+    },
+    {
+      "log": ".dev/voice-turn-native-20261104/android-attempt1.log",
+      "cause": "SDK path missing; reused existing repository toolchain"
+    },
+    {
+      "log": ".dev/voice-turn-native-20261104/android-attempt2.log",
+      "cause": "nanosecond media expiry compared with millisecond journal expiry; corrected to contract normalization"
+    },
+    {
+      "log": ".dev/voice-turn-native-20261104/combined-attempt1.log",
+      "cause": "missing coroutine test extension import; corrected without weakening assertions"
+    },
+    {
+      "log": ".dev/voice-turn-native-20261104/android-final-attempt1.log",
+      "cause": "passed APK/lint in 15m21s; final entry reran tests and reused unchanged build outputs"
+    }
+  ],
+  "limitations": {
+    "providers": "synthetic ASR/text/TTS providers, not model quality evaluation",
+    "native_runtime": "host state and SDK; no complete Android/iOS app runtime acceptance",
+    "ios": "full Xcode/iOS SDK unavailable; Swift package and host state build, SwiftUI parse only",
+    "storage": "private host-file fixture; no Keychain/Keystore runtime acceptance",
+    "hardware": "用户要求跳过，不计通过",
+    "nas_image_rebuilt": false,
+    "cloud_deployed": false,
+    "published": false,
+    "real_voice_quality": false,
+    "streaming_or_continuous_conversation": false
+  }
+}

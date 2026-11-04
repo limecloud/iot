@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "first_party_znp_serial_diagnostics_and_existing_device_zdo_interview",
+  "status": "macos_host_software_stage_passed",
+  "archive": ".dev/znp-verification-20261103",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "linux_serial_runtime_verified": false,
+  "gateway_binding_implemented": false,
+  "zcl_mapping_implemented": false,
+  "official_cloud_updated": false,
+  "published": false,
+  "full_goal_completed": false,
+  "reference": {
+    "repository": "TexasInstruments/simplelink-lowpower-f2-sdk",
+    "revision": "3615ad5d3f4f271258d18a2f5ce1785064ff9a58",
+    "archive": ".dev/znp-reference-20261103",
+    "verified_sources": [
+      {
+        "path": "source/ti/zstack/mt/mt_rpc.h",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_rpc.h",
+        "sha256": "9ab6f9e7706b223bef791028b4df1b612f728b6e5d817efad9d5b80a486daf18",
+        "bytes": 7604
+      },
+      {
+        "path": "source/ti/zstack/mt/mt_zdo.h",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_zdo.h",
+        "sha256": "e931a2125114668554708fa439402a3a26f8e33b1778d11bfac521f9e3d7b050",
+        "bytes": 5259
+      },
+      {
+        "path": "source/ti/zstack/mt/mt_sys.h",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_sys.h",
+        "sha256": "350dc6a65c27431a298347d36372022fb8e42058d99dac9904ea9473b9825442",
+        "bytes": 4566
+      },
+      {
+        "path": "source/ti/zstack/mt/mt_zdo.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_zdo.c",
+        "sha256": "c55081cd012540f64f157cde6bec63b6ca7d5606f018aa2c992eb1113a0ea432",
+        "bytes": 91814
+      },
+      {
+        "path": "source/ti/zstack/mt/mt_sys.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_sys.c",
+        "sha256": "d3fadd0388785b450ebe2a3a33fd4fb0e47d871ad8e3971b69dda1e2c68d3110",
+        "bytes": 52966
+      },
+      {
+        "path": "source/ti/zstack/mt/mt.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt.c",
+        "sha256": "baccd3cce2df0093d61671117a11f09db104d0cb9b6043c38a6d7183bbb5efa6",
+        "bytes": 16699
+      },
+      {
+        "path": "source/ti/zstack/mt/mt.h",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt.h",
+        "sha256": "6d4ed5e2a5cda798bf24ac4b5cc98b1c18254f1f4006676f905746b2dc1b558e",
+        "bytes": 38606
+      },
+      {
+        "path": "source/ti/zstack/mt/mt_version.h",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_version.h",
+        "sha256": "3d0953e71da2ab530ea4c3d1dd473badc5c140d577b08076536d21154d1d1abe",
+        "bytes": 3741
+      },
+      {
+        "path": "source/ti/zstack/npi/npi_tl_uart.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/npi/npi_tl_uart.c",
+        "sha256": "b02a12833c4cd2c37606bbe4ea3972685f9737826aaf7fd34cca7e6831ef1022",
+        "bytes": 14006
+      },
+      {
+        "path": "source/ti/zstack/mt/mt_version.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_version.c",
+        "sha256": "2823ad5163766d5884595ffa6b320d309737d4cf5f7998e32b6eaed15ae460da",
+        "bytes": 4261
+      },
+      {
+        "path": "source/ti/zstack/npi/npi_frame_mt.c",
+        "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/npi/npi_frame_mt.c",
+        "sha256": "1417a4aaef8431471fc2919da8264ffa00f67c8107e3cdb5bd4e072205e0d44b",
+        "bytes": 12544
+      }
+    ],
+    "failed_optional_or_initial_fetches": [
+      {
+        "path": "source/ti/zstack/mt/mt_uart.c",
+        "error": "HTTP Error 404: Not Found"
+      },
+      {
+        "path": "source/ti/zstack/mt/mt_version.c",
+        "error": "<urlopen error [Errno 65] No route to host>"
+      },
+      {
+        "path": "source/ti/zstack/mt/mt_uart.h",
+        "error": "HTTP Error 404: Not Found"
+      },
+      {
+        "path": "source/ti/zstack/znp/znp_app.c",
+        "error": "HTTP Error 404: Not Found"
+      },
+      {
+        "path": "source/ti/zstack/npi/npi_frame_mt.h",
+        "error": "HTTP Error 404: Not Found"
+      }
+    ]
+  },
+  "changes": {
+    "rust_owned_serial": true,
+    "bounded_mt_frame": true,
+    "single_inflight_srsp_and_areq": true,
+    "absolute_deadline_and_cancel_close": true,
+    "sigint_sigterm_cleanup": true,
+    "tty_exclusive": true,
+    "restore_original_termios": true,
+    "probe_and_zdo_interview": true,
+    "ieee_before_after_recheck": true,
+    "strict_cli_and_schema": true,
+    "same_site_developer_guide": true,
+    "official_artifact_collector_includes_workspace_member": true,
+    "new_upstream_iot_dependency": false
+  },
+  "verification": {
+    "platform": "macOS-15.8.1-arm64-arm-64bit-Mach-O",
+    "rust_session_tests": 5,
+    "unix_pty_tests": 23,
+    "pty_failures": 0,
+    "pty_errors": 0,
+    "strict_schema_groups": 3,
+    "clippy_all_targets_warnings_denied": true,
+    "fragmented_cli_and_binary": true,
+    "early_areq_foreign_target_malformed_flood_limits": true,
+    "signals_and_competing_open": true,
+    "whole_interview_deadline": true,
+    "binary": ".dev/znp-verification-20261103/target/debug/limeiot-znp",
+    "binary_sha256": "0edc90167add27937a6cd994d37f759495a2bb8c1e84d8ec63bcf172b5412054",
+    "website": {
+      "pages": 53,
+      "local_references": 2052,
+      "log": "website-build.log"
+    },
+    "control_artifact": {
+      "prepared": true,
+      "deployed": false,
+      "artifact": ".dev/releases/official-control-oJRlgs",
+      "cargo_metadata": true,
+      "workspace_packages": [
+        "limeiot-android-tv",
+        "limeiot-core",
+        "limeiot-dlna",
+        "limeiot-gateway",
+        "limeiot-model-validator",
+        "limeiot-simulator",
+        "limeiot-zigbee-znp"
+      ],
+      "adapter_sources_match": true
+    },
+    "documentation": {
+      "documents": 6,
+      "file_links": 335,
+      "broken": []
+    }
+  },
+  "history": {
+    "initial_pty": {
+      "tests": 20,
+      "failures": 18,
+      "errors": 0,
+      "log": "pty-initial.log",
+      "results": "pty-initial-results.json",
+      "reason": "Darwin raw到规范模式恢复后留下内核PENDIN，Python标准库同样复现；恢复后TCIFLUSH清除本会话输入，原精确termios断言保留。"
+    },
+    "initial_compile": "Mac ioctl请求类型和流控常量不匹配，已按当前libc修正；当前Tokio使用带所有权约束的AsyncFd::register。",
+    "shared_target_wait": {
+      "verified_cargo_pid": 43297,
+      "other_build_pid": 32905,
+      "only_owned_waiting_cargo_terminated": true,
+      "waiting_run_exit_code": 143,
+      "isolated_target_used": true
+    },
+    "earlier_input_manifest_changes": [
+      "Cargo.lock",
+      "Cargo.toml",
+      "gateway/adapters/zigbee-znp/src/serial.rs",
+      "package.json",
+      "tests/test_znp.py"
+    ]
+  },
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "files": 17,
+    "captured_after_checks": true,
+    "whole_stage_inputs_frozen": false
+  },
+  "limits": [
+    "伪终端证明实际宿主串口字节与软件NCP流程，不证明空口、CC2652固件或具体设备兼容。",
+    "尚无网关装配、持久设备绑定、物模型/ZCL映射、入网、观测、控制、自动恢复或协调器备份。",
+    "版本扩展保留原字节，未推断芯片/固件制品身份；协议IEEE不是认证身份。",
+    "当前验证为macOS，Linux/NAS串口运行与完整容器分别验收。",
+    "最终源码归档在检查后采集；工作区存在并行修改，未声明全阶段冻结。",
+    "官方云制品只准备并校验工作区及适配器输入，没有部署。",
+    "完整原生运行、AMD64多模态恢复、真实模型质量、其他协议生态与玩具机器人仍独立推进。"
+  ]
+}

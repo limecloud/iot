@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "znp_managed_observation_runtime_api_cli_and_state_browser",
+  "status": "macos_software_stage_passed",
+  "archive": ".dev/observation-runtime-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "official_cloud_updated": false,
+  "full_goal_completed": false,
+  "changes": {
+    "v1_static_configuration_preserved": true,
+    "v2_coordinator_only_configuration": true,
+    "max_dynamic_coordinators": 4,
+    "max_cached_candidates_per_coordinator": 16,
+    "candidate_ttl_seconds": 60,
+    "query_slots_per_serial": 1,
+    "query_queue_capacity": 1,
+    "query_deadline_includes_queue_time": true,
+    "query_never_creates_device_or_observation": true,
+    "committed_registry_drives_polling": true,
+    "store_checks_generation_before_begin_and_sample": true,
+    "static_and_dynamic_share_actor_session_and_85_read_budget": true,
+    "client_serial_and_manifest_rejected": true,
+    "api_operations": 5,
+    "cli_original_request_saved_before_post": true,
+    "same_key_create_only_gets_original": true,
+    "bidirectional_observation_execution_adapter_ownership": true,
+    "state_browser_subscribes_observation_operation": true,
+    "database_table_schema_changed": false,
+    "new_production_dependency": false
+  },
+  "verification": {
+    "core_passed": 223,
+    "runtime_passed": 81,
+    "core_runtime_log": "core-runtime-final.log",
+    "core_runtime_test_threads": 1,
+    "post_suite_change": "Only a test assertion changed from find/is_none to equivalent !contains; adapter 6 tests rerun afterward.",
+    "adapter_tests_after_assertion_edit": 6,
+    "observation_binding_tests": 14,
+    "new_execution_ownership_behavior_cases": 4,
+    "initial_serial_runtime_journeys_passed": 5,
+    "initial_journeys_log": "journeys.log",
+    "final_contract_cli_dynamic_and_shutdown_checks_passed": 13,
+    "final_software_log": "software-final.log",
+    "final_runtime_journeys": 4,
+    "final_runtime_journeys_include": [
+      "dynamic_query_cli_bind_revoke_rebind_and_390px_state_browser",
+      "shared_query_busy_and_timeout_with_healthy_source",
+      "sigint_sse_and_inflight_serial_shutdown",
+      "sigterm_sse_and_inflight_serial_shutdown"
+    ],
+    "initial_85_read_rotation_not_repeated_after_final_small_edits": true,
+    "clippy_all_targets_warnings_denied": true,
+    "minimal_feature_check": true,
+    "zigbee_only_feature_check": true,
+    "gateway_and_simulator_build": true,
+    "home_build": true,
+    "home_existing_dependency_warning_preserved": true,
+    "website_astro_checked_files": 48,
+    "website_astro_errors": 0,
+    "website_astro_warnings": 0,
+    "website_pages": 53,
+    "website_local_references": 2054,
+    "mobile_screenshot_viewed": true,
+    "mobile_horizontal_overflow": false,
+    "rustfmt_checked_files": 4,
+    "reports": [
+      {
+        "path": ".dev/observation-runtime-20261104/reports/01-observation-runtime-report.json",
+        "sha256": "f009236a17bcab167835a94ef109092dbbe2022fddd47c42f43053092a607639",
+        "source": ".dev/zigbee-gateway-journey-T2yl4j/observation-runtime-report.json"
+      },
+      {
+        "path": ".dev/observation-runtime-20261104/reports/02-observation-query-report.json",
+        "sha256": "6210b82f60ddc1393750297db8aaec007aa2a3500c6eda11a53cdd6dd036405a",
+        "source": ".dev/zigbee-gateway-journey-BsCgCW/observation-query-report.json"
+      },
+      {
+        "path": ".dev/observation-runtime-20261104/reports/03-report.json",
+        "sha256": "f4e0000578bfe3f80469e0c9d1e6887b5ecd29e849f7ccf91495620f0caa5335",
+        "source": ".dev/zigbee-gateway-journey-ZuCqtd/report.json"
+      },
+      {
+        "path": ".dev/observation-runtime-20261104/reports/04-isolation-report.json",
+        "sha256": "0031b7084d14aff49c51d3dbf0da121362a84099800de886b1fb22818ff5f789",
+        "source": ".dev/zigbee-gateway-journey-fJecsf/isolation-report.json"
+      },
+      {
+        "path": ".dev/observation-runtime-20261104/reports/05-rotation-report.json",
+        "sha256": "59f3c409571182c408c76870b1335faa51e2a4c19baebb213d2b0dbd9d2d283c",
+        "source": ".dev/zigbee-gateway-journey-fXBoe5/rotation-report.json"
+      },
+      {
+        "path": ".dev/observation-runtime-20261104/reports/06-shutdown-report.json",
+        "sha256": "275964c2bce86347ea0eacce61a158135f68f21db6e271bbfd02ae2ea770b9c5",
+        "source": ".dev/zigbee-gateway-journey-NIPUGR/shutdown-report.json"
+      },
+      {
+        "path": ".dev/observation-runtime-20261104/reports/07-shutdown-report.json",
+        "sha256": "72f88f35be31417adec61ed04415dba2cbb65f48a908d274395c2c79fb3f177a",
+        "source": ".dev/zigbee-gateway-journey-psw1Hx/shutdown-report.json"
+      },
+      {
+        "path": ".dev/observation-runtime-20261104/reports/08-observation-runtime-report.json",
+        "sha256": "e05688492a0fe923570864da760bb857193b29159f99bffa1e4fd740ffdc2e3b",
+        "source": ".dev/zigbee-gateway-journey-y3OFi8/observation-runtime-report.json"
+      },
+      {
+        "path": ".dev/observation-runtime-20261104/reports/09-observation-query-report.json",
+        "sha256": "6210b82f60ddc1393750297db8aaec007aa2a3500c6eda11a53cdd6dd036405a",
+        "source": ".dev/zigbee-gateway-journey-UtBzVv/observation-query-report.json"
+      }
+    ],
+    "documentation": {
+      "documents": 10,
+      "local_file_links": 360,
+      "broken": [],
+      "anchors_checked": false
+    },
+    "logs_sha256": {
+      "adapter-current.log": "a932994a5f957a4018c17ddfabacdfef3aa25b48c68470ab83cebc3eb6ab603a",
+      "adapter-tests.log": "a62808a82b1fe14a712bda32491fc1b132bf9dfb965e0068fcd4e173cb1e3a9f",
+      "build-current.log": "52512afec0f5371a5ba61e950ae2172c9205ff419e35f6e53ec5a024b84c4a8a",
+      "build-final.log": "3059441327b3a390ee49884f3b612be5997f1ee861ef9e40ea755c8322a65164",
+      "build.log": "f8bd3b1b7ec162b82860eb44f4486038fece527873326bb431dd26248f2832d1",
+      "clippy-final.log": "0de803b1891c689fafaf1aa37bd6eda5246f702ddd9c98a012e25f066b377902",
+      "clippy-initial.log": "f8b5a008fcad1c32dc0de24c33bd37ae60ebb43fd7167ece805ec1a8566b120c",
+      "compile-initial.log": "90434422e16eb9930a3c72a258d64f8825ce518f12e7ad59d04fa1ccacdb0235",
+      "contracts-cli-final.log": "5e51af1d32a107755d2518907efa9acf53d3f2859d2f9ee4aad1ce0a56d1a12b",
+      "contracts-cli.log": "3960ba726fa0d9a0728348df6e41178181a3c00ecb0509bcdc12133f88557bee",
+      "core-runtime-final.log": "6cf1b1eda6df3e961594afd43047f60897495ede29aa83a88cb4e13957387c37",
+      "feature-minimal.log": "7f7f8aef340e0a818dfaa4b1f3df1d67d778a061ad7508ac6f055208b2c28f83",
+      "feature-zigbee.log": "fbd187cb4b17c1bad94957f99e4d18b93c4e6b4214d8e02d0d81190b2cb5a11d",
+      "home-build.log": "8d005f1e5543a5f584cf18c66e7b125f3786060936255085da69b90f8c721ff1",
+      "journeys.log": "3f5d898c7b3c5ef283a1e84e99e70f3b01f3dce91a3ca7623771c0706de4c471",
+      "software-final.log": "136ca971036d3dccb06e613414ba3f690f18e27deadb4ffa661c409c7c478241",
+      "source-ownership.log": "a57f3df04e55aa1a94c559414ae64d5e1cddd4d8ea0b983fef4cf01210604e13",
+      "website-build.log": "df9dbc2e11e7e27912bc05f4cf32edadb4e8d4e1611d416e118cb10b5da5b8c3"
+    },
+    "documentation_check_sha256": "eb66e45a480ee070bad1a737428064401edeb0a9172f6ddc24059b0ac7e771e4"
+  },
+  "history": {
+    "initial_contract_cli": {
+      "passed": 8,
+      "failed": 1,
+      "log": "contracts-cli.log",
+      "cause": "macOS temporary /var path resolves to /private/var; existing private-directory guard rejected the alias",
+      "fix": "canonicalize the test temporary directory with realpath; private guard unchanged",
+      "final_passed": 9,
+      "final_log": "contracts-cli-final.log"
+    },
+    "initial_clippy": {
+      "passed": false,
+      "log": "clippy-initial.log",
+      "cause": "new test used find/is_none",
+      "fix": "equivalent !contains assertion",
+      "final_passed": true,
+      "final_log": "clippy-final.log"
+    },
+    "assertions_relaxed": false
+  },
+  "not_implemented": [
+    "family_gui_source_add_revoke_and_original_operation_recovery",
+    "native_client_source_onboarding",
+    "permit_join",
+    "automatic_discovery",
+    "static_source_migration",
+    "zigbee_execution"
+  ],
+  "not_verified": [
+    "linux_or_nas_serial",
+    "dynamic_v13_container_backup_restore",
+    "rf_and_hardware",
+    "complete_ios_and_android_apps",
+    "amd64_multimodal_recovery",
+    "real_model_quality",
+    "brand_ecosystems_and_other_protocols",
+    "toy_robot_complete_sample",
+    "new_official_cloud_deployment"
+  ],
+  "limits": [
+    "Software NCP on macOS is not RF, hardware, Linux or a purchased-device support claim.",
+    "State display and event subscription are implemented; source onboarding GUI is not.",
+    "The initial five journeys and final thirteen checks overlap and are not added as unique test coverage.",
+    "Other worktree changes exist; the source snapshot is not a whole-repository or whole-stage frozen build."
+  ],
+  "source_archive": {
+    "manifest": "source-sha256.json",
+    "copies": "source",
+    "captured_after_checks": true,
+    "whole_stage_inputs_frozen": false,
+    "files": 32,
+    "manifest_sha256": "d9ed329564274f7a936a30d4d357286bbc8fc4b248a0ff138ccd6e5736fb58f4"
+  }
+}

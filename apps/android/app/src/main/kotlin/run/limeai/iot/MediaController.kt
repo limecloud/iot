@@ -18,21 +18,30 @@ class MediaController(private val client: MediaClient, val space: String, privat
     private var generation = 0
     private var work: Job? = null
     private var bytes: ByteArray? = null
+    private var recorded = false
     fun selectMedia(id: String) { if (!mutable.value.busy) mutable.update { it.copy(selectedMedia = id, approved = false) } }
     fun selectTarget(id: String) { if (!mutable.value.busy) mutable.update { it.copy(selectedTarget = id, approved = false) } }
     fun setRetention(value: Int) { if (!mutable.value.busy && value in listOf(600, 3600, 86400)) mutable.update { it.copy(retainSeconds = value, approved = false) } }
     fun setGrantDuration(value: Int) { if (!mutable.value.busy && value in listOf(30, 300, 600)) mutable.update { it.copy(grantSeconds = value, approved = false) } }
     fun approve(value: Boolean) { mutable.update { it.copy(approved = active && it.writable && value) } }
-    fun selectFile(name: String, data: ByteArray) {
-        if (!active || !mutable.value.online || mutable.value.busy) return
+    fun selectFile(name: String, data: ByteArray) { selectFile(name, data, false) }
+    fun selectRecording(data: ByteArray): Boolean = selectFile("recording.wav", data, true)
+    private fun selectFile(name: String, data: ByteArray, recording: Boolean): Boolean {
+        if (!active || !mutable.value.online || mutable.value.busy) return false
         try {
-            val selected = data.copyOf(); MediaChanges.upload(selected, mutable.value.retainSeconds); bytes = selected
+            val selected = data.copyOf(); MediaChanges.upload(selected, mutable.value.retainSeconds); bytes?.fill(0); bytes = selected; recorded = recording
             mutable.update { it.copy(fileName = name.filterNot(Char::isISOControl).take(128).ifEmpty { "audio.wav" }, message = "", approved = false) }
-        } catch (error: Exception) { fileFailure(error) }
+            return true
+        } catch (error: Exception) { fileFailure(error); return false }
+    }
+    fun clearRecording() {
+        if (!recorded) return
+        bytes?.fill(0); bytes = null; recorded = false
+        mutable.update { it.copy(fileName = "", approved = false) }
     }
     fun fileFailure(error: Exception) {
         if (!active || !mutable.value.online || mutable.value.busy || error is CancellationException) return
-        bytes = null
+        bytes?.fill(0); bytes = null; recorded = false
         mutable.update { it.copy(fileName = "", approved = false, message = if (error is MediaException) error.displayMessage else "无法读取音频，请选择不超过 4 MiB 的 WAV 文件") }
     }
     private suspend fun current(epoch: Int) { currentCoroutineContext().ensureActive(); if (!active || !mutable.value.online || epoch != generation) throw CancellationException() }
@@ -73,7 +82,7 @@ class MediaController(private val client: MediaClient, val space: String, privat
     fun upload() {
         if (!active || !mutable.value.writable) return
         val input = bytes ?: return
-        try { val change = MediaChanges.upload(input, mutable.value.retainSeconds); bytes = null; mutable.update { it.copy(fileName = "") }; submit(change) }
+        try { val change = MediaChanges.upload(input, mutable.value.retainSeconds); bytes?.fill(0); bytes = null; recorded = false; mutable.update { it.copy(fileName = "") }; submit(change) }
         catch (error: Exception) { fileFailure(error) }
     }
     fun grant() {
@@ -97,7 +106,7 @@ class MediaController(private val client: MediaClient, val space: String, privat
         task { epoch -> val result = client.resolve(space, key); current(epoch); read(epoch); mutable.update { it.copy(message = result.statusText) } }
     }
     fun pause() {
-        generation++; work?.cancel(); bytes = null
+        generation++; work?.cancel(); bytes?.fill(0); bytes = null; recorded = false
         mutable.update { it.copy(busy = false, ready = false, approved = false, deletion = null, fileName = "") }
     }
     fun setOnline(value: Boolean) { if (!value) pause(); mutable.update { it.copy(online = value) } }

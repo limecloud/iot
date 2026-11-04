@@ -168,6 +168,14 @@ impl Store {
                 interrupted = true;
             }
         }
+        for task in next.texts.values_mut() {
+            if task.status == limeiot_core::model_job::Status::Running {
+                task.status = limeiot_core::model_job::Status::Unknown;
+                task.error_code = Some("text_interrupted".into());
+                task.updated_at = now;
+                interrupted = true;
+            }
+        }
         if interrupted {
             next.saved_at = now;
             store.persist(next)?;

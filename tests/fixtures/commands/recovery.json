@@ -1,0 +1,1229 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "accepted",
+      "valid": true,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "accepted",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "dispatched",
+      "valid": true,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "dispatched",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "confirmed",
+      "valid": true,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "device_result",
+          "reported": {
+            "light.brightness": 22.5
+          }
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "unknown",
+      "valid": true,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "unknown",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "failed",
+      "valid": true,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "failed",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "expired",
+      "valid": true,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "expired",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "rejected",
+      "valid": true,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "rejected",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "action-submitted",
+      "valid": true,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "action.invoke",
+          "path": "remote.press",
+          "value": {
+            "key": "home"
+          }
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "action.invoke",
+            "path": "remote.press",
+            "value": {
+              "key": "home"
+            }
+          }
+        },
+        "request_digest": "sha256:bca0a5fae9032d56f2b2c493eae93f051c208d8bcd1dbf0dd7d2e79833fd6d4a",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "action_result",
+          "path": "remote.press",
+          "input_digest": "sha256:77abdb28f9e099bb4458e7ea695b998de74270d0bfc60f4691c812bb70be406f",
+          "output": {},
+          "completion": "submitted",
+          "observed_at": "2026-01-01T00:00:01Z"
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "wrong-space_id",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "other-space",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:53dfefd899c29221ee6c9eb76726b4908ab7c0dc9deae6e8de294f0b997c2099",
+        "status": "accepted",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "wrong-device_id",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "other-device",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:7ffa950f5ede3a36a5a5d6d41b2fa961fd6c7e44edeb516612aa744496fe608f",
+        "status": "accepted",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "wrong-model_revision",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:8329a206fd7e4c8beff130549380f1593fd1298b0fc8610e97f77e4f62b011c7",
+        "status": "accepted",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "wrong-idempotency_key",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "other-key",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c7e21d408cb47896a696516fb51c7b93ce2a90fda9b9b09e299a782083773dd8",
+        "status": "accepted",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "wrong-expires_at",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:06Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:377bb6cc7eb711f3ebf5754005ae919e3eaf7c46fb3cb5f04deab2ac2ab78f19",
+        "status": "accepted",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "wrong-operation-type",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "action.invoke",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:9c5ce2d0cfac783118373d51da2571f90585627728551163cbc1737192bd896c",
+        "status": "accepted",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "wrong-operation-path",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.power",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:b8ad5a0a7c0f32fc9d3827dcea167fadbab38ef4a17666aa94ab2613136a730f",
+        "status": "accepted",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "wrong-operation-value",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 23.5
+          }
+        },
+        "request_digest": "sha256:f17c1342a24538e3166328cd8add65dece35115e73076cfc742f53741413ce63",
+        "status": "accepted",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "unknown-status",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "success",
+        "error": null,
+        "evidence": {
+          "type": "device_result",
+          "reported": {
+            "light.brightness": 22.5
+          }
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "bad-command-id",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "invalid id",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "device_result",
+          "reported": {
+            "light.brightness": 22.5
+          }
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "bad-request-digest",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "invalid",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "device_result",
+          "reported": {
+            "light.brightness": 22.5
+          }
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "extra-request",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          },
+          "extra": true
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "device_result",
+          "reported": {
+            "light.brightness": 22.5
+          }
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "extra-operation",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5,
+            "extra": true
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "device_result",
+          "reported": {
+            "light.brightness": 22.5
+          }
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "bad-expiry",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "invalid",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "device_result",
+          "reported": {
+            "light.brightness": 22.5
+          }
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "confirmed-without-evidence",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "confirmed",
+        "error": null,
+        "evidence": null,
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "confirmed-wrong-value",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "device_result",
+          "reported": {
+            "light.brightness": 20
+          }
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "confirmed-with-error",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "property.set",
+          "path": "light.brightness",
+          "value": 22.5
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "property.set",
+            "path": "light.brightness",
+            "value": 22.5
+          }
+        },
+        "request_digest": "sha256:c9a41664c4e8eda5787bc9acf7f90aa0eb3115e991ccd86761b863f1166c3d77",
+        "status": "confirmed",
+        "error": "execution_unknown",
+        "evidence": {
+          "type": "device_result",
+          "reported": {
+            "light.brightness": 22.5
+          }
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "action-null-output",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "action.invoke",
+          "path": "remote.press",
+          "value": {
+            "key": "home"
+          }
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "action.invoke",
+            "path": "remote.press",
+            "value": {
+              "key": "home"
+            }
+          }
+        },
+        "request_digest": "sha256:bca0a5fae9032d56f2b2c493eae93f051c208d8bcd1dbf0dd7d2e79833fd6d4a",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "action_result",
+          "path": "remote.press",
+          "input_digest": "sha256:77abdb28f9e099bb4458e7ea695b998de74270d0bfc60f4691c812bb70be406f",
+          "output": null,
+          "completion": "submitted",
+          "observed_at": "2026-01-01T00:00:01Z"
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "action-wrong-path",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "action.invoke",
+          "path": "remote.press",
+          "value": {
+            "key": "home"
+          }
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "action.invoke",
+            "path": "remote.press",
+            "value": {
+              "key": "home"
+            }
+          }
+        },
+        "request_digest": "sha256:bca0a5fae9032d56f2b2c493eae93f051c208d8bcd1dbf0dd7d2e79833fd6d4a",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "action_result",
+          "path": "apps.launch",
+          "input_digest": "sha256:77abdb28f9e099bb4458e7ea695b998de74270d0bfc60f4691c812bb70be406f",
+          "output": {},
+          "completion": "submitted",
+          "observed_at": "2026-01-01T00:00:01Z"
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "action-invalid-completion",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "action.invoke",
+          "path": "remote.press",
+          "value": {
+            "key": "home"
+          }
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "action.invoke",
+            "path": "remote.press",
+            "value": {
+              "key": "home"
+            }
+          }
+        },
+        "request_digest": "sha256:bca0a5fae9032d56f2b2c493eae93f051c208d8bcd1dbf0dd7d2e79833fd6d4a",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "action_result",
+          "path": "remote.press",
+          "input_digest": "sha256:77abdb28f9e099bb4458e7ea695b998de74270d0bfc60f4691c812bb70be406f",
+          "output": {},
+          "completion": "success",
+          "observed_at": "2026-01-01T00:00:01Z"
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "action-too-early",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "action.invoke",
+          "path": "remote.press",
+          "value": {
+            "key": "home"
+          }
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "action.invoke",
+            "path": "remote.press",
+            "value": {
+              "key": "home"
+            }
+          }
+        },
+        "request_digest": "sha256:bca0a5fae9032d56f2b2c493eae93f051c208d8bcd1dbf0dd7d2e79833fd6d4a",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "action_result",
+          "path": "remote.press",
+          "input_digest": "sha256:77abdb28f9e099bb4458e7ea695b998de74270d0bfc60f4691c812bb70be406f",
+          "output": {},
+          "completion": "submitted",
+          "observed_at": "2025-01-01T00:00:00Z"
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    },
+    {
+      "name": "action-extra-evidence",
+      "valid": false,
+      "expected": {
+        "space_id": "space-demo",
+        "device_id": "device-lamp",
+        "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "idempotency_key": "original-command",
+        "expires_at": "2026-01-01T00:00:05.000Z",
+        "operation": {
+          "type": "action.invoke",
+          "path": "remote.press",
+          "value": {
+            "key": "home"
+          }
+        }
+      },
+      "response": {
+        "command_id": "command-original",
+        "request": {
+          "space_id": "space-demo",
+          "device_id": "device-lamp",
+          "model_revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "idempotency_key": "original-command",
+          "expires_at": "2026-01-01T00:00:05.000Z",
+          "operation": {
+            "type": "action.invoke",
+            "path": "remote.press",
+            "value": {
+              "key": "home"
+            }
+          }
+        },
+        "request_digest": "sha256:bca0a5fae9032d56f2b2c493eae93f051c208d8bcd1dbf0dd7d2e79833fd6d4a",
+        "status": "confirmed",
+        "error": null,
+        "evidence": {
+          "type": "action_result",
+          "path": "remote.press",
+          "input_digest": "sha256:77abdb28f9e099bb4458e7ea695b998de74270d0bfc60f4691c812bb70be406f",
+          "output": {},
+          "completion": "submitted",
+          "observed_at": "2026-01-01T00:00:01Z",
+          "extra": true
+        },
+        "run_id": null,
+        "sequence": 1
+      }
+    }
+  ]
+}

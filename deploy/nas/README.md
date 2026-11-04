@@ -1,5 +1,11 @@
 # NAS 与 Linux 本地安装
 
+完整私有工作台和独立维护页提供“陪伴”，复用[有限会话合同](../../contracts/companion.md#家庭网页)、录音上传和独立播放授权。默认四轮十分钟，历史只在本页内存，离页后只查询或结束。当前ARM64安装包已包含此入口，恢复后的HTTPS页面完成两轮模拟录音、明确上传与ASR→文字→TTS；第二轮核对准确历史，刷新只查询，停止清文后重启不复活，未新增授权或设备命令。
+
+私有工作台的“AI 服务”可查看规则草案、文字、视觉、识别和合成的实际部署、限制与未检测健康状态，按明确入口进入使用。配置由NAS所有者管理，网关重启后刷新发现，不自动安装或探测模型。详见[AI目录合同](../../contracts/ai-catalog.md)。最新本地验证镜像为`limeiot/verification:nas-arm64-companion-20261104`和`limeiot/verification:control-arm64-companion-20261104`，分别用于网关与完整私有版控制面；制品摘要和验收范围见[整包证据](../../docs/evidence/2026-11-04-companion-nas.json)，尚未发布到镜像仓库。
+
+后续组合包网页版本已生成`limeiot/verification:nas-arm64-composition-20261104`和`limeiot/verification:control-arm64-composition-20261104`，镜像内217份运行文件摘要通过。源码网页已验证绑定、预演、启用、停用及丢回执恢复；本机两次完整安装停在MySQL的90秒健康检查，尚未验收该版本的NAS安装恢复。上述陪伴版仍是最近完整通过的冻结版本，不能将其恢复结果延伸到新镜像。新版本状态见[组合包网页证据](../../docs/evidence/2026-11-04-composition-web.json)，操作见[组合包合同](../../contracts/composition.md#家庭网页)。
+
 可选DLNA音箱已有[静态适配配置](../../gateway/adapters/dlna/README.md)和[正式合同](../../contracts/dlna.md)。将配置只读挂载到网关，并设置进程配置LIMEIOT_AUDIO_CONFIG的容器内绝对路径；音频使用所有者准备的局域网HTTP服务或下方的受控媒体出口，地址须从音箱网络可达，不能用容器localhost代替宿主地址。固定目标配置只准备候选，仍须所有者明确绑定。SSDP扫描与原厂仲裁尚未实现，真实音箱支持按型号验收。
 
 可选[有限音频服务](../../contracts/media.md)已接配置、媒体端口、备份恢复及家庭网页，使用方法见[下方步骤](#可选平台音频服务)。2026-11-03的ARM64镜像已通过真实容器的媒体、TTS、ASR、视觉、大图、授权播放及v4备份恢复/清文旅程，见[软件验收](../../docs/evidence/2026-11-03-nas-buffered-recovery.json)。提供方与音箱为独立协议夹具；真实模型质量与实际音箱支持另行验收。
@@ -8,7 +14,15 @@ AMD64冻结网关基础包已通过HTTPS、家庭网页、MQTT、mTLS/ACL/撤销
 
 本目录提供完整本地工作台和网关基础包，均可安装在 NAS 或常开的 Linux 主机。完整本地版把控制面、数据库和网关放在同一台机器，不依赖官网、云账号或模型服务。官网与文档中心在独立的 `iotweb` 仓库。
 
-2026-11-02：本轮 Linux ARM64 工作台验收镜像已通过真实 Compose 安装、显式迁移、统一登录、10个同页菜单、MQTT 控制、产品校验/签名发布、明确配对/WSS、故障维护及完整备份恢复。回执为 `.dev/nas-platform-6939c2d0e130e891/result.json`，记录实际镜像 ID；设备使用软件模拟器。x86_64、指定 NAS 实机、可选 Ollama 和官方云公网链路仍需分别验收。未发布正式镜像或升级用户设备，其他新增协议能力以各自证据为准。
+2026-11-04：当前 Linux ARM64 完整工作台已通过独立 Compose 安装、显式迁移、统一登录、16个同页菜单、MQTT控制、自动化、产品校验/签名发布、明确配对/WSS、管理后台、故障维护及空数据库恢复。AI目录、陪伴、音频、视觉与对话复用本地家庭页面；未配置服务时保持不可执行，选择托管空间也不改变本地网关上下文。恢复到新目录后，产品、规则、命令和机器身份保持，WSS重新连接；390px目录与陪伴页无横向溢出。详见[当前整包证据](../../docs/evidence/2026-11-04-companion-nas.json)，临时容器已清理。完整工作台未启用推理服务；同版独立网关基础包另通过四类推理协议、授权播放和备份恢复，再在恢复后的HTTPS页面验证上述两轮陪伴。设备、麦克风、模型和音箱均为软件夹具，真实模型质量、AMD64完整工作台与官方云分别验收。实机按用户要求跳过，未发布镜像或升级用户设备。
+
+## 可选本地文字生成
+
+支持局域网Ollama和NAS同机模型，配置与验收统一见[本地文字对话](#可选本地文字对话)。家庭工作台“对话”支持有限多轮、原任务查询和明确清文；模型离线不阻止基础控制。
+
+首次文字任务将媒体快照升至v5，读取仍支持v1–5；后续音频/识别/视觉写入不得降版本。备份保持原字节，可能包含保留期内的回答，应按私有数据保管；恢复未完成任务为unknown，不重发消息。旧程序不能读取v5，不能删除任务记录绕过占用。`npm run test:text`检查宿主恢复和正式Nginx配置；这与新镜像、容器网络及真实模型质量分别验收。
+
+此前文字版镜像的TTS、ASR、视觉和文字协议、请求大小、v5恢复、unknown占用、授权播放及清文后重启结果见[文字版证据](../../docs/evidence/2026-11-04-text-nas-container.json)。其中提供方和DLNA终端是协议夹具，真实模型效果与资源需求分别验收。
 
 ## 可选平台音频服务
 
@@ -47,6 +61,8 @@ docker compose --env-file "$PWD/.local/limeiot/compose.env" \
 | 官方云配现场网关 | Rust 网关、MQTT、SQLite | 使用官方 iotweb，无需自建 NAS 控制面 |
 
 完整本地版与通用 Console/Admin 共用 `packages/control-ui/src/workspace`。设备、自动化、执行记录和设备接入复用 Home 的本地组件；产品、物模型校验与签名发布使用本地 Go 控制面。构建不依赖相邻私有 `iotweb`。完整入口目前使用简体中文；独立 Console/Admin 可通过语言控件切换中英文。
+
+设备控制前，浏览器在本地保存并回读完整原请求；关闭浏览器后仍可“查询原操作”。使用同一个HTTPS地址和浏览器配置恢复，勿在结果未知时清除站点数据或切换地址。错误回执和404保留记录，损坏的存储会阻止新控制；多个标签页通过同源锁避免重复提交。本机浏览器记录不包含在NAS服务器备份中。
 
 ## 完整本地版安装
 
@@ -195,6 +211,20 @@ docker compose --env-file ".dev/nas/compose.env" \
 
 本地CLI与机器合同见 [CLI](../../packages/cli/README.md#安装签名模型和绑定设备)、[发布与安装合同](../../contracts/model-release.md#本地信任安装和设备绑定)。此流程不升级固件，设备仍须实际实现所绑定能力。
 
+### Zigbee 开关
+
+新安装可使用[v3开关来源](../dev/zigbee-onoff.example.json)及[网关模型示例](../dev/zigbee-onoff-gateway.example.json)，将serial改为容器内映射路径，填写实际设备IEEE及已核对的完整型号指纹。示例指纹来自软件夹具，不表示采购型号已经兼容。已有安装不能直接覆盖初始配置或删除数据库；当前仅提供明确静态接入，网页动态接入仍限温湿度。
+
+网页与原生客户端按物模型显示电源开关。网关在同一串口actor中发送一次固定On/Off，只有后续独立读回匹配才确认；受理但没有匹配状态、ACK丢失或到期均保留unknown。v14快照保留命令与桥策略，重启和备份恢复不补发。合同见[属性桥接](../../contracts/property-bridges.md)。
+
+本地验证镜像使用`npm run test:nas:onoff -- --image "limeiot/verification:YOUR_TEST_TAG" --platform linux/arm64`检查打包网页控制、温度联动、unknown、重建及v14备份恢复；实际执行结果见[当前进度](../../docs/24-实施计划与进度.md)。该入口创建独立安装，软件PTY不代表USB透传或空口验收。
+
+新安装也可只配置v2协调器，通过网页“设备接入”选择开关类型，查询IEEE/端点、核对“读取和控制电源”后明确添加。动态开关与温湿度来源共用决定账本，写入v15快照；恢复必须使用支持v15的网关。撤销同时停止读取与控制，保留设备和原命令。验证动态接入、控制与备份恢复时，为上述命令增加`--dynamic`；静态安装继续使用原配置。
+
+本轮动态v15验证镜像为`limeiot/verification:nas-arm64-dynamic-switch-20261104`；已通过动态添加、控制、阈值、重建和备份恢复，快照正文摘要一致，临时容器已清理。详见[当前证据](../../docs/evidence/2026-11-04-property-bridge-runtime.json)中的dynamic_binding。
+
+2026-11-04的本地镜像`limeiot/verification:nas-arm64-onoff-20261104`已通过上述完整容器旅程，恢复前后v14快照正文摘要一致，重建与恢复均无历史命令补发。406份冻结输入生成4个Linux ELF及92份制品；保留非root、只读根和cap_drop ALL，测试容器已清理。具体证据见[属性桥接闭环](../../docs/evidence/2026-11-04-property-bridge-runtime.json)，不提升AMD64、完整原生App、实机或正式云部署的验收范围。
+
 ## 可选本地模型
 
 ### 同机 Ollama 容器
@@ -301,6 +331,57 @@ docker compose --env-file ".dev/nas/compose.env" \
 
 `npm run test:vision`提供网关、CLI、浏览器、真实Nginx和NAS备份恢复的软件验证。Compose配置渲染与实际容器运行分别记录，真实视觉质量、新镜像和跨架构仍单独验收。
 
+## 可选本地文字对话
+
+先启用媒体存储，不需要绑定音箱。使用已安装的Ollama文字模型，明确其标签和许可。在基础及媒体Compose之后，局域网提供方叠加`compose.text.yaml`：
+
+```sh
+LIMEIOT_TEXT_URL="http://192.168.1.10:11434" \
+LIMEIOT_TEXT_MODEL="your-installed-model:tag" \
+docker compose --env-file ".dev/nas/compose.env" \
+  -f "deploy/nas/compose.yaml" -f "deploy/nas/compose.media.yaml" \
+  -f "deploy/nas/compose.text.yaml" up --build -d
+```
+
+同机部署改用`compose.text-local.yaml`，与上述外部覆盖二选一：
+
+```sh
+LIMEIOT_TEXT_MODEL="your-installed-model:tag" \
+LIMEIOT_OLLAMA_MODELS_DIR="/absolute/path/to/preloaded-ollama-models" \
+docker compose --env-file ".dev/nas/compose.env" \
+  -f "deploy/nas/compose.yaml" -f "deploy/nas/compose.media.yaml" \
+  -f "deploy/nas/compose.text-local.yaml" up --build -d
+```
+
+完整私有版保留原`compose.platform.yaml`，再叠加媒体和文字覆盖。`text`服务复用共享Ollama定义，默认2 CPU、4GiB内存，非root、只读根和独立internal网络；不发布推理端口，不挂载设备秘密或网关数据。模型缓存由所有者准备，容器禁用云功能和启动时自动清理权重；不自动下载，不启用规则推理或视觉。可用`LIMEIOT_OLLAMA_IMAGE`明确选择经过验证的版本。网关启动不依赖模型健康。
+
+外部提供方使用私有HTTPS时设置`LIMEIOT_TEXT_CA_FILE=/config/text-ca.crt`，CA由安装者放入config。
+
+在家庭网页“对话”明确发送消息。输入只保存摘要，输出短期保留并可清除，不创建设备命令。网关重启和新目录恢复只查询原任务，运行中任务保持unknown并保留预算；明确放弃不会证明提供方已停止计算。媒体v5快照包含任务与保留期内回答，权重不属于NAS备份，需独立管理。完整约束见[文字合同](../../contracts/text.md)。
+
+配置检查使用`npm run test:nas:inference:config`。真实容器检查要求已准备模型缓存和Ollama镜像：
+
+```sh
+npm run test:nas:text:live -- --model "your-installed-model:tag" \
+  --models-dir "/absolute/path/to/preloaded-ollama-models"
+```
+
+检查复制缓存到本次隔离目录，覆盖实际网页、CLI、三个固定文字样本、网关重启、v5原字节备份及新目录恢复、unknown不重推与明确清文；最后停止真实模型容器并确认手动MQTT控制仍可完成。缺镜像、模型或输出不满足要求时直接失败，不切换夹具。已有本地网关验证镜像可增加`--no-build --image limeiot/verification:YOUR_TAG`；提供方版本通过`--ollama-image`与`--ollama-version`明确核对。运行状态以[实施进度](../../docs/24-实施计划与进度.md)为准，不据有限样本声明全面质量或指定NAS性能通过。
+
+2026-11-04：4项同机/外部覆盖配置检查通过；真实同机旅程尚未执行。官方Linux ARM64推理归档下载未完成，两轮有时限续传后停止，未使用不完整制品。详情见[同机阶段记录](../../docs/evidence/2026-11-04-text-local-nas.json)。
+
+外部本地模型可用同一入口验证。传入已核验的Ollama可执行文件，入口会启动本次专用进程，使用复制的模型缓存，并在结束时停止该进程；不连接或停止已有推理服务：
+
+```sh
+npm run test:nas:text:live -- --model "qwen2.5:1.5b-instruct" \
+  --models-dir "/absolute/preloaded-models" \
+  --ollama-executable "/absolute/verified-ollama" --ollama-version "0.40.14"
+```
+
+模型仅监听宿主回环。Docker Desktop默认使用`host.docker.internal`访问；其他运行环境可通过`--ollama-host`指定已确认的宿主私网映射地址，先核对实际连通性，不需要改系统网络。此模式使用正式`compose.text.yaml`，模型运行在容器外，不能据此推断同机容器的CPU、内存限制或性能。
+
+Linux ARM64网关连接Darwin ARM64 Ollama 0.40.14的完整入口已通过：三个固定样本、4次实际推理、网关重启、v5原字节备份/新目录恢复、恢复后零新增推理、unknown占用和清文后重启均通过；实际停止专用模型进程后，明确MQTT灯控仍为confirmed。临时容器和进程已清理，见[外部本地模型证据](../../docs/evidence/2026-11-04-text-external-nas.json)。同机Linux推理镜像继续保持上方阻塞状态。
+
 ## 网页固件升级
 
 
@@ -308,7 +389,7 @@ docker compose --env-file ".dev/nas/compose.env" \
 
 连接中断或响应丢失后，通过“升级原操作”查询原决定；任务未知时读取当前任务，再选择“查询设备结果”。查询不会重新安装。任务只有收到匹配的新启动、实际镜像与健康确认后才显示升级成功。浏览器记录保存失败时零发送，损坏记录保持原文并阻止新写入；未决原操作不能通过重新创建计划绕过。固件信任撤销不取消已发送的安装。
 
-软件检查为 `npm run test:ota:web`，使用独立网关/SQLite/Broker与浏览器，不启动第二套MySQL或连接现有NAS。新页面尚未进入既有ARM64冻结镜像；从当前源码构建后使用，当前完整工作台为11项菜单。正式密钥/托管、手机OTA和新整包验收状态见 [实施进度](../../docs/24-实施计划与进度.md)。
+软件检查为 `npm run test:ota:web`，使用独立网关/SQLite/Broker与浏览器，不启动第二套MySQL或连接现有NAS。固件升级页面已包含在本轮ARM64完整工作台镜像中；14项菜单的安装与恢复验收不替代真实设备OTA安装。正式密钥/托管、手机OTA和整包验收状态见 [实施进度](../../docs/24-实施计划与进度.md)。
 
 ## 固件制品仓库
 
@@ -377,11 +458,45 @@ NAS备份包含原CSR意图、轮换激活证明、CA账本和CRL；轮换中断
 
 ## 可选环境节点
 
+### Zigbee环境来源
+
+网关默认构建包含固定ZNP温湿度观测。新安装首次启动前，在`config/gateway.json`声明环境模型及逻辑设备，并在同目录放置符合[正式Schema](../../contracts/zigbee-environment.schema.json)的`zigbee.json`；两份对应模板见[网关示例](../dev/zigbee-gateway.example.json)与[来源示例](../dev/zigbee-environment.example.json)。保留安装自身的space_id和原设备配置，替换IEEE、端点、manufacturer_code及完整Basic型号信息。容器内serial填写`/dev/limeiot-znp`，示例型号是软件夹具，不能直接作为采购适配声明。
+
+在原Compose文件之后叠加`compose.zigbee.yaml`，显式设置`LIMEIOT_ZNP_DEVICE`为Docker宿主的NCP路径，`LIMEIOT_ZNP_GID`为该串口设备所属数字GID。覆盖文件只透传该设备的读写权限并添加这个补充组，保留非root用户、只读根、cap_drop和原网络；不使用privileged或host网络。配置检查示例：
+
+```sh
+docker compose --env-file "/absolute/path/installation/compose.env" \
+  -f "deploy/nas/compose.yaml" -f "deploy/nas/compose.zigbee.yaml" config
+```
+
+运行中添加新逻辑设备可改用[v2协调器示例](../dev/zigbee-coordinator.example.json)，serial仍填写容器内路径，保留原安装初始配置。所有者通过[CLI](../../packages/cli/README.md#运行中接入只读来源)、家庭网页“设备接入 → Zigbee 设备”或原生客户端“设置 → Zigbee 设备”发现已有邻居、读取端点、查询完整候选，核对后明确添加；也可填写已知IEEE/端点。托管来源决定保存在SQLite v13快照，不改变初始配置摘要。撤销停轮询，缺少协调器时保留过期设备，不回退成MQTT。未知结果保留原请求，只查询原操作；网页需安全上下文与Web Locks。原生页面源码和宿主状态检查已完成，完整App运行仍单独验收；全网遍历和静态来源迁移仍未实现。
+
+需要新设备加入已有网络时，使用页面“Zigbee 入网”或[正式网关工具](../../contracts/zigbee-operations.md)核对协调器后明确开放1–120秒。关闭另行核对并确认，0表示关闭；协议受理不代表设备已经加入。原请求和结果保存在SQLite事件中，入网不会自动创建平台设备或绑定。未知时只查询原操作，不能换键延长可能仍开放的窗口；独立关闭保留先前未知记录。协调器配置移除后仍可读取历史，新的入网请求拒绝。
+
+来源文件随原config目录进入备份，但来源token、候选缓存和当前在线状态不恢复；设备路径可重新映射，恢复后仍须读取并复核同一协调器及设备。静态来源语义和模型修订仍参与初始配置摘要，不能直接增删静态来源或覆盖初始配置。SQLite首次保存来源决定后升为v13，恢复须使用支持v13的网关，不用旧镜像覆盖已有决定的安装。流程及恢复规则见[观测来源合同](../../contracts/observation-sources.md)。
+
+2026-11-04的Linux ARM64验证镜像已通过容器内软件PTY、双目标查询绑定、撤销、网关重建和动态v13备份恢复；恢复前后快照正文摘要与来源配置一致，缺少协调器时仍保留设备和过期状态，旧成功决定不会重新启用已撤销设备。明确重新查询、绑定后可再次触发confirmed温度阈值灯控。打包家庭PWA的390px设备页与接入页也已检查，见[阶段证据](../../docs/evidence/2026-11-04-observation-nas.json)。
+
+后续ARM64入网恢复镜像已包含当前入网、邻居发现和端点读取网页。完整容器旅程通过：未知开放后明确关闭、关闭响应丢失后只读恢复、重建零补发、四条入网事件原字节备份恢复、缺少协调器时历史可读且新写拒绝，以及原双目标来源和两次confirmed阈值灯控。每次重建使用新的软件NCP核对零入网请求，390px打包页面截图已复核，见[入网恢复证据](../../docs/evidence/2026-11-04-zigbee-commissioning-nas.json)。这是本地验证镜像，未发布或升级已有安装。
+
+在已按下文构建的本地验证镜像上运行：
+
+```sh
+npm run test:nas:zigbee -- --image "limeiot/verification:YOUR_TEST_TAG" \
+  --platform "linux/arm64"
+```
+
+检查创建独立安装、来源、备份和恢复目录，并收尾本次Compose容器；不会访问已有NAS安装。软件NCP在非root、只读网关容器内创建PTY，不验证宿主USB设备透传或物理串口权限。`compose.zigbee.yaml`另做设备/GID映射配置检查；空口、采购型号和物理设备仍按用户要求跳过。本阶段未发布镜像，也不提升旧AMD64制品的动态来源验收范围。
+
+### 原生SHT30节点
+
 新安装可在`manage.py init`追加`--with-environment`，增加SHT30环境模型、`device-environment`绑定、独立开发凭据及精确设备ACL。默认安装继续保留灯和按钮；此参数不修改已有目录，也不证明设备已接线或认领。通过同一设备CA签发或外部CSR路径准备身份，按[固件说明](../../firmware/README.md#sht30环境节点)构建和配置第三块C3。
 
 家庭网页将温湿度显示为只读观测，网关按原采样时刻计算15秒有效期。断开传感器或CRC失败不刷新旧时间，恢复后的新样本才能重新有效；CLI仍返回摄氏度/%RH各自100倍的整数。第三节点的签发资料与配置沿用现有备份范围；容器运行和物理读数分别验收，实机按用户要求跳过。
 
 ## 备份与恢复
+
+Rust网关处理SIGINT与SIGTERM，关闭网页事件流，HTTP在途请求最多排空3秒，并取消、等待协议子任务释放串口；超时会明确记录`gateway.http_drain_timeout`，不代表原操作完成。Compose原15秒停止宽限保留。当前关停软件验收使用macOS进程和伪终端，未由此提升为Linux/NAS容器串口验收，范围见[进程启停合同](../../contracts/runtime-lifecycle.md)。
 
 运行中的数据库通过 SQLite Backup API 取得一致快照，关联模型配置、凭据和 TLS 材料一并复制。复制签发数据库、已签证书和 CRL 时持有与管理命令相同的锁。恢复校验每个文件摘要和 SQLite 完整性，仅写入新目录，并重新生成签发配置中的绝对路径。
 
@@ -423,6 +538,8 @@ python3 "tools/build-nas-artifacts.py" image --directory "$PWD/.dev/nas-arm64-bu
 已有核验过来源及系统包的同平台本地运行依赖镜像时，`image`命令可追加`--runtime-base limeiot/verification:TAG`复用该层。工具核对平台、工作目录和`run.limeiot.runtime-prefix-digest`，后者为规范运行层从FROM到首个COPY之前的原字节SHA-256；实际组装固定镜像ID，并保留源制品完整性检查。该参数复用依赖层，不改变最终应用复制、用户、环境或健康检查，也不代替完整容器验收。
 
 构建清单包含编译时嵌入的全部非Markdown合同及各workspace的package.json。构建期间任何受检输入变化都会拒绝打包；并发开发时应在独立源码快照构建，并确认node_modules中的workspace链接解析到快照内，再通过`--toolchain-cache`复用工具链和编译缓存。
+
+陪伴页面使用的`examples/companions`角色策略同时进入Docker构建上下文和源码摘要。仅更新网页时，`build`可追加`--rust-artifacts "/absolute/verified-nas-artifacts"`复用已验证的同平台Rust二进制：全部Rust/Cargo输入及字面量include所引用合同必须一致，并核对固定工具链、原制品摘要和ELF。发现构建脚本或动态include则拒绝复用。清单记录复用来源与二进制摘要，网页始终从当前源码构建；该检查不替代完整容器验收。控制面对应入口见[控制面制品构建](../control/README.md#容器与-railway-制品)。
 
 镜像生成后，继续运行原有容器验收：
 
@@ -468,16 +585,20 @@ npm run test:nas:container
 npm run test:nas:container -- --image "limeiot/verification:YOUR_TEST_TAG" --no-build
 ```
 
-追加`--multimodal`可验收有限音频、TTS、ASR和图片观察的容器集成：
+追加`--multimodal`可验收有限音频、TTS、ASR、图片观察和文字生成的容器集成：
 
 ```sh
 npm run test:nas:container -- --platform "linux/arm64" \
   --image "limeiot/verification:nas-arm64-local" --no-build --multimodal
 ```
 
-该模式叠加正式媒体、语音、识别和视觉Compose覆盖，并使用同一待验镜像运行独立Python协议夹具。夹具只接入本次内部网络，不映射宿主端口、不挂载网关数据或密钥。音箱使用固定本次地址；媒体出口仅绑定宿主回环，实际Range拉取经容器网络核对原WAV字节。第三设备模型由待验镜像内的正式校验器规范化，不手工推断模型修订。
+该模式叠加正式媒体、语音、识别、视觉和文字Compose覆盖，并使用同一待验镜像运行独立Python协议夹具。夹具只接入本次内部网络，不映射宿主端口、不挂载网关数据或密钥。音箱使用固定本次地址；媒体出口仅绑定宿主回环，实际Range拉取经容器网络核对原WAV字节。第三设备模型由待验镜像内的正式校验器规范化，不手工推断模型修订。
 
-旅程检查超过512 KiB的图片上传、其他路由限制、三类推理不隐式授权或播放、明确授权后的DLNA协议与媒体拉取、替换网关不重新推理或播放、媒体v4快照的原字节备份与新目录恢复。恢复中的任务保持unknown并占用预算，恢复只查询原编号；明确放弃、清文和删除后再重启，核对正文不复活。协议夹具只证明集成，不证明真实模型质量、物理音箱播放或具体NAS型号兼容。新增入口的实际运行结果以[24](../../docs/24-实施计划与进度.md)及本次报告为准。
+需要同时检查安装包中的网页录音时，再追加`--recording`，并通过`LIMEIOT_BROWSER_EXECUTABLE`指定支持模拟麦克风的测试浏览器。它从NAS的HTTPS入口实际加载AudioWorklet，完成一段模拟录音，核对轨道/AudioContext关闭、零隐式上传和CSP；这段录音不送模型，三阶段组合由`npm run test:recording`独立检查。模拟麦克风不代表真实硬件录音效果。
+
+2026-11-04最新本地验证镜像为`limeiot/verification:nas-arm64-recording-20261104`，对应制品在`.dev/nas-arm64-recording-20261104`；已通过完整14菜单安装与新目录恢复，以及`--multimodal --recording`旅程。镜像仅保留在本机，未发布到仓库；固定镜像ID、输入摘要与验证边界见[录音版整包证据](../../docs/evidence/2026-11-04-recording-nas-container.json)。此前文字版和其他架构保持各自证据范围。
+
+旅程检查超过512 KiB的图片上传、其他路由限制、四类推理不隐式授权或播放、明确授权后的DLNA协议与媒体拉取、替换网关不重新推理或播放、媒体v5快照的原字节备份与新目录恢复。恢复中的任务保持unknown并占用预算，恢复只查询原编号；明确放弃、清文和删除后再重启，核对正文不复活。协议夹具只证明集成，不证明真实模型质量、物理音箱播放或具体NAS型号兼容。新增入口的实际运行结果以[24](../../docs/24-实施计划与进度.md)及本次报告为准。
 
 报告逐项记录镜像ID、实际Linux架构、独立CA验证的HTTPS、非root/只读/内部网络、MQTT回执、家庭页面、设备mTLS/ACL/撤销、保留入口时替换网关，以及新目录备份恢复和原操作状态。浏览器专项只验证界面，TLS信任由显式加载本次CA的独立HTTPS连接证明。通过当前架构的容器检查不能代替其他架构或指定NAS型号实测；可选Ollama和云连接覆盖另行验收。
 

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limeiot.run/contracts/voice-turns.schema.json",
+  "title": "本地有限语音回合输入",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["turn_id", "media_id", "language", "voice"],
+  "properties": {
+    "turn_id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,96}$" },
+    "media_id": { "type": "string", "pattern": "^media-[A-Za-z0-9_-]{1,122}$" },
+    "language": { "enum": ["auto", "zh", "en"] },
+    "voice": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$" }
+  }
+}

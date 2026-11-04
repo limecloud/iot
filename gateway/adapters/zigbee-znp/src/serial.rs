@@ -94,6 +94,7 @@ impl Serial {
             libc::cfsetospeed(&mut configured, libc::B115200);
         }
         configured.c_cflag |= libc::CLOCAL | libc::CREAD;
+        configured.c_iflag &= !(libc::IXON | libc::IXOFF | libc::IXANY);
         configured.c_cflag &= !(libc::PARENB | libc::CSTOPB | libc::CSIZE);
         configured.c_cflag |= libc::CS8;
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "ios"))]

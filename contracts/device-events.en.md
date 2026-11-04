@@ -4,6 +4,8 @@
 
 Local HTTP polling and SSE share the existing durable channel: `GET /api/v1/spaces/{space}/events?after={cursor}` and `GET /api/v1/spaces/{space}/events/stream`. SSE resumes with `Last-Event-ID`, using existing local authorization and session revocation. This adds neither control-plane forwarding nor permission to subscribe directly to device MQTT.
 
+On SIGINT or SIGTERM, the gateway ends SSE streams without creating business events or confirming operations. Reconnect using the original cursor and log in again after a process restart. Drain limits and serial cleanup are defined in the [runtime lifecycle contract](runtime-lifecycle.md).
+
 ## Implemented payload
 
 The channel envelope is `{event_id,type,space_id,payload}`. Its outer `event_id` is a gateway database cursor, distinct from the device's business event ID. A new live `device.event` has `payload={occurred_at,data}`: the outer timestamp comes from the existing Store, and `payload.data` is the strict [DeviceEvent](../gateway/crates/core/src/device_events.rs) projection:
@@ -26,6 +28,10 @@ Failed model, session, sequence, topic, schema or time checks produce no busines
 Original deduplication/rule effects and the projection are committed in the same existing Store transaction before publishing memory changes or notifying SSE. Failed commits expose no readable projection. Committed records remain readable by cursor after restart. Existing pages of 100, bounded retention of approximately 5,000 records, `event_gap` / SSE `gap` and session expiry semantics remain unchanged. After a gap, refresh the current state of the relevant object; this bounded channel is neither a complete history nor a high-frequency telemetry store.
 
 The projection proves acceptance of the source and schema-conforming data. It does not independently prove a physical effect, data truth or long-task completion. A product must still bind its original task, generation, action and required observations. A friendly event path cannot establish a stop or completed performance. Non-event message output retains its existing shape.
+
+## Observation binding decisions
+
+Managed source binding, revocation, rejection and revision conflicts use the same durable channel with type `observation.operation`. Its `payload.data` is the Operation from the [source contract](observation-sources.md), not a device sample. Consumers reread the current binding and device state; a historical applied result must not reactivate a revoked source. Source tokens are never included.
 
 ## Verification
 

@@ -367,6 +367,12 @@ impl Data {
         };
         ensure(identifier(device_id), "invalid_device_id")?;
         ensure(
+            self.devices
+                .get(device_id)
+                .is_none_or(|device| device.property_bridge_policy.is_none()),
+            "property_bridge_binding_locked",
+        )?;
+        ensure(
             self.execution_binding(device_id)?.revision == *expected,
             "revision_conflict",
         )?;
@@ -397,6 +403,19 @@ impl Data {
                         && offer.route == *route
                         && offer.model_revision == *expected_model_revision,
                     "execution_offer_mismatch",
+                )?;
+                ensure(
+                    !self.devices.values().any(|other| {
+                        other.observation_policy.as_ref().is_some_and(|policy| {
+                            policy.source.adapter_id == route.adapter_id
+                                && self
+                                    .observation_registry
+                                    .bindings
+                                    .get(&other.device_id)
+                                    .is_none_or(|binding| binding.active)
+                        })
+                    }),
+                    "execution_adapter_in_use",
                 )?;
                 self.check_model_authority(device_id)?;
                 let model = &self.models[expected_model_revision];

@@ -9,14 +9,15 @@ export async function privateDirectory(directory, create=false) {
   const stat=await lstat(directory);
   if(!stat.isDirectory()||stat.isSymbolicLink()||stat.uid!==process.getuid?.()||(stat.mode&0o077)!==0||await realpath(directory)!==path.resolve(directory))throw problem('private_directory_required');
 }
-export async function readPrivate(file) {
+export async function readPrivateText(file) {
   const handle=await open(file,constants.O_RDONLY|constants.O_NOFOLLOW);
   try {
     const stat=await handle.stat();
     if(!stat.isFile()||stat.nlink!==1||stat.uid!==process.getuid?.()||(stat.mode&0o077)!==0||stat.size>65536)throw problem('private_file_required');
-    return JSON.parse(await handle.readFile('utf8'));
+    return await handle.readFile('utf8');
   } finally {await handle.close()}
 }
+export async function readPrivate(file) { return JSON.parse(await readPrivateText(file)); }
 export async function createPrivate(file,value) {
   await privateDirectory(path.dirname(file),true);
   const handle=await open(file,constants.O_WRONLY|constants.O_CREAT|constants.O_EXCL|constants.O_NOFOLLOW,0o600);

@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "scope": "first_party_znp_on_off_library_and_standalone_cli",
+  "status": "software_protocol_stage_passed",
+  "archive": ".dev/znp-onoff-20261104",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "official_cloud_updated": false,
+  "new_nas_image": false,
+  "gateway_property_execution_integrated": false,
+  "native_app_runtime": false,
+  "full_goal_completed": false,
+  "changes": {
+    "fixed_on_off_read_and_explicit_on_off": true,
+    "shared_af_and_zcl_transport": true,
+    "host_endpoints": [
+      239,
+      240
+    ],
+    "shared_transaction_ids_no_wrap": true,
+    "fingerprint_before_control": true,
+    "command_and_actual_state_separate": true,
+    "formal_requests_and_reports": true,
+    "strict_cli_context_and_duplicate_json_rejection": true,
+    "new_dependencies": false,
+    "database_changed": false,
+    "core_changed": false
+  },
+  "verification": {
+    "rust_tests": 14,
+    "new_pty_groups": 15,
+    "new_contract_groups": 7,
+    "new_contract_failures": 0,
+    "new_pty_records": 93,
+    "existing_pty_groups": 70,
+    "existing_pty_reports": [
+      {
+        "name": "test_znp",
+        "tests": 23,
+        "records": 26
+      },
+      {
+        "name": "test_znp_environment",
+        "tests": 17,
+        "records": 51
+      },
+      {
+        "name": "test_znp_discovery",
+        "tests": 18,
+        "records": 34
+      },
+      {
+        "name": "test_znp_commissioning",
+        "tests": 12,
+        "records": 65
+      }
+    ],
+    "existing_current_receipts_schema": {
+      "passed": true,
+      "tests": 70,
+      "records": 176,
+      "groups": [
+        {
+          "name": "test_znp",
+          "tests": 23,
+          "records": 26
+        },
+        {
+          "name": "test_znp_environment",
+          "tests": 17,
+          "records": 51
+        },
+        {
+          "name": "test_znp_discovery",
+          "tests": 18,
+          "records": 34
+        },
+        {
+          "name": "test_znp_commissioning",
+          "tests": 12,
+          "records": 65
+        }
+      ]
+    },
+    "all_six_mt_aps_zcl_orders": true,
+    "read_and_on_and_off_cli_and_binary": true,
+    "signature_all_fields_mismatch_zero_control": true,
+    "host_conflict_zero_control_and_zero_overwrite": true,
+    "identity_change_before_control_zero_write": true,
+    "identity_change_after_control_unknown": true,
+    "foreign_frames_not_adopted": true,
+    "invalid_boolean_types_rejected": true,
+    "wrong_default_response_rejected": true,
+    "missing_each_receipt_one_control_no_retry": true,
+    "sigterm_after_control_cli_and_binary_unknown_and_tty_restored": true,
+    "shared_session_two_hosts_registered_once": true,
+    "shared_session_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "accepted_control_does_not_echo_actual_state": true,
+    "all_target_clippy_deny_warnings": true,
+    "gateway_zigbee_only_feature_check": true,
+    "root_onoff_entry": true,
+    "website": {
+      "errors": 0,
+      "warnings": 0,
+      "pages": 53,
+      "local_references": 2055
+    },
+    "document_links": {
+      "passed": true,
+      "files": 6,
+      "local_file_links": 382,
+      "broken": []
+    },
+    "final_source_fingerprints_match": true
+  },
+  "toolchain": {
+    "rust": "1.93.1",
+    "node": "24.21.0",
+    "host": "macos_arm64",
+    "serial": "unix_pty"
+  },
+  "binary": {
+    "path": ".dev/znp-verification-20261103/target/debug/limeiot-znp",
+    "sha256": "87df410e2ca002e7a47c891e3f6f058e4b278641ce9e1c22f64e5511df985b6f"
+  },
+  "upstream_revision": "3615ad5d3f4f271258d18a2f5ce1785064ff9a58",
+  "upstream_sources": [
+    {
+      "path": "source/ti/zstack/mt/mt_af.c",
+      "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/mt/mt_af.c",
+      "sha256": "7e2fa8b2cd2a3bdb8da2a6d5a452f07b9c8cafeb634c0f39f727a9cc44b9a5ed",
+      "bytes": 29126
+    },
+    {
+      "path": "source/ti/zstack/stack/zcl/zcl_general.h",
+      "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/stack/zcl/zcl_general.h",
+      "sha256": "6c065e21f49b7ab36c37ab7c2638ec0d043d7d3253d791186b6f0832055c7d32",
+      "bytes": 157135
+    },
+    {
+      "path": "source/ti/zstack/stack/zcl/zcl.h",
+      "url": "https://raw.githubusercontent.com/TexasInstruments/simplelink-lowpower-f2-sdk/3615ad5d3f4f271258d18a2f5ce1785064ff9a58/source/ti/zstack/stack/zcl/zcl.h",
+      "sha256": "b1b4e0d3783e32ba674f0addc0d1bcd64d74b13548cf75d87b34d9c24926d40b",
+      "bytes": 88729
+    }
+  ],
+  "source_sha256": {
+    "gateway/adapters/zigbee-znp/src/lib.rs": "3da24e60f389dd09dbb1dda0c79b2ea98c170a33b68779615635aa79c04bc33c",
+    "gateway/adapters/zigbee-znp/src/session.rs": "d472b32dfc49965dfb63e64521bd5cdd832b5970319411f0194eed3122b00b40",
+    "gateway/adapters/zigbee-znp/src/environment.rs": "4c33761df05a15b450725b103a66ef550123a08b46c9dd11383b2499a5cbe4ea",
+    "gateway/adapters/zigbee-znp/src/zcl.rs": "e774a6e71b9bef59b564bb67293ca4ee6b7e118bb879a283f431e5079cc596e7",
+    "gateway/adapters/zigbee-znp/src/on_off.rs": "a7649645c542143bd8f06581fe4684a09fe7559e0488d55194a1f5aed7358134",
+    "gateway/adapters/zigbee-znp/src/main.rs": "bdaa26da8d1ae5b30d096e4ddd23543495b7c87b280d69194ef91d832e84f1ed",
+    "gateway/adapters/zigbee-znp/tests/environment.rs": "0b00cb014bf72cbac4f0d8c4a8c683ddd1581981bdd01cbefbc25d646c0933a5",
+    "gateway/adapters/zigbee-znp/README.md": "41659bcc100186f45362ec8a8d140411acbdf0acb3bde6900b088e4db89a01a1",
+    "packages/protocol/zigbee-onoff.mjs": "ec76499016643f3133519f35d7ecf1b330c7b50c6a03787db00ddd17b47f9f1d",
+    "packages/cli/src/zigbee.mjs": "6a0fda900af442b9320ac71ece320251d5d310508d34a2d3bef291aa7690b035",
+    "packages/cli/README.md": "4f0f91d3ab5ab9a2876d2baa67eb80d1425b3305e1d34f481b33b5c3ff3c8c93",
+    "tests/test_znp_onoff.py": "1bd1df5f2de0d6563b3b78a29f679921b8e542999486a78d4efcaf70081e4dac",
+    "tests/zigbee-onoff.test.mjs": "1e824fbb883ef3dbffa31c332cb287eb43166edd7680da83d949a04be4d2b75e",
+    "contracts/zigbee-diagnostics.schema.json": "2ebbcdf50c53dbb80ed7f19ccfea923706521d37b2848a9f02642f28788ca148",
+    "contracts/zigbee-diagnostics.md": "829ac0e57ca3e8aafe5e90c278a46257fc3820e8c3347c58d50db29b2e63edd8",
+    "contracts/README.md": "8d6d0b60e3bc947e735783a1d6bdf367bdb8e9515392c59a0fcb9ed5dd9fb3c8",
+    "docs/07-异构协议与适配器规范.md": "db4b9a9d64ad8551526ec43eb16f22396f71f1fbd5312aaff7e0e538b7db6232",
+    "docs/24-实施计划与进度.md": "1a4d4ed8956bea77d74ccc063c461103eae7ac76d8a4fb6f49edda4cdbeb77b8",
+    "package.json": "405c181aa0b0f857611074634f8f8f01a0d955c520ae94cfcf7dc9a55123eb37"
+  },
+  "website_source_sha256": {
+    "src/docs/content/zigbee.md": "cd6f027c68599ac1f81dff169a847cd20e17dad8022eaaedcb4abcf565ade9f0"
+  },
+  "log_sha256": {
+    "znp-onoff-compile.log": "63019e8938f9606906147b46c4f485e7f9779e8461b375beab76628e02eceb8e",
+    "znp-onoff-rust.log": "6dfac89840dedcc8893271b857f876ff9ab9c4b07e0eaabd0b83a7dee522f34c",
+    "znp-onoff-build.log": "5604fc8f0c276397a55db4bd7008236712075c0ad37d3b3a0f1fe362b1b85a36",
+    "znp-onoff-pty-first.log": "968bc26507c38ca95e0b9cad588e7dca8c717fcfb0cc1c443bb6be675e680679",
+    "znp-onoff-contract-first.log": "597c036e1fc78b4b467f1f214bdc1a76710afb71fc7abd644c576488daf57124",
+    "znp-onoff-entry-final.log": "53d672229b1850f0aea32197e659f00d3cf7e8861149b6fffb48e53c24937583",
+    "znp-onoff-existing-pty.log": "53b4af855a429ff2de40a68bc64df61297fe36101f92f178f209a5821321130b",
+    "znp-onoff-current-schema.log": "d3f5dddf3ccd79f273d86ff065d16b20c79e3f1a475676ab544e19a400bcc0e6",
+    "znp-onoff-gateway-check.log": "e437b07731b18ff4411441ea2475ba8565da2439d0ed5c1a402353c66e58cfd7",
+    "znp-onoff-clippy-final.log": "7fb2e9b4479849ea35ba9da090294dea0d8aa447fddc6a657f09f9f8852c0f6c",
+    "znp-onoff-website.log": "221ae752ca1dcba8a5b6e0deda84ea03946b155e1120cf2cf63093a1d1ebc250"
+  },
+  "history": [
+    {
+      "stage": "first_rust_new_pty_and_contract_checks",
+      "result": "passed"
+    },
+    {
+      "stage": "existing_pty_and_feature_checks",
+      "result": "passed"
+    },
+    {
+      "stage": "final_root_entry_and_clippy",
+      "result": "passed",
+      "targeted_fix_retries": 0
+    }
+  ],
+  "design": "在已有串口库提取真实共用的AF/ZCL端点、序号与回执关联，环境和On/Off各自映射；固定命令及精确指纹保持接口小且职责明确，复用原期限、失败关闭、CLI及合同工具，不新增依赖或命令状态机。",
+  "freeze_scope": "检查后归档19份相关源码、1份官网指南与摘要及当前二进制；不声明整个双仓工作区或历史NAS源码冻结。",
+  "limitations": [
+    "独立组件和CLI直接操作已释放的串口，不可与运行网关争用NCP；尚未接入平台可写属性执行、耐久命令账本、同串口actor、网页或原生灯控。",
+    "协议成功只证明匹配MT/APS/ZCL的受理与身份复核，不证明物理电路或属性已变化；独立读取也是未经认证的协议证据。",
+    "不提供Toggle、亮度、色温、组播、任意ZCL写、厂商quirks或具体品牌/型号支持。",
+    "macOS软件PTY不证明Linux/NAS串口或USB透传，既有NAS与正式云镜像不包含本阶段新源码；硬件按用户要求跳过。",
+    "原生App完整运行、AMD64多模态恢复、TV回调超时、更多协议/生态、真实模型质量及玩具机器人样板仍有缺口，完整目标保持进行。"
+  ]
+}

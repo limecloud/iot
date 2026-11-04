@@ -27,6 +27,9 @@ struct RootView: View {
                     NavigationStack { ActivityView() }.tabItem { Label("执行记录", systemImage: "clock") }
                     NavigationStack { Form {
                         Section("家庭网关") { Text(home.endpoint).textSelection(.enabled); Text(home.online ? "本地已连接" : "连接中断") }
+                        NavigationLink("AI 服务") { AiCatalogView(load: { try await home.aiCatalog() }, authFailure: home.report) }
+                        if let sources = home.observation { NavigationLink("Zigbee 设备") { ObservationView(sources: sources) } }
+                        if let conversation = home.textGeneration { NavigationLink("本地对话") { TextGenerationView(conversation: conversation) } }
                         if let firmware = home.firmware { NavigationLink("固件升级") { FirmwareView(firmware: firmware, devices: home.snapshot?.devices ?? []) } }
                         if let media = home.media { MediaSettingsLinks(media: media) }
                         else { Button("退出登录", role: .destructive) { Task { await home.logout() } }.disabled(home.busy || home.firmware?.busy == true) }

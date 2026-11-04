@@ -4,6 +4,8 @@
 
 当前本地 HTTP 轮询与 SSE 复用同一耐久事件通道：`GET /api/v1/spaces/{space}/events?after={cursor}`、`GET /api/v1/spaces/{space}/events/stream`。SSE 通过 `Last-Event-ID` 恢复游标，继续使用当前本地鉴权及会话撤销规则；没有增加控制面转发或直接订阅设备 MQTT 的权限。
 
+网关收到SIGINT/SIGTERM时主动结束SSE，不新增业务事件或确认结果。重连后继续原游标；重启后浏览器重新登录。排空期限及串口回收见[进程启停](runtime-lifecycle.md)。
+
 ## 已实现的正文
 
 通道外层为 `{event_id,type,space_id,payload}`。外层 `event_id` 是网关数据库游标，和设备业务事件 ID 不同。对于新的实时 `device.event`，`payload` 为 `{occurred_at,data}`：外层采集时间由原 Store 生成，`payload.data` 为 [DeviceEvent](../gateway/crates/core/src/device_events.rs) 的严格白名单投影：
@@ -26,6 +28,10 @@
 原去重与规则副作用、投影记录沿原 Store 事务先提交，再公布内存变化和通知 SSE；提交失败没有可读取的投影。成功记录在网关重启后仍可按原游标读取。现有每页100条、有界约5000条保留、`event_gap` / SSE `gap` 和会话失效语义保持不变。游标过旧需重新读取所关注对象的当前状态；不能把有界事件日志当作完整历史或高频遥测仓库。
 
 投影表明网关接受了来源及符合模型的数据，不独立证明物理结果、内容真实性或长任务完成。产品仍需按原任务、代次、动作和具体观测核对；不得仅凭路径名称把触摸事件变为停车或节目完成证据。非事件消息的通道输出形状保持原行为。
+
+## 观测来源决定通知
+
+托管来源绑定、撤销、拒绝和修订冲突沿同一耐久通道发布`observation.operation`，`payload.data`为[来源合同](observation-sources.md)定义的Operation。它是原请求决定，不是设备采样；消费者应重新读取当前绑定与设备状态，不能用历史applied结果重新激活已撤销来源。来源token不进入事件。
 
 ## 验证入口
 

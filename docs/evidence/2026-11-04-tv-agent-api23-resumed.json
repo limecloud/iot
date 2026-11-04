@@ -1,0 +1,95 @@
+{
+  "evidence_id": "EVID-TV-API23-RESUMED-20261104-01",
+  "observed_on": "2026-11-04",
+  "status": "passed_isolated_application_and_restore_journey",
+  "device": {
+    "model": "MiTV4-ANSM0",
+    "android": "6.0.1",
+    "api_level": 23,
+    "build_fingerprint": "Xiaomi/xmen/xmen:6.0.1/MHC19J/2061:user/release-keys"
+  },
+  "archive": ".dev/tv-live-20261104-9alg9r0b/",
+  "scope": {
+    "hardware": true,
+    "native_app_runtime": true,
+    "real_mtls": true,
+    "real_mqtt": true,
+    "real_android_sqlite": true,
+    "same_device_adb_coexistence": false,
+    "actual_audio_service": false,
+    "phone_runtime": false,
+    "nas_runtime": false,
+    "apk_update_acceptance": false,
+    "full_goal_completed": false
+  },
+  "results": {
+    "service_application_test_passed": 1,
+    "new_process_restore_test_passed": 1,
+    "activity_deliveries": [
+      {
+        "delivery": "create",
+        "created_elapsed_ms": 2197143
+      },
+      {
+        "delivery": "new_intent",
+        "created_elapsed_ms": 2198285
+      }
+    ],
+    "formal_commands": [
+      {
+        "name": "foreground",
+        "command_id": "c1-1-730dc940-3d5f-4c22-ac13-15497cf8257e",
+        "status": "confirmed"
+      },
+      {
+        "name": "background-api23",
+        "command_id": "c1-2-bc68c42e-4157-4b7a-8881-329ec63b8964",
+        "status": "confirmed"
+      },
+      {
+        "name": "revoked",
+        "command_id": "c1-3-eb9a5953-34be-4b89-afa4-0a0d0b13e373",
+        "status": "failed"
+      }
+    ],
+    "first_window_independently_verified": true,
+    "revocation_no_third_delivery": true,
+    "results_retired": true,
+    "new_process_no_automatic_connection_or_replay": true,
+    "no_pem_plaintext_in_database": true
+  },
+  "artifacts": {
+    "application": "fb129cba5092bec4120545ad417b14424b9687a4fc2be7f0a7e4c43ce99f3cee",
+    "instrumentation": "61d1497982fa0db459660c2567a218dfb75779cd71a0ec6f61f455720836f8f1",
+    "gateway": "0c6c7991c1c0b65e511a1ba1f20a4846149678049c96393dcf6ebfae1f80399e"
+  },
+  "isolation": {
+    "production_package_replaced": false,
+    "old_agent_and_fixture_read_back_matching_previous_digests": true,
+    "test_credentials_confined_to_instrumentation": true,
+    "single_task_test_activity": true,
+    "temporary_device_ca": true,
+    "broker": "local_via_owned_adb_reverse",
+    "new_package": "run.limeai.iot.tv.live20261104"
+  },
+  "cleanup": {
+    "owned_device_processes_stopped": true,
+    "owned_host_processes_stopped": true,
+    "owned_reverse_removed": true,
+    "packages_uninstalled": false,
+    "errors": []
+  },
+  "failed_observations_retained": [
+    "Initial host identity preparation lacked the gateway configuration; repaired before issuance and device installation.",
+    "The original television screencap emits a diagnostic prefix before PNG; the image signature was located before visual inspection."
+  ],
+  "limits": [
+    "Single physical model and firmware only.",
+    "PEM test enrollment; production local-key enrollment and renewal not covered.",
+    "Short functional journey, not foreground-service longevity or standby acceptance.",
+    "These APKs precede the following TV UI redesign; UI validation is separate.",
+    "No actual Android audio, mobile or NAS, same-device ADB composition, or APK update continuity acceptance."
+  ],
+  "published": false,
+  "full_goal_completed": false
+}

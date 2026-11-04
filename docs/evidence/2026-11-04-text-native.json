@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-04T04:48:32.959956+00:00",
+  "scope": "Swift/Kotlin有限文字对话SDK、实际状态层、原生入口接入与真实Rust网关宿主恢复",
+  "status": "passed",
+  "hardware": false,
+  "hardware_status": "用户要求跳过",
+  "provider_fixture": true,
+  "real_model_quality": false,
+  "native_app_runtime": false,
+  "new_nas_image": false,
+  "published": false,
+  "full_goal_completed": false,
+  "implementation": [
+    "复用既有网关会话、CSRF、严格JSON与安全存储接口，外部模型无设备执行权",
+    "两端设置中的本地对话、内存多轮、原任务查询与明确清除",
+    "保存并回读摘要后唯一POST；404、unknown、坏用量或状态回退不重发",
+    "后台、离页、离线、退出与最早回答期限清本页正文，迟到结果不进入新上下文",
+    "Home连接、空间切换、失效与关闭接入；Android恢复前台明确读取状态"
+  ],
+  "checks": {
+    "shared_javascript": 1,
+    "swift_contract_and_state_groups": 9,
+    "swift_home_state_groups": 6,
+    "swiftui_parse": true,
+    "xcode_project_plist": true,
+    "android": {
+      "core.TextGenerationClientTest": {
+        "tests": 7,
+        "passed": 7,
+        "report": {
+          "path": ".dev/text-native/TEST-run.limeai.iot.core.TextGenerationClientTest.xml",
+          "sha256": "6d779a5dd12c31d405e292920701e4762b36fbd95e57bfc697d45db8cf493e5e"
+        }
+      },
+      "TextGenerationControllerTest": {
+        "tests": 7,
+        "passed": 7,
+        "report": {
+          "path": ".dev/text-native/TEST-run.limeai.iot.TextGenerationControllerTest.xml",
+          "sha256": "7f49623f9b699ab29bdb5d48fd64a5b0522055edef5d14bc99601ade6575e656"
+        }
+      },
+      "HomeViewModelTest": {
+        "tests": 6,
+        "passed": 6,
+        "report": {
+          "path": ".dev/text-native/TEST-run.limeai.iot.HomeViewModelTest.xml",
+          "sha256": "6b4f04d7e0e07f6a0bd8a1c3a15dddd715f76ca558830e9727a860bca2bb69aa"
+        }
+      },
+      "lint": {
+        "errors": 0,
+        "warnings": 17,
+        "report": {
+          "path": ".dev/text-native/android-lint.xml",
+          "sha256": "9eb5c4833b96e8886c7cbb3eb923681c80f9ffad784067828adae595d4e76b07"
+        }
+      }
+    },
+    "native_host_journeys": {
+      "targets": 2,
+      "native_processes": 12,
+      "gateway_restarts": 6,
+      "real_rust_sqlite_mqtt": true,
+      "reports": [
+        {
+          "path": ".dev/run-1793767480146-17cecffb/text-native-result.json",
+          "sha256": "07527858e2cde4f3234eb43e9b813e762ac9569710bb62b8a65127ae38959a4c"
+        },
+        {
+          "path": ".dev/run-1793767493573-e4fd59eb/text-native-result.json",
+          "sha256": "884e41cafdf254ec37daed149fa05be1c678db77b9ded1f30089d57ef12ebedc"
+        }
+      ]
+    },
+    "website": {
+      "pages": 54,
+      "local_references": 2112,
+      "node": "24.21.0"
+    },
+    "diff_check": true,
+    "legacy_harness_dependencies": "仅同步HomeStore编译输入并通过语法检查，未重跑旧完整旅程"
+  },
+  "logs": [
+    {
+      "path": ".dev/text-native-shared-final-20261104.log",
+      "sha256": "ef352325e80823f27cc4b0f2cbe7db84649cd026ab7c67fd1ec42f4a4133986e"
+    },
+    {
+      "path": ".dev/text-native-ios-final-20261104.log",
+      "sha256": "ce396a0e22f6d13f6e0290f247ce06f25c408de9ea21fd16adfc8e1ae749a8d4"
+    },
+    {
+      "path": ".dev/text-native-ios-live-final-20261104.log",
+      "sha256": "a9cffb32843883319ff15928039bdc14540d96d296f9ffe40e733df9608d1c42"
+    },
+    {
+      "path": ".dev/text-native-android-final-20261104.log",
+      "sha256": "a7e2ed5bd6455992f193762ef98c08c590476c1db2c24ed68038bb65ad5f8091"
+    },
+    {
+      "path": ".dev/text-native-android-live-20261104.log",
+      "sha256": "28886252ad62d69987d9303cdcc229395489eb8ed250a327f4f793a3bd8cc4d6"
+    },
+    {
+      "path": ".dev/text-native-website-20261104.log",
+      "sha256": "a01673f87cbeea0c5af091093069f960542bdd23a8f5415fc2331327dd324d26"
+    }
+  ],
+  "binaries": [
+    {
+      "path": "target/debug/limeiot-gateway",
+      "sha256": "90da6bb8f6c53e1995c7a3c356985685fffcf9e9df927db88317df65bfa242b1"
+    },
+    {
+      "path": "target/debug/limeiot-model-validator",
+      "sha256": "ebe57871f9b496f50483e42245123921a2f6e315270e8abc296e5b1072b45948"
+    },
+    {
+      "path": "target/debug/limeiot-simulator",
+      "sha256": "229ef250fb2d6e45695b0901c9f5a4a1ab2ef74df9462b3a59c9741d3ae974f2"
+    },
+    {
+      "path": ".dev/text-native/ios-text-checks",
+      "sha256": "47fb6bc91ebb63a60447231d318586e444fb8f5d3e2f5286d47bafb1923789c6"
+    },
+    {
+      "path": "apps/android/app/build/outputs/apk/debug/app-debug.apk",
+      "sha256": "bf10ecdcd8ae41a7c88cf9e22ac0f075d7ee9f584b924bd14dc4c3eb74f8c424"
+    }
+  ],
+  "source_manifest": {
+    "path": ".dev/text-native/source-manifest.json",
+    "sha256": "a3a7701fc6724d7dd65b5f4ab7ef33231ffa9898c20980a104bc27f1e0fe4987"
+  },
+  "source_files": 604,
+  "failure_history": [
+    {
+      "check": "Swift App状态层首次编译",
+      "cause": "Published属性包装器不能共用多变量声明",
+      "fix": "拆为独立Published声明",
+      "log": {
+        "path": ".dev/text-native-ios-20261104.log",
+        "sha256": "93c31d262089d937cf0304ad807eead369832eb6effe8342bf0143da76c70f39"
+      }
+    },
+    {
+      "check": "共享夹具首次装载",
+      "cause": "整数JSON解析器拒绝整份夹具中的小数及孤立代理项",
+      "fix": "无效向量保留为原始JSON字符串，仍验证拒绝，未放宽断言",
+      "logs": [
+        {
+          "path": ".dev/text-native-ios-recheck1-20261104.log",
+          "sha256": "ade59c53536d779a394f09acbdee18cb06825c30e29c1b7f4ae137718b08d8c0"
+        },
+        {
+          "path": ".dev/text-native-android-sdk-20261104.log",
+          "sha256": "ab52d7d83a6e189c32f88d76a2461cda80637273b7e2a9ce1669da36dab20683"
+        }
+      ]
+    },
+    {
+      "check": "Android App首次编译",
+      "cause": "跨模块公开可空属性不能智能转换",
+      "fix": "保存局部非空值后构造消息",
+      "log": {
+        "path": ".dev/text-native-android-20261104.log",
+        "sha256": "1e6b3bf31f240748fa393ff4f6d344a203b2aabcf452590248ab2e4dfd56eb7a"
+      }
+    }
+  ],
+  "limits": [
+    "提供方为HTTP协议夹具，不证明真实模型质量、最大上下文消费或连续语音质量",
+    "iOS缺少完整Xcode/iOS SDK，SwiftUI为语法和工程装配检查；Android为宿主状态、Debug APK和lint，不代表完整App运行",
+    "尚无观测的unresolved保持预算，404不能通过删除本地记录或换键解除；正式取消/墓碑合同未扩展",
+    "未实现长期记忆、完整会话政策、流式输出或ASR/Text/TTS会话编排",
+    "本轮不改变NAS镜像、官方云冻结发布、既有AMD64/TV/App运行阻塞或硬件跳过范围"
+  ]
+}

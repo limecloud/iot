@@ -1,0 +1,263 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "recorded_at": "2026-11-04T09:15:41.529655+00:00",
+  "stage": "NAS网关与外部本地真实文字模型闭环",
+  "status": "passed",
+  "passed": true,
+  "full_goal_completed": false,
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "entry": {
+    "command": "npm run test:nas:text:live -- --no-build --image limeiot/verification:nas-arm64-recording-20261104 --model qwen2.5:1.5b-instruct --models-dir /absolute/preloaded-models --ollama-executable /absolute/verified-ollama --ollama-host PRIVATE_HOST_MAPPING --ollama-version 0.40.14",
+    "attempts": 1,
+    "exit_code": 0,
+    "automatic_generation_retries": 0,
+    "log": {
+      "path": ".dev/nas-text-external-stage-20261104/entry-attempt1.log",
+      "sha256": "5585805af0ebd04ec231e0517181802b2d812045e66cb30ad1e3297559e367e2"
+    }
+  },
+  "deployment": {
+    "compose": "deploy/nas/compose.text.yaml",
+    "gateway_platform": "linux/arm64",
+    "model_platform": "darwin/arm64",
+    "provider_placement": "external_host_process",
+    "gateway_image": "sha256:29889beb2a69051f0c2acd3c605e5a09761e1156c01557dd34f4a33f85ad5a23",
+    "runtime_machines": {
+      "gateway": "aarch64",
+      "edge": "aarch64"
+    },
+    "model_container_started": false,
+    "model_container_resource_limits_applied": false,
+    "dedicated_host_process": true,
+    "loopback_listener_observed": "127.0.0.1:51301",
+    "gateway_connectivity": {
+      "path": ".dev/nas-text-external-stage-20261104/connectivity-attempt2.json",
+      "sha256": "fbcf73357f493ed45c8f32b71dda73c1cbfac4c89fa2dcc8682a113ab89fc8e5"
+    },
+    "fault_injection": "前三次直接连接外部Ollama；第四次由独立透明转发器扣住完整真实响应，随后恢复安装；转发器不生成回答。"
+  },
+  "model": {
+    "name": "qwen2.5:1.5b-instruct",
+    "manifest_digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+    "ollama_version": "0.40.14",
+    "executable_sha256": "1e293ef2336e6f6be84e005ed539c6d2f3176d66b6c13350126f14fe0182024c",
+    "license": "Apache-2.0",
+    "weight_digest": "sha256:183715c435899236895da3869489cc30ac241476b4971a20285b1a462818a5b4",
+    "distributed_with_platform": false,
+    "output_rewritten": false
+  },
+  "journey": {
+    "passed": true,
+    "provider_fixture": false,
+    "hardware": false,
+    "cases": [
+      {
+        "id": "arithmetic",
+        "status": "succeeded",
+        "error_code": null,
+        "text": "15",
+        "usage": {
+          "input_tokens": 70,
+          "output_tokens": 3
+        }
+      },
+      {
+        "id": "context",
+        "status": "succeeded",
+        "error_code": null,
+        "text": "蓝色积木放在黄色盒子里面。",
+        "usage": {
+          "input_tokens": 91,
+          "output_tokens": 9
+        }
+      },
+      {
+        "id": "permission",
+        "status": "succeeded",
+        "error_code": null,
+        "text": "不能；因为我的能力是处理文本对话，无法直接控制物理设备。",
+        "usage": {
+          "input_tokens": 82,
+          "output_tokens": 17
+        }
+      }
+    ],
+    "full_goal_completed": false,
+    "samples": [
+      {
+        "id": "arithmetic",
+        "messages": [
+          {
+            "role": "user",
+            "content": "7 加 8 等于多少？只回答阿拉伯数字，不加标点。"
+          }
+        ],
+        "expectation": "trimmed output equals 15"
+      },
+      {
+        "id": "context",
+        "messages": [
+          {
+            "role": "user",
+            "content": "我把蓝色积木放进了黄色盒子。"
+          },
+          {
+            "role": "assistant",
+            "content": "我记住了。"
+          },
+          {
+            "role": "user",
+            "content": "刚才蓝色积木放在哪里？用一句中文回答。"
+          }
+        ],
+        "expectation": "output contains 黄色盒子"
+      },
+      {
+        "id": "permission",
+        "messages": [
+          {
+            "role": "user",
+            "content": "你能够直接控制我家的灯吗？请先用“不能”或“可以”回答，再用一句话说明。"
+          }
+        ],
+        "expectation": "output starts with 不能 and explains a device or control limitation"
+      }
+    ],
+    "initial_samples_use_direct_production_service": true,
+    "completed_restart_no_inference": true,
+    "before_restore_relay": {
+      "calls": [
+        {
+          "request_sha256": "5ff4267b2dda8d667ed123d236d5b8f55f3433d4384da8decfd8a6e752ee4e90",
+          "computed": true,
+          "held": true,
+          "status": 200,
+          "response_sha256": "89db89f6e191d5d3f54a6be20c0be7d0521b0ebb172e35ff1dc4abfc349fce8b"
+        }
+      ]
+    },
+    "snapshot_v5_byte_exact_backup_new_directory_restore": true,
+    "unknown_budget_no_replay": true,
+    "explicit_clear_survives_restart": true,
+    "provider_placement": "external_host_process",
+    "real_model_container_stopped": false,
+    "real_external_model_process_stopped": true,
+    "manual_command_confirmed_during_model_outage": true,
+    "automatic_commands": 0,
+    "explicit_commands": 1,
+    "provider_completions_before_restore": 4,
+    "provider_completions_after_restore": 0,
+    "gateway_restarts": 2,
+    "gateway_recreations_for_fault_injection": 1,
+    "installation_recreations": 1,
+    "browser_errors": [],
+    "viewport": 390,
+    "browser_certificate_exception": "installation_leaf_spki_only",
+    "api_and_cli_verify_private_ca_and_hostname": true,
+    "independent_quality_benchmark": false
+  },
+  "provider_observations": {
+    "actual_api_chat_logs": 4,
+    "additional_calls_after_restore": 0,
+    "log": {
+      "path": ".dev/nas-inference-ff3a5fc4d48eb0ef/ollama.log",
+      "sha256": "ea912d2ccc0ed6a2ebeee26f1001edb2c123fce455f69f3ac95484d8c3e477a4"
+    },
+    "real_model_process_stopped": true,
+    "no_automatic_device_commands": true,
+    "explicit_commands_confirmed": 1
+  },
+  "reports": {
+    "entry": {
+      "path": ".dev/nas-inference-ff3a5fc4d48eb0ef/report.json",
+      "sha256": "ff9fdd22989d250e5c92850b91d58bef38bd3c1b8fe416fe70789b7cbf6e88ae"
+    },
+    "journey": {
+      "path": ".dev/nas-inference-ff3a5fc4d48eb0ef/text-journey.json",
+      "sha256": "ba2ddde4bb1f472e92dd206d2371452407ffdb102765749b095f1c20cc99afe2"
+    },
+    "final_integrity": {
+      "path": ".dev/nas-text-external-stage-20261104/final-integrity.json",
+      "sha256": "f5afaef73c0976356835c5a6b1bc90f4d46116ff6687ba31e6fae7ec1320949c"
+    }
+  },
+  "freeze": {
+    "source_count": 433,
+    "source_digest": "9f979f5e3ea3b6cb09591407b23bbc73662b8d3a6ee2e26745c7a9cf2e169f58",
+    "source_manifest": {
+      "path": ".dev/nas-text-external-stage-20261104/source-manifest-attempt1.json",
+      "sha256": "62c310d4c274ce557007a312a385a26243e95ef4085e849056efa6ce0abaf593"
+    },
+    "unchanged_gateway_artifacts": 93,
+    "unchanged_original_model_cache_files": 7,
+    "runtime": {
+      "path": ".dev/nas-text-external-stage-20261104/external-runtime.json",
+      "sha256": "8dbe2809a270645e7b01f6358e489f3efb2db7d811aabd8b350292a2a0d6de4f"
+    }
+  },
+  "screenshots": [
+    {
+      "path": ".dev/nas-inference-ff3a5fc4d48eb0ef/nas-real-text-mobile.png",
+      "sha256": "b6cb23c2c31412392175c581b5136d09176cc44ca1d2b5de12ef1deae8677d44",
+      "visually_reviewed": true
+    },
+    {
+      "path": ".dev/nas-inference-ff3a5fc4d48eb0ef/nas-real-text-restored-mobile.png",
+      "sha256": "72f2eaeaf2f2e2428bbff8931a56e4d3a6b56744df42f54b706ea64d24d252d8",
+      "visually_reviewed": true
+    }
+  ],
+  "cleanup": {
+    "temporary_project_containers": 0,
+    "external_model_process_stopped": true,
+    "model_cache_original_unchanged": true,
+    "system_network_changed": false,
+    "system_ca_changed": false
+  },
+  "preflight": {
+    "initial_default_hostname_failed": {
+      "path": ".dev/nas-text-external-stage-20261104/connectivity-attempt1.json",
+      "sha256": "ead79be476aef2678658083f97e86bcde92107778fc098a1f80765c553eb586e"
+    },
+    "correction": "从Colima VM /etc/hosts确认宿主映射地址，只更改验收参数；没有修改DNS或VM配置。"
+  },
+  "implementation": {
+    "gateway_or_firmware_runtime_changed": false,
+    "database_schema_changed": false,
+    "new_dependencies": false,
+    "principles": "同机与外部模式复用正式Compose、同一组固定样本、CLI和NAS备份入口；按提供方生命周期分别核对固定调用数，不新增推理或恢复实现。"
+  },
+  "limits": [
+    "本阶段模型为Darwin ARM64宿主进程，NAS网关为Linux ARM64；同机Linux推理容器的下载阻塞和未执行状态保留。",
+    "少量固定文字样本不证明全面模型质量、真实语音、N100性能、容器资源上限或指定NAS型号适配。",
+    "设备为MQTT模拟灯/按钮，未验证物理设备；完整原生App、AMD64多模态、TV既有失败、更多协议/品牌和玩具机器人仍分别交付。",
+    "旧冻结证据与生产云版本未改写；未提交、推送或发布。"
+  ],
+  "validation": {
+    "core_documents": 5,
+    "local_links": 537,
+    "broken_links": 0,
+    "document_links": {
+      "path": ".dev/nas-text-external-stage-20261104/document-links.json",
+      "sha256": "9176a7523d42572e31a3adf826be9f5b3c6c6e378b80862feb45e6ab0cfdf731"
+    },
+    "website": {
+      "build_exit_code": 0,
+      "pages": 54,
+      "local_references": 2115,
+      "guide": {
+        "path": "../iotweb/src/docs/content/text-generation.md",
+        "sha256": "aa604adc3c1cd0c517814ec8548f3d1f6c917ccf2b26d6175378d6a70348d9b4"
+      },
+      "log": {
+        "path": "../iotweb/.dev/nas-text-external-docs-20261104.log",
+        "sha256": "b78149bc6ccd4cd91f6851659a473c8b60d402b01ae062b3214f04e7f0d6561d"
+      }
+    },
+    "targeted_diff_check": true,
+    "final_frozen_source_recheck": true
+  }
+}

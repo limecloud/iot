@@ -10,6 +10,7 @@ use axum::{
     },
     Extension, Json, Router,
 };
+use futures_util::StreamExt;
 use limeiot_core::{
     draft::{DraftRequest, DraftStatus, RuleDraft},
     engine::Data,
@@ -49,14 +50,19 @@ impl IntoResponse for ApiError {
             | "speech_not_found"
             | "transcription_not_found"
             | "vision_not_found"
+            | "text_not_found"
             | "execution_plan_not_found"
             | "execution_plan_operation_not_found"
+            | "observation_operation_not_found"
+            | "observation_coordinator_not_found"
+            | "zigbee_operation_not_found"
             | "not_found" => StatusCode::NOT_FOUND,
             "idempotency_conflict"
             | "device_offline"
             | "model_mismatch"
             | "event_gap"
             | "revision_conflict"
+            | "zigbee_operation_unresolved"
             | "control_already_bound" => StatusCode::CONFLICT,
             "transcription_source_mismatch" | "transcription_already_completed" => {
                 StatusCode::CONFLICT
@@ -71,14 +77,23 @@ impl IntoResponse for ApiError {
             | "speech_not_configured"
             | "transcription_not_configured"
             | "vision_not_configured"
+            | "text_not_configured"
+            | "observation_query_unavailable"
+            | "observation_not_enabled"
             | "media_not_configured" => StatusCode::SERVICE_UNAVAILABLE,
             "inference_busy"
             | "control_busy"
             | "model_operation_capacity"
             | "ota_operation_capacity" => StatusCode::TOO_MANY_REQUESTS,
             "execution_operation_capacity" => StatusCode::TOO_MANY_REQUESTS,
+            "observation_query_busy"
+            | "observation_operation_capacity"
+            | "observation_candidate_capacity" => StatusCode::TOO_MANY_REQUESTS,
+            "zigbee_operation_capacity" => StatusCode::TOO_MANY_REQUESTS,
+            "observation_query_timeout" => StatusCode::GATEWAY_TIMEOUT,
             "transcription_busy" | "transcription_capacity" => StatusCode::TOO_MANY_REQUESTS,
             "vision_busy" | "vision_capacity" => StatusCode::TOO_MANY_REQUESTS,
+            "text_busy" | "text_capacity" => StatusCode::TOO_MANY_REQUESTS,
             "media_operation_capacity" | "media_capacity" | "speech_busy" | "speech_capacity" => {
                 StatusCode::TOO_MANY_REQUESTS
             }
@@ -159,10 +174,13 @@ pub fn router(app: App) -> Router {
         .merge(crate::ota_api::routes())
         .merge(crate::execution_api::routes())
         .merge(crate::execution_plan_api::routes())
+        .merge(crate::observation_api::routes())
         .merge(crate::media::routes())
         .merge(crate::speech::routes())
         .merge(crate::transcription::routes())
         .merge(crate::vision::routes())
+        .merge(crate::text::routes())
+        .merge(crate::ai_catalog::routes())
         .route_layer(middleware::from_fn_with_state(app.clone(), auth::authorize));
     Router::new()
         .route("/healthz", axum::routing::get(health))
@@ -217,25 +235,16 @@ async fn device(
     ))
 }
 async fn capabilities(State(app): State<App>, Path(space): Path<String>) -> ApiResult<Json<Value>> {
-    let vision = app
-        .vision
-        .as_ref()
-        .map(|service| service.capabilities())
-        .unwrap_or_else(|| json!({"configured":false,"capability":"vision.understand"}));
-    let transcription = app
-        .transcription
-        .as_ref()
-        .map(|service| service.capabilities())
-        .unwrap_or_else(|| json!({"configured":false,"capability":"audio.transcribe"}));
-    let speech = app
-        .speech
-        .as_ref()
-        .map(|service| service.capabilities())
-        .unwrap_or_else(|| json!({"configured":false,"capability":"audio.synthesize"}));
+    let services = crate::ai_catalog::services(&app);
+    let text = &services["text"];
+    let vision = &services["vision"];
+    let transcription = &services["transcription"];
+    let speech = &services["speech"];
+    let inference = &services["inference"];
     let store = app.store.lock().await;
     check(&store.data, &space)?;
     Ok(Json(
-        json!({"space_id":space,"mode":"loopback_simulation","operations":serde_json::from_str::<Value>(include_str!("../../../../contracts/tools/catalog.json")).unwrap()["operations"],"models":store.data.models,"inference":{"configured":app.inference.is_some(),"provider":"ollama","model":app.inference.as_ref().map(|p|p.model()),"data_location":"local","concurrency":1,"max_output_tokens":1024},"speech":speech,"transcription":transcription,"vision":vision,"limits":{"devices":64,"commands":4096,"rules":64,"runs":1024,"dedup_events":4096,"rule_drafts":128,"model_trusts":limeiot_core::model_registry::MAX_TRUSTS,"model_installations":limeiot_core::model_registry::MAX_INSTALLATIONS,"model_operations":limeiot_core::model_registry::MAX_OPERATIONS}}),
+        json!({"space_id":space,"mode":"loopback_simulation","operations":serde_json::from_str::<Value>(include_str!("../../../../contracts/tools/catalog.json")).unwrap()["operations"],"models":store.data.models,"inference":inference,"speech":speech,"transcription":transcription,"vision":vision,"text":text,"limits":{"devices":64,"commands":4096,"rules":64,"runs":1024,"dedup_events":4096,"rule_drafts":128,"model_trusts":limeiot_core::model_registry::MAX_TRUSTS,"model_installations":limeiot_core::model_registry::MAX_INSTALLATIONS,"model_operations":limeiot_core::model_registry::MAX_OPERATIONS}}),
     ))
 }
 async fn model(State(app): State<App>, Path(revision): Path<String>) -> ApiResult<Json<Value>> {
@@ -673,6 +682,7 @@ async fn stream(
         ensure(after >= 0, "invalid_cursor")?;
         store.events(after)?;
     }
+    let stopping = app.clone();
     let output = futures_util::stream::unfold(
         (app, receiver, after, false, session),
         |(app, mut receiver, mut after, done, session)| async move {
@@ -712,6 +722,7 @@ async fn stream(
                     tokio::time::timeout(std::time::Duration::from_secs(10), receiver.recv()).await;
             }
         },
-    );
+    )
+    .take_until(async move { stopping.wait_for_shutdown().await });
     Ok(Sse::new(output).keep_alive(axum::response::sse::KeepAlive::default()))
 }

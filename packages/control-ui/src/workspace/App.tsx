@@ -9,11 +9,13 @@ import {
   CircleHelp,
   Code2,
   Cpu,
+  Eye,
   Globe2,
   House,
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageSquare,
   Music2,
   Network,
   SunMoon,
@@ -384,7 +386,7 @@ function Workspace({
 }) {
   const local = deployment?.local;
   const tasks = local ? ([
-    ["overview", LayoutDashboard], ["devices", Cpu], ["automation", Workflow], ["media", Music2],
+    ["overview", LayoutDashboard], ["devices", Cpu], ["automation", Workflow], ["text", MessageSquare], ["companion", MessageSquare], ["media", Music2], ["vision", Eye], ["ai", Cpu],
     ["operations", Cable], ["products", Boxes], ["models", Boxes], ["firmware", Cpu],
     ["spaces", House], ["gateways", Network], ["connections", Code2], ["account", UserRound],
   ] as const) : navigation;
@@ -641,7 +643,7 @@ function Workspace({
               <Admin />
             ) : params.has("native") ? (
               <Developer native={params.get("native") ?? ""} />
-            ) : local && (["automation", "media", "models", "firmware"].includes(view) || !selected && ["devices", "operations"].includes(view)) ? (
+            ) : local && (["automation", "text", "companion", "media", "vision", "ai", "models", "firmware"].includes(view) || !selected && ["devices", "operations"].includes(view)) ? (
               local.render(view === "operations" ? "activity" : view, onLocalExpired)
             ) : view === "products" ? (
               <Products />

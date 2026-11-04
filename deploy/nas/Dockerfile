@@ -10,6 +10,8 @@ RUN npm ci --ignore-scripts
 COPY apps/home apps/home
 COPY packages/control-ui packages/control-ui
 COPY packages/protocol packages/protocol
+COPY examples/companions examples/companions
+COPY examples/compositions examples/compositions
 RUN npm run build:home
 
 FROM rust:1.93.1-bookworm AS gateway

@@ -85,6 +85,7 @@ private func actualGatewayDeviceResultAndSessionRevocation() async throws {
     }
     try check(current.status == "confirmed", "device confirmation")
     try check(await client.resolve(space: snapshot.space, key: intent.key).commandId == accepted.commandId, "original command resolution")
+    try check(await client.resolve(space: snapshot.space, intent: intent).commandId == accepted.commandId, "complete original command resolution")
     let rule = Rule(id: "swift-rule", source: "device-button", event: "button.pressed", target: "device-lamp", path: "light.power", value: .bool(true), cooldownMs: 0)
     let simulation = try await client.simulate(space: snapshot.space, rule: rule, eventData: .object(["count": .integer(1)]))
     try check(simulation.matched && !simulation.executed, "simulation has no effect")
@@ -112,11 +113,15 @@ private func actualGatewayDeviceResultAndSessionRevocation() async throws {
 
 @main enum ClientChecks {
     static func main() async throws {
+        if ProcessInfo.processInfo.environment["LIMEIOT_BRIDGE_PHASE"] != nil { try await propertyBridgeLiveChecks(); return }
+        if ProcessInfo.processInfo.environment["LIMEIOT_OBSERVATION_CHECK"] == "1" { print("{\"observation_contract_groups\":\(try await observationContractChecks())}"); return }
         if ProcessInfo.processInfo.environment["LIMEIOT_VISION_CHECK"] == "1" { try await visionLiveChecks(); return }
         try numericValuesPreserveIntegerContract()
         try endpointsRequireSecureExactOrigins()
         try await sessionHeadersAndUnknownSubmissionDoNotRetry()
         try await timedOutDraftRecoversOriginalWithoutAnotherSubmission()
+        let recoveryChecks = try await commandRecoveryContractChecks()
+        print("{\"command_recovery_contract_checks\":\(recoveryChecks)}")
         let otaChecks = try await otaContractChecks()
         let mediaChecks = try await mediaContractChecks()
         print("{\"media_contract_checks\":\(mediaChecks)}")

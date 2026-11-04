@@ -293,6 +293,7 @@ impl Data {
                 let reason = if self.check_model_authority(&c.device).is_err() {
                     Some("model_authority_unavailable")
                 } else if !device.ready
+                    || device.observation_policy.is_some() && !device.state_ready(now)
                     || device
                         .last_seen
                         .is_none_or(|seen| seen > now || now - seen > Duration::seconds(30))

@@ -1,13 +1,28 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://iot.limeai.run/contracts/zigbee-diagnostics.schema.json",
-  "title": "ZNP诊断与ZDO候选访谈回执",
+  "title": "ZNP诊断、设备发现、固定属性、On/Off与有限入网操作合同",
   "oneOf": [
     {
       "$ref": "#/$defs/probeReport"
     },
     {
       "$ref": "#/$defs/interviewReport"
+    },
+    {
+      "$ref": "#/$defs/environmentReport"
+    },
+    {
+      "$ref": "#/$defs/neighborsReport"
+    },
+    {
+      "$ref": "#/$defs/joinWindowReport"
+    },
+    {
+      "$ref": "#/$defs/onOffReport"
+    },
+    {
+      "$ref": "#/$defs/onOffCommandReport"
     }
   ],
   "$defs": {
@@ -67,6 +82,197 @@
             "command",
             "serial",
             "address"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "command": {
+              "const": "read-environment"
+            },
+            "serial": {
+              "type": "string",
+              "pattern": "^/",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 30000
+            },
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            },
+            "ieee_address": {
+              "$ref": "#/$defs/ieee"
+            },
+            "endpoint": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 240
+            }
+          },
+          "required": [
+            "command",
+            "serial",
+            "coordinator_ieee",
+            "ieee_address",
+            "endpoint"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "command": {
+              "const": "neighbors"
+            },
+            "serial": {
+              "type": "string",
+              "pattern": "^/",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 30000
+            },
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            }
+          },
+          "required": [
+            "command",
+            "serial",
+            "coordinator_ieee"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "command": {
+              "const": "permit-join"
+            },
+            "serial": {
+              "type": "string",
+              "pattern": "^/",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 30000
+            },
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            },
+            "duration_seconds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 120,
+              "description": "0明确关闭，1至120有限允许加入；不接受永久开放"
+            }
+          },
+          "required": [
+            "command",
+            "serial",
+            "coordinator_ieee",
+            "duration_seconds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "command": {
+              "const": "read-onoff"
+            },
+            "serial": {
+              "type": "string",
+              "pattern": "^/",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 30000
+            },
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            },
+            "ieee_address": {
+              "$ref": "#/$defs/ieee"
+            },
+            "endpoint": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 240
+            }
+          },
+          "required": [
+            "command",
+            "serial",
+            "coordinator_ieee",
+            "ieee_address",
+            "endpoint"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "command": {
+              "const": "set-onoff"
+            },
+            "serial": {
+              "type": "string",
+              "pattern": "^/",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 30000
+            },
+            "coordinator_ieee": {
+              "$ref": "#/$defs/ieee"
+            },
+            "ieee_address": {
+              "$ref": "#/$defs/ieee"
+            },
+            "endpoint": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 240
+            },
+            "power": {
+              "type": "boolean"
+            },
+            "manufacturer_code": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "signature": {
+              "$ref": "#/$defs/signature"
+            }
+          },
+          "required": [
+            "command",
+            "serial",
+            "coordinator_ieee",
+            "ieee_address",
+            "endpoint",
+            "power",
+            "manufacturer_code",
+            "signature"
           ],
           "additionalProperties": false
         }
@@ -374,16 +580,614 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 255
+            },
+            "outcome": {
+              "const": "unknown"
+            },
+            "retry_allowed": {
+              "const": false
             }
           },
           "required": [
             "code"
           ],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "dependentRequired": {
+            "outcome": [
+              "retry_allowed"
+            ],
+            "retry_allowed": [
+              "outcome"
+            ]
+          }
         }
       },
       "required": [
         "error"
+      ],
+      "additionalProperties": false
+    },
+    "ieee": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$",
+      "not": {
+        "enum": [
+          "0000000000000000",
+          "ffffffffffffffff"
+        ]
+      }
+    },
+    "signature": {
+      "type": "object",
+      "properties": {
+        "manufacturer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^(?=.*\\S)[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "pattern": "^(?=.*\\S)[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "application_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "hardware_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      },
+      "required": [
+        "manufacturer",
+        "model",
+        "application_version",
+        "hardware_version"
+      ],
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "coordinator_ieee": {
+          "$ref": "#/$defs/ieee"
+        },
+        "ieee_address": {
+          "$ref": "#/$defs/ieee"
+        },
+        "network_address": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65527
+        },
+        "endpoint": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240
+        },
+        "manufacturer_code": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "signature": {
+          "$ref": "#/$defs/signature"
+        },
+        "temperature_celsius_x100": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "integer",
+              "minimum": -4500,
+              "maximum": 13000
+            },
+            "received_at_unix_ms": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "value",
+            "received_at_unix_ms"
+          ],
+          "additionalProperties": false
+        },
+        "humidity_percent_x100": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "received_at_unix_ms": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "value",
+            "received_at_unix_ms"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "coordinator_ieee",
+        "ieee_address",
+        "network_address",
+        "endpoint",
+        "manufacturer_code",
+        "signature",
+        "temperature_celsius_x100",
+        "humidity_percent_x100"
+      ],
+      "additionalProperties": false
+    },
+    "environmentReport": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "read-environment"
+        },
+        "protocol": {
+          "const": "znp"
+        },
+        "evidence": {
+          "const": "unauthenticated_protocol"
+        },
+        "device_binding_created": {
+          "const": false
+        },
+        "observed_at_unix_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "result": {
+          "$ref": "#/$defs/environment"
+        }
+      },
+      "required": [
+        "schema_version",
+        "operation",
+        "protocol",
+        "evidence",
+        "device_binding_created",
+        "observed_at_unix_ms",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    "neighbor": {
+      "type": "object",
+      "properties": {
+        "extended_pan_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "ieee_address": {
+          "$ref": "#/$defs/ieee"
+        },
+        "network_address": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65527
+        },
+        "device_type": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "rx_on_when_idle": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "relationship": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7
+        },
+        "flags": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "permit_joining": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "link_quality": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      },
+      "required": [
+        "extended_pan_id",
+        "ieee_address",
+        "network_address",
+        "device_type",
+        "rx_on_when_idle",
+        "relationship",
+        "flags",
+        "permit_joining",
+        "depth",
+        "link_quality"
+      ],
+      "additionalProperties": false
+    },
+    "neighbors": {
+      "type": "object",
+      "properties": {
+        "ncp": {
+          "$ref": "#/$defs/probe"
+        },
+        "coordinator_ieee": {
+          "$ref": "#/$defs/ieee"
+        },
+        "network_address": {
+          "const": 0
+        },
+        "scope": {
+          "const": "coordinator_neighbors"
+        },
+        "table_entries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "page_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/neighbor"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "ncp",
+        "coordinator_ieee",
+        "network_address",
+        "scope",
+        "table_entries",
+        "page_count",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "neighborsReport": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "neighbors"
+        },
+        "protocol": {
+          "const": "znp"
+        },
+        "evidence": {
+          "const": "unauthenticated_protocol"
+        },
+        "device_binding_created": {
+          "const": false
+        },
+        "observed_at_unix_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "result": {
+          "$ref": "#/$defs/neighbors"
+        }
+      },
+      "required": [
+        "schema_version",
+        "operation",
+        "protocol",
+        "evidence",
+        "device_binding_created",
+        "observed_at_unix_ms",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    "joinWindow": {
+      "type": "object",
+      "properties": {
+        "ncp": {
+          "$ref": "#/$defs/probe"
+        },
+        "coordinator_ieee": {
+          "$ref": "#/$defs/ieee"
+        },
+        "network_address": {
+          "const": 0
+        },
+        "scope": {
+          "const": "coordinator"
+        },
+        "duration_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "trust_center_significance": {
+          "const": 1
+        },
+        "status": {
+          "const": "protocol_accepted",
+          "description": "只确认协议受理，不证明当前窗口状态或有设备加入"
+        }
+      },
+      "required": [
+        "ncp",
+        "coordinator_ieee",
+        "network_address",
+        "scope",
+        "duration_seconds",
+        "trust_center_significance",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "joinWindowReport": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "permit-join"
+        },
+        "protocol": {
+          "const": "znp"
+        },
+        "evidence": {
+          "const": "unauthenticated_protocol"
+        },
+        "device_binding_created": {
+          "const": false
+        },
+        "observed_at_unix_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "result": {
+          "$ref": "#/$defs/joinWindow"
+        },
+        "network_write_requested": {
+          "const": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "operation",
+        "protocol",
+        "evidence",
+        "device_binding_created",
+        "observed_at_unix_ms",
+        "result",
+        "network_write_requested"
+      ],
+      "additionalProperties": false
+    },
+    "onOff": {
+      "type": "object",
+      "properties": {
+        "coordinator_ieee": {
+          "$ref": "#/$defs/ieee"
+        },
+        "ieee_address": {
+          "$ref": "#/$defs/ieee"
+        },
+        "network_address": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65527
+        },
+        "endpoint": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240
+        },
+        "manufacturer_code": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "signature": {
+          "$ref": "#/$defs/signature"
+        },
+        "power": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "boolean"
+            },
+            "received_at_unix_ms": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "value",
+            "received_at_unix_ms"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "coordinator_ieee",
+        "ieee_address",
+        "network_address",
+        "endpoint",
+        "manufacturer_code",
+        "signature",
+        "power"
+      ],
+      "additionalProperties": false
+    },
+    "onOffReport": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "read-onoff"
+        },
+        "protocol": {
+          "const": "znp"
+        },
+        "evidence": {
+          "const": "unauthenticated_protocol"
+        },
+        "device_binding_created": {
+          "const": false
+        },
+        "observed_at_unix_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "result": {
+          "$ref": "#/$defs/onOff"
+        }
+      },
+      "required": [
+        "schema_version",
+        "operation",
+        "protocol",
+        "evidence",
+        "device_binding_created",
+        "observed_at_unix_ms",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    "onOffCommand": {
+      "type": "object",
+      "properties": {
+        "coordinator_ieee": {
+          "$ref": "#/$defs/ieee"
+        },
+        "ieee_address": {
+          "$ref": "#/$defs/ieee"
+        },
+        "network_address": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65527
+        },
+        "endpoint": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240
+        },
+        "manufacturer_code": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "signature": {
+          "$ref": "#/$defs/signature"
+        },
+        "power_requested": {
+          "type": "boolean"
+        },
+        "status": {
+          "const": "protocol_accepted"
+        },
+        "device_state_confirmed": {
+          "const": false
+        },
+        "accepted_at_unix_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "coordinator_ieee",
+        "ieee_address",
+        "network_address",
+        "endpoint",
+        "manufacturer_code",
+        "signature",
+        "power_requested",
+        "status",
+        "device_state_confirmed",
+        "accepted_at_unix_ms"
+      ],
+      "additionalProperties": false
+    },
+    "onOffCommandReport": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "operation": {
+          "const": "set-onoff"
+        },
+        "protocol": {
+          "const": "znp"
+        },
+        "evidence": {
+          "const": "unauthenticated_protocol"
+        },
+        "device_binding_created": {
+          "const": false
+        },
+        "observed_at_unix_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "result": {
+          "$ref": "#/$defs/onOffCommand"
+        },
+        "device_write_requested": {
+          "const": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "operation",
+        "protocol",
+        "evidence",
+        "device_binding_created",
+        "observed_at_unix_ms",
+        "result",
+        "device_write_requested"
       ],
       "additionalProperties": false
     }

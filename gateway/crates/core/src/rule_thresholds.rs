@@ -114,13 +114,27 @@ impl Data {
         now: DateTime<Utc>,
         was_ready: bool,
     ) -> Result<()> {
+        self.apply_observation_thresholds(
+            &message.device_id,
+            &json!({"boot_id":message.boot_id,"session_id":message.session_id}),
+            now,
+            was_ready,
+        )
+    }
+    pub(crate) fn apply_observation_thresholds(
+        &mut self,
+        device_id: &str,
+        epoch: &Value,
+        now: DateTime<Utc>,
+        was_ready: bool,
+    ) -> Result<()> {
         let deployments: Vec<_> = self.deployments.values().filter(|d|
-            matches!(&d.rule.trigger, Trigger::Property { device, .. } if device == &message.device_id)).cloned().collect();
+            matches!(&d.rule.trigger, Trigger::Property { device, .. } if device == device_id)).cloned().collect();
         for deployment in deployments {
             let Trigger::Property { property, .. } = &deployment.rule.trigger else {
                 unreachable!()
             };
-            let device = &self.devices[&message.device_id];
+            let device = &self.devices[device_id];
             let model = &self.models[&device.model_revision];
             property.validate_model(model)?;
             let max_age = model.property(&property.path)?.max_age_ms;
@@ -164,16 +178,15 @@ impl Data {
                 continue;
             }
             let evidence = ThresholdEvidence {
-                device_id: message.device_id.clone(),
+                device_id: device_id.to_owned(),
                 path: property.path.clone(),
                 previous: previous.unwrap().observation,
                 current: observation,
             };
-            let event_id = format!(
-                "state-{}",
-                &digest(&json!({"boot_id":message.boot_id,
-                "session_id":message.session_id,"sample":evidence}))?[7..]
-            );
+            // 原生epoch保留原事件摘要形状，外部观测使用独立来源及会话。
+            let mut occurrence = epoch.clone();
+            occurrence["sample"] = json!(evidence);
+            let event_id = format!("state-{}", &digest(&occurrence)?[7..]);
             self.run_deployment(deployment, &event_id, Some(evidence), None, now)?;
         }
         Ok(())

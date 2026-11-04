@@ -1,0 +1,167 @@
+{
+  "date": "2026-11-04",
+  "stage": "NAS同机文字模型部署与验收入口",
+  "status": "blocked",
+  "passed": false,
+  "full_goal_completed": false,
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "published": false,
+  "implemented": {
+    "same_machine_overlay": "deploy/nas/compose.text-local.yaml",
+    "external_overlay": "deploy/nas/compose.text.yaml",
+    "entry": "npm run test:nas:text:live",
+    "independent_internal_network": true,
+    "model_public_ports": 0,
+    "default_cpu_limit": 2,
+    "default_memory_limit_gib": 4,
+    "device_credentials_mounted_in_model": false,
+    "runtime_code_changed": false,
+    "database_schema_changed": false,
+    "new_dependencies": false,
+    "default_ollama_version_upgraded": false,
+    "principles": "复用已有Ollama服务定义、文字样本、CLI与NAS管理入口；设备领域不依赖推理服务。"
+  },
+  "validation": {
+    "compose_tests": {
+      "passed": 4,
+      "failed": 0,
+      "log": {
+        "path": ".dev/ollama-local-20261104/text-compose-tests.log",
+        "sha256": "fbbf3a967c571b9532407163a6fc5fa2b197452048003045f27da790eee4cd8a"
+      }
+    },
+    "browser_tls_preflight": {
+      "passed": true,
+      "default_rejects_untrusted_certificate": true,
+      "explicit_leaf_spki_works": true,
+      "another_leaf_spki_still_rejected": true,
+      "ignore_https_errors": false,
+      "system_ca_changed": false
+    },
+    "syntax_checks": {
+      "node_scripts": 3,
+      "python_relay": true
+    },
+    "shared_samples": {
+      "path": ".dev/ollama-nas-20261104/shared-samples-check.json",
+      "sha256": "e4237c4118ccf79eb3173e3c9cc594dc29c7e86a75756a4b2e895a06acb72527"
+    },
+    "documentation": {
+      "documents": 6,
+      "local_links": 559,
+      "missing_links": 0,
+      "report": {
+        "path": ".dev/nas-text-live-stage-20261104/document-links.json",
+        "sha256": "d0f394ca3a4563c43b60c220b81bc9c5b7f6f62d190f547723906b5275da4e53"
+      }
+    },
+    "website": {
+      "repository": "iotweb",
+      "build_exit_code": 0,
+      "guide": {
+        "path": "../iotweb/src/docs/content/text-generation.md",
+        "sha256": "cc05f78fba11a908c82e78acc8065ac18d43226157ec8cda7351890f827440a1"
+      },
+      "log": {
+        "path": "../iotweb/.dev/nas-text-deployment-docs-20261104.log",
+        "sha256": "85345a1bf7b3e166bdc596c7177cf06fc231c1822178c008c521b2aab03009d9"
+      }
+    },
+    "targeted_diff_check": true,
+    "frozen_source_final_recheck": true
+  },
+  "unexecuted": [
+    "真实Linux文字模型三个样本、网页/CLI/API",
+    "真实模型参与的网关重启、v5原字节备份/新目录恢复与unknown不重推",
+    "停止真实模型容器后的明确MQTT控制"
+  ],
+  "blocker": {
+    "status": "blocked",
+    "recorded_at": "2026-11-04T08:58:28.146659+00:00",
+    "failure": "official Linux archive download incomplete after two bounded recovery rounds",
+    "expected_archive_sha256": "sha256:39bb333b7b4c0bafcdd7fad35eab1ae9aaf4518ea0f2c731de4376e3a29c94d0",
+    "archive_size": 1581673422,
+    "downloaded_bytes": 1581328984,
+    "missing_bytes": 344438,
+    "incomplete": [
+      {
+        "offset": 897581056,
+        "downloaded": 8044170,
+        "expected": 8388608,
+        "missing": 344438
+      }
+    ],
+    "archive_integrity_verified": false,
+    "cpu_runtime_image_built": false,
+    "nas_real_text_journey_executed": false,
+    "partial_files_preserved": true,
+    "recovery_exit_codes": [
+      1,
+      1
+    ],
+    "first_download_session_exit": 143
+  },
+  "download": {
+    "source": {
+      "path": ".dev/ollama-nas-20261104/source.json",
+      "sha256": "22c8403dad1e33cc8369a2220a2c898189732d21211431803519bea0d944f2dd"
+    },
+    "logs": [
+      {
+        "path": ".dev/ollama-nas-20261104/download-attempt1.log",
+        "sha256": "86be9b5d9bcf28535e6e075d48453d79ef5cd88903eb5ff8786cb787f2203348"
+      },
+      {
+        "path": ".dev/ollama-nas-20261104/download-resume.log",
+        "sha256": "5a46dc9577ec67210330953a810d057f139da21fc24e979783c6fa138965a32f"
+      },
+      {
+        "path": ".dev/ollama-nas-20261104/download-recovery-attempt1.log",
+        "sha256": "15b894d867985bdb78cd3bae6384504b415de3ab65f8c6f3265e9d93ee10b7c5"
+      },
+      {
+        "path": ".dev/ollama-nas-20261104/download-recovery-attempt2.log",
+        "sha256": "a14213636f274eabf7b80999cc96358da3d0be36561f2cdfa2f49ed3cc9db971"
+      }
+    ],
+    "verified_runtime_image_created": false,
+    "cpu_system_library_base_created": true,
+    "cpu_system_library_base_id": "sha256:1dfa439957c116f50adba7ce513784f90f9e18b93ed410da293d46b72a96e80b",
+    "existing_partial_data_preserved": true,
+    "global_installation": false
+  },
+  "freeze": {
+    "source_count": 433,
+    "source_digest": "36e5845b6bfd3567276a87a45b8bdb57d49958d11ab4a29f7bbe9640dc770d57",
+    "source_manifest": {
+      "path": ".dev/nas-text-live-stage-20261104/source-manifest-attempt1.json",
+      "sha256": "f40e64d6bd1369ff54abe8b1a23f7dcd7088b18e6351adaf7b01e23e7590f32c"
+    },
+    "model_cache_manifest": {
+      "path": ".dev/nas-text-live-stage-20261104/model-cache-manifest.json",
+      "sha256": "8540cc7ee0313cfa8e8f18dd506852e0a9d9c7307ca0d4f870fb8296d42389b6"
+    },
+    "final_integrity": {
+      "path": ".dev/nas-text-live-stage-20261104/final-integrity.json",
+      "sha256": "dca37d1747386c8bb11b91d21166c16467f36fa197891dc4f5fa70beda66eac1"
+    },
+    "source_and_original_model_cache_unchanged": true
+  },
+  "gateway_image_reuse": {
+    "image_id": "sha256:29889beb2a69051f0c2acd3c605e5a09761e1156c01557dd34f4a33f85ad5a23",
+    "image_input_manifest": ".dev/nas-arm64-recording-20261104/build.json",
+    "source_files": 425,
+    "changed_current_files": [
+      "deploy/nas/compose.ollama-service.yaml",
+      "package.json"
+    ],
+    "artifact_files": 93,
+    "changed_artifact_files": []
+  },
+  "limits": [
+    "没有执行真实NAS模型旅程，配置、语法及TLS预检不等于容器功能通过。",
+    "旧宿主模型及NAS协议夹具证据保持原范围；没有重跑已达上限的原规则意图、合成中文ASR、Android整包ANR、AMD64多模态或TV回调失败。",
+    "完整原生App、其他协议/品牌、玩具机器人与正式云版本仍按实施进度独立验收。"
+  ]
+}

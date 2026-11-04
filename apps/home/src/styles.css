@@ -18,6 +18,11 @@ body { margin: 0; }
 .home-app h3 { font-size: var(--font-body); font-weight: 600; }
 .home-app p + p { margin-top: 8px; }
 .home-app label { display: grid; gap: 8px; }
+.home-app .ai-services { display: grid; gap: 24px; }
+.home-app .ai-service { min-width: 0; padding-bottom: 24px; border-bottom: .5px solid var(--slate-6); }
+.home-app .ai-service-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px; }
+.home-app .ai-service-model { overflow-wrap: anywhere; margin-block: 8px; }
+.home-app .ai-service > a { color: var(--teal-11); text-underline-offset: 3px; }
 .home-app section + section { margin-top: 40px; }
 .home-app section > h2 { margin-bottom: 20px; }
 .home-app details { font-size: var(--font-small); color: var(--slate-11); }
@@ -104,6 +109,13 @@ body { margin: 0; }
 .home-app .control-links .rule-editor dl, .home-app .control-links .rule-editor details { margin: 0; }
 .home-app .control-links h3 { overflow-wrap: anywhere; }
 .home-app .model-registry { min-width: 0; }
+.home-app .observation-sources { display: grid; gap: 16px; margin-bottom: 32px; }
+.home-app .observation-sources form { display: grid; gap: 16px; }
+.home-app .observation-sources form > button { justify-self: start; }
+.home-app .observation-sources .rule-fields { margin-bottom: 0; }
+.home-app .observation-sources label { display: grid; gap: 8px; min-width: 0; }
+.home-app .observation-sources [role='group'] { display: grid; gap: 16px; }
+.home-app .observation-sources :is(p, dd, h3) { overflow-wrap: anywhere; }
 .home-app .model-registry form { display: grid; gap: 16px; }
 .home-app .model-registry .notice { overflow-wrap: anywhere; }
 .home-app .model-registry [role='group'] { display: grid; gap: 16px; margin-top: 20px; }
@@ -117,9 +129,18 @@ body { margin: 0; }
 .home-app .vision-file span { overflow-wrap: anywhere; }
 .home-app .vision-task { display: grid; gap: 16px; border-bottom: 0; padding-bottom: 0; }
 .home-app .vision-task details { margin-top: 12px; }
+.home-app .text-form { display: grid; gap: 12px; max-width: 640px; }
+.home-app .text-form textarea { resize: vertical; }
+.home-app .text-answer, .home-app .conversation span { white-space: pre-wrap; overflow-wrap: anywhere; }
+.home-app .conversation { max-width: 640px; margin-bottom: 24px; }
+.home-app .conversation p { display: grid; gap: 8px; }
 .home-app .media-library { display: grid; gap: 24px; min-width: 0; }
 .home-app .media-library form { display: grid; gap: 12px; max-width: 640px; }
 .home-app .media-library form > button { justify-self: start; }
+.home-app .companion-session { display: grid; gap: 16px; min-width: 0; }
+.home-app .companion-session .section-heading { flex-wrap: wrap; margin-bottom: 0; }
+.home-app .companion-session .conversation { margin-bottom: 0; }
+.home-app .companion-session textarea { resize: vertical; }
 .home-app :is(.speech-generation, .audio-transcription) > .actions { margin-block: 12px; }
 .home-app :is(.speech-generation, .audio-transcription) textarea { resize: vertical; }
 .home-app :is(.speech-generation, .audio-transcription) .registry-row > .actions { flex-shrink: 0; flex-direction: column; }

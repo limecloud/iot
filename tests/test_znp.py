@@ -245,6 +245,15 @@ class ZnpPtyChecks(unittest.TestCase):
             return standard_response(a, b, data)
         self.failure(handler, "znp_invalid_response", max_requests=6)
 
+    def test_cluster_limit_is_not_silently_truncated(self):
+        def handler(a, b, data):
+            if (a, b) == (0x25, 4):
+                descriptor = struct.pack("<BHHBB", data[4], 0x0104, 0x0402, 1, 33)
+                descriptor += b"".join(struct.pack("<H", cluster) for cluster in range(33)) + b"\x00"
+                return frame(0x65, b, b"\x00") + frame(0x45, 0x84, response_header() + bytes([len(descriptor)]) + descriptor)
+            return standard_response(a, b, data)
+        self.failure(handler, "znp_limit_exceeded", max_requests=6)
+
     def test_short_address_reassigned_during_interview_rejects_all_evidence(self):
         count = 0
         def handler(a, b, data):
@@ -265,6 +274,9 @@ class ZnpPtyChecks(unittest.TestCase):
                 process = subprocess.Popen([str(BINARY), "probe", "--serial", ncp.path, "--timeout-ms", "30000"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                 try:
                     self.assertTrue(ncp.received.wait(3), "组件未发送首个请求")
+                    competing = subprocess.run([str(BINARY), "probe", "--serial", ncp.path], capture_output=True, text=True, timeout=3)
+                    self.assertEqual(competing.returncode, 5)
+                    self.assertEqual(json.loads(competing.stderr)["error"]["code"], "serial_io_failed")
                     process.send_signal(received_signal)
                     stdout, stderr = process.communicate(timeout=3)
                     self.assertEqual(process.returncode, 5)

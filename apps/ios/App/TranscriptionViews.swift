@@ -3,6 +3,7 @@ import LimeIoTKit
 
 struct TranscriptionSection: View {
     @ObservedObject var transcription: TranscriptionStore
+    var conversation: TextGenerationStore? = nil
     @Environment(\.scenePhase) private var scenePhase
     var body: some View {
         Section("语音识别") {
@@ -23,6 +24,7 @@ struct TranscriptionSection: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(record.statusText).font(.body)
                     if let text = transcription.text(for: record.id) { Text(text.isEmpty ? "未识别到语音" : text).font(.body).textSelection(.enabled).privacySensitive().accessibilityIdentifier("transcription-result") }
+                    if let conversation, let text = transcription.text(for: record.id), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { VoiceQuestionButton(transcription: transcription, conversation: conversation, key: record.id) }
                     DisclosureGroup("任务详情") { Text(record.id).font(.footnote).textSelection(.enabled) }
                     if record.rejectedCode == nil { Button("查询原任务") { transcription.recover(record.id) }.disabled(transcription.busy || !transcription.online) }
                     if ["running", "unknown"].contains(record.status) { Button("放弃输出", role: .destructive) { transcription.requestDiscard(record.id) }.disabled(!transcription.writable) }
@@ -40,5 +42,16 @@ struct TranscriptionSection: View {
         }
         .onChange(of: transcription.online) { _, online in if online { transcription.refresh() } }
         .onDisappear { transcription.pause() }
+    }
+}
+
+private struct VoiceQuestionButton: View {
+    @ObservedObject var transcription: TranscriptionStore
+    @ObservedObject var conversation: TextGenerationStore
+    let key: String
+    var body: some View {
+        Button("带入新对话") { if let text = transcription.text(for: key) { _ = conversation.prepareQuestion(text) } }
+            .disabled(!transcription.online || !conversation.editable || conversation.capabilities?.configured != true)
+            .accessibilityIdentifier("transcription-use-text")
     }
 }

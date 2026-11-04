@@ -774,7 +774,7 @@ dependencies = [
 
 [[package]]
 name = "limeiot-android-tv"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "limeiot-core",
@@ -785,7 +785,7 @@ dependencies = [
 
 [[package]]
 name = "limeiot-core"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -803,7 +803,7 @@ dependencies = [
 
 [[package]]
 name = "limeiot-dlna"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "limeiot-core",
@@ -817,7 +817,7 @@ dependencies = [
 
 [[package]]
 name = "limeiot-gateway"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -828,6 +828,7 @@ dependencies = [
  "limeiot-android-tv",
  "limeiot-core",
  "limeiot-dlna",
+ "limeiot-zigbee-znp",
  "reqwest",
  "ring",
  "rumqttc",
@@ -846,7 +847,7 @@ dependencies = [
 
 [[package]]
 name = "limeiot-model-validator"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -862,7 +863,7 @@ dependencies = [
 
 [[package]]
 name = "limeiot-simulator"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "limeiot-core",
@@ -874,7 +875,7 @@ dependencies = [
 
 [[package]]
 name = "limeiot-zigbee-znp"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "libc",
  "serde",

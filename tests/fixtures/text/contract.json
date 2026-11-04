@@ -1,0 +1,552 @@
+{
+  "input": {
+    "instructions": "简短回答，保留 é 与🍋。",
+    "messages": [
+      {
+        "role": "user",
+        "content": "我的积木是青柠🍋"
+      },
+      {
+        "role": "assistant",
+        "content": "可以组合哪些能力？"
+      },
+      {
+        "role": "user",
+        "content": "让它会对话\n并显示 é"
+      }
+    ],
+    "retain_seconds": 600,
+    "expires_at": "2026-11-04T08:01:25.123+08:00"
+  },
+  "normalized": {
+    "instructions": "简短回答，保留 é 与🍋。",
+    "messages": [
+      {
+        "role": "user",
+        "content": "我的积木是青柠🍋"
+      },
+      {
+        "role": "assistant",
+        "content": "可以组合哪些能力？"
+      },
+      {
+        "role": "user",
+        "content": "让它会对话\n并显示 é"
+      }
+    ],
+    "retain_seconds": 600,
+    "expires_at": "2026-11-04T00:01:25.123Z"
+  },
+  "original": {
+    "version": 1,
+    "origin": "https://nas.local",
+    "space_id": "space-demo",
+    "idempotency_key": "original",
+    "input": {
+      "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+      "context_bytes": 117,
+      "message_count": 3,
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T00:01:25.123Z"
+    },
+    "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f"
+  },
+  "capabilities": {
+    "configured": true,
+    "capability": "text.generate",
+    "deployment": {
+      "adapter": "ollama-text-v1",
+      "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "model": "fixture:text",
+      "data_location": "local"
+    },
+    "max_messages": 15,
+    "max_context_bytes": 8192,
+    "max_instructions_characters": 1024,
+    "max_text_bytes": 8192,
+    "max_characters": 2048,
+    "max_output_tokens": 1024,
+    "max_deadline_seconds": 90,
+    "max_retain_seconds": 3600,
+    "concurrency": 1,
+    "streaming": false,
+    "provider_cancellation": false,
+    "input_storage": "digest_only",
+    "server_memory": false,
+    "device_execution": false
+  },
+  "tasks": {
+    "running": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:00.123Z",
+      "status": "running",
+      "output": null,
+      "usage": null,
+      "error_code": null
+    },
+    "succeeded": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "可以组合对话和显示🍋，保留 é。",
+        "content_digest": "sha256:72820b782d5c91af5b11d1117863e5cfb8ae5f2d808ac6c4d30f515feaeed494",
+        "expires_at": "2026-11-04T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "usage": {
+        "input_tokens": 42,
+        "output_tokens": 12
+      },
+      "error_code": null
+    },
+    "cleared": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": null,
+        "content_digest": "sha256:72820b782d5c91af5b11d1117863e5cfb8ae5f2d808ac6c4d30f515feaeed494",
+        "expires_at": "2026-11-04T00:10:01.123Z",
+        "cleared_at": "2026-11-04T00:00:02.123Z"
+      },
+      "usage": {
+        "input_tokens": 42,
+        "output_tokens": 12
+      },
+      "error_code": null
+    },
+    "unknown": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:00.123Z",
+      "status": "unknown",
+      "output": null,
+      "usage": null,
+      "error_code": "text_interrupted"
+    },
+    "discarded": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:00.123Z",
+      "status": "discarded",
+      "output": null,
+      "usage": null,
+      "error_code": "text_output_discarded"
+    },
+    "failed": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:00.123Z",
+      "status": "failed",
+      "output": null,
+      "usage": null,
+      "error_code": "text_provider_rejected"
+    }
+  },
+  "invalid_inputs": {
+    "even": {
+      "instructions": "简短回答，保留 é 与🍋。",
+      "messages": [
+        {
+          "role": "user",
+          "content": "我的积木是青柠🍋"
+        },
+        {
+          "role": "assistant",
+          "content": "可以组合哪些能力？"
+        }
+      ],
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T08:01:25.123+08:00"
+    },
+    "role": {
+      "instructions": "简短回答，保留 é 与🍋。",
+      "messages": [
+        {
+          "role": "system",
+          "content": "bad"
+        }
+      ],
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T08:01:25.123+08:00"
+    },
+    "empty": {
+      "instructions": "简短回答，保留 é 与🍋。",
+      "messages": [
+        {
+          "role": "user",
+          "content": " \t"
+        }
+      ],
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T08:01:25.123+08:00"
+    },
+    "scalar": {
+      "instructions": "简短回答，保留 é 与🍋。",
+      "messages": [
+        {
+          "role": "user",
+          "content": "🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋🍋"
+        }
+      ],
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T08:01:25.123+08:00"
+    },
+    "bytes": {
+      "instructions": "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中",
+      "messages": [
+        {
+          "role": "user",
+          "content": "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中"
+        }
+      ],
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T08:01:25.123+08:00"
+    },
+    "precision": {
+      "instructions": "简短回答，保留 é 与🍋。",
+      "messages": [
+        {
+          "role": "user",
+          "content": "我的积木是青柠🍋"
+        },
+        {
+          "role": "assistant",
+          "content": "可以组合哪些能力？"
+        },
+        {
+          "role": "user",
+          "content": "让它会对话\n并显示 é"
+        }
+      ],
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T00:01:25.1234Z"
+    },
+    "control": {
+      "instructions": "简短回答，保留 é 与🍋。",
+      "messages": [
+        {
+          "role": "user",
+          "content": "x\ry"
+        }
+      ],
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T08:01:25.123+08:00"
+    },
+    "extra": {
+      "instructions": "简短回答，保留 é 与🍋。",
+      "messages": [
+        {
+          "role": "user",
+          "content": "我的积木是青柠🍋"
+        },
+        {
+          "role": "assistant",
+          "content": "可以组合哪些能力？"
+        },
+        {
+          "role": "user",
+          "content": "让它会对话\n并显示 é"
+        }
+      ],
+      "retain_seconds": 600,
+      "expires_at": "2026-11-04T08:01:25.123+08:00",
+      "tools": []
+    }
+  },
+  "invalid_tasks": {
+    "usage_running": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:00.123Z",
+      "status": "running",
+      "output": null,
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 1
+      },
+      "error_code": null
+    },
+    "usage_zero": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "可以组合对话和显示🍋，保留 é。",
+        "content_digest": "sha256:72820b782d5c91af5b11d1117863e5cfb8ae5f2d808ac6c4d30f515feaeed494",
+        "expires_at": "2026-11-04T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "usage": {
+        "input_tokens": 1,
+        "output_tokens": 0
+      },
+      "error_code": null
+    },
+    "usage_large": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "可以组合对话和显示🍋，保留 é。",
+        "content_digest": "sha256:72820b782d5c91af5b11d1117863e5cfb8ae5f2d808ac6c4d30f515feaeed494",
+        "expires_at": "2026-11-04T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "usage": {
+        "input_tokens": 65537,
+        "output_tokens": 1
+      },
+      "error_code": null
+    },
+    "output_digest": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "可以组合对话和显示🍋，保留 é。",
+        "content_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "expires_at": "2026-11-04T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "usage": {
+        "input_tokens": 42,
+        "output_tokens": 12
+      },
+      "error_code": null
+    },
+    "request_digest": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:00.123Z",
+      "status": "running",
+      "output": null,
+      "usage": null,
+      "error_code": null
+    },
+    "extra": {
+      "text_id": "text-original",
+      "space_id": "space-demo",
+      "idempotency_key": "original",
+      "request_digest": "sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f",
+      "input": {
+        "context_digest": "sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1",
+        "context_bytes": 117,
+        "message_count": 3,
+        "retain_seconds": 600,
+        "expires_at": "2026-11-04T00:01:25.123Z"
+      },
+      "deployment": {
+        "adapter": "ollama-text-v1",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "model": "fixture:text",
+        "data_location": "local"
+      },
+      "created_at": "2026-11-04T00:00:00.123Z",
+      "updated_at": "2026-11-04T00:00:01.123Z",
+      "status": "succeeded",
+      "output": {
+        "text": "可以组合对话和显示🍋，保留 é。",
+        "content_digest": "sha256:72820b782d5c91af5b11d1117863e5cfb8ae5f2d808ac6c4d30f515feaeed494",
+        "expires_at": "2026-11-04T00:10:01.123Z",
+        "cleared_at": null
+      },
+      "usage": {
+        "input_tokens": 42,
+        "output_tokens": 12
+      },
+      "error_code": null,
+      "tools": []
+    }
+  },
+  "invalid_input_json": {
+    "surrogate": "{\"instructions\":\"简短回答，保留 é 与🍋。\",\"messages\":[{\"role\":\"user\",\"content\":\"\\ud800\"}],\"retain_seconds\":600,\"expires_at\":\"2026-11-04T08:01:25.123+08:00\"}",
+    "duplicate": "{\"instructions\":\"a\",\"instructions\":\"b\"}"
+  },
+  "invalid_task_json": {
+    "usage_fraction": "{\"text_id\":\"text-original\",\"space_id\":\"space-demo\",\"idempotency_key\":\"original\",\"request_digest\":\"sha256:02c92a5ee263e1f4f34e7cdbef507eb5d02ad9eea987dc5ab9c14fae12ffca3f\",\"input\":{\"context_digest\":\"sha256:d19e22840834ba57fc3d25f0baacea3a21ac5a68d2964415099daee3e309e8a1\",\"context_bytes\":117,\"message_count\":3,\"retain_seconds\":600,\"expires_at\":\"2026-11-04T00:01:25.123Z\"},\"deployment\":{\"adapter\":\"ollama-text-v1\",\"revision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"model\":\"fixture:text\",\"data_location\":\"local\"},\"created_at\":\"2026-11-04T00:00:00.123Z\",\"updated_at\":\"2026-11-04T00:00:01.123Z\",\"status\":\"succeeded\",\"output\":{\"text\":\"可以组合对话和显示🍋，保留 é。\",\"content_digest\":\"sha256:72820b782d5c91af5b11d1117863e5cfb8ae5f2d808ac6c4d30f515feaeed494\",\"expires_at\":\"2026-11-04T00:10:01.123Z\",\"cleared_at\":null},\"usage\":{\"input_tokens\":1.5,\"output_tokens\":1},\"error_code\":null}"
+  }
+}

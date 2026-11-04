@@ -1,0 +1,254 @@
+{
+  "date": "2026-11-04",
+  "stage": "真实本地文字模型与恢复闭环",
+  "passed": true,
+  "full_goal_completed": false,
+  "entry": {
+    "command": "npm run test:text:live",
+    "combined_entry_executed": true,
+    "final_exit_code": 0,
+    "attempts": 2,
+    "automatic_generation_retries": 0,
+    "successful_attempt_provider_calls": 4,
+    "all_attempts_provider_calls": 8
+  },
+  "model": {
+    "name": "qwen2.5:1.5b-instruct",
+    "digest": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+    "size": 986061892,
+    "details": {
+      "parent_model": "",
+      "format": "gguf",
+      "family": "qwen2",
+      "families": [
+        "qwen2"
+      ],
+      "parameter_size": "1.5B",
+      "quantization_level": "Q4_K_M",
+      "context_length": 32768,
+      "embedding_length": 1536,
+      "runner": "ggml"
+    },
+    "ollama_version": "0.40.14",
+    "license": "Apache-2.0",
+    "license_sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e",
+    "weight_digest": "sha256:183715c435899236895da3869489cc30ac241476b4971a20285b1a462818a5b4",
+    "runtime_archive_sha256": "f3bf9a528e908da0da5a2b3a4ad3252a369d62186501dc4880261e8d9023bff5",
+    "sources": [
+      "https://github.com/ollama/ollama/releases/tag/v0.40.14",
+      "https://registry.ollama.ai/v2/library/qwen2.5/manifests/1.5b-instruct"
+    ],
+    "weights_distributed_with_platform": false
+  },
+  "environment": {
+    "host": {
+      "system": "Darwin",
+      "architecture": "arm64"
+    },
+    "inference_fixture": false,
+    "device_transport": "real MQTT with simulated lamp/button",
+    "real_browser": "Google Chrome, 390x844",
+    "real_cli": true,
+    "real_rust_gateway": true,
+    "real_sqlite": true,
+    "model_output_rewritten": false,
+    "fault_injection": "本地透明HTTP转发器扣住一次已完成的真实响应，并对另一次调用注入连接中断；不修改模型输入或输出"
+  },
+  "successful_attempt": {
+    "samples": [
+      {
+        "id": "arithmetic",
+        "status": "succeeded",
+        "error_code": null,
+        "text": "15",
+        "usage": {
+          "input_tokens": 70,
+          "output_tokens": 3
+        }
+      },
+      {
+        "id": "context",
+        "status": "succeeded",
+        "error_code": null,
+        "text": "蓝色积木放在黄色盒子里面。",
+        "usage": {
+          "input_tokens": 91,
+          "output_tokens": 9
+        }
+      },
+      {
+        "id": "permission",
+        "status": "succeeded",
+        "error_code": null,
+        "text": "不能；因为我的能力是处理文本对话，无法直接控制物理设备。",
+        "usage": {
+          "input_tokens": 82,
+          "output_tokens": 17
+        }
+      }
+    ],
+    "sample_expectations_predeclared": true,
+    "provider_calls": [
+      {
+        "context_digest": "sha256:58449cce3f44819870d506c15f1fabcd7eccc75460b2d8fc8c67c862ed56e2ec",
+        "request_digest": "sha256:5ff4267b2dda8d667ed123d236d5b8f55f3433d4384da8decfd8a6e752ee4e90",
+        "response_digest": "sha256:5f42f5139eb448a31e1f36e9f5835e464dd7a8c2d6b45fac39b31ac9fd01e807",
+        "response_bytes": 334,
+        "output_text": "15",
+        "done_reason": "stop",
+        "elapsed_ms": 4834,
+        "durable_before_provider": true,
+        "unmodified_forwarding": true
+      },
+      {
+        "context_digest": "sha256:abcc4978bfe5a0dc8aeb9ef8e9a139fd23f8b4ae095f8ef8a2512401a53cf552",
+        "request_digest": "sha256:9da72bc441987ea5d1cb1f10094c3b757d6f89abec7ae27185cf47c4dfee7cd9",
+        "response_digest": "sha256:8c709c2e059946d1708dcf709f315cf3f5efa6792d1bb6c9575869778591e5dd",
+        "response_bytes": 373,
+        "output_text": "蓝色积木放在黄色盒子里面。",
+        "done_reason": "stop",
+        "elapsed_ms": 4234,
+        "durable_before_provider": true,
+        "unmodified_forwarding": true
+      },
+      {
+        "context_digest": "sha256:631729188469113b0ac038082b9dce91b5d3c9c3daeeee1741c7683a666b4b42",
+        "request_digest": "sha256:fda554c4fdd71a614c4ab585753cc8109e9a7bcf8d0bcdadd21abef24334bba4",
+        "response_digest": "sha256:023292312cdb1f96ffb246de269b583d1519afc276d70759b8b6a91a9ee7ffd1",
+        "response_bytes": 419,
+        "output_text": "不能；因为我的能力是处理文本对话，无法直接控制物理设备。",
+        "done_reason": "stop",
+        "elapsed_ms": 5974,
+        "durable_before_provider": true,
+        "unmodified_forwarding": true
+      },
+      {
+        "context_digest": "sha256:58449cce3f44819870d506c15f1fabcd7eccc75460b2d8fc8c67c862ed56e2ec",
+        "request_digest": "sha256:5ff4267b2dda8d667ed123d236d5b8f55f3433d4384da8decfd8a6e752ee4e90",
+        "response_digest": "sha256:afa858bfd77b55742ecd9ec466b95655bad8206a105374b2adf4a2c3bb13027e",
+        "response_bytes": 336,
+        "output_text": "15",
+        "done_reason": "stop",
+        "elapsed_ms": 5932,
+        "durable_before_provider": true,
+        "unmodified_forwarding": true
+      }
+    ],
+    "gateway_restarts": 3,
+    "success_restart_and_clear": true,
+    "interrupted_unknown_no_replay": true,
+    "unknown_budget_retained": true,
+    "provider_connection_failure_device_command_confirmed": true,
+    "automatic_device_commands": 0,
+    "explicit_device_commands": 1,
+    "rule_deployments": 0,
+    "browser_errors": [],
+    "cli_digest_only_0600": true
+  },
+  "first_attempt": {
+    "passed": false,
+    "samples_passed": 3,
+    "failure": "设备控制检查期望202，实际409；检查发生在第三次网关重启后，未等待模拟设备重新就绪",
+    "repair": "只读查询ready后再创建唯一明确命令；保留202和confirmed断言，未修改Rust、设备协议或模型回答要求",
+    "source_manifest": {
+      "path": ".dev/text-live-stage-20261104/source-manifest-attempt1.json",
+      "sha256": "e53efaa3e72038310adbb221455b7a2729d61cf830c879be2e74841b6aa1512f"
+    },
+    "report": {
+      "path": ".dev/text-live-run1-20261104/text-live-result.json",
+      "sha256": "53ae3014c1a63c0a9e0676d64f07ff052196a2f3941c310239b0b21dc6ef934b"
+    },
+    "log": {
+      "path": ".dev/text-live-stage-20261104/entry-attempt1.log",
+      "sha256": "faf0eb5fcba4ba9c8999fe13e762cb1724e77081ccc03b44ee0ccc7f4f9d22c4"
+    }
+  },
+  "freeze": {
+    "source_count": 247,
+    "source_digest": "e7c1d9edc42712d334c5b91ba10bbd0d32ccbbe71f77f9404ccf2b40630d2545",
+    "source_manifest": {
+      "path": ".dev/text-live-stage-20261104/source-manifest.json",
+      "sha256": "454c8916846d39bed9b04ff155337654152e8b3a7cf84fa77a61432556b4a685"
+    },
+    "artifact_count": 84,
+    "artifact_manifest": {
+      "path": ".dev/text-live-stage-20261104/artifact-manifest.json",
+      "sha256": "fa3fa17bd85de21d508c199c256d5be8227b56840e8307132f8eff733c87dd0f"
+    },
+    "gateway_and_simulator_binaries_unchanged": true
+  },
+  "reports": {
+    "result": {
+      "path": ".dev/text-live-run2-20261104/text-live-result.json",
+      "sha256": "8156b2c7ea7686bf6f9ab61cd23dbf53232666750429b8c6a060c46ea1439a3d"
+    },
+    "log": {
+      "path": ".dev/text-live-stage-20261104/entry-attempt2.log",
+      "sha256": "422c98f7fea8dfdd1db9586153b75a69b0a8f7fd7f819129884617dd01f50339"
+    },
+    "mobile_screenshot": {
+      "path": ".dev/text-live-run2-20261104/text-live-mobile.png",
+      "sha256": "b6cb23c2c31412392175c581b5136d09176cc44ca1d2b5de12ef1deae8677d44"
+    },
+    "provenance": {
+      "path": ".dev/ollama-local-20261104/provenance.json",
+      "sha256": "d1d9cde6e80be5970a8ce738f069ec6d6b3295910e9e99e3fb3205c5a0ffad57"
+    },
+    "cleanup": {
+      "path": ".dev/text-live-stage-20261104/cleanup.json",
+      "sha256": "aa45ad69515f320e462c924ee23bd8075b038beea76adbf0a5eddea674bf72e1"
+    }
+  },
+  "implementation": {
+    "runtime_code_changed": false,
+    "database_schema_changed": false,
+    "new_dependencies": false,
+    "uses_existing_text_adapter_and_task_ledger": true,
+    "new_files": [
+      "tools/test-text-local-model.mjs"
+    ],
+    "principles": "复用原适配器、CLI与开发栈，只新增显式真实验收入口，避免建立第二套推理或恢复实现"
+  },
+  "scope": {
+    "finite_sample_quality": true,
+    "independent_quality_benchmark": false,
+    "complete_voice_quality": false,
+    "nas_container_runtime": false,
+    "native_app_runtime": false,
+    "hardware": false,
+    "hardware_status": "用户要求跳过",
+    "published": false,
+    "nas_image_rebuilt": false,
+    "official_cloud_updated": false
+  },
+  "remaining": [
+    "三个有限样本不等于全面模型质量、儿童使用或专业咨询效果验收。",
+    "本轮没有重跑已达上限的规则完整意图与合成中文语音质量问题。",
+    "视觉真实模型、实际家庭语音、完整原生App、AMD64多模态恢复、TV既有回调、更多协议生态与玩具机器人仍按原状态处理。",
+    "宿主推理结果不提升N100性能、Ollama容器、NAS同机模型或生产云验收。"
+  ],
+  "validation": {
+    "core_documents": 5,
+    "local_links": 495,
+    "broken_links": 0,
+    "document_manifest": {
+      "path": ".dev/text-live-stage-20261104/document-links.json",
+      "sha256": "a1dc933f679afd81487e233f48f2fd7198ad5e58064ff58601093b830e4792ac"
+    },
+    "website": {
+      "build_exit_code": 0,
+      "pages": 54,
+      "local_references": 2115,
+      "log": {
+        "path": "../iotweb/.dev/text-live-docs-final-20261104.log",
+        "sha256": "7c2b1ea30391f0571041c5acbed73900016b03cd71daae7b3238461096260b08"
+      },
+      "guide": {
+        "path": "../iotweb/src/docs/content/text-generation.md",
+        "sha256": "3e88a3e53f8883c947b00c13d73abc310445b345545cdb065f8fb6a1c57e9396"
+      }
+    },
+    "targeted_diff_check": true,
+    "frozen_source_and_artifact_recheck": true
+  }
+}

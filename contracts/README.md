@@ -1,6 +1,18 @@
 # 当前工具与模型合同
 
-[ZNP诊断与访谈](zigbee-diagnostics.md)及[严格Schema](zigbee-diagnostics.schema.json)定义本地`zigbee schema/probe/interview`、固定SYS/ZDO读取、有界串口会话和未经认证的候选证据。当前没有网关绑定、入网、ZCL映射或控制；不加入网关HTTP工具目录。
+[有限陪伴会话](companion.md)和[政策Schema](companion.schema.json)定义源码CLI的`companion schema/start/reply/resolve/continue/stop`。固定角色、模型、轮数和期限，每轮复用原语音任务，历史正文由调用者持有，原账本只保存摘要；生成不授权播放或设备执行。首个[积木小狗样板](../examples/companions/block-puppy/README.md)展示有界多轮，专用页面、真实质量与儿童/监护产品政策另验。
+
+[声明式事件组合包](composition.md)与[机器Schema](composition.schema.json)定义源码CLI的`composition schema/compile/plan`：角色绑定编译成现有事件/set规则，在线核对精确物模型并预演，部署与停用沿原规则工具。首个[触摸伴读灯](../examples/compositions/reading-companion/README.md)可用模拟器完整运行；组合包摘要不授予权限，也不表示完整玩具固件、模型对话或物理组合已实现。
+
+[本地 AI 能力目录](ai-catalog.md)及[机器 Schema](ai-catalog.schema.json)统一发现规则草案、文字、视觉、识别和合成的定义、已装配部署与未检测健康状态。API、CLI和家庭/NAS网页复用真实服务配置，发现零推理；许可、费用、资源与质量的未知值不会推定为已核验。
+
+[本地有限语音回合](voice-turns.md)及[输入Schema](voice-turns.schema.json)定义客户端组合：已上传录音依次识别、文字回答和语音合成，共用摘要账本、暂停与明确恢复。网页可明确录制最多60秒的16 kHz PCM WAV，再独立上传；采音生命周期与发送前校验见同一合同。CLI入口为`voice-turns schema/start/resolve/continue/stop`，家庭网页位于“音频 → 语音对话”。这是客户端工作流；生成后仍须独立授权并播放。
+
+[本地文字生成](text.md)及[文字Schema](text.schema.json)定义 `text.generate` 的有限多轮上下文、独立Ollama适配、摘要任务、到期清文和原键恢复。输入正文只在内存，输出可明确清除；模型无设备执行权，完整会话政策与长期记忆单独交付。
+
+[ZNP读取、固定On/Off与有限入网](zigbee-diagnostics.md)及[严格Schema](zigbee-diagnostics.schema.json)定义第一方串口组件与独立CLI，运行网关的On/Off装配见下方属性桥接合同。运行中发现与明确温湿度/开关接入见[观测来源](observation-sources.md)；[协调器入网管理](zigbee-operations.md)和[机器Schema](zigbee-operations.schema.json)定义网关同串口调度、耐久意图、有限开放/关闭及CLI原键恢复。协议受理不创建平台绑定，家庭网页与Swift/Kotlin提供独立的开放/关闭核对和原操作查询；宿主软件验证不代表完整原生App或硬件入网验收。
+
+[属性观测与执行桥接](property-bridges.md)定义宿主明确授权、同设备完整物模型、原命令FIFO、协议受理与独立读回确认，以及Store静态v14/动态v15恢复。固定ZNP On/Off已接共享串口任务和家庭网页通用控件，v3静态配置用于新安装，也可运行中查询固定候选并明确接入；云端保持原已确认属性回执，来源token和本地受理证据不出站。原生完整App与NAS新镜像另验。
 
 [本地图片观察](vision.md)及[视觉Schema](vision.schema.json)定义 `vision.understand` 的有界 PNG/JPEG、问题摘要、独立 Ollama 适配、耐久任务、到期清文和原键恢复。API、CLI与家庭网页共用合同，图片和问题正文不入任务快照，视觉结果不执行设备操作；真实模型质量、原生视觉页面和新NAS整包分别验收。
 

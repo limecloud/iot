@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iot.limeai.run/contracts/zigbee-operations.schema.json",
+  "title": "有限协调器入网与原请求记录",
+  "$ref": "#/$defs/change",
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "minLength": 71,
+      "maxLength": 71
+    },
+    "ieee": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{16}$",
+      "minLength": 16,
+      "maxLength": 16,
+      "not": {
+        "enum": [
+          "0000000000000000",
+          "ffffffffffffffff"
+        ]
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "change": {
+      "type": "object",
+      "properties": {
+        "coordinator_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "duration_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120
+        }
+      },
+      "required": [
+        "coordinator_id",
+        "expected_revision",
+        "duration_seconds"
+      ],
+      "additionalProperties": false
+    },
+    "coordinator": {
+      "type": "object",
+      "properties": {
+        "coordinator_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "coordinator_ieee": {
+          "$ref": "#/$defs/ieee"
+        },
+        "revision": {
+          "$ref": "#/$defs/digest"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 30000
+        }
+      },
+      "required": [
+        "coordinator_id",
+        "coordinator_ieee",
+        "revision",
+        "timeout_ms"
+      ],
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "space_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/identifier"
+        },
+        "change": {
+          "$ref": "#/$defs/change"
+        }
+      },
+      "required": [
+        "space_id",
+        "idempotency_key",
+        "change"
+      ],
+      "additionalProperties": false
+    },
+    "receipt": {
+      "type": "object",
+      "properties": {
+        "coordinator_ieee": {
+          "$ref": "#/$defs/ieee"
+        },
+        "duration_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120
+        },
+        "observed_at": {
+          "$ref": "#/$defs/timestamp"
+        }
+      },
+      "required": [
+        "coordinator_ieee",
+        "duration_seconds",
+        "observed_at"
+      ],
+      "additionalProperties": false
+    },
+    "operation": {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "request": {
+          "$ref": "#/$defs/request"
+        },
+        "request_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "coordinator": {
+          "$ref": "#/$defs/coordinator"
+        },
+        "status": {
+          "enum": [
+            "unknown",
+            "protocol_accepted"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9_]{1,64}$",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/receipt"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "blocked_until": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "operation_id",
+        "sequence",
+        "request",
+        "request_digest",
+        "coordinator",
+        "status",
+        "reason",
+        "result",
+        "created_at",
+        "blocked_until",
+        "completed_at"
+      ],
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "result": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "status": {
+              "const": "protocol_accepted"
+            },
+            "reason": {
+              "type": "null"
+            },
+            "result": {
+              "$ref": "#/$defs/receipt"
+            },
+            "completed_at": {
+              "$ref": "#/$defs/timestamp"
+            }
+          }
+        }
+      ]
+    },
+    "coordinators": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/coordinator"
+          }
+        },
+        "next_cursor": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "items",
+        "next_cursor"
+      ],
+      "additionalProperties": false
+    },
+    "operations": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/operation"
+          }
+        },
+        "next_cursor": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "items",
+        "next_cursor"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

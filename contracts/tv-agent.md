@@ -2,6 +2,10 @@
 
 当前消费者位于 [apps/tv-agent/core](../apps/tv-agent/core/)。这是设备身份下的 MQTT 消费者，复用 [命令](commands.md) 和 [设备通信](../docs/06-MQTT报文与设备通信规范.md)；不是手机控制 SDK、通用推理 Agent 或第二套网关。当前实现和验证范围以 [24](../docs/24-实施计划与进度.md) 为准。
 
+## 电视交互边界
+
+电视原生界面按总览、连接设置、应用授权、设备维护、诊断信息分区，具体导航与视觉规范见[体验设计](../apps/tv-agent/DESIGN.md)。页面读取既有Runtime，不另存连接或授权事实；导航、重建和返回不得建立连接、授予音频权限或复活确认。系统文件导入沿用下述材料及本机身份合同，当前没有扫码或短码配对协议。UI调整不改变模型、MQTT、日志、密钥或APK更新状态合同；可构建、宿主测试和指定实机验收分别记录。
+
 ## 本机材料导入
 
 [本机材料Schema](tv-agent-enrollment.schema.json)由设备核心严格解析。v1/v2是含PKCS8私钥的旧材料导入格式，Android文件选择器仅接受这两版；v3仅用于已核对本机请求产生的凭据引用，不接受外部文件指定KeyStore alias。正文最多32KiB，重复键、未知字段、错误版本和不完整材料拒绝；Broker沿用显式ssl地址及主机校验。材料不包含所有者Token、ADB密钥或其他设备身份。证书用途、有效期、签发与持钥匹配通过后，电视显示逻辑模型修订及CA/设备证书SHA-256指纹，用户与可信来源核对并明确保存；保存不自动连接或授权应用。
@@ -136,11 +140,13 @@ hello声明receipt_ledger=1，welcome须明确支持并提供原网关账本的c
 
 ## 验证入口
 
-JDK21及项目工具就绪后，在仓库根目录执行 `npm run test:tv-agent`。入口先构建Rust，再执行`:core:test :core:journeyRuntime`：纯JVM故障检查与测试类编译在网络旅程之前完成，独立TLS测试在缺少专用环境时显式跳过。Gradle导出本机`core/build/journey/runtime.json`，Node读取其中的JDK21、classpath及固定`MqttJourneyMain`，直接启动设备Java进程；该入口复用`MqttJourneyTest`，不在设备启动或重启时执行Gradle。缺少产物时明确失败，重新编译后再运行；原`:core:mqttJourney`任务保留。
+JDK21及项目工具就绪后，在仓库根目录执行 `npm run test:tv-agent`。入口先构建Rust和Home网页，再执行`:core:test :core:journeyRuntime`：纯JVM故障检查与测试类编译在网络旅程之前完成，独立TLS测试在缺少专用环境时显式跳过。Gradle导出本机`core/build/journey/runtime.json`，Node读取其中的JDK21、classpath及固定`MqttJourneyMain`，直接启动设备Java进程；该入口复用`MqttJourneyTest`，不在设备启动或重启时执行Gradle。缺少产物时明确失败，重新编译后再运行；原`:core:mqttJourney`任务保留。
 
-后半由Node串行运行回收、已有设备跨模型换绑及JVM/假ADB组合三条旅程，分别创建临时CA、mTLS Broker、Rust网关、SQLite和独立JVM进程。编译不占连接等待期限，期限与业务断言均未放宽。核心检查、入口导出、实际网络运行和Android端上分别记结果；直接Java原回收旅程与Android宿主/调试APK/lint已复验通过，见 [24第4.17节](../docs/24-实施计划与进度.md#417-tv-agent独立jvm回收与android软件复验)。默认核心任务的网络项仍跳过；实际JVM/假ADB组合的后续软件通过结果见 [24第4.22节](../docs/24-实施计划与进度.md#422-adb身份预检合并与实际jvm组合软件验收)，不提升为本轮整套或端上通过。
+后半由Node串行运行回收、已有设备跨模型换绑、JVM/假ADB组合及实际JVM音频网页组合四条旅程，分别创建临时CA、mTLS Broker、Rust网关、SQLite和独立JVM进程。编译不占连接等待期限，期限与业务断言均未放宽。核心检查、入口导出、实际网络运行和Android端上分别记结果；直接Java原回收旅程与Android宿主/调试APK/lint已复验通过，见 [24第4.17节](../docs/24-实施计划与进度.md#417-tv-agent独立jvm回收与android软件复验)。默认核心任务的网络项仍跳过；实际JVM/假ADB组合的后续软件通过结果见 [24第4.22节](../docs/24-实施计划与进度.md#422-adb身份预检合并与实际jvm组合软件验收)，不提升为本轮整套或端上通过。
 
 应用入口是文件审计夹具。软件检查分别记录真实网络、证书、耐久顺序和进程恢复，不将其提升为 Android APK、真实应用启动、Android端上共存、自动配对或实机验收。真实JVM核心与假ADB同一逻辑设备的组合旅程由tests/tv-agent-composition.test.mjs独立执行，最终结果只在24登记。
+
+`npm run test:tv-agent:audio`定向执行`tests/tv-agent-audio.test.mjs`，运行实际DeviceAgent/DeviceMqtt和网页；`FileAudioFixture`仅替代系统音频端口，独立采样文件混音器。每次原生效果前，复核设备日志中原命令的未决尝试，以及本轮网关快照版本、原命令dispatched、无外部路由和完整原生路径分区。模拟setter生效后异常必须保留unknown，重启仅核对原结果，不能重复setter。音量submitted不代替实际状态，外部按键不进入原生端口。已通过范围和未运行的相邻回归见[4.72](../docs/24-实施计划与进度.md#472-实际jvm音频与网页及adb组合软件闭环)，不构成Android AudioManager或电视验收。
 
 ## APK离线预检
 

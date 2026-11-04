@@ -1,0 +1,334 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-BROWSER-RECORDING-20261104-01",
+  "recorded_at": "2026-11-04T06:18:22.958716+00:00",
+  "status": "passed",
+  "scope": "网页有限麦克风采音、PCM WAV上传、ASR→文字→TTS及独立授权播放的软件闭环",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "microphone_fixture": true,
+  "real_microphone": false,
+  "provider_fixture": true,
+  "renderer_fixture": true,
+  "real_model_quality": false,
+  "native_recording_ui": false,
+  "new_nas_image": false,
+  "published": false,
+  "full_goal_completed": false,
+  "implementation": [
+    "PcmRecorder独立管理浏览器权限、轨道、AudioContext和AudioWorklet生命周期；Microphone只负责页面交互，WAV编码复用正式媒体校验。",
+    "本站工作模块生成16 kHz单声道PCM16 WAV，最长60秒、960000帧、1920044字节；完成、取消及异常停止全部轨道并关闭上下文，不将采音输出到扬声器。",
+    "初始化最多30秒、完成回执最多3秒；后台、离线、离页和设备中断停止采音并放弃未上传录音，取消后迟到授权的轨道立即停止。",
+    "上传前保留页面、网络和录音代次校验，文件读取等待期间进入后台零POST；录音不写客户端持久存储，不自动上传、调用模型、授权或播放。",
+    "Vite使用?url&no-inline交付独立工作模块，构建制品逐字节匹配源码并进入离线外壳缓存；保持既有CSP，未增加运行依赖、网关API或数据库变更。"
+  ],
+  "checks": {
+    "root_entry_command": "npm run test:recording",
+    "root_entry_passed": true,
+    "pcm_checks": 2,
+    "browser_checks": 3,
+    "regression_checks": 3,
+    "failed": 0,
+    "skipped": 0,
+    "home_console_admin_builds": true,
+    "website_build": true,
+    "website_pages": 54,
+    "website_local_references": 2115,
+    "source_files": 451,
+    "core_artifacts": 197,
+    "unchanged_rust_inputs": 146,
+    "all_recorded_hashes_rechecked": true,
+    "csp_violations": 0,
+    "browser": "Google Chrome 156.0.8078.80",
+    "browser_executable_override": "LIMEIOT_BROWSER_EXECUTABLE"
+  },
+  "manifests": [
+    {
+      "path": ".dev/browser-recording-20261104/source-manifest.json",
+      "sha256": "b03926c9df49812cbc1944c73bfee8e05b0853e982f0a1f5fc0e4ceb2ab2d8f2"
+    },
+    {
+      "path": ".dev/browser-recording-20261104/artifact-manifest.json",
+      "sha256": "2392d3c4935b8dd39c203d115618eefcb5b53571a56287d3f5c8da83b31d84c8"
+    }
+  ],
+  "logs": [
+    {
+      "path": ".dev/recording-entry-final2-20261104.log",
+      "sha256": "553ff6f5249ea7463d65802fc0c8f5647a7fcb07a84cba6580a6749fe08dc0ba"
+    },
+    {
+      "path": ".dev/recording-regression-20261104.log",
+      "sha256": "8d355049b6428d84766ed024b7fff0a80fb237944c6cddddc06872ab434b07ff"
+    },
+    {
+      "path": ".dev/recording-control-build-20261104.log",
+      "sha256": "7fce857f2e09a96375ab274cb5bad867c59e5e76d40d0bce563949c5db663cac"
+    },
+    {
+      "path": ".dev/recording-home-build-final-20261104.log",
+      "sha256": "a25576e6c58c0a39f2b046dca8f6a812d74cd4a85265b41fec93cbf3179f10c8"
+    },
+    {
+      "path": ".dev/recording-home-build-attempt2-20261104.log",
+      "sha256": "ee59842aeff5187ea7326343fa1065ed46fc92b09a6e4e650fc5dd2c46a1ea7c"
+    },
+    {
+      "path": ".dev/recording-web-attempt1-20261104.log",
+      "sha256": "8443ac8e784493f8abf4f9d434bd715b407bbad69df824e05cb736946293cc6e"
+    },
+    {
+      "path": ".dev/recording-web-diagnostic-20261104.log",
+      "sha256": "64d5bc4d0af040f8e55472fbb2db8f09e66ea05720f8985df61b242cd3ce0917"
+    },
+    {
+      "path": ".dev/recording-web-diagnostic2-20261104.log",
+      "sha256": "3132a2a7e2ec3224a73689c7f9e36a246019f8f2ff71f98d16db614201836815"
+    },
+    {
+      "path": ".dev/recording-web-chrome-attempt1-20261104.log",
+      "sha256": "c7789a7e83a977a4ee50a69c9461d32ad7a7bf9d67fc7e844462133f55ef9ed9"
+    },
+    {
+      "path": ".dev/recording-entry-final-20261104.log",
+      "sha256": "3bbbb81d77d1354842a67e12011434c3978ab246476e776ce22d4c9a00847672"
+    },
+    {
+      "path": ".dev/recording-failure-diagnostic-20261104.log",
+      "sha256": "9915fde2000ee37b79b111030bee74378446b591f74da717d2159a8df9d46111"
+    }
+  ],
+  "reports": [
+    {
+      "path": ".dev/voice-turn-6pYfpX/recording-web.json",
+      "sha256": "91309a6005223722caeb9bde31884c316a0da3e1433f61861f47dd757c1f764e",
+      "result": {
+        "passed": true,
+        "browser_audio_worklet": true,
+        "microphone_fixture": true,
+        "real_microphone": false,
+        "real_gateway": true,
+        "provider_fixture": true,
+        "renderer_fixture": true,
+        "format": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "bits_per_sample": 16,
+          "frames": 20736
+        },
+        "captures": 1,
+        "no_pre_upload_posts": true,
+        "media_tracks_ended": true,
+        "audio_context_closed": true,
+        "csp_violations": [],
+        "recorded_bytes_match_asr": {
+          "sample_rate": 16000,
+          "channels": 1,
+          "bits_per_sample": 16,
+          "frames": 20736,
+          "bytes": 41516,
+          "sha256": "db467e62ac08f00fcde3ac4f9fdaa18657f3222fc260903024409101493a418f"
+        },
+        "stages": [
+          "transcription",
+          "text",
+          "speech"
+        ],
+        "separate_explicit_grant_and_play": true,
+        "local_storage_excludes_audio": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "path": ".dev/voice-turn-o53YbR/recording-lifecycle.json",
+      "sha256": "33ec2cdcfaa489e2af2b3afc3f4b6d6dad0b76ffb9ddf99f111129e4f2bd8682",
+      "result": {
+        "passed": true,
+        "browser_audio_worklet": true,
+        "microphone_fixture": true,
+        "background_cancels_and_clears": true,
+        "saved_unuploaded_audio_cleared_in_background": true,
+        "background_during_file_read_zero_post": true,
+        "offline_stops_tracks": true,
+        "navigation_stops": true,
+        "spa_unmount_stops_tracks": true,
+        "device_end_stops": true,
+        "cancelled_permission_late_stream_stopped": true,
+        "upload_posts": 0,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "path": ".dev/voice-turn-dZxknI/recording-failures.json",
+      "sha256": "1e43078e4a136f503bc9d5d9f3c4bcc202f343dcdab6b9f034589547a3f64276",
+      "result": {
+        "passed": true,
+        "microphone_fixture": true,
+        "permission_denied": true,
+        "actual_module_missing": true,
+        "module_failure_stops_tracks_and_context": true,
+        "upload_posts": 0,
+        "provider_calls": 0,
+        "observed_module_responses": [],
+        "failures": [
+          {
+            "stage": "permission",
+            "name": "NotAllowedError",
+            "message": "Permission denied"
+          },
+          {
+            "stage": "module",
+            "name": "AbortError",
+            "message": "Failed to load worklet module script: http://127.0.0.1:50898/assets/pcm-capture-worklet-xdlxlWmZ.js (HTTP status: 404)"
+          }
+        ],
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "path": ".dev/media-client-miiGAC/media-clients-result.json",
+      "sha256": "e7f6716a8c622a3ec3dc892eb5b5fc13033a5468e6c0153c96f401d6fbaa9b8d",
+      "result": {
+        "passed": true,
+        "cli": true,
+        "browser": true,
+        "viewport": 390,
+        "upload_storage_failure_zero_posts": true,
+        "lost_upload_original_only": true,
+        "records_exclude_audio_and_tokens": true,
+        "explicit_current_binding_grant": true,
+        "managed_media_gui_playback": true,
+        "soap_mutations": 3,
+        "media_range_pulls": 1,
+        "revoke_and_delete": true,
+        "restart_original_no_regrant": true,
+        "old_upload_does_not_restore_content": true,
+        "unified_workspace_media": true,
+        "workspace_control_identity_mocked": true,
+        "real_http": true,
+        "real_sqlite": true,
+        "real_mqtt": true,
+        "hardware": false,
+        "hardware_status": "用户要求跳过",
+        "audible_output": false,
+        "native_media_ui": false,
+        "nas_image_rebuilt": false,
+        "published": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "path": ".dev/voice-turn-ylkwp0/voice-turn-web.json",
+      "sha256": "6caf5aa117f9e2c7f9859854120f40b8f539d1df084522fbc773aaaa394736a6",
+      "result": {
+        "passed": true,
+        "browser": true,
+        "viewport": 390,
+        "real_gateway": true,
+        "real_sqlite": true,
+        "provider_fixture": true,
+        "renderer_fixture": true,
+        "stages_posted_once": 3,
+        "summary_only_storage": true,
+        "reload_no_new_post": true,
+        "explicit_grant_and_play": true,
+        "range_pull": true,
+        "stop_clear_survives_gateway_restart": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    },
+    {
+      "path": ".dev/voice-turn-7MWpnV/voice-turn-web-faults.json",
+      "sha256": "f33057c589c50c4d2d8535370171b1abf41fd5dddce116993114e80db51a5f26",
+      "result": {
+        "passed": true,
+        "browser": true,
+        "save_failure_zero_post": true,
+        "response_loss_get_only": true,
+        "background_no_next_stage": true,
+        "resume_get_only_until_explicit_continue": true,
+        "corrupt_record_blocks": true,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    }
+  ],
+  "screenshots": [
+    {
+      "path": ".dev/voice-turn-6pYfpX/recording-mobile.png",
+      "sha256": "fd7063951a09729c683f5e93236be1ce90a28f50b02a2a052933acd68e095fa1",
+      "visually_reviewed": true
+    }
+  ],
+  "documentation": [
+    {
+      "path": "README.md",
+      "sha256": "20d6ee357186f6864b1de292b1189381a508d3595546baf197fcee955a4076aa"
+    },
+    {
+      "path": "llms.txt",
+      "sha256": "75aa508db9bf65cc899e4b53d6b08fb548cccd3aee7190d94dfc2153a70930eb"
+    },
+    {
+      "path": "contracts/README.md",
+      "sha256": "ea80e72340befc5d289afe81c94a7a0eacc4be2770a304895ba25cac686c76ab"
+    },
+    {
+      "path": "contracts/voice-turns.md",
+      "sha256": "9a4870ce704f0e824f836e7f0c2b7418c692ba7d71dc0cde07b440824b041f78"
+    },
+    {
+      "path": "deploy/dev/README.md",
+      "sha256": "713016f34aa585493fcacd94cc8306bda98c06f0df4c327e78ab5db7841051ea"
+    },
+    {
+      "path": "docs/24-实施计划与进度.md",
+      "sha256": "1103cb32ec3dd60a44ba537d47baee1cb9b9b15093da1ca1f620dbf30abf9d56"
+    },
+    {
+      "path": "docs/33-多模态模型与媒体服务.md",
+      "sha256": "18723d5041623c516f3362d64f435f4efd15e882a5e48f2626924c15399d1e9d"
+    },
+    {
+      "path": "docs/36-音频播放终端与DLNA接入.md",
+      "sha256": "e8e8a828331539b8dcde9ce110ad49b6b57926ffbcb0092340e94a9cc0354f67"
+    }
+  ],
+  "website": {
+    "repository": "iotweb",
+    "sources": [
+      {
+        "path": "src/docs/content/audio-playback.md",
+        "sha256": "fb5d2f2ed861709a88cf3de50580f9b4fdfdd23ca061e9069a35e4c0e4b84320"
+      },
+      {
+        "path": "src/docs/content/multimodal.md",
+        "sha256": "b545016a621541e631ed3266bbc645f8b5bdb03e829735a350d3519c9fc0f3dd"
+      }
+    ],
+    "build_log": {
+      "path": ".dev/recording-docs-build-20261104.log",
+      "sha256": "5f2a66a2accbd6fa150a388ec2eb5c3cc637780fcd7407dd940db4580113916d"
+    },
+    "astro_check_errors": 0,
+    "astro_check_warnings": 0
+  },
+  "earlier_failures": [
+    "工作模块首次使用的查询顺序未匹配Vite类型声明，改用内置支持的?url&no-inline后类型与构建通过。",
+    "Playwright自带无头浏览器的模拟麦克风返回NotSupportedError；独立最小诊断同样失败。使用本机Chrome的独立测试会话后采音通过，未改产品或断言。",
+    "页面网络拦截未拦截AudioWorklet加载，导致首次故障检查仍进入录音。改为独立静态目录实际缺少工作模块，取得404加载失败及轨道释放证据。",
+    "首轮完整入口的故障检查90秒超时，原因未确认；独立同断言复验和最终完整入口均通过。保留原日志和90秒期限，没有削弱检查。"
+  ],
+  "limits": [
+    "模拟麦克风输入为4秒440Hz PCM文件，提供方与DLNA音箱均为协议夹具，不证明真实麦克风、ASR/文字/TTS质量、人工听感或物理发声。",
+    "仅网页有限录音与已有回合组合；没有唤醒词、流式识别、全双工、自动打断、长期记忆或原生录音组合。",
+    "本轮构建Home/Console/Admin和官网，未重建NAS镜像，也未发布或更新官方云；此前NAS证据保持各自冻结源码范围。",
+    "后台事件由浏览器测试显式派发，离线使用浏览器网络控制；同时验证真实页面切换和SPA组件卸载。未覆盖所有浏览器/系统后台策略。",
+    "取消未上传录音仅结束客户端持有与后续发送；已发出的上传沿用媒体原键查询，不能据客户端取消推定网关未保存。",
+    "Android整包ANR、iOS完整SDK、AMD64多模态恢复及TV既有失败保持原状态，未重复已达修复上限的问题。"
+  ]
+}

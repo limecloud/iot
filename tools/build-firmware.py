@@ -14,7 +14,7 @@ product = project / "firmware/products/desk-node"
 revision = "fff9895c82d744c7237be8847347bdd1b07c6643"
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--role", choices=("all", "lamp", "button", "environment"), default="all")
-parser.add_argument("--firmware-version", default="0.5.0", help="写入原生应用描述的 major.minor.patch")
+parser.add_argument("--firmware-version", default="0.6.0", help="写入原生应用描述的 major.minor.patch")
 parser.add_argument("--security-epoch", type=int, default=0, help="C3 原生安全代次，0–16")
 parser.add_argument("--native-anti-rollback", action="store_true", help="显式构建启用原生 eFuse 防降级的镜像；本命令不烧录")
 parser.add_argument("--storage", choices=("development", "hmac"), default="development", help="明文开发配置或预置HMAC密钥的加密NVS")

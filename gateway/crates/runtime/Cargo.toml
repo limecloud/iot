@@ -5,14 +5,16 @@ edition.workspace = true
 license.workspace = true
 
 [features]
-default = ["android-tv", "dlna"]
+default = ["android-tv", "dlna", "zigbee-znp"]
 android-tv = ["dep:limeiot-android-tv"]
 dlna = ["dep:limeiot-dlna"]
+zigbee-znp = ["dep:limeiot-zigbee-znp"]
 
 [dependencies]
 limeiot-core.workspace = true
 limeiot-android-tv = { path = "../../adapters/android-tv", optional = true }
 limeiot-dlna = { path = "../../adapters/dlna", optional = true }
+limeiot-zigbee-znp = { path = "../../adapters/zigbee-znp", optional = true }
 serde.workspace = true
 serde_json.workspace = true
 chrono.workspace = true

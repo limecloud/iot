@@ -63,6 +63,14 @@ private suspend fun connectSpeech(scope: CoroutineScope, memory: SpeechMemory, w
     speech.refresh(); speech.waitForIdle(); return speech to media
 }
 class SpeechControllerTest {
+    @Test fun preparedAnswerNeverSendsOrTruncatesAndCannotReplacePendingOutput() = runBlocking {
+        val wire = SpeechStateWire(); val (speech, _) = connectSpeech(this, SpeechMemory(), wire)
+        assertTrue(speech.prepareAnswer("完整回答🍋")); assertEquals("完整回答🍋", speech.state.value.text); assertEquals(0, wire.posts)
+        for (invalid in listOf(" ", "字".repeat(1001), "🍋".repeat(1001))) { assertFalse(speech.prepareAnswer(invalid)); assertEquals("完整回答🍋", speech.state.value.text) }
+        speech.generate(); speech.waitForIdle(); assertFalse(speech.prepareAnswer("替换未决输出")); assertEquals(1, wire.posts)
+        speech.pause(); assertFalse(speech.prepareAnswer("后台")); assertEquals("", speech.state.value.text)
+        speech.setOnline(false); assertFalse(speech.prepareAnswer("离线")); speech.close(); assertFalse(speech.prepareAnswer("关闭")); assertEquals(0, wire.mediaPosts)
+    }
     @Test fun selectionAndGenerationRequireSeparateMediaAuthorization() = runBlocking {
         val wire = SpeechStateWire(); val selected = mutableListOf<String>(); val (speech, media) = connectSpeech(this, SpeechMemory(), wire, selected = selected)
         speech.setText("青柠🍋萌宠"); speech.selectVoice("other"); speech.setRetention(3600)

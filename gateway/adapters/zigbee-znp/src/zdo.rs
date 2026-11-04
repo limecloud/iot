@@ -1,4 +1,7 @@
-use crate::{session::Transport, Error, Result};
+use crate::{
+    session::{ResponseMatch, Transport},
+    Error, Result,
+};
 use serde::Serialize;
 use tokio::io::{AsyncRead, AsyncWrite};
 
@@ -95,14 +98,14 @@ pub(crate) async fn probe<T: AsyncRead + AsyncWrite + Unpin>(
     })
 }
 
-async fn ieee<T: AsyncRead + AsyncWrite + Unpin>(
+pub(crate) async fn ieee<T: AsyncRead + AsyncWrite + Unpin>(
     io: &mut Transport<T>,
     address: u16,
 ) -> Result<String> {
     let mut request = address.to_le_bytes().to_vec();
     request.extend_from_slice(&[0, 0]); // 单设备地址请求，不请求关联设备列表。
     let data = io
-        .request(5, 1, request, Some((0x81, address, None)))
+        .request(5, 1, request, Some(ResponseMatch::Zdo(0x81, address, None)))
         .await?;
     if data.first() != Some(&0) {
         return Err(Error::DeviceRejected(
@@ -123,7 +126,7 @@ async fn ieee<T: AsyncRead + AsyncWrite + Unpin>(
     ))
 }
 
-fn node(data: &[u8]) -> Result<NodeDescriptor> {
+pub(crate) fn node(data: &[u8]) -> Result<NodeDescriptor> {
     if data.len() != 18 || data[5] & 7 > 2 {
         return Err(Error::InvalidResponse);
     }
@@ -141,7 +144,7 @@ fn node(data: &[u8]) -> Result<NodeDescriptor> {
     })
 }
 
-fn active_endpoints(data: &[u8]) -> Result<Vec<u8>> {
+pub(crate) fn active_endpoints(data: &[u8]) -> Result<Vec<u8>> {
     let count = usize::from(*data.get(5).ok_or(Error::InvalidResponse)?);
     if count > 16 {
         return Err(Error::LimitExceeded);
@@ -177,7 +180,7 @@ fn clusters(data: &[u8], position: &mut usize) -> Result<Vec<u16>> {
     Ok(values)
 }
 
-fn simple(data: &[u8]) -> Result<Endpoint> {
+pub(crate) fn simple(data: &[u8]) -> Result<Endpoint> {
     let len = usize::from(*data.get(5).ok_or(Error::InvalidResponse)?);
     if len < 8 || data.len() != 6 + len {
         return Err(Error::InvalidResponse);
@@ -209,18 +212,33 @@ pub(crate) async fn interview<T: AsyncRead + AsyncWrite + Unpin>(
     let ieee_address = ieee(io, address).await?;
     let request = [address.to_le_bytes(), address.to_le_bytes()].concat();
     let node = node(
-        &io.request(5, 2, request.clone(), Some((0x82, address, None)))
-            .await?,
+        &io.request(
+            5,
+            2,
+            request.clone(),
+            Some(ResponseMatch::Zdo(0x82, address, None)),
+        )
+        .await?,
     )?;
     let active = io
-        .request(5, 5, request.clone(), Some((0x85, address, None)))
+        .request(
+            5,
+            5,
+            request.clone(),
+            Some(ResponseMatch::Zdo(0x85, address, None)),
+        )
         .await?;
     let mut endpoints = Vec::new();
     for ep in active_endpoints(&active)? {
         let mut data = request.clone();
         data.push(ep);
         let descriptor = io
-            .request(5, 4, data, Some((0x84, address, Some(ep))))
+            .request(
+                5,
+                4,
+                data,
+                Some(ResponseMatch::Zdo(0x84, address, Some(ep))),
+            )
             .await?;
         endpoints.push(simple(&descriptor)?);
     }
@@ -235,4 +253,24 @@ pub(crate) async fn interview<T: AsyncRead + AsyncWrite + Unpin>(
         node,
         endpoints,
     })
+}
+
+/// 通过IEEE寻找当前短地址，短地址只作为本次访谈的路由证据。
+pub(crate) async fn lookup<T: AsyncRead + AsyncWrite + Unpin>(
+    io: &mut Transport<T>,
+    ieee: [u8; 8],
+) -> Result<u16> {
+    let mut request = ieee.to_vec();
+    request.extend_from_slice(&[0, 0]);
+    let data = io
+        .request(5, 0, request, Some(ResponseMatch::Ieee(ieee)))
+        .await?;
+    if data.len() != 13 || data[0] != 0 || data[11..] != [0, 0] {
+        return Err(Error::InvalidResponse);
+    }
+    let address = word(&data, 9)?;
+    if address == 0 || address >= 0xfff8 {
+        return Err(Error::IdentityChanged);
+    }
+    Ok(address)
 }

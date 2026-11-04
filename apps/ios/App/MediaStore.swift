@@ -18,6 +18,7 @@ import LimeIoTKit
     @Published private(set) var approved = false
     @Published private(set) var deletion: String?
     private var bytes: Data?
+    private var recorded = false
     private let client: MediaClient
     let space: String
     private let authFailure: (Error) -> Void
@@ -33,17 +34,22 @@ import LimeIoTKit
     func setRetention(_ value: Int) { guard !busy, [600, 3600, 86400].contains(value) else { return }; retainSeconds = value; approved = false }
     func setGrantDuration(_ value: Int) { guard !busy, [30, 300, 600].contains(value) else { return }; grantSeconds = value; approved = false }
     func approve(_ value: Bool) { approved = writable && value }
-    func selectFile(name: String, data: Data) {
-        guard active, online, !busy else { return }
+    func selectFile(name: String, data: Data) { _ = selectFile(name: name, data: data, recording: false) }
+    func selectRecording(_ data: Data) -> Bool { selectFile(name: "recording.wav", data: data, recording: true) }
+    private func clearBytes() { if bytes != nil { bytes!.resetBytes(in: 0..<bytes!.count) }; bytes = nil; recorded = false }
+    func clearRecording() { guard recorded else { return }; clearBytes(); fileName = ""; approved = false }
+    private func selectFile(name: String, data: Data, recording: Bool) -> Bool {
+        guard active, online, !busy else { return false }
         do {
             _ = try MediaChanges.upload(bytes: data, retainSeconds: retainSeconds)
-            bytes = data; fileName = String(name.filter { $0.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) } }.prefix(128))
+            clearBytes(); bytes = Data(data); recorded = recording; fileName = String(name.filter { $0.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) } }.prefix(128))
             if fileName.isEmpty { fileName = "audio.wav" }; message = ""; approved = false
-        } catch { fileFailure(error) }
+            return true
+        } catch { fileFailure(error); return false }
     }
     func fileFailure(_ error: Error) {
         guard active, online, !busy, !(error is CancellationError) else { return }
-        bytes = nil; fileName = ""; approved = false
+        clearBytes(); fileName = ""; approved = false
         message = (error as? MediaError)?.message ?? "无法读取音频，请选择不超过 4 MiB 的 WAV 文件"
     }
     private func current(_ epoch: Int) throws {
@@ -95,7 +101,7 @@ import LimeIoTKit
     }
     func upload() {
         guard canUpload, let bytes else { return }
-        do { let change = try MediaChanges.upload(bytes: bytes, retainSeconds: retainSeconds); self.bytes = nil; fileName = ""; submit(change) }
+        do { let change = try MediaChanges.upload(bytes: bytes, retainSeconds: retainSeconds); clearBytes(); fileName = ""; submit(change) }
         catch { fileFailure(error) }
     }
     func grant() {
@@ -119,7 +125,7 @@ import LimeIoTKit
     }
     func pause() {
         generation += 1; work?.cancel(); busy = false; ready = false
-        approved = false; deletion = nil; bytes = nil; fileName = ""
+        approved = false; deletion = nil; clearBytes(); fileName = ""
     }
     func setOnline(_ value: Bool) { if !value { pause() }; online = value }
     func close() { pause(); active = false }

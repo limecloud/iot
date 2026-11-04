@@ -8,6 +8,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.View
 import android.view.WindowManager
 import android.widget.*
 import run.limeai.iot.device.DeviceModelProfile
@@ -17,12 +20,22 @@ class TelevisionActivity : Activity() {
     private val runtime get() = (application as TelevisionApplication).runtime
     private lateinit var status: TextView
     private lateinit var details: TextView
-    private lateinit var notice: TextView
     private lateinit var applications: LinearLayout
     private lateinit var start: Button
     private lateinit var stop: Button
     private lateinit var audioStatus: TextView
     private lateinit var revokeAudio: Button
+    private lateinit var navigation: TvNavigation
+    private lateinit var backNavigation: TvBackNavigation
+    private lateinit var heroTitle: TextView
+    private lateinit var heroMessage: TextView
+    private lateinit var homeSetup: Button
+    private lateinit var applicationsSummary: TextView
+    private lateinit var capabilitiesSummary: TextView
+    private lateinit var homeConnectionSummary: TextView
+    private lateinit var connectionStep: TextView
+    private lateinit var connectionSummary: TextView
+    private lateinit var maintenanceSummary: TextView
     private var audioDialog: AlertDialog? = null
     private var modelDialog: AlertDialog? = null
     private lateinit var modelAssignment: Button
@@ -51,31 +64,91 @@ class TelevisionActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(40), dp(24), dp(40), dp(32)) }
-        fun label(value: String, size: Float = 18f) = TextView(this).apply { text = value; textSize = size; setPadding(0, dp(8), 0, dp(8)) }.also(content::addView)
-        label(getString(R.string.app_name), 28f)
-        label("使用手机或电脑控制这台电视。首次接入请核对连接配置、申请设备证书，再明确允许可启动的应用。")
-        status = label("未连接", 22f); notice = label(""); details = label("尚未导入设备材料")
-        fun button(value: String, action: () -> Unit) = Button(this).apply { text = value; isFocusable = true; setOnClickListener { action() } }.also(content::addView)
-        identityDetails = label("尚无本机证书申请")
-        identitySetup = button("导入首次连接配置") { choose("application/json", SETUP_REQUEST) }
-        resumeRequest = button("恢复原申请") { runtime.requestIdentity() }
-        exportRequest = button("导出原申请") {
+        backNavigation = TvBackNavigation(this, ::returnToOverview)
+        navigation = TvNavigation(this) { backNavigation.update(it != HOME) }
+        fun label(parent: LinearLayout, value: String, size: Float = 16f, secondary: Boolean = true) =
+            TvUi.label(this, value, size, secondary).also { view ->
+                parent.addView(view, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
+            }
+        fun button(parent: LinearLayout, value: String, primary: Boolean = false, action: () -> Unit) =
+            TvUi.button(this, value, primary, action).also(parent::addView)
+        fun panel(parent: LinearLayout, title: String, description: String): LinearLayout = TvUi.card(this).also {
+            parent.addView(it, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(16) })
+            label(it, title, 20f, false); label(it, description, 15f)
+        }
+
+        val home = TvUi.column(this)
+        val hero = TvUi.column(this).apply { setPadding(dp(12), dp(18), 0, 0); minimumHeight = dp(218) }
+        home.addView(hero)
+        status = label(hero, "连接状态", 13f)
+        heroTitle = label(hero, "这台电视", 40f, false)
+        heroMessage = label(hero, "连接家庭网关，允许手机和电脑控制这台电视。", 16f).apply { maxWidth = dp(560) }
+        homeSetup = button(hero, "设置连接", true) { navigation.show(CONNECTION, true) }.apply {
+            layoutParams = LinearLayout.LayoutParams(dp(184), -2).apply { topMargin = dp(12) }
+        }
+        val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false }
+        hero.addView(actions)
+        start = button(actions, "开始连接", true) { requestStart() }.apply {
+            layoutParams = LinearLayout.LayoutParams(dp(184), -2).apply { topMargin = dp(12); rightMargin = dp(12) }
+        }
+        stop = button(actions, getString(R.string.stop)) { runtime.stop(); stopService(Intent(this, AgentService::class.java)) }.apply {
+            layoutParams = LinearLayout.LayoutParams(dp(164), -2).apply { topMargin = dp(12) }
+        }
+        home.addView(TvUi.space(this, 18))
+        val shortcuts = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false }
+        home.addView(shortcuts, LinearLayout.LayoutParams(-1, dp(110)))
+        applicationsSummary = TvUi.actionTile(shortcuts, R.drawable.ic_tv_apps, "应用授权", "选择允许远程启动的应用") { navigation.show(APPLICATIONS, true) }
+        homeConnectionSummary = TvUi.actionTile(shortcuts, R.drawable.ic_tv_connection, "连接设置", "接入你的家庭网关") { navigation.show(CONNECTION, true) }
+        capabilitiesSummary = TvUi.actionTile(shortcuts, R.drawable.ic_tv_maintenance, "设备维护", "管理能力与应用更新") { navigation.show(MAINTENANCE, true) }
+        navigation.addPage("总览", "这台电视", "管理连接、应用授权与设备维护。", home)
+
+        val connection = TvUi.column(this)
+        val setup = panel(connection, "连接家庭网关", "由家庭网关的管理者准备连接配置，在电视上核对并完成接入。")
+        connectionStep = label(setup, "第一步 · 导入连接配置", 18f, false)
+        identitySetup = button(setup, "导入首次连接配置", true) { choose("application/json", SETUP_REQUEST) }
+        resumeRequest = button(setup, "恢复原申请") { runtime.requestIdentity() }
+        exportRequest = button(setup, "导出原申请") {
             try { startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/pkcs10").putExtra(Intent.EXTRA_TITLE, "request.csr"), EXPORT_REQUEST) }
             catch (_: ActivityNotFoundException) { runtime.notice("需要可用的系统文件选择器。") }
         }
-        importCertificate = button("导入签发的设备证书") { choose("*/*", CERTIFICATE_REQUEST) }
-        reopen = button("重新核对已保存记录") { runtime.reopenRecords() }
-        modelAssignment = button("扩展设备能力配置") { chooseModelAssignment() }
-        rotationDetails = label("尚无换钥申请")
-        rotate = button("申请或恢复换钥") { requestKeyChange(false) }
-        recoverExpired = button("申请或恢复过期身份") { requestKeyChange(true) }
-        exportRotation = button("导出原换钥申请") { createDocument("application/pkcs10", "rotation.csr", EXPORT_ROTATION) }
-        importRotation = button("导入换钥回执与证书") { choose("application/json", ROTATION_RECEIPT) }
-        exportProof = button("导出原激活证明") { createDocument("text/plain", "activation-proof.txt", EXPORT_PROOF) }
-        importCompletion = button("核对管理端撤旧结果") { choose("application/json", ROTATION_COMPLETION) }
-        retirementDetails = label("尚无可清理的旧签名键")
-        retire = button("核对并清理已撤销旧密钥") {
+        importCertificate = button(setup, "导入签发的设备证书") { choose("*/*", CERTIFICATE_REQUEST) }
+        connectionSummary = label(setup, "连接配置只保存在这台电视中。", 15f)
+        button(setup, "查看完整身份信息") { navigation.show(DIAGNOSTICS, true) }
+        val legacy = panel(connection, "已有设备材料？", "如果管理者已提供完整的设备材料，可从这里导入并逐项核对。")
+        import = button(legacy, "导入设备材料") {
+            try { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json"), IMPORT_REQUEST) }
+            catch (_: ActivityNotFoundException) { runtime.notice("需要可用的系统文件选择器。请由所有者提供设备材料文件。") }
+        }
+        navigation.addPage("连接设置", "连接设置", "接入家庭网关，由你决定何时开始连接。", connection)
+
+        val apps = TvUi.column(this)
+        label(apps, "只有你允许的应用，才能从手机或电脑远程启动。随时取消，立即生效。", 16f)
+        applications = TvUi.column(this)
+        apps.addView(applications)
+        button(apps, "刷新设备与应用") { runtime.refresh() }
+        navigation.addPage("应用授权", "应用授权", "使用方向键选择应用，按确定键允许或取消。", apps)
+
+        val maintenance = TvUi.column(this)
+        val capabilities = panel(maintenance, "设备能力", "应用启动、音量与外部遥控分别授权，按当前配置提供。")
+        maintenanceSummary = label(capabilities, "尚未配置设备能力", 18f, false)
+        modelAssignment = button(capabilities, "扩展设备能力配置") { chooseModelAssignment() }
+        audioStatus = label(capabilities, "尚未允许音量和静音控制", 15f)
+        revokeAudio = button(capabilities, "取消本次音量和静音授权并停止") { runtime.revokeAudio(); stopService(Intent(this, AgentService::class.java)) }
+        val updates = panel(maintenance, "应用更新", "核对发布材料与权限变化，由你明确批准每次更新。")
+        button(updates, "更新材料与批准") { startActivity(Intent(this, ApkUpdateActivity::class.java)) }
+        val security = panel(maintenance, "设备身份管理", "仅在更换证书、证书过期或清理旧密钥时使用。请先停止连接。")
+        val advanced = TvUi.column(this).apply { visibility = View.GONE }
+        button(security, "证书与密钥管理") {
+            advanced.visibility = if (advanced.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        }
+        security.addView(advanced)
+        rotate = button(advanced, "申请或恢复换钥") { requestKeyChange(false) }
+        recoverExpired = button(advanced, "申请或恢复过期身份") { requestKeyChange(true) }
+        exportRotation = button(advanced, "导出原换钥申请") { createDocument("application/pkcs10", "rotation.csr", EXPORT_ROTATION) }
+        importRotation = button(advanced, "导入换钥回执与证书") { choose("application/json", ROTATION_RECEIPT) }
+        exportProof = button(advanced, "导出原激活证明") { createDocument("text/plain", "activation-proof.txt", EXPORT_PROOF) }
+        importCompletion = button(advanced, "核对管理端撤旧结果") { choose("application/json", ROTATION_COMPLETION) }
+        retire = button(advanced, "核对并清理已撤销旧密钥") {
             val available = runtime.screen.retirements.filter { it.phase in setOf("retained", "deleting") }
             AlertDialog.Builder(this).setTitle("选择原换钥操作")
                 .setItems(available.map { it.requestId + if (it.phase == "deleting") "（恢复原清理）" else "（核对撤销列表）" }.toTypedArray()) { _, index ->
@@ -84,23 +157,23 @@ class TelevisionActivity : Activity() {
                     else { pendingRetirementId = entry.requestId; choose("*/*", RETIREMENT_CRL) }
                 }.setNegativeButton("取消", null).show()
         }
-        import = button("导入设备材料") {
-            try { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/json"), IMPORT_REQUEST) }
-            catch (_: ActivityNotFoundException) { runtime.notice("需要可用的系统文件选择器。请由所有者提供设备材料文件。") }
-        }
-        start = button("开始连接") { requestStart() }
-        stop = button(getString(R.string.stop)) { runtime.stop(); stopService(Intent(this, AgentService::class.java)) }
-        audioStatus = label("尚未允许音量和静音控制")
-        revokeAudio = button("取消本次音量和静音授权并停止") { runtime.revokeAudio(); stopService(Intent(this, AgentService::class.java)) }
-        button("刷新设备与应用") { runtime.refresh() }
-        button("更新材料与批准") { startActivity(Intent(this, ApkUpdateActivity::class.java)) }
-        label("允许启动的应用", 22f)
-        label("未勾选的应用不会接受远程启动。卸载、禁用或撤销后，执行前还会重新检查。")
-        applications = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }.also(content::addView)
-        label(runtime.backgroundLimit())
-        label("日志最多保留128条原命令；容量用尽时拒绝新动作。请保留原记录，不要清除应用数据恢复控制。")
-        setContentView(ScrollView(this).apply { isFillViewport = true; addView(content) })
-        identitySetup.requestFocus()
+        navigation.addPage("设备维护", "设备维护", "管理设备能力、应用更新与证书。", maintenance)
+
+        val diagnostics = TvUi.column(this)
+        val information = panel(diagnostics, "设备与连接信息", "这里的摘要可用于与家庭网关管理者核对，不包含私钥。")
+        details = label(information, "尚未导入设备材料", 15f)
+        identityDetails = label(information, "尚无本机证书申请", 14f)
+        rotationDetails = label(information, "尚无换钥申请", 14f)
+        retirementDetails = label(information, "尚无可清理的旧签名键", 14f)
+        reopen = button(information, "重新核对已保存记录") { runtime.reopenRecords() }
+        val help = panel(diagnostics, "使用与恢复", runtime.backgroundLimit())
+        label(help, "连接失败时请检查网关地址与网络。证书过期请进入设备维护；存储异常请保留原记录并重新核对。", 15f)
+        label(help, "不要通过清除应用数据恢复控制；这会丢失设备身份、授权与原命令记录。", 15f)
+        label(help, "LimeIoT ${BuildConfig.VERSION_NAME}  ·  Android ${Build.VERSION.RELEASE}", 13f)
+        navigation.addPage("诊断信息", "诊断信息", "查看连接信息，核对设备记录。", diagnostics)
+        setContentView(navigation.root)
+        navigation.show(savedInstanceState?.getInt("page", HOME) ?: HOME)
+        navigation.focusNavigation()
     }
     override fun onStart() { super.onStart(); runtime.observe(observer); runtime.refresh() }
     override fun onResume() { super.onResume(); resumed = true; runtime.setVisible(true) }
@@ -112,6 +185,18 @@ class TelevisionActivity : Activity() {
         super.onPause()
     }
     override fun onStop() { runtime.remove(observer); super.onStop() }
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt("page", navigation.selected)
+        super.onSaveInstanceState(outState)
+    }
+    override fun onDestroy() { backNavigation.close(); super.onDestroy() }
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if (Build.VERSION.SDK_INT < 33 && keyCode == KeyEvent.KEYCODE_BACK && !event.isCanceled && navigation.selected != HOME) {
+            returnToOverview(); return true
+        }
+        return super.onKeyUp(keyCode, event)
+    }
+    private fun returnToOverview() { navigation.show(HOME); navigation.focusNavigation() }
 
     private fun choose(type: String, request: Int) {
         try { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType(type), request) }
@@ -305,7 +390,42 @@ class TelevisionActivity : Activity() {
         val s = runtime.screen
         val statuses = mapOf("stopped" to "已停止", "stopping" to "正在停止", "connecting" to "正在连接", "handshaking" to "正在核对设备会话", "ready" to "设备连接就绪", "connection_unavailable" to "连接失败，正在等待重连", "storage_unavailable" to "记录存储不可用，连接已阻断")
         status.text = statuses[s.status] ?: "设备未就绪（${s.status}）"
-        notice.text = s.notice
+        navigation.message(s.notice)
+        navigation.status(when (s.status) {
+            "ready" -> "●  已连接家庭网关"
+            "connection_unavailable" -> "○  连接失败，等待重试"
+            "handshaking" -> "○  正在核对网关会话"
+            "storage_unavailable" -> "○  记录存储异常"
+            else -> if (runtime.running) "○  正在连接家庭网关" else "○  连接已停止"
+        })
+        heroTitle.text = when {
+            s.summary == null -> "设置电视连接"
+            s.summary.expired -> "证书需要维护"
+            s.status == "ready" -> "电视已连接"
+            s.status == "connection_unavailable" -> "暂时无法连接网关"
+            s.status == "handshaking" -> "正在核对网关会话"
+            s.status == "storage_unavailable" -> "设备记录需要检查"
+            runtime.running -> "正在建立安全连接"
+            else -> "这台电视"
+        }
+        heroMessage.text = when {
+            s.summary == null -> "连接家庭网关，允许手机和电脑控制这台电视。"
+            s.summary.expired -> "证书已过期。请进入设备维护，保留原身份并恢复连接资格。"
+            s.status == "ready" -> "远程控制已就绪。只有你允许的应用和能力可以被操作。"
+            s.status == "connection_unavailable" -> "连接失败，正在自动重试。请检查网关是否运行、连接地址与网络是否可用。"
+            s.status == "handshaking" -> "已建立网络连接，正在等待家庭网关确认设备会话。"
+            s.status == "storage_unavailable" -> "记录存储异常，连接已阻断。请保留原数据并进入诊断信息核对。"
+            runtime.running -> "请保持网络可用。你可以随时停止本次连接。"
+            else -> "家庭网关已配置，连接已停止。"
+        }
+        homeSetup.visibility = if (s.summary == null) View.VISIBLE else View.GONE
+        start.visibility = if (s.summary != null && !runtime.running) View.VISIBLE else View.GONE
+        stop.visibility = if (runtime.running) View.VISIBLE else View.GONE
+        applicationsSummary.text = "${s.allowed.size} 个已允许"
+        homeConnectionSummary.text = if (s.summary != null) "已配置" else "尚未配置"
+        val currentModel = s.summary?.let { DeviceModelProfile.parse(it.model) }
+        capabilitiesSummary.text = currentModel?.let { if (it.hasAudio) "应用与音频" else "应用启动" } ?: "未配置"
+        maintenanceSummary.text = currentModel?.let(::modelLabel) ?: "请先完成连接设置"
         details.text = s.summary?.let { "空间：${it.space}\n设备：${it.device}\n连接：${it.broker}\n逻辑模型：${it.model}\nCA指纹：${it.ca}\n证书有效至：${it.expires}" + if (it.expired) "\n证书已过期，仅可维护" else "" } ?: "尚未导入设备材料"
         start.isEnabled = s.summary != null && !s.summary.expired && !runtime.running
         stop.isEnabled = runtime.running
@@ -315,6 +435,19 @@ class TelevisionActivity : Activity() {
             else "当前配置没有开放音量和静音控制。"
         revokeAudio.isEnabled = audioModel && runtime.running
         val request = s.identityRequest
+        connectionStep.text = when {
+            s.summary != null -> "连接身份已保存"
+            request?.request != null -> "第二步 · 请管理者签发后导入证书"
+            request != null -> "恢复已保存的证书申请"
+            else -> "第一步 · 导入连接配置"
+        }
+        connectionSummary.text = s.summary?.let { "设备：${it.device}\n家庭空间：${it.space}\n证书有效至：${it.expires}" }
+            ?: if (request?.request != null) "导出原申请交给管理者签发，再将签发的证书导入这台电视。" else "配置来自你的家庭网关。请在确认页面核对设备和连接来源。"
+        identitySetup.visibility = if (s.summary == null && request == null) View.VISIBLE else View.GONE
+        resumeRequest.visibility = if (request != null && request.phase != "active") View.VISIBLE else View.GONE
+        exportRequest.visibility = if (request?.request != null && request.phase != "active") View.VISIBLE else View.GONE
+        importCertificate.visibility = exportRequest.visibility
+        import.visibility = if (request == null) View.VISIBLE else View.GONE
         modelAssignment.isEnabled = !runtime.running && request?.phase == "active" && s.summary?.expired == false &&
             s.summary.model != DeviceModelProfile.AUDIO_COMPOSED_REMOTE.id &&
             (s.rotation == null || s.rotation.managementCompleted) && s.retirements.none { it.phase == "deleting" }
@@ -349,21 +482,41 @@ class TelevisionActivity : Activity() {
         val listState = s.applications to s.allowed
         if (lastApplications != listState) {
             lastApplications = listState
+            val focusedPackage = applications.findFocus()?.tag as? String
             applications.removeAllViews()
             val entries = (s.applications + (s.allowed - s.applications.map { it.packageName }.toSet()).map { AndroidApplications.Entry(it, "当前不可启动，可取消授权") }).sortedBy { it.packageName }
-            if (entries.isEmpty()) applications.addView(TextView(this).apply { text = "尚未发现可启动的电视应用。" })
-            entries.forEach { entry ->
-                applications.addView(CheckBox(this).apply {
-                    text = "${entry.label}\n${entry.packageName}"; textSize = 18f
-                    isChecked = entry.packageName in s.allowed; isEnabled = s.summary != null && (!s.summary.expired || isChecked)
-                    isFocusable = true
+            if (entries.isEmpty()) applications.addView(TvUi.label(this, "尚未发现可启动的电视应用。安装电视应用后，请刷新列表。", 17f, true).apply {
+                background = TvUi.shape(this@TelevisionActivity, TvUi.surface)
+                setPadding(dp(20), dp(28), dp(20), dp(28))
+            })
+            var restoreFocus: CheckBox? = null
+            entries.chunked(2).forEach { pair ->
+                val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false }
+                applications.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+                pair.forEachIndexed { index, entry ->
+                    row.addView(CheckBox(this).apply {
+                    TvUi.styleButton(this)
+                    tag = entry.packageName
+                    val allowed = entry.packageName in s.allowed
+                    text = "${entry.label}\n${if (allowed) "已允许启动" else "未授权"}"; textSize = 16f
+                    contentDescription = "${entry.label}，${entry.packageName}，${if (allowed) "已允许启动" else "未授权"}"
+                    gravity = Gravity.CENTER_VERTICAL; minHeight = dp(84)
+                    setPadding(dp(16), dp(14), dp(12), dp(14))
+                    isChecked = allowed; isEnabled = s.summary != null && (!s.summary.expired || isChecked)
+                    if (focusedPackage == entry.packageName) restoreFocus = this
                     setOnCheckedChangeListener { _, checked -> runtime.authorize(entry.packageName, checked) }
-                })
+                    }, LinearLayout.LayoutParams(0, -2, 1f).apply { if (index == 0) rightMargin = dp(12) })
+                }
+                if (pair.size == 1) row.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
             }
+            restoreFocus?.let { target -> applications.post { if (resumed && target.isShown && hasWindowFocus()) target.requestFocus() } }
         }
+        TvUi.syncEnabledFocus(navigation.root)
     }
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
     companion object {
+        private const val HOME = 0; private const val CONNECTION = 1; private const val APPLICATIONS = 2
+        private const val MAINTENANCE = 3; private const val DIAGNOSTICS = 4
         private const val IMPORT_REQUEST = 41; private const val NOTIFICATION_REQUEST = 42
         private const val SETUP_REQUEST = 43; private const val EXPORT_REQUEST = 44; private const val CERTIFICATE_REQUEST = 45
         private const val EXPORT_ROTATION = 46; private const val ROTATION_RECEIPT = 47; private const val ROTATION_CERTIFICATE = 48

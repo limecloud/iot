@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "evidence_id": "EVID-NATIVE-VOICE-HANDOFF-20261104-01",
+  "recorded_at": "2026-11-04T07:20:52.559010+00:00",
+  "status": "passed",
+  "scope": "Swift/Kotlin原生分步语音的实际状态层、三阶段模型协议、独立授权播放及重启只读恢复",
+  "hardware": false,
+  "hardware_acceptance": "skipped_by_user",
+  "capture_fixture": true,
+  "system_microphone": false,
+  "model_provider_fixture": true,
+  "real_model_quality": false,
+  "renderer_fixture": true,
+  "audible_output": false,
+  "native_app_runtime": false,
+  "production_secure_store": false,
+  "ios_app_build": false,
+  "automatic_voice_turn_composition": false,
+  "published": false,
+  "full_goal_completed": false,
+  "implementation": [
+    "复用各原生模型状态层与媒体原请求合同；同页按上传、识别、文字对话、语音合成及授权排序，无新增服务、运行依赖、网关API或数据库变更。",
+    "prepareQuestion只校验并准备新对话问题，清除旧上下文；prepareAnswer只准备完整语音草稿，超长拒绝且保留原回答/草稿，不截断或隐式发送。",
+    "目标未配置、处理中、未决、后台/离线或关闭时拒绝带入；点击时重新读取仍有效的源结果；恢复任务不自动填入下一阶段。",
+    "生成媒体选中但不授权；授权和播放各自明确，重启不恢复旧授权、重新推理或重播。"
+  ],
+  "checks": {
+    "state_entry_passed": true,
+    "android_state_tests": 22,
+    "android_test_suites": {
+      "TextGenerationControllerTest": 8,
+      "SpeechControllerTest": 8,
+      "HomeViewModelTest": 6
+    },
+    "android_failed": 0,
+    "android_skipped": 0,
+    "android_debug_apk": true,
+    "android_lint_errors": 0,
+    "android_lint_existing_warnings": 17,
+    "swift_text_contract_state_groups": 10,
+    "swift_speech_state_groups": 8,
+    "swiftui_syntax_and_project_structure": true,
+    "gateway_journeys": 2,
+    "failed_journeys_final": 0,
+    "skipped_journeys_final": 0,
+    "host_processes_per_target": 2,
+    "gateway_restarts_per_target": 1,
+    "provider_calls_per_target": 3,
+    "transcription_received_recorded_frames": 16000,
+    "transcription_received_sample_rate": 16000,
+    "explicit_device_commands_per_target": 1,
+    "soap_mutations_per_target": 3,
+    "range_audio_bytes_per_target": 32044,
+    "restart_provider_calls": 0,
+    "restart_device_commands": 0,
+    "client_body_persistence": false,
+    "host_journal_mode": "0600",
+    "unchanged_rust_inputs": 135,
+    "unchanged_gateway_binaries": 3,
+    "website_pages": 54,
+    "website_local_references": 2115,
+    "document_count": 8,
+    "checked_local_links": 640,
+    "diff_checks_both_repositories": true
+  },
+  "commands": [
+    "npm run test:voice-handoff:native:state",
+    "node --test --test-concurrency=1 tests/voice-handoff-native.test.mjs",
+    "iotweb: npm run build"
+  ],
+  "available_combined_entry": "npm run test:voice-handoff:native",
+  "combined_entry_executed": false,
+  "manifests": [
+    {
+      "path": ".dev/native-voice-handoff-20261104/source-manifest.json",
+      "sha256": "9a1e4a67ce3bf4b182954688dedd6f86787bfcd4cfe3a5d887d90865e1ce7809"
+    },
+    {
+      "path": ".dev/native-voice-handoff-20261104/artifact-manifest.json",
+      "sha256": "6f2544168727cb066a101785bbf692807cb4e6c2a5f329fc419ca00ce92d549b"
+    }
+  ],
+  "source_digest": "4d10b69f671d70bf365dbaa1f42f4dbf478d9c765afedfbcc1cfee06dc945e7b",
+  "source_file_count": 331,
+  "journeys": [
+    {
+      "target": "ios",
+      "path": ".dev/voice-turn-L5iBHO/voice-handoff-native-result.json",
+      "sha256": "5310f4e16771a2752abdc44c2599c1b0240008fdea28057b63fdd67a56e9d412"
+    },
+    {
+      "target": "android",
+      "path": ".dev/voice-turn-l7MRYd/voice-handoff-native-result.json",
+      "sha256": "d21b90ae435cbecbdb12d4d523ee99db6d8062e69f0b9b1eae96782f7440b1fa"
+    }
+  ],
+  "logs": [
+    {
+      "path": ".dev/voice-handoff-android-attempt1-20261104.log",
+      "sha256": "439045a11a87d4a8df21b686d939d50141004ae71a302b2b0949027423601b6c"
+    },
+    {
+      "path": ".dev/voice-handoff-ios-attempt1-20261104.log",
+      "sha256": "a6cf8eaeaca599c244e526489ccc1830a00fc80923e38cccc5fc552a58728269"
+    },
+    {
+      "path": ".dev/voice-handoff-journey-attempt1-20261104.log",
+      "sha256": "fb3ab8e07c20743470c21c4a769c26094122caad1e0eecb64448b0337c90629c"
+    },
+    {
+      "path": ".dev/voice-handoff-journey-attempt2-20261104.log",
+      "sha256": "419b691558141ce1a2ccfda430b2c5d6fc031f8401419907a13cc1dc4ae56ce2"
+    },
+    {
+      "path": ".dev/voice-handoff-state-entry-20261104.log",
+      "sha256": "2a92bd26d24972b3f9dd8758cd69634040896d6ed7c002eec12420edb74f4493"
+    },
+    {
+      "repository": "iotweb",
+      "path": ".dev/native-voice-handoff-docs-build-20261104.log",
+      "sha256": "ef5b179fdd9f4a7673dde6869b680f5e9347581d394db252983f4fa22c1a693a"
+    }
+  ],
+  "failures_and_repairs": [
+    {
+      "failure": "首次两端组合宿主均在编译时缺少Transcription状态层要求的MediaClient参数",
+      "repair": "按实际构造合同注入同一网关/存储的MediaClient，没有修改产品合同或削弱检查",
+      "result": "第二轮两端完整旅程通过，原失败日志保留"
+    }
+  ],
+  "limits": [
+    "实际运行的是Swift/Kotlin宿主状态层，采音、模型与音箱使用协议夹具；未运行完整App或系统麦克风。",
+    "分步组合沿用各独立原任务，无统一回合ID、自动阶段推进、5分钟总期限或三类部署冻结；网页/CLI VoiceTurnClient合同保持独立。",
+    "生产Keychain/Keystore、iOS系统采音分支与完整iOS构建未验收；Android App既有ANR和iOS SDK缺失继续保留，未重试。",
+    "未重建NAS、发布官网、更新官方云或执行实机；真实模型质量、其他协议/品牌及既有AMD64/TV问题仍有未完成项。"
+  ],
+  "document_validation": {
+    "path": ".dev/native-voice-handoff-20261104/document-links.json",
+    "sha256": "992f38f7d6480fb318da8e59ddfb2ca0400ae459be3734fe8f34f92b06a8584b"
+  }
+}

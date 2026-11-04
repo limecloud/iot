@@ -1,0 +1,141 @@
+{
+  "space_id": "space-demo",
+  "models": [
+    {
+      "schema_version": 1,
+      "model_id": "urn:limeiot:model:demo-lamp:1",
+      "model_version": "1.0.0",
+      "services": [
+        {
+          "id": "light",
+          "semantic_id": "urn:limeiot:service:light:1",
+          "properties": [
+            {
+              "id": "power",
+              "semantic_id": "urn:limeiot:property:power:1",
+              "schema": {
+                "type": "boolean"
+              },
+              "access": [
+                "read",
+                "write",
+                "notify"
+              ],
+              "max_age_ms": 60000
+            },
+            {
+              "id": "brightness",
+              "semantic_id": "urn:limeiot:property:brightness:1",
+              "schema": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "access": [
+                "read",
+                "write",
+                "notify"
+              ],
+              "unit": "percent",
+              "max_age_ms": 60000
+            }
+          ],
+          "actions": [],
+          "events": []
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "model_id": "urn:limeiot:model:demo-button:1",
+      "model_version": "1.0.0",
+      "services": [
+        {
+          "id": "button",
+          "semantic_id": "urn:limeiot:service:button:1",
+          "properties": [],
+          "actions": [],
+          "events": [
+            {
+              "id": "pressed",
+              "semantic_id": "urn:limeiot:event:button-pressed:1",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3
+                  }
+                },
+                "required": [
+                  "count"
+                ],
+                "additionalProperties": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "schema_version": 1,
+      "model_id": "urn:limeiot:model:demo-environment:1",
+      "model_version": "1.0.0",
+      "services": [
+        {
+          "id": "environment",
+          "semantic_id": "urn:limeiot:service:environment:1",
+          "properties": [
+            {
+              "id": "temperature",
+              "semantic_id": "urn:limeiot:property:temperature:1",
+              "schema": {
+                "type": "integer",
+                "minimum": -4500,
+                "maximum": 13000
+              },
+              "access": [
+                "read",
+                "notify"
+              ],
+              "unit": "celsius_x100",
+              "max_age_ms": 15000
+            },
+            {
+              "id": "humidity",
+              "semantic_id": "urn:limeiot:property:relative-humidity:1",
+              "schema": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "access": [
+                "read",
+                "notify"
+              ],
+              "unit": "percent_x100",
+              "max_age_ms": 15000
+            }
+          ],
+          "actions": [],
+          "events": []
+        }
+      ]
+    }
+  ],
+  "devices": [
+    {
+      "device_id": "device-lamp",
+      "model_revision": "sha256:aaf9fc9ba87187643ab777cda43658e09603fc1c0e51dc6ec1acde160d4aecfc"
+    },
+    {
+      "device_id": "device-button",
+      "model_revision": "sha256:c557e81af48798cd354c4a3558e822aed3d732f78ecdfb481d46883d13a7366d"
+    },
+    {
+      "device_id": "device-zigbee-environment",
+      "model_revision": "sha256:2c8f8412b8ca513286c6975f5b887166dbb1b364ee800b74e528e279fa6c3348"
+    }
+  ]
+}

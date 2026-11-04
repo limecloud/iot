@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LimeIoT bounded companion policy v1",
+  "type": "object",
+  "required": ["schema_version", "policy_id", "version", "name", "instructions", "language", "voice", "max_turns", "max_seconds"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "policy_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$"},
+    "version": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,5})\\.(0|[1-9][0-9]{0,5})\\.(0|[1-9][0-9]{0,5})$"},
+    "name": {"type": "string", "minLength": 1, "maxLength": 80},
+    "instructions": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "language": {"enum": ["auto", "zh", "en"]},
+    "voice": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$"},
+    "max_turns": {"type": "integer", "minimum": 1, "maximum": 8},
+    "max_seconds": {"type": "integer", "minimum": 30, "maximum": 1800}
+  },
+  "additionalProperties": false
+}

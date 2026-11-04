@@ -1,5 +1,25 @@
 # Android 原生客户端
 
+本地“设置 → 音频 → 陪伴”支持自定义角色说明、实际声音和逐轮录音，默认四轮、十分钟。`CompanionClient`与`#companion:space_id`摘要账本复用原三阶段；后台/离页/离线清除内存历史，返回只GET，停止无需正文并清各轮文字。生成音频仍须独立授权播放。入口`npm run test:companion:native`检查共享账本、实际状态层及真实网关跨进程恢复，见[原生合同](../../contracts/companion.md#原生客户端)。完整原生页面、生产安全存储与真实模型质量独立验收，实机跳过。
+
+“设置 → AI 服务”展示当前五类能力、实际模型、部署修订和限制；“已配置，健康未检测”不表示模型可用。已配置条目可进入原自动化、对话、视觉或音频页面，仍需明确调用。后台、离页、离线或会话变化会清除目录，迟到响应不恢复旧入口；查询不创建推理任务，不持久保存目录。SDK使用`gateway.aiCatalog("space-demo")`，严格合同见[AI目录](../../contracts/ai-catalog.md)。统一检查入口为`npm run test:ai-catalog:native`；宿主状态层、APK与lint检查不替代完整Compose应用或Keystore运行。
+
+普通控制在发送前保存并回读完整原输入；`GatewayClient.create`及`resolve(space,intent)`核对空间、键、设备、模型、期限和操作，confirmed另核对属性或动作证据。错误回执不清除原请求；SDK校验摘要格式，正式JCS摘要由Rust负责。`CommandRecoveryTest`消费`tests/fixtures/commands/recovery.json`的30组共享向量，属于JVM宿主检查；APK/lint不代表Keystore故障或完整Compose运行验收。
+
+仓库根目录执行`node tools/test-home-native-state.mjs android`，运行实际HomeViewModel的六组宿主旅程及云状态回归，并构建Debug APK和执行lint。旅程覆盖存储抛错/未真正保存时零POST、错误回执与404保留原字节、状态重建/退出后恢复、清理未保存及503离线禁写。家庭入口沿用云入口的ViewModel工厂方式，注入既有SessionStore、GatewayTransport和地址偏好回调；生产使用Keystore，在连接时创建OkHttp传输实例。测试不启动模拟器，不代表生产Keystore或Compose端上运行。
+
+静态配置的Zigbee开关复用家庭设备页现有电源控件与GatewayClient，不增加协议专用UI。`npm run test:zigbee:onoff-native`使用真实Rust/SQLite和软件NCP，检查Swift/Kotlin客户端库的完整读回证据、丢响应原键查询、客户端进程及网关重启零补发；宿主库联调与完整App运行分别验收。配置与范围见[属性桥接合同](../../contracts/property-bridges.md)。
+
+## Zigbee 来源接入
+
+同页的“Zigbee 入网”支持选择协调器、填写1–120秒时长，核对IEEE后明确开放；关闭独立确认。ZigbeeClient使用`origin#zigbee-operations`保存并回读原请求，未知只查询原键，禁止换键延长未知窗口。已完成回执不可变化；后台、离页、离线或60秒过期清除核对，准备与取消零POST。共享合同与运行边界见[入网管理合同](../../contracts/zigbee-operations.md#原生客户端)。
+
+本地“设置 → Zigbee 设备”支持选择已配置的协调器，发现已有邻居、读取端点，再查询支持的温湿度端点，核对厂商/型号后明确添加；也保留已知 IEEE/端点和设备编号的手填入口。发现和端点只在内存保留最长 60 秒，过期、输入/来源变化或暂停后清除，不创建设备或保存原请求。托管来源可先读取当前绑定再确认撤销；重新接入重新查询候选。配置接入的静态来源只展示，不接管或迁移。
+
+`ObservationClient(gateway, store)`复用当前HTTPS会话与Keystore适配器，独立`origin#observation-operations`最多保留128条完整原请求。保存并回读成功才POST；同键仅GET，未知同设备/来源阻止换键和换编号。后台、离线、离页、输入/模型/来源变化和60秒到期清除核对；状态层取消在途任务，迟到结果不恢复页面。原请求查询不会重新启用已撤销来源。
+
+仓库根目录执行`node tools/test-observation-native.mjs android`，检查合同、实际ObservationController、相关回归、Debug APK和lint；完整组合旅程为`npm run test:zigbee:native`，需要Swift、JDK21和Android SDK。同一Gradle工程串行运行。详情见[来源合同](../../contracts/observation-sources.md#原生客户端接入与恢复)。宿主恢复文件为夹具，不代表Keystore或Compose实际页面运行；既有完整应用启动ANR缺口保留，实机按用户要求跳过。
+
 ## 本地音频客户端库
 
 `MediaClient(gateway, store)`使用现有NAS所有者会话与必填`SessionStore`，提供`list`、`submit`、`records`和`resolve`。`MediaChanges.upload(bytes, retainSeconds)`接受最多4MiB、60秒的16位PCM WAV；`grant`需要当前执行绑定修订，`revoke`与`delete`分别撤销授权和删除正文。接口只消费媒体ID与状态，不取得下载URL或令牌，上传/授权不自动播放。
@@ -9,6 +29,16 @@
 家庭网关“设置 → 音频”提供OpenDocument文件选择、保留时间、当前已绑定音箱、明确授权、撤销、删除确认和原操作查询。IO调度器有界读取最多4MiB+1字节，不申请广泛文件权限、不保留URI权限或正文；离开页面、后台和断线清除临时文件与确认。`targets`读取并核对当前执行绑定，兼容候选不自动授权；播放仍由设备页另行操作。云入口不增加媒体权限。
 
 仓库根目录`npm run test:media:native`检查库；`npm run test:media:native:state`运行实际`MediaController`、有界读取器与真实Rust/SQLite/MQTT及软件音箱，覆盖本地无副作用、确认失效、取消保存后零POST、离线禁写、401、丢回执和进程/网关重启恢复。需要JDK21、Android SDK和Swift。恢复文件为宿主夹具，不代表Android Keystore、系统文件选择器或Compose运行；既有模拟器ANR状态保留，实机按用户要求跳过。
+
+## 有限麦克风录音
+
+“设置 → 音频 → 上传音频”支持明确开始、完成和取消录音。系统权限批准后由独立`AndroidRecordingInput`读取AudioRecord，`RecordingController`只管理本机采音；`PcmRecording`输出16 kHz单声道PCM16 WAV，最多60秒、960000帧，不补静音。完成后先关闭麦克风，再将内存文件交给`MediaController`；另行点击上传，不自动调用模型或播放。后台、离页、断线、取消或设备中断停止采音并清除未上传录音，迟到权限与回调不恢复旧状态。仅申请运行时麦克风权限，没有后台录音服务。
+
+根目录`node tools/test-recording-native.mjs android`检查实际状态层、独立Java Sound解码、与JS逐字节一致、既有媒体回归及APK/lint；完整`npm run test:recording:native`另查两端真实Rust/SQLite上传、丢HTTP回执及新进程/网关重启只GET原键。采音与私有恢复文件为宿主夹具，不代表AudioRecord、Keystore或完整Compose运行，既有App启动ANR继续保留。同页分步组合见下段，统一回合见下方新增入口；实机按要求跳过。正式边界见[原生录音合同](../../contracts/voice-turns.md#原生有限录音)。
+
+在同页识别录音后，点击“带入新对话”，核对问题后“发送”；回答通过“带入语音合成”填入完整文本，再明确“生成音频”。两处带入只改当前内存草稿，不发请求；提问使用新对话上下文，超长回答不截断，未决或离线时不替换输入。合成成功后继续独立授权并在设备页播放。后台/离页清文，新进程查询各原键，不自动推进或重播。检查入口`npm run test:voice-handoff:native`，正式边界见[原生分步组合](../../contracts/voice-turns.md#原生分步组合)。
+
+“设置 → 音频 → 语音对话”另提供统一回合：选择已上传录音和声音，明确开始后依次调用ASR、文字与TTS；原任务共用v1摘要账本和5分钟期限。后台、离页或断网取消推进并清文，返回后查询原回合，明确继续才创建未创建阶段；停止需要确认，丢回执后只GET。生成音频须另行选择、授权和播放。SDK为`VoiceTurnClient`，检查入口`npm run test:voice-turns:native`，详见[原生统一回合](../../contracts/voice-turns.md#原生统一回合)。完整App、系统采音和真实模型质量保持独立验收。
 
 ## 本地文字转语音库
 
@@ -152,3 +182,11 @@ npm run test:android:runtime
 2026-11-02完整运行通过：2项Keystore、1项NAS页面旅程、1项新进程恢复，登录与命令POST各1次。原始报告为 `.dev/android-runtime-0389d7a7-b432-4ab1-9d5d-f29708032ca3/report.json`，标记native_app_runtime=true、hardware=false。早期一次新进程崩溃没有根因证据，保留失败记录，不因后续通过而宣称修复。该运行后的状态栏图标外观修复、常规构建与CA隔离单独登记在 `.dev/android-runtime-report.json`；该索引不替代 [当前进度](../../docs/24-实施计划与进度.md)。
 
 当前最终状态：状态栏外观修复与恢复页面在线/实际开关状态加强断言之后，`.dev/android-runtime-5cf6392a-d72c-4dc0-9722-a87d381da5ba/report.json` 在首个测试阶段启动ANR，未进入Keystore测试。退出记录为reason=6、failed to complete startup，根因未确认；按仓库重试上限停止循环。历史四项通过不覆盖当前运行与新增断言。独立常规Debug启动外观检查也未观察到登录页，未标通过；没有实机操作或发布。
+
+## 本地文字对话
+
+“设置 → 本地对话”使用 `TextGenerationController` 与 `TextGenerationClient(gateway, store)`，遵循[正式文字合同](../../contracts/text.md)。`TextGenerationRequests.input(messages, instructions, retainSeconds, expiresAt)` 构造有界上下文；成功回答后可在当前页面继续提问，最早回答期限约束整个上下文。
+
+本机 `origin#text-generations` 仅保存原输入摘要、去正文观测和明确清除意图。进入后台、离页、离线、退出或期限经过时清除本页消息；回到前台读取元数据，完成回答须明确查询。原键只 GET，404 和 unknown 不允许换键重发；放弃输出须确认，不能保证外部模型停止计算。原请求尚无观测时保留 unresolved，不能自动删除。
+
+运行 `npm run test:text:native:state` 检查实际状态层、Home 接入、Debug APK 和 lint；运行 `npm run test:text:native` 验证真实 Rust 网关与两端宿主进程恢复。宿主 HTTP 夹具与真实模型效果分开验收，完整 Android App 运行和 Keystore 仍独立验收。实机按要求跳过。

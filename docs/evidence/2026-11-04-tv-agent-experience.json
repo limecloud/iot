@@ -1,0 +1,422 @@
+{
+  "recorded_on": "2026-11-04",
+  "scope": "TV Agent visual redesign and navigation; separate from pre-redesign MQTT live journey",
+  "device": {
+    "model": "MiTV4-ANSM0",
+    "android": "6.0.1",
+    "api": 23,
+    "build": "2061",
+    "resolution": [
+      1920,
+      1080
+    ],
+    "dp_size": [
+      960,
+      540
+    ]
+  },
+  "research": {
+    "local_tv_screens_examined": [
+      "VIP content page of com.mitv.tvhome",
+      "system settings overlay of com.xiaomi.mitv.settings"
+    ],
+    "measured_colors": {
+      "vip_content_background": "#1B1D21",
+      "settings_focused_tile": "#0072FF",
+      "settings_uniform_sample_pixels": 15500,
+      "vip_theme_gold_samples": [
+        "#DFBD9F",
+        "#E3C5AA"
+      ]
+    },
+    "limits": [
+      "VIP gold is page-specific, not a universal Xiaomi theme",
+      "Attempt to navigate to ordinary home remained on VIP page; ordinary home not verified",
+      "Observations cover this model/build only"
+    ],
+    "public_references": [
+      {
+        "url": "https://tv.google/",
+        "images_examined": [
+          "google-tv-hero.webp",
+          "google-tv-content.webp"
+        ]
+      },
+      {
+        "url": "https://play.google.com/store/apps/details?id=com.spocky.projengmenu&hl=en",
+        "images_examined": [
+          "projectivy-0.webp",
+          "projectivy-1.webp"
+        ]
+      }
+    ],
+    "reference_image_sources": [
+      {
+        "name": "google-tv-hero",
+        "url": "https://www.gstatic.com/marketing-cms/assets/images/b8/3c/60e926d04bf5a12ec8ff763d1b32/hero-image-2x.webp=n-w2560-h1422-fcrop64=1,00000000ffffffff-rw",
+        "bytes": 235536,
+        "saved": true
+      },
+      {
+        "name": "google-tv-content",
+        "url": "https://www.gstatic.com/marketing-cms/assets/images/5a/80/8fcd0a754eefa3351a1d4eb199d8/everything-in-one-place-2x.webp=n-w2400-h1372-fcrop64=1,00000000ffffffff-rw",
+        "bytes": 214794,
+        "saved": true
+      },
+      {
+        "name": "projectivy-0",
+        "url": "https://play-lh.googleusercontent.com/y1mcHDxW3xwDwIjIPY6Et7W6LRcqdNhyOlqfLC9Vn2Qz9DpAkYC8jH-thQqeyZoReU2fja1-aAaenBobmHseqQ=w1052-h592",
+        "bytes": 539603,
+        "saved": true
+      },
+      {
+        "name": "projectivy-1",
+        "url": "https://play-lh.googleusercontent.com/U1hhfK4bw9Q9C-qbj1AfReA-lpDqrovDLZxfl99V1UdBnCcijmNCXEcj9MFDkC00eTF6mt2-b072VYjbUsGJwA=w1052-h592",
+        "bytes": 622332,
+        "saved": true
+      }
+    ],
+    "local_tv_screenshots_uploaded": false,
+    "local_tv_screenshots_published": false
+  },
+  "revisions": {
+    "2": {
+      "unit_tests": {
+        "passed": true,
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "suites": [
+          {
+            "name": "run.limeai.iot.television.AudioConsentActivityTest",
+            "tests": "2",
+            "failures": "0",
+            "errors": "0",
+            "skipped": "0",
+            "timestamp": "2026-11-04T04:16:55.057Z"
+          },
+          {
+            "name": "run.limeai.iot.television.ModelAssignmentActivityTest",
+            "tests": "2",
+            "failures": "0",
+            "errors": "0",
+            "skipped": "0",
+            "timestamp": "2026-11-04T04:17:13.448Z"
+          },
+          {
+            "name": "run.limeai.iot.television.TvNavigationActivityTest",
+            "tests": "6",
+            "failures": "0",
+            "errors": "0",
+            "skipped": "0",
+            "timestamp": "2026-11-04T04:17:21.262Z"
+          }
+        ]
+      },
+      "install": {
+        "exit_code": 0,
+        "output": "/Users/coso/Documents/dev/ai/limecloud/limeiot/iot/.dev/tv-ux-20261104/v2/application.apk: 1 file pushed, 0 skipped. 0.2 MB/s (5702176 bytes in 23.115s)\nPerforming Push Install\n\tpkg: /data/local/tmp/application.apk\r\nSuccess\r\n",
+        "elapsed_seconds": 52.43,
+        "sha256": "519c4688ae07da6467f085379031263560c78e5ef8eac5be7c593d8ee9b89109",
+        "installed_readback_matches": true
+      },
+      "navigation": {
+        "passed": true,
+        "revision": 2,
+        "method": "real_adb_input_and_uiautomator_hierarchy",
+        "screenshot_captured": false,
+        "pages": [
+          {
+            "page": "连接设置",
+            "selected": true,
+            "content_focused": true,
+            "focus_bounds": [
+              510,
+              590,
+              1792,
+              688
+            ],
+            "back_home": true,
+            "connection_stopped": true
+          },
+          {
+            "page": "应用授权",
+            "selected": true,
+            "content_focused": true,
+            "focus_bounds": [
+              486,
+              308,
+              1147,
+              476
+            ],
+            "back_home": true,
+            "connection_stopped": true
+          },
+          {
+            "page": "设备维护",
+            "selected": true,
+            "content_focused": true,
+            "focus_bounds": [
+              510,
+              875,
+              1792,
+              972
+            ],
+            "back_home": true,
+            "connection_stopped": true
+          },
+          {
+            "page": "诊断信息",
+            "selected": true,
+            "content_focused": true,
+            "focus_bounds": [
+              510,
+              843,
+              1792,
+              941
+            ],
+            "back_home": true,
+            "connection_stopped": true
+          }
+        ],
+        "home_row_activated_with_dpad_center": true,
+        "whole_database_unchanged_across_apk_replacement_and_navigation": true,
+        "database_sha256": "22ba95fee63c1ccdc73e5e4a43a5a98e8f843c847de2437af2e56bbcf3d39388",
+        "left_at_home_connection_stopped": true,
+        "installed_apk_readback_matches": true
+      },
+      "lint": {
+        "passed": false,
+        "errors": 1,
+        "warnings": 7,
+        "error": "GestureBackNavigation: onBackPressed override with targetSdk36"
+      },
+      "visual_direction": "graphite sidebar; rejected and superseded"
+    },
+    "3": {
+      "status": "implemented_installed_host_checks_passed_real_navigation_blocked",
+      "visual_direction": "original landscape, horizontal navigation, sampled blue focus",
+      "modern_back_implementation": "OnBackInvokedDispatcher in API33-isolated object; legacy BACK keys retained",
+      "modern_back_runtime_verified": false,
+      "initial_unit_tests": {
+        "tests": 12,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "suites": [
+          {
+            "name": "run.limeai.iot.television.TvNavigationActivityTest",
+            "tests": "8",
+            "failures": "1",
+            "errors": "0",
+            "skipped": "0",
+            "timestamp": "2026-11-04T04:54:08.387Z"
+          },
+          {
+            "name": "run.limeai.iot.television.ModelAssignmentActivityTest",
+            "tests": "2",
+            "failures": "0",
+            "errors": "0",
+            "skipped": "0",
+            "timestamp": "2026-11-04T04:53:54.411Z"
+          },
+          {
+            "name": "run.limeai.iot.television.AudioConsentActivityTest",
+            "tests": "2",
+            "failures": "0",
+            "errors": "0",
+            "skipped": "0",
+            "timestamp": "2026-11-04T04:53:18.450Z"
+          }
+        ],
+        "passed": false
+      },
+      "initial_navigation": {
+        "revision": 3,
+        "passed": false,
+        "method": "real_adb_input_and_uiautomator_hierarchy",
+        "screenshot_captured": false,
+        "pages": [
+          {
+            "page": "连接设置",
+            "horizontal_tab_selected": true,
+            "content_focused": true,
+            "focus_bounds": [
+              124,
+              790,
+              1796,
+              888
+            ],
+            "up_returns_current_tab": true,
+            "back_home": true,
+            "connection_stopped": true
+          },
+          {
+            "page": "应用授权",
+            "horizontal_tab_selected": true,
+            "content_focused": true,
+            "focus_bounds": [
+              104,
+              508,
+              959,
+              676
+            ],
+            "up_returns_current_tab": true,
+            "back_home": true,
+            "connection_stopped": true
+          }
+        ],
+        "error": "Up must return to current tab"
+      },
+      "initial_lint": {
+        "passed": false,
+        "status": "terminated_before_completion",
+        "reason": "Lint remained scanning dependency classfiles for over 10 minutes under host memory pressure; stack saved; own Gradle process terminated before copying corrected sources",
+        "log": ".dev/tv-ux-20261104/v3/initial/build.log"
+      },
+      "corrections": [
+        "Disabled native buttons excluded from focus after every render; real API23 Up selected a disabled button",
+        "Connection-unavailable status now has failure headline and explicit retry text; handshaking is separate"
+      ],
+      "unit_tests": {
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "suites": [
+          {
+            "name": "run.limeai.iot.television.TvNavigationActivityTest",
+            "tests": "10",
+            "failures": "0",
+            "errors": "0",
+            "skipped": "0",
+            "timestamp": "2026-11-04T05:20:54.989Z"
+          },
+          {
+            "name": "run.limeai.iot.television.ModelAssignmentActivityTest",
+            "tests": "2",
+            "failures": "0",
+            "errors": "0",
+            "skipped": "0",
+            "timestamp": "2026-11-04T05:21:22.812Z"
+          },
+          {
+            "name": "run.limeai.iot.television.AudioConsentActivityTest",
+            "tests": "2",
+            "failures": "0",
+            "errors": "0",
+            "skipped": "0",
+            "timestamp": "2026-11-04T05:21:21.047Z"
+          }
+        ],
+        "passed": true
+      },
+      "apk_build": {
+        "passed": true,
+        "log": ".dev/tv-ux-20261104/v3/build-final.log"
+      },
+      "install": {
+        "exit_code": 0,
+        "elapsed_seconds": 62.86,
+        "installed_readback_matches": true,
+        "sha256": "fceccbdb84a1924868ed32e9f56031b674450b193b1865eeb778be936e57f279"
+      },
+      "test_setup_corrections": [
+        "Legacy-PEM focus test now sets identityRequest absent, matching the real old test enrollment; initial assertions retained",
+        "Real navigation setup restores non-touch mode with a D-pad key after a prior touch-based diagnostic; initial focused-home assertion retained"
+      ],
+      "navigation": {
+        "revision": 3,
+        "passed": false,
+        "method": "real_adb_input_and_uiautomator_hierarchy",
+        "screenshot_captured": false,
+        "pages": [],
+        "error": "Connection must remain stopped",
+        "blocked_reason": "Final full navigation run stopped at connection-stopped precondition: the saved temporary gateway was being retried. Earlier real run verified connection/apps pages but failed maintenance Up on a disabled button; production correction passed host tests, final full real-device journey not completed."
+      },
+      "final_state": {
+        "owned_agent_process_stopped": true,
+        "failure_ui_observed_in_prior_hierarchy": true,
+        "database_unchanged_from_before_install": true,
+        "database_sha256": "d3b89c2cc5b926d03e9387d8a2a7928d02152f4157883add0a8404c0124f26e6",
+        "complete_navigation_journey_passed": false,
+        "action": "Stopped only the owned isolated application process after UI stop verification could not return valid XML; package and data retained."
+      },
+      "lint": {
+        "passed": true,
+        "counts": {
+          "Error": 0,
+          "Fatal": 0,
+          "Warning": 8,
+          "Information": 0
+        },
+        "log": ".dev/tv-ux-20261104/v3/lint-final.log",
+        "gesture_back_error_resolved": true,
+        "modern_back_runtime_verified": false
+      },
+      "failure_status_real_device_verified": {
+        "passed": true,
+        "method": "UIAutomator hierarchy after installation",
+        "title": "暂时无法连接网关",
+        "header": "○  连接失败，等待重试",
+        "local_evidence": ".dev/tv-ux-20261104/v3/running-connection-precondition/home.xml"
+      },
+      "apk": {
+        "path": ".dev/tv-ux-20261104/v3/application.apk",
+        "sha256": "fceccbdb84a1924868ed32e9f56031b674450b193b1865eeb778be936e57f279",
+        "bytes": 5706614
+      },
+      "source_manifest": {
+        "path": ".dev/tv-ux-20261104/v3/build-inputs.json",
+        "sha256": "02a35a97669df2084c0613393a240928962dde4f12aba2735f87c32f905e8d5d"
+      }
+    }
+  },
+  "blocked_checks": {
+    "screenshot_instrumentation": {
+      "passed": false,
+      "reason": "System registered test APK path does not exist; runner could not be loaded after two corrective attempts",
+      "retries_stopped": true,
+      "product_flag_secure_retained": true
+    },
+    "apk_update_activity": {
+      "passed": false,
+      "last_production_id_recheck": {
+        "tests": 6,
+        "failed": 3
+      },
+      "reason": "One page callback exceeded original 2-second deadline; two JDK signature fixtures exceeded original 10-second deadline",
+      "retries_stopped": true,
+      "full_npm_ui_command_passed": false
+    }
+  },
+  "limits": [
+    "No new UI runtime screenshots; generated overview is a design reference",
+    "System audio, production EC enrollment/rotation, long-running service/standby, normal file-picker setup and APK-update continuity not promoted",
+    "No publish or Git commit/push"
+  ],
+  "private_artifact_root": ".dev/tv-ux-20261104",
+  "artwork_metadata": "apps/tv-agent/artwork.json",
+  "published": false,
+  "full_goal_completed": false,
+  "connection_observation": {
+    "ui_state": "connection_unavailable",
+    "top_header_was_misleading": true,
+    "displayed_text": [
+      "连接失败，正在等待重连",
+      "正在建立安全连接"
+    ],
+    "active_adb_reverse_rules": 0,
+    "temporary_broker_port": 58167,
+    "temporary_broker_listening": false,
+    "previous_journey_services_and_reverse_cleaned_up": true,
+    "connection_restored": false,
+    "owned_isolated_agent_process_stopped": true
+  },
+  "documentation_checks": {
+    "local_links": 638,
+    "errors": 0,
+    "passed": true
+  }
+}

@@ -36,12 +36,13 @@ const products = models || process.argv.includes('--products');
 const web = process.argv.includes('--control-web');
 const cli = process.argv.includes('--control-cli');
 const nativeClients = process.argv.includes('--native-clients');
-const remote = consumerWeb || web || cli || nativeClients || process.argv.includes('--gateway-remote');
+const propertyBridge = process.argv.includes('--property-bridge');
+const remote = propertyBridge || consumerWeb || web || cli || nativeClients || process.argv.includes('--gateway-remote');
 const relay = remote || process.argv.includes('--gateway-relay');
 const pairing = relay || process.argv.includes('--gateway-pairing');
 const relaySockets = new Set();
 let relayCA;
-if (process.argv.slice(2).some(value => !['--gateway-pairing', '--gateway-relay', '--gateway-remote', '--control-web', '--control-cli', '--native-clients', '--products', '--models', '--consumer-web'].includes(value))) throw new Error('unsupported_test_option');
+if (process.argv.slice(2).some(value => !['--property-bridge', '--gateway-pairing', '--gateway-relay', '--gateway-remote', '--control-web', '--control-cli', '--native-clients', '--products', '--models', '--consumer-web'].includes(value))) throw new Error('unsupported_test_option');
 async function startProxy(backend) {
   const token = randomBytes(32).toString('hex');
   await writeFile(join(scratch, 'proxy-token'), token, { mode: 0o600 });
@@ -215,13 +216,14 @@ async function processSmoke(env) {
   if (restored.principal?.principal_id !== session.principal?.principal_id || !spaces.spaces?.some(item => item.space_id === space.space_id)) throw new Error('control process lost durable session or space');
   startAPIForFixture=startAPI;
   const clientEnv = { ...env, ...(relayCA ? { NODE_EXTRA_CA_CERTS: relayCA, LIMEIOT_TEST_CONTROL_CA_FILE: relayCA } : {}), LIMEIOT_TEST_CONTROL_ORIGIN: origin, LIMEIOT_TEST_CONTROL_TOKEN_FILE: join(scratch, 'console'), LIMEIOT_TEST_ADMIN_TOKEN_FILE:join(scratch,'admin'), LIMEIOT_TEST_CONTROL_PROXY_SECRET_FILE: join(scratch, 'proxy-token') };
-  if (pairing || nativeClients || products) await run(process.execPath, ['--test', '--test-concurrency=1', ...(consumerWeb ? [consumerSuite] : [...(pairing?['tests/pairing.test.mjs']:[]), ...(relay ? ['tests/relay.test.mjs'] : []), ...(remote ? ['tests/remote.test.mjs'] : []), ...(web?['tests/control-web.test.mjs','tests/native-auth.test.mjs']:[]),...(cli?['tests/control-cli.test.mjs','tests/control-tui-integration.test.mjs']:[]),...(nativeClients?['tests/control-native.test.mjs']:[]),...(products?['tests/products.test.mjs']:[]),...(models?['tests/model-validation.test.mjs','tests/model-compatibility.test.mjs']:[])])], { env: clientEnv, stdio: 'inherit' });
+  if (pairing || nativeClients || products) await run(process.execPath, ['--test', '--test-concurrency=1', ...(propertyBridge ? ['tests/zigbee-onoff-cloud.test.mjs'] : consumerWeb ? [consumerSuite] : [...(pairing?['tests/pairing.test.mjs']:[]), ...(relay ? ['tests/relay.test.mjs'] : []), ...(remote ? ['tests/remote.test.mjs'] : []), ...(web?['tests/control-web.test.mjs','tests/native-auth.test.mjs']:[]),...(cli?['tests/control-cli.test.mjs','tests/control-tui-integration.test.mjs']:[]),...(nativeClients?['tests/control-native.test.mjs']:[]),...(products?['tests/products.test.mjs']:[]),...(models?['tests/model-validation.test.mjs','tests/model-compatibility.test.mjs']:[])])], { env: clientEnv, stdio: 'inherit' });
   // 草稿旅程保留空产品库前提；有写入的发布旅程随后运行，不改动既有单产品断言。
   if (models && !consumerWeb) await run(process.execPath, ['--test', '--test-concurrency=1', 'tests/model-publication.test.mjs', 'tests/model-installation.test.mjs'], { env: clientEnv, stdio: 'inherit' });
   await stopAPI();
   console.log('真实控制面进程：显式迁移、登录、建空间、进程重启及原会话恢复通过。');
 }
 const report = { passed: false, isolated_mysql: true, hardware: false };
+if (propertyBridge) { report.property_bridge = true; report.go_full_suite_this_run = false; report.published = false; report.full_goal_completed = false; }
 try {
   await writeFile(join(scratch, 'mysql.env'), `MYSQL_ROOT_PASSWORD=${randomBytes(32).toString('hex')}\nMYSQL_DATABASE=limeiot_test\nMYSQL_USER=limeiot_test\nMYSQL_PASSWORD=${password}\n`, { mode: 0o600 });
   await run('docker', ['run', '--detach', '--rm', '--pull=never', '--name', name, '--publish', '127.0.0.1::3306', '--env-file', join(scratch, 'mysql.env'), 'mysql:8.4']);
@@ -231,10 +233,24 @@ try {
   const dsnPath = join(scratch, 'mysql.dsn');
   await writeFile(dsnPath, `limeiot_test:${password}@tcp(${mapping})/limeiot_test?parseTime=true&charset=utf8mb4`, { mode: 0o600 });
   const env = { ...process.env, GOTOOLCHAIN: 'go1.26.10', LIMEIOT_CONTROL_MYSQL_DSN_FILE: dsnPath, LIMEIOT_CONTROL_TEST_ISOLATED: '1', GIN_MODE: 'release' };
+  if (propertyBridge) {
+    let ready = false;
+    for (let attempt = 0; attempt < 120; attempt++) {
+      try {
+        ready = await run('docker', ['exec', name, 'sh', '-c', 'MYSQL_PWD="$MYSQL_PASSWORD" mysql --protocol=tcp --host=127.0.0.1 --user="$MYSQL_USER" --database="$MYSQL_DATABASE" --execute="SELECT 1" --skip-column-names --silent']) === '1';
+      } catch {}
+      if (ready) break;
+      await delay(500);
+    }
+    if (!ready) throw new Error('isolated_mysql_readiness_timeout');
+  }
   if(models){await run('cargo',['build','--offline','--locked','--workspace'],{env,stdio:'inherit'});env.LIMEIOT_MODEL_VALIDATOR=join(root,'target/debug/limeiot-model-validator');}
   console.log('验证 Go 控制面：临时 MySQL 8.4、HTTP 与 OIDC 提供方夹具。');
-  await run('go', ['test', '-race', '-count=1', './...'], { cwd: resolve(root, 'server'), env, stdio: 'inherit' });
-  await run('go', ['vet', './...'], { cwd: resolve(root, 'server'), env, stdio: 'inherit' });
+  // 属性桥接专项只验证跨层行为；Go全量检查仍由原控制面入口负责。
+  if (!propertyBridge) {
+    await run('go', ['test', '-race', '-count=1', './...'], { cwd: resolve(root, 'server'), env, stdio: 'inherit' });
+    await run('go', ['vet', './...'], { cwd: resolve(root, 'server'), env, stdio: 'inherit' });
+  }
   await processSmoke(env);
   report.process_restart = true;
   if(models&&!consumerWeb) {report.model_validation=true;report.model_compatibility=true;report.model_publication=true;report.model_installation=true;}
@@ -252,7 +268,7 @@ try {
   if (proxy) { for (const socket of relaySockets) socket.destroy(); proxy.closeAllConnections(); await new Promise(resolve => proxy.close(resolve)); }
   if (started) await run('docker', ['stop', '--time', '5', name]);
   await rm(scratch, { recursive: true, force: true });
-  const reportDir = resolve(root, consumerWeb ? '.dev/consumer-web-test' : models ? '.dev/model-validation-test' : products ? '.dev/products-test' : nativeClients ? '.dev/control-native-test' : cli ? '.dev/control-cli-test' : web ? '.dev/control-web-test' : remote ? '.dev/remote-test' : relay ? '.dev/relay-test' : pairing ? '.dev/pairing-test' : '.dev/control-test');
+  const reportDir = resolve(root, propertyBridge ? '.dev/property-bridge-control-test' : consumerWeb ? '.dev/consumer-web-test' : models ? '.dev/model-validation-test' : products ? '.dev/products-test' : nativeClients ? '.dev/control-native-test' : cli ? '.dev/control-cli-test' : web ? '.dev/control-web-test' : remote ? '.dev/remote-test' : relay ? '.dev/relay-test' : pairing ? '.dev/pairing-test' : '.dev/control-test');
   await mkdir(reportDir, { recursive: true });
   await writeFile(join(reportDir, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
 }

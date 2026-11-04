@@ -31,6 +31,11 @@ import LimeIoTKit
         guard value.utf8.count <= 8192 else { message = "请填写 1000 字以内的文本"; return }
         text = value
     }
+    func prepareAnswer(_ value: String) -> Bool {
+        guard writable, !pending, capabilities?.configured == true else { return false }
+        guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, value.unicodeScalars.count <= 1000, value.utf8.count <= 4096 else { message = "回答超出语音长度限制，请保留文字回答"; return false }
+        text = value; message = ""; return true
+    }
     func selectVoice(_ value: String) { guard writable, !pending, capabilities?.voices.contains(value) == true else { return }; voice = value }
     func setRetention(_ value: Int) { guard writable, !pending, [600, 3600, 86400].contains(value) else { return }; retainSeconds = value }
     private func current(_ epoch: Int) throws { try Task.checkCancellation(); guard active, online, epoch == generation else { throw CancellationError() } }
