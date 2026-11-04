@@ -1,6 +1,6 @@
 {
   "name": "limeiot",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -139,6 +139,7 @@
     "test:ai-catalog:native": "cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node tools/test-ai-catalog-native.mjs && node --test --test-concurrency=1 tests/ai-catalog-native.test.mjs",
     "test:composition": "cargo build --locked -p limeiot-gateway -p limeiot-simulator && node --test --test-concurrency=1 tests/composition.test.mjs tests/composition-attempt.test.mjs tests/composition-runtime.test.mjs",
     "test:composition:web": "npm run build:home && cargo build --locked -p limeiot-gateway -p limeiot-simulator && node --test --test-concurrency=1 tests/composition-attempt.test.mjs tests/composition-web.test.mjs",
+    "test:composition:native": "cargo build --locked -p limeiot-gateway -p limeiot-simulator && node tools/test-composition-native.mjs ios && node tools/test-composition-native.mjs android && node --test --test-concurrency=1 tests/composition-native.test.mjs",
     "test:companion": "npm run build:home && cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node --test --test-concurrency=1 tests/voice-context.test.mjs tests/companion.test.mjs tests/companion-cli.test.mjs tests/voice-turns.test.mjs tests/voice-turns-web.test.mjs",
     "test:companion:web": "npm run build:home && cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node --test --test-concurrency=1 tests/companion-web.test.mjs tests/voice-turns-web.test.mjs",
     "test:companion:workspace": "npm run build:home && npm run build:control && cargo build --locked -p limeiot-gateway -p limeiot-model-validator -p limeiot-simulator && node --test tests/companion-workspace.test.mjs",

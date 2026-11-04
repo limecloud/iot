@@ -4,7 +4,7 @@ AI-first 的开源智能物联与能力组合平台。连接文字、视觉、�
 
 仓库：<https://github.com/limecloud/iot>。中文名称：青柠物联。
 
-当前源码版本为 **v0.6.0**，变更与验收边界见 [版本记录](CHANGELOG.md)。版本标签不代表已发布镜像、手机安装包或完成硬件验收。
+当前源码版本为 **v0.7.0**，变更与验收边界见 [版本记录](CHANGELOG.md)。版本标签不代表已发布镜像、手机安装包或完成硬件验收。
 
 ## 当前状态
 
@@ -12,7 +12,7 @@ AI-first 的开源智能物联与能力组合平台。连接文字、视觉、�
 
 已加入 NAS 家庭 PWA、所有者会话、规则预演/启停、原操作恢复、HTTPS 和一致性备份恢复。Linux ARM64整套容器已通过HTTPS、MQTT命令、设备mTLS/ACL/撤销及恢复检查，入口为 `npm run test:nas:container`；x86_64及指定NAS型号待验收。iOS使用Swift/SwiftUI，Android使用Kotlin/Jetpack Compose；独立库已联调，Android调试APK构建通过，两端App实际运行仍待验收。ESP-IDF灯/按钮均已通过C3目标编译，入口为 `npm run build:firmware`；烧录、实机认领、OTA、正式云和生态适配仍在开发。当前ARM64完整本地版另通过14菜单、统一登录、产品签名发布、配对/WSS、故障维护及空数据库恢复，同版网关的文字/TTS/ASR/视觉通过独立协议夹具容器检查，证据见[NAS整包验收](docs/evidence/2026-11-04-text-nas-container.json)。完整状态见 [实施计划](docs/24-实施计划与进度.md)。
 
-已加入本地 Ollama 文字联动草案，CLI、家庭 PWA 和原生客户端共用生成、原键恢复、预演和明确启用流程。模型经窄接口适配，只取得设备/物模型上下文，不拥有部署或设备执行权限。合同与故障检查通过，真实模型的完整意图质量验收尚未通过。配置与检查见[本地模型](deploy/dev/README.md)。有限文字对话与单张图片观察已接入 API、CLI、家庭网页和 SwiftUI/Compose 页面源码；文字对话支持本页有限上下文，见[文字合同](contracts/text.md)。通用 Agent 与组合包仍在开发。
+已加入本地 Ollama 文字联动草案，CLI、家庭 PWA 和原生客户端共用生成、原键恢复、预演和明确启用流程。模型经窄接口适配，只取得设备/物模型上下文，不拥有部署或设备执行权限。合同与故障检查通过，真实模型的完整意图质量验收尚未通过。配置与检查见[本地模型](deploy/dev/README.md)。有限文字对话与单张图片观察已接入 API、CLI、家庭网页和 SwiftUI/Compose 页面源码；文字对话支持本页有限上下文，见[文字合同](contracts/text.md)。声明式事件组合包已接通CLI、家庭网页和原生客户端源码，详见[组合包合同](contracts/composition.md)；通用Agent与更多组合类型仍在开发。
 
 已加入[本地有限语音识别](contracts/transcription.md)的HTTP适配、API、CLI、家庭网页与SwiftUI/Compose页面源码：选择已上传录音并固定摘要，原任务不重发，识别文本随源录音到期/删除清除，不执行设备操作。NAS媒体快照v3支持转写结果与未知任务恢复。原生库与实际状态层只持久保存去正文观测，后台/离线/退出清文，原任务恢复由 `npm run test:transcription:native:state` 验证。[独立sherpa ASR服务](providers/sherpa-asr/README.md)提供Paraformer Small/Whisper Tiny适配，上游录音经网页、CLI和重启未知恢复的软件集成已通过，25秒分段避免静默截断。两模型在合成中文语音上的质量检查未通过；ARM64协议容器恢复已通过；家庭环境质量、转换权重分发许可、完整原生运行和其他架构继续验收。
 

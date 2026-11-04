@@ -204,6 +204,10 @@ class HomeViewModel(
             else mutable.update { it.copy(message = error.displayMessage) }
         } else { mutable.value.media?.setOnline(false); mutable.value.speech?.setOnline(false); mutable.value.transcription?.setOnline(false); mutable.value.vision?.setOnline(false); mutable.value.textGeneration?.setOnline(false); mutable.value.voiceTurn?.setOnline(false); mutable.value.companion?.setOnline(false); mutable.value.observation?.setOnline(false); mutable.update { it.copy(online = false, message = "无法连接家庭网关，请检查本地网络") } }
     }
+    fun compositionClient(): CompositionClient? {
+        val current = client ?: return null; val snapshot = mutable.value.snapshot ?: return null
+        return if (mutable.value.connected) CompositionClient(current, vault, snapshot.space) else null
+    }
     suspend fun aiCatalog(): AiCatalog {
         val state = mutable.value; val gateway = client; val epoch = generation
         if (!state.connected || !state.online || gateway == null) throw CancellationException()

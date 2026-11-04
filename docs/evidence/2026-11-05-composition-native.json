@@ -1,0 +1,413 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "passed": true,
+  "scope": "原生组合包在线SDK、实际状态层与宿主软件旅程",
+  "checks": {
+    "swift_online_and_actual_state": true,
+    "swift_js_compile_vectors": 22,
+    "swift_offline_client_checks": true,
+    "android_suites": [
+      {
+        "suite": "run.limeai.iot.CompositionControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "evidence": {
+          "path": ".dev/composition-native-20261105/TEST-run.limeai.iot.CompositionControllerTest.xml",
+          "sha256": "e0f487eab20bc79dcdc64350d480a02bc374ae8234154366ec4d553690751bb2"
+        }
+      },
+      {
+        "suite": "run.limeai.iot.HomeViewModelTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "evidence": {
+          "path": ".dev/composition-native-20261105/TEST-run.limeai.iot.HomeViewModelTest.xml",
+          "sha256": "c5b04f9afef6014cae45b2af8b23d51c351e4c59710699675acf75a922c9e3ca"
+        }
+      },
+      {
+        "suite": "run.limeai.iot.core.CompositionClientTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "evidence": {
+          "path": ".dev/composition-native-20261105/TEST-run.limeai.iot.core.CompositionClientTest.xml",
+          "sha256": "298053a8f34ebfcb91eafdf1562bd476f0b1b4502c74fd9f8b48ea90e4b1d014"
+        }
+      },
+      {
+        "suite": "run.limeai.iot.core.CompositionTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "evidence": {
+          "path": ".dev/composition-native-20261105/TEST-run.limeai.iot.core.CompositionTest.xml",
+          "sha256": "e159df92386abc3e6e71677a521b0e6b95889b2795fd100613c8c8c4aa6ee5d8"
+        }
+      },
+      {
+        "suite": "run.limeai.iot.core.GatewayClientTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "evidence": {
+          "path": ".dev/composition-native-20261105/TEST-run.limeai.iot.core.GatewayClientTest.xml",
+          "sha256": "31a74d33ec8c6c46dad47cf3000e478812d77b69d78c87d3f22487a3fa663c84"
+        }
+      }
+    ],
+    "android_tests_total": 23,
+    "native_journeys": [
+      {
+        "evidence": {
+          "path": ".dev/run-1793809998302-465a5105/composition-native-result.json",
+          "sha256": "859e8ffbe914c4f1974a6b9c942214efa2071016db1db4f4b133f82c0d0d919c"
+        },
+        "passed": true,
+        "target": "ios",
+        "lost_deployment_receipt": false,
+        "real_rust_gateway": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "host_ui_state": true,
+        "native_processes": 3,
+        "gateway_restarts": 2,
+        "device_restarts": 1,
+        "original_record_unchanged": true,
+        "original_submission_state": "acknowledged",
+        "command_statuses": [
+          "confirmed",
+          "confirmed"
+        ],
+        "duplicate_event_no_replay": true,
+        "stop_blocks_new_event": true,
+        "conditional_deployment_posts": 1,
+        "native_app_runtime": false,
+        "production_secure_store_runtime": false,
+        "hardware": false,
+        "full_goal_completed": false
+      },
+      {
+        "evidence": {
+          "path": ".dev/run-1793810008540-80c62aa3/composition-native-result.json",
+          "sha256": "f04e6e783bb3d14d0b71bb9185ed258fba01442b9012531446a6dafc948549f4"
+        },
+        "passed": true,
+        "target": "ios",
+        "lost_deployment_receipt": true,
+        "real_rust_gateway": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "host_ui_state": true,
+        "native_processes": 3,
+        "gateway_restarts": 2,
+        "device_restarts": 1,
+        "original_record_unchanged": true,
+        "original_submission_state": "attempted",
+        "command_statuses": [
+          "confirmed",
+          "confirmed"
+        ],
+        "duplicate_event_no_replay": true,
+        "stop_blocks_new_event": true,
+        "conditional_deployment_posts": 1,
+        "native_app_runtime": false,
+        "production_secure_store_runtime": false,
+        "hardware": false,
+        "full_goal_completed": false
+      },
+      {
+        "evidence": {
+          "path": ".dev/run-1793810017715-9bec43f9/composition-native-result.json",
+          "sha256": "7c9638f587ae334b16e4dd7a28e32ac5d2f80695b7b1559a49ec68b2c6092f8a"
+        },
+        "passed": true,
+        "target": "android",
+        "lost_deployment_receipt": false,
+        "real_rust_gateway": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "host_ui_state": true,
+        "native_processes": 3,
+        "gateway_restarts": 2,
+        "device_restarts": 1,
+        "original_record_unchanged": true,
+        "original_submission_state": "acknowledged",
+        "command_statuses": [
+          "confirmed",
+          "confirmed"
+        ],
+        "duplicate_event_no_replay": true,
+        "stop_blocks_new_event": true,
+        "conditional_deployment_posts": 1,
+        "native_app_runtime": false,
+        "production_secure_store_runtime": false,
+        "hardware": false,
+        "full_goal_completed": false
+      },
+      {
+        "evidence": {
+          "path": ".dev/run-1793810028279-36f960fe/composition-native-result.json",
+          "sha256": "461de31ecc09c765b79481e762ff721ae462ee7e77cdcffd695cd1af32f7aea3"
+        },
+        "passed": true,
+        "target": "android",
+        "lost_deployment_receipt": true,
+        "real_rust_gateway": true,
+        "real_mqtt": true,
+        "real_sqlite": true,
+        "host_ui_state": true,
+        "native_processes": 3,
+        "gateway_restarts": 2,
+        "device_restarts": 1,
+        "original_record_unchanged": true,
+        "original_submission_state": "attempted",
+        "command_statuses": [
+          "confirmed",
+          "confirmed"
+        ],
+        "duplicate_event_no_replay": true,
+        "stop_blocks_new_event": true,
+        "conditional_deployment_posts": 1,
+        "native_app_runtime": false,
+        "production_secure_store_runtime": false,
+        "hardware": false,
+        "full_goal_completed": false
+      }
+    ],
+    "swiftui_syntax": true,
+    "xcode_project_syntax": true,
+    "android_debug_apk": {
+      "version": "0.7.0",
+      "version_code": 7
+    },
+    "android_lint": {
+      "errors": 0,
+      "warnings": 17
+    }
+  },
+  "initial_failures": [
+    {
+      "check": "Swift SDK首次编译",
+      "reason": "CompositionJSON.decode误用双参数",
+      "resolution": "按现有泛型接口改为类型推断后构建通过",
+      "log": ".dev/composition-native-20261104/swift-online-build.log"
+    },
+    {
+      "check": "Android App测试首次编译",
+      "reason": "测试宿主Android API桩无Files.readString/writeString",
+      "resolution": "复用readAllBytes/write；保留原字节与持久化断言",
+      "evidence": {
+        "path": ".dev/composition-native-20261105/android-attempt1.log",
+        "sha256": "9f3f5fe0cdff70f0a4a8ac711ea5ab7a85883d43b33c460a69572666f7a2cac7"
+      }
+    },
+    {
+      "check": "Kotlin测试发现数量",
+      "reason": "取消与持久化测试推断返回异常对象，未被JUnit识别",
+      "resolution": "明确Unit返回类型，并要求工具核对每个suite的准确数量；最终7项均执行",
+      "evidence": {
+        "path": ".dev/composition-native-20261105/android-attempt3.log",
+        "sha256": "34ef12409cdcd44172a7d293c5b6a9486b36d6320e5d9198fd5f11827f3abdde"
+      }
+    },
+    {
+      "check": "swift test命令",
+      "reason": "此工程使用ClientChecks可执行target，没有SwiftPM test target",
+      "resolution": "执行已有ClientChecks与专项检查可执行程序；不计swift test为通过",
+      "evidence": {
+        "path": ".dev/composition-native-20261105/swift-tests.log",
+        "sha256": "9c4527ff5eb649d3d2c342044b54446e34179dcb58171fcb5a804946c724c035"
+      }
+    }
+  ],
+  "design": "复用原规则引擎、网关会话和SessionStore，职责集中在组合客户端与独立状态层；未新增执行器、数据库或依赖。",
+  "limitations": [
+    "SwiftUI仅语法检查，未进行完整iOS App构建或运行",
+    "Android APK与宿主状态层不代表完整Compose运行或既有ANR已解决",
+    "0600恢复文件不代表生产Keychain/Keystore验收",
+    "共享持久门禁仅覆盖当前进程，不提供OS级跨进程CAS",
+    "最新NAS组合版完整安装仍受MySQL健康检查失败阻塞，本次未重试",
+    "实机按用户要求跳过"
+  ],
+  "native_app_runtime": false,
+  "production_secure_store_runtime": false,
+  "hardware": false,
+  "full_goal_completed": false,
+  "inputs": [
+    {
+      "path": "apps/admin/package.json",
+      "sha256": "42a5f3a9f0643e965b530f971c35c6e0f791eeae6afb35d8be227214f3bec3dc"
+    },
+    {
+      "path": "apps/android/README.md",
+      "sha256": "f6749285219f010f5207d34f84db7c5f824f492fe93e9157b8e368ae16a2fae6"
+    },
+    {
+      "path": "apps/android/app/build.gradle.kts",
+      "sha256": "717073341d6c14c5ba13a7f8c02576cadb8c2fcd2e34e16bf4b93a40a4538bce"
+    },
+    {
+      "path": "apps/android/app/src/main/kotlin/run/limeai/iot/CompositionController.kt",
+      "sha256": "37aa2f1a566a3689e01a1dfafafe5679a4f6efb5dc2fa052ba9d9dbf9470e8c4"
+    },
+    {
+      "path": "apps/android/app/src/main/kotlin/run/limeai/iot/CompositionViews.kt",
+      "sha256": "e82b7eb0aec66a4e653985ad6fb5bcabc6302c745ee049a59263e80b340fbb0c"
+    },
+    {
+      "path": "apps/android/app/src/main/kotlin/run/limeai/iot/HomeViewModel.kt",
+      "sha256": "580ea3a691b114fb31821cbf8f039ed9578dc41f4952d58814e5f4766aac1503"
+    },
+    {
+      "path": "apps/android/app/src/main/kotlin/run/limeai/iot/MainActivity.kt",
+      "sha256": "9c0a8b1359058b531a589b83ea00dedb9a4a2cd1026665422eb38ca89b8370d0"
+    },
+    {
+      "path": "apps/android/app/src/test/kotlin/run/limeai/iot/CompositionControllerTest.kt",
+      "sha256": "7bb7b3d473ee0e51c5eaac513498d7064f1b662fd46afab8901c024b2d8f81cb"
+    },
+    {
+      "path": "apps/android/app/src/test/kotlin/run/limeai/iot/CompositionJourneyTest.kt",
+      "sha256": "100e262c03124f24600e89dce7b5a468a3bdf531a08a76654287b6c1b379f44a"
+    },
+    {
+      "path": "apps/android/core/src/main/kotlin/run/limeai/iot/core/CompositionClient.kt",
+      "sha256": "fa9d764631beb8589074674294a5bbb58ba66bed246c17a5516af96765364c56"
+    },
+    {
+      "path": "apps/android/core/src/main/kotlin/run/limeai/iot/core/CompositionModels.kt",
+      "sha256": "cc946825aae1254c9831da03b04e35203ac28e3abcf7112e09108dba5f3fb7e1"
+    },
+    {
+      "path": "apps/android/core/src/main/kotlin/run/limeai/iot/core/GatewayClient.kt",
+      "sha256": "4e641e66f96b4fc6517acc7dcdade4edea58d00b4ad54f598a1b4b12254f8264"
+    },
+    {
+      "path": "apps/android/core/src/main/resources/limeiot/reading-companion.json",
+      "sha256": "5b915b024e187e5a02bc634eb35d6eab1b9ed77798138a49d6ee785ebc2c532c"
+    },
+    {
+      "path": "apps/android/core/src/test/kotlin/run/limeai/iot/core/CompositionClientTest.kt",
+      "sha256": "e14081f245d0d7695270c1f8a87f9386a4904b3cc1b9562a767c0cdee1d2681d"
+    },
+    {
+      "path": "apps/console/package.json",
+      "sha256": "496f3dcf24952c65cd424bc183f430a98f30c188cbfea143a5ea5efb637028a0"
+    },
+    {
+      "path": "apps/home/package.json",
+      "sha256": "80e96123ca30cd4c6115bc53cba51f9105081e42d66872f30d1639128b052eaf"
+    },
+    {
+      "path": "apps/ios/App/CompositionStore.swift",
+      "sha256": "b069025c012b86e1ced7d2d04db14cb4dc3905d1ce73300454e7e6d184742f42"
+    },
+    {
+      "path": "apps/ios/App/CompositionViews.swift",
+      "sha256": "e1b055ddea258a82d1561243da347d27dc001dd3481532f423456d13fc4a575d"
+    },
+    {
+      "path": "apps/ios/App/HomeStore.swift",
+      "sha256": "1b880d7980882ea0dd77def070a8ea75f47f3478ad625c556fe893560b5fe5d7"
+    },
+    {
+      "path": "apps/ios/App/Views.swift",
+      "sha256": "12038d984d2a7546b1b7f9f7ca947f31a7b0301643f90465dc3da71622d90e35"
+    },
+    {
+      "path": "apps/ios/Checks/CompositionLiveChecks.swift",
+      "sha256": "53a8f83852f51c548f65cbc4aaf382fef5439e482e9e483787d1e0b6fd66c2ee"
+    },
+    {
+      "path": "apps/ios/Checks/CompositionOnlineChecks.swift",
+      "sha256": "4fad76590304de4da55b47b05dd6345bf316755a942bf662fe81cb36f5325230"
+    },
+    {
+      "path": "apps/ios/LimeIoT.xcodeproj/project.pbxproj",
+      "sha256": "d8de9a3d25a5f648bcd2ba47e318fe279ec80db4c40c30953acc9ae6b6272519"
+    },
+    {
+      "path": "apps/ios/Package.swift",
+      "sha256": "9ef360ff6379188d643a4db63eafb3a5a06b42397a16c99e4cf5260798dffd97"
+    },
+    {
+      "path": "apps/ios/README.md",
+      "sha256": "44d187e26a79c910b86d8d6e5dc004536961a239639d44035202ee795e1f7574"
+    },
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/CompositionClient.swift",
+      "sha256": "209183ab2d1215d340444edce0115915a3716ff8eb827c7f7520e9f7c4a3f6fb"
+    },
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/CompositionModels.swift",
+      "sha256": "22b112b2fb8fc4741273350a203c8c9af6732f69dba3a561b48fd54a2cb8bac5"
+    },
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/GatewayClient.swift",
+      "sha256": "d28b4bb6e721981eba7da7485b91a6f7b8d50d2fa7e4c40b409dd44d6042e0c0"
+    },
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/Resources/reading-companion.json",
+      "sha256": "5b915b024e187e5a02bc634eb35d6eab1b9ed77798138a49d6ee785ebc2c532c"
+    },
+    {
+      "path": "tests/composition-native.test.mjs",
+      "sha256": "289e6080df069474ee125c3682a248f8382d50e34a23ab56068241ab8a5dab33"
+    },
+    {
+      "path": "tests/fixtures/compositions/online.json",
+      "sha256": "eaf8c5fd60c6603d71c04e59fdd5c3043e0fa2e006044c70f442f63f67240e27"
+    },
+    {
+      "path": "tools/test-composition-native.mjs",
+      "sha256": "d9a5c60781de9043b0077bb648765b5ae324049da9a03a134b7f216a814b002f"
+    },
+    {
+      "path": "packages/protocol/composition.mjs",
+      "sha256": "e13fb8bff43437f11bdebfb2e79bada8efb3193bbc24caaac53442f20195a7f7"
+    },
+    {
+      "path": "packages/protocol/rule-simulation.mjs",
+      "sha256": "437587abbf6da04c8de447dea1de1d0a0088e000cb2d474a1ca29cf762aa3291"
+    },
+    {
+      "path": "examples/compositions/reading-companion/package.json",
+      "sha256": "5b915b024e187e5a02bc634eb35d6eab1b9ed77798138a49d6ee785ebc2c532c"
+    },
+    {
+      "path": "contracts/composition.md",
+      "sha256": "8b2ba8f7d05eeede2cdddf304331eed06500372737326483ed8e5115dad4be14"
+    }
+  ],
+  "logs": [
+    {
+      "path": ".dev/composition-native-20261105/ios-attempt2.log",
+      "sha256": "41f86306fb5dab25ec30d061613c0baa2a94ec540b7a128b1cecb3c519f6cb39"
+    },
+    {
+      "path": ".dev/composition-native-20261105/android-attempt3.log",
+      "sha256": "34ef12409cdcd44172a7d293c5b6a9486b36d6320e5d9198fd5f11827f3abdde"
+    },
+    {
+      "path": ".dev/composition-native-20261105/native-journeys-attempt1.log",
+      "sha256": "85d22724d45ca6de46560c5a4b21c1172228f2382ca343260bdf24f588bef9ea"
+    },
+    {
+      "path": ".dev/composition-native-20261105/rust-build-v0.7.0.log",
+      "sha256": "e0a820bc78f07a581f1701cc66cd77fcaa34d7ddf7c055b7b63ec2188af5b88d"
+    },
+    {
+      "path": ".dev/composition-native-20261105/swift-client-checks.log",
+      "sha256": "06f286742f004801c48c7c8c84448a5793c0f6a9341b367819cf1275d293ced0"
+    }
+  ]
+}

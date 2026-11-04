@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "package_id": "reading-companion",
+  "version": "1.0.0",
+  "name": "触摸伴读灯",
+  "modules": {
+    "touch": {"model_revision": "sha256:c557e81af48798cd354c4a3558e822aed3d732f78ecdfb481d46883d13a7366d"},
+    "light": {"model_revision": "sha256:aaf9fc9ba87187643ab777cda43658e09603fc1c0e51dc6ec1acde160d4aecfc"}
+  },
+  "rule": {
+    "version": 1,
+    "id": "reading-companion",
+    "trigger": {"device": "touch", "event": "button.pressed"},
+    "conditions": [],
+    "actions": [
+      {"device": "light", "set": {"path": "light.power", "value": true}},
+      {"device": "light", "set": {"path": "light.brightness", "value": 35}}
+    ],
+    "cooldown_ms": 1000
+  },
+  "sample_event_data": {"count": 1}
+}

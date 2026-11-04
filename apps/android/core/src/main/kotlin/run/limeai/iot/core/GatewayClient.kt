@@ -1,6 +1,7 @@
 package run.limeai.iot.core
 
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
@@ -67,22 +68,26 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val mutex = Mutex()
     private var saved: SavedSession? = null
+    private var sessionEpoch = 0
     init {
         val url = runCatching { URI(origin) }.getOrNull()
         if (url == null || url.host.isNullOrEmpty() || url.rawUserInfo != null || !url.rawPath.isNullOrEmpty() || url.rawQuery != null || url.rawFragment != null || !(url.scheme == "https" || (allowLoopbackHTTP && url.scheme == "http" && url.host in listOf("127.0.0.1", "localhost", "[::1]")))) throw GatewayException("invalid_endpoint")
     }
     private fun segment(value: String) = URLEncoder.encode(value, "UTF-8").replace("+", "%20")
     private fun base(space: String) = "/api/v1/spaces/${segment(space)}"
-    private suspend inline fun <reified T> call(path: String, method: String = "GET", body: String? = null, key: String? = null, authenticated: Boolean = true, strictJSON: Boolean = false, timeoutMillis: Long = 12000, maxJSONBytes: Int = 2_000_000): T = mutex.withLock {
+    private suspend inline fun <reified T> call(path: String, method: String = "GET", body: String? = null, key: String? = null, authenticated: Boolean = true, strictJSON: Boolean = false, timeoutMillis: Long = 12000, maxJSONBytes: Int = 2_000_000, compositionEpoch: Int? = null, createOnly: Boolean = false): T = mutex.withLock {
         if (authenticated && saved == null) throw GatewayException("unauthenticated", 401)
+        if (compositionEpoch != null) { kotlinx.coroutines.currentCoroutineContext().ensureActive(); if (compositionEpoch != sessionEpoch) throw kotlinx.coroutines.CancellationException() }
         val headers = mutableMapOf("Origin" to origin, "Cache-Control" to "no-store")
         saved?.let { headers["Cookie"] = it.cookie; headers["X-CSRF-Token"] = it.session.csrfToken }
         key?.let { headers["Idempotency-Key"] = it }
         if (body != null) headers["Content-Type"] = "application/json"
+        if (createOnly) headers["If-None-Match"] = "*"
         val response = transport.send(GatewayRequest(origin + path, method, headers, body, timeoutMillis))
+        if (compositionEpoch != null) kotlinx.coroutines.currentCoroutineContext().ensureActive()
         if (response.status !in 200..299) {
             val code = runCatching { json.decodeFromString<Failure>(response.body).error.code }.getOrDefault("request_failed")
-            if (response.status == 401 && authenticated) { saved = null; store?.save(origin, null) }
+            if (response.status == 401 && authenticated) { saved = null; sessionEpoch++; store?.save(origin, null) }
             throw GatewayException(code, response.status)
         }
         if (path == "/api/v1/auth/session" && method == "POST") {
@@ -91,15 +96,15 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
             saved = SavedSession(json.decodeFromString(response.body), cookie)
             store?.save(origin, json.encodeToString(saved))
         }
-        if (strictJSON) json.decodeFromJsonElement(IntegerJSON.parse(response.body, maxBytes = maxJSONBytes)) else json.decodeFromString(response.body.ifEmpty { "{}" })
+        if (strictJSON) json.decodeFromJsonElement(if (compositionEpoch != null) CompositionJSON.parse(response.body, maxJSONBytes, 12, 4096) else IntegerJSON.parse(response.body, maxBytes = maxJSONBytes)) else json.decodeFromString(response.body.ifEmpty { "{}" })
     }
-    suspend fun login(token: String) { mutex.withLock { saved = null }; call<Session>("/api/v1/auth/session", "POST", json.encodeToString(Login(token)), authenticated = false) }
+    suspend fun login(token: String) { mutex.withLock { saved = null; sessionEpoch++ }; call<Session>("/api/v1/auth/session", "POST", json.encodeToString(Login(token)), authenticated = false) }
     suspend fun restore() {
         val data = store?.load(origin) ?: throw GatewayException("unauthenticated", 401)
-        mutex.withLock { saved = json.decodeFromString(data) }
+        mutex.withLock { sessionEpoch++; saved = json.decodeFromString(data) }
         call<Session>("/api/v1/auth/session")
     }
-    suspend fun logout() { call<JsonObject>("/api/v1/auth/logout", "POST", "{}"); mutex.withLock { saved = null; store?.save(origin, null) } }
+    suspend fun logout() { call<JsonObject>("/api/v1/auth/logout", "POST", "{}"); mutex.withLock { saved = null; sessionEpoch++; store?.save(origin, null) } }
     suspend fun snapshot(): Snapshot {
         val space = call<Page<Space>>("/api/v1/spaces").items.firstOrNull()?.spaceId ?: throw GatewayException("space_missing")
         val path = base(space)
@@ -143,6 +148,8 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
     internal suspend fun otaCall(space: String, suffix: String, method: String = "GET", body: String? = null, key: String? = null): JsonObject = call(base(space) + suffix, method, body, key, strictJSON = true)
     internal suspend fun mediaCall(space: String, suffix: String, method: String = "GET", body: String? = null, key: String? = null): JsonObject = call(base(space) + suffix, method, body, key, strictJSON = true)
     internal suspend fun observationCall(space: String, suffix: String, method: String = "GET", body: String? = null, key: String? = null, query: Boolean = false): JsonObject = call(base(space) + suffix, method, body, key, strictJSON = true, timeoutMillis = if (query) 35000 else 12000)
+    internal suspend fun compositionSession(): Int = mutex.withLock { if (saved == null) throw GatewayException("unauthenticated", 401); sessionEpoch }
+    internal suspend fun compositionCall(space: String, suffix: String, epoch: Int, method: String = "GET", body: JsonObject? = null, createOnly: Boolean = false): JsonObject = call(base(space) + suffix, method, body?.let(CompositionJSON::canonical), strictJSON = true, timeoutMillis = 5000, maxJSONBytes = 65536, compositionEpoch = epoch, createOnly = createOnly)
     suspend fun createDraft(reference: DraftReference, input: DraftInput): RuleDraft = call(base(reference.space) + "/rule-drafts", "POST", json.encodeToString(input), reference.key)
     suspend fun resolveDraft(reference: DraftReference): RuleDraft = call(base(reference.space) + "/rule-drafts/by-key/" + segment(reference.key))
     suspend fun simulate(space: String, rule: Rule, eventData: JsonElement): Simulation {

@@ -1,5 +1,7 @@
 # Android 原生客户端
 
+本地“自动化 → 使用组合包”支持触摸伴读灯、自定义JSON、逐模块绑定、60秒预演和明确启用。`CompositionClient`复用原网关会话与安全存储接口，先保存并回读完整原请求再单次条件创建；丢回执保持attempted，重启只查询，停用沿原自动化列表。后台、离页、离线、输入或相关设备变化清除证明。`npm run test:composition:native`检查共享向量、实际CompositionController及真实网关跨进程恢复；宿主文件存储、Debug APK与lint不代表Keystore或完整Compose运行。详见[组合包合同](../../contracts/composition.md#原生客户端)。
+
 本地“设置 → 音频 → 陪伴”支持自定义角色说明、实际声音和逐轮录音，默认四轮、十分钟。`CompanionClient`与`#companion:space_id`摘要账本复用原三阶段；后台/离页/离线清除内存历史，返回只GET，停止无需正文并清各轮文字。生成音频仍须独立授权播放。入口`npm run test:companion:native`检查共享账本、实际状态层及真实网关跨进程恢复，见[原生合同](../../contracts/companion.md#原生客户端)。完整原生页面、生产安全存储与真实模型质量独立验收，实机跳过。
 
 “设置 → AI 服务”展示当前五类能力、实际模型、部署修订和限制；“已配置，健康未检测”不表示模型可用。已配置条目可进入原自动化、对话、视觉或音频页面，仍需明确调用。后台、离页、离线或会话变化会清除目录，迟到响应不恢复旧入口；查询不创建推理任务，不持久保存目录。SDK使用`gateway.aiCatalog("space-demo")`，严格合同见[AI目录](../../contracts/ai-catalog.md)。统一检查入口为`npm run test:ai-catalog:native`；宿主状态层、APK与lint检查不替代完整Compose应用或Keystore运行。

@@ -50,6 +50,7 @@ class CompositionPackage private constructor(val document: JsonObject) {
     val roles get() = document.getValue("modules").jsonObject.keys.sorted()
     fun modelRevision(role: String) = document.getValue("modules").jsonObject.getValue(role).jsonObject.getValue("model_revision").jsonPrimitive.content
     companion object {
+        fun readingCompanionJSON(): String = CompositionPackage::class.java.getResourceAsStream("/limeiot/reading-companion.json")?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: throw CompositionException("invalid_composition")
         fun parse(text: String): CompositionPackage = try {
             val v = CompositionJSON.parse(text, 32768, 8, 2048)
             MediaJSON.fields(v, "schema_version,package_id,version,name,modules,rule,sample_event_data")
@@ -103,6 +104,7 @@ class CompositionPackage private constructor(val document: JsonObject) {
 }
 class CompositionCompiled internal constructor(val document: JsonObject, val manifest: CompositionPackage, val bindings: Map<String, String>) {
     val rule get() = document.getValue("rule").jsonObject
+    val typedRule: Rule get() = CompositionJSON.json.decodeFromJsonElement(rule)
     val instanceId get() = MediaJSON.text(rule, "id")
     val revision get() = MediaJSON.text(document, "rule_revision")
     val json get() = CompositionJSON.canonical(document)

@@ -42,6 +42,10 @@ public struct CompositionPackage: Sendable {
     public var name: String { MediaJSON.string(document, "name") }
     public var roles: [String] { (try? MediaJSON.object(MediaJSON.member(document, "modules")).keys.sorted()) ?? [] }
     public func modelRevision(_ role: String) -> String { MediaJSON.string(MediaJSON.member(MediaJSON.member(document, "modules"), role), "model_revision") }
+    public static func readingCompanionJSON() throws -> String {
+        guard let url = Bundle.module.url(forResource: "reading-companion", withExtension: "json") else { throw CompositionError(code: "invalid_composition") }
+        return try String(contentsOf: url, encoding: .utf8)
+    }
     public static func parse(_ text: String) throws -> Self {
         do {
             let document = try CompositionJSON.parse(text, bytes: 32768, depth: 8, nodes: 2048)
@@ -99,6 +103,7 @@ public struct CompositionPackage: Sendable {
 public struct CompositionCompiled: Sendable {
     public let document: JSONValue; public let package: CompositionPackage; public let bindings: [String: String]
     public var rule: JSONValue { MediaJSON.member(document, "rule") }
+    public var typedRule: Rule { get throws { try CompositionJSON.decode(rule) } }
     public var instanceID: String { MediaJSON.string(rule, "id") }
     public var revision: String { MediaJSON.string(document, "rule_revision") }
     public var json: String { CompositionJSON.canonical(document) }

@@ -60,11 +60,17 @@ flowchart LR
 
 当前网页功能属于源码交付。既有NAS镜像、原生App和正式云须分别验收，不能因网页通过而提升其范围。
 
-## 原生离线合同
+## 原生客户端
 
 Swift与Kotlin已实现组合包解析、角色绑定编译和原请求记录校验。两端消费同一份[合同向量](../tests/fixtures/compositions/contract.json)，对齐JavaScript的规范JSON及内容摘要，覆盖Unicode排序、小数、负零、极小值、三种提交状态及损坏/跨上下文拒绝。小数解析仅由组合包显式启用，原整数JSON入口默认规则保持。
 
-本阶段仅交付离线合同；原生在线规划、部署与持久恢复客户端、状态层及SwiftUI/Compose组合包入口尚未实现，不构成原生软件闭环。验证范围与日志见[阶段证据](../docs/evidence/2026-11-04-composition-native-contract.json)。
+SwiftUI与Compose在本地“自动化 → 使用组合包”提供内置样板、自定义JSON、逐模块明确绑定、预演、启用与当前部署查询。`CompositionClient`复用现有GatewayClient会话与SessionStore；每次规划前后读取真实设备并核对精确模型，沿原规则校验及完整预演证据检查。证明仅驻留内存，60秒有效，输入、相关设备、会话、后台、离页或离线变化均使其失效。调用方不能向部署方法传入外部证明。
+
+启用前再次核对设备，先向`origin#composition:SPACE_ID`写入并回读完整attempted记录，再单次条件POST。记录复用三种状态、规范JSON摘要和重新编译检查；合法原回执才acknowledged，明确4xx才rejected，其余保持attempted。客户端取消不能撤回已发出的请求。恢复及“查询当前部署”只GET，不补认原提交，不补部署；attempted禁止清除或换实例。明确“准备其他组合”仅用于acknowledged/rejected，已启用列表仍沿原规则入口停用。
+
+客户端及共享持久门禁隔离当前进程内的并发，保存前后比较原值；这不提供操作系统级跨进程CAS。已知记录被删除、损坏或改写后暂停新提交，卸载或清空应用数据后应人工核对已有部署。生产使用既有Keychain/Keystore适配器；宿主旅程使用独立0600恢复文件，不能代替生产安全存储验收。
+
+`npm run test:composition:native`检查共享向量、在线SDK、实际状态层及真实Rust/MQTT/SQLite的正常提交、丢回执、跨进程与网关重启恢复、重复事件和明确停用。SwiftUI语法检查、Android调试包构建及宿主检查与完整App运行分别管理，实机按用户要求跳过。离线阶段记录见[原生合同证据](../docs/evidence/2026-11-04-composition-native-contract.json)，本次范围见[原生在线证据](../docs/evidence/2026-11-05-composition-native.json)。
 
 ## 发现和验证
 
@@ -72,6 +78,7 @@ Swift与Kotlin已实现组合包解析、角色绑定编译和原请求记录校
 node packages/cli/src/main.mjs composition schema
 npm run test:composition
 npm run test:composition:web
+npm run test:composition:native
 ```
 
 本地composition命令是源码CLI能力，不新增HTTP操作，因此不伪装成tools/catalog.json中的网关端点。schema离线返回正式输入Schema、所引用规则Schema、绑定Schema、边界和原部署入口；compile不读取凭据，plan不写本机状态。

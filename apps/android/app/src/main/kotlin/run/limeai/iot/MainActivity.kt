@@ -213,6 +213,7 @@ private data class Target(val device: String, val path: String, val label: Strin
 @Composable private fun Automations(state: HomeState, vm: HomeViewModel) {
     val snapshot = state.snapshot ?: return
     DraftEditor(state, vm)
+    CompositionPanel(vm, state)
     val sources = snapshot.devices.flatMap { device -> snapshot.models[device.modelRevision]?.services?.flatMap { service ->
         service.events.map { Source(device.deviceId, "${service.id}.${it.id}", "${snapshot.name(device)} ${if (it.id == "pressed") "按下时" else it.id}", it.schema) } +
         service.properties.filter { it.schema.type in listOf("integer", "number") && "read" in it.access && "notify" in it.access && it.unit != null }.map { Source(device.deviceId, "${service.id}.${it.id}", "${snapshot.name(device)} ${it.displayName}", it.schema, it) }

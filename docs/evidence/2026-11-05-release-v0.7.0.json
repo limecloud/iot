@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-05",
+  "version": "0.7.0",
+  "previous_commit": "50819ded4e9b6e8647dcdfb013cf2f2eb0c2ceba",
+  "scope": "源码版本、提交与附注Git tag；不分发二进制制品",
+  "versions": {
+    "rust_workspace": "0.7.0",
+    "npm_workspace": "0.7.0",
+    "nas_build_references": "0.7.0",
+    "firmware_build_defaults": "0.7.0",
+    "android_phone": {
+      "version": "0.7.0",
+      "code": 7
+    },
+    "ios": {
+      "version": "0.7.0",
+      "build": 7
+    },
+    "tv_agent": {
+      "version": "0.4.0",
+      "code": 4
+    }
+  },
+  "checks": {
+    "workspace_lock_consistency": true,
+    "rust_gateway_simulator_build": true,
+    "native_composition": "docs/evidence/2026-11-05-composition-native.json",
+    "android_host_tests": 23,
+    "native_real_gateway_journeys": 4,
+    "android_debug_apk": true,
+    "android_lint_errors": 0,
+    "android_lint_warnings": 17
+  },
+  "previous_verification": {
+    "path": "docs/evidence/2026-11-04-release-v0.6.0.json",
+    "note": "Rust执行源码未变，全工作区385项、格式/Clippy及三个Web应用构建沿上一版冻结记录；本次重新构建网关/模拟器并运行原生专项，不追认其他历史制品。"
+  },
+  "not_performed": [
+    "生产部署",
+    "新NAS镜像完整安装恢复",
+    "完整手机App与生产安全存储运行",
+    "实机验收",
+    "固件/APK/镜像/模型分发"
+  ],
+  "artifacts": [
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "ac12730e15fb85d88f43450c013ca8c6f4d3076b89c1cb7428364a81e55c72cc"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "83fe9651ed1562b6237256cb1d8b0e28abf23b828b255359434520a88129e71b"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "1d37b58bb7dd77ba07747429e7df626e91a1257b8e767b1716e5c904f2ab8100"
+    },
+    {
+      "path": "README.md",
+      "sha256": "a5bf253f2cd1d9ba6b0a41ed55e994a6cb0a4689d40b43a239bd597000de5b58"
+    },
+    {
+      "path": "apps/admin/package.json",
+      "sha256": "42a5f3a9f0643e965b530f971c35c6e0f791eeae6afb35d8be227214f3bec3dc"
+    },
+    {
+      "path": "apps/android/README.md",
+      "sha256": "f6749285219f010f5207d34f84db7c5f824f492fe93e9157b8e368ae16a2fae6"
+    },
+    {
+      "path": "apps/android/app/build.gradle.kts",
+      "sha256": "717073341d6c14c5ba13a7f8c02576cadb8c2fcd2e34e16bf4b93a40a4538bce"
+    },
+    {
+      "path": "apps/android/app/src/main/kotlin/run/limeai/iot/CompositionController.kt",
+      "sha256": "37aa2f1a566a3689e01a1dfafafe5679a4f6efb5dc2fa052ba9d9dbf9470e8c4"
+    },
+    {
+      "path": "apps/android/app/src/main/kotlin/run/limeai/iot/CompositionViews.kt",
+      "sha256": "e82b7eb0aec66a4e653985ad6fb5bcabc6302c745ee049a59263e80b340fbb0c"
+    },
+    {
+      "path": "apps/android/app/src/main/kotlin/run/limeai/iot/HomeViewModel.kt",
+      "sha256": "580ea3a691b114fb31821cbf8f039ed9578dc41f4952d58814e5f4766aac1503"
+    },
+    {
+      "path": "apps/android/app/src/main/kotlin/run/limeai/iot/MainActivity.kt",
+      "sha256": "9c0a8b1359058b531a589b83ea00dedb9a4a2cd1026665422eb38ca89b8370d0"
+    },
+    {
+      "path": "apps/android/app/src/test/kotlin/run/limeai/iot/CompositionControllerTest.kt",
+      "sha256": "7bb7b3d473ee0e51c5eaac513498d7064f1b662fd46afab8901c024b2d8f81cb"
+    },
+    {
+      "path": "apps/android/app/src/test/kotlin/run/limeai/iot/CompositionJourneyTest.kt",
+      "sha256": "100e262c03124f24600e89dce7b5a468a3bdf531a08a76654287b6c1b379f44a"
+    },
+    {
+      "path": "apps/android/core/src/main/kotlin/run/limeai/iot/core/CompositionClient.kt",
+      "sha256": "fa9d764631beb8589074674294a5bbb58ba66bed246c17a5516af96765364c56"
+    },
+    {
+      "path": "apps/android/core/src/main/kotlin/run/limeai/iot/core/CompositionModels.kt",
+      "sha256": "cc946825aae1254c9831da03b04e35203ac28e3abcf7112e09108dba5f3fb7e1"
+    },
+    {
+      "path": "apps/android/core/src/main/kotlin/run/limeai/iot/core/GatewayClient.kt",
+      "sha256": "4e641e66f96b4fc6517acc7dcdade4edea58d00b4ad54f598a1b4b12254f8264"
+    },
+    {
+      "path": "apps/android/core/src/main/resources/limeiot/reading-companion.json",
+      "sha256": "5b915b024e187e5a02bc634eb35d6eab1b9ed77798138a49d6ee785ebc2c532c"
+    },
+    {
+      "path": "apps/android/core/src/test/kotlin/run/limeai/iot/core/CompositionClientTest.kt",
+      "sha256": "e14081f245d0d7695270c1f8a87f9386a4904b3cc1b9562a767c0cdee1d2681d"
+    },
+    {
+      "path": "apps/console/package.json",
+      "sha256": "496f3dcf24952c65cd424bc183f430a98f30c188cbfea143a5ea5efb637028a0"
+    },
+    {
+      "path": "apps/home/package.json",
+      "sha256": "80e96123ca30cd4c6115bc53cba51f9105081e42d66872f30d1639128b052eaf"
+    },
+    {
+      "path": "apps/ios/App/CompositionStore.swift",
+      "sha256": "b069025c012b86e1ced7d2d04db14cb4dc3905d1ce73300454e7e6d184742f42"
+    },
+    {
+      "path": "apps/ios/App/CompositionViews.swift",
+      "sha256": "e1b055ddea258a82d1561243da347d27dc001dd3481532f423456d13fc4a575d"
+    },
+    {
+      "path": "apps/ios/App/HomeStore.swift",
+      "sha256": "1b880d7980882ea0dd77def070a8ea75f47f3478ad625c556fe893560b5fe5d7"
+    },
+    {
+      "path": "apps/ios/App/Views.swift",
+      "sha256": "12038d984d2a7546b1b7f9f7ca947f31a7b0301643f90465dc3da71622d90e35"
+    },
+    {
+      "path": "apps/ios/Checks/CompositionLiveChecks.swift",
+      "sha256": "53a8f83852f51c548f65cbc4aaf382fef5439e482e9e483787d1e0b6fd66c2ee"
+    },
+    {
+      "path": "apps/ios/Checks/CompositionOnlineChecks.swift",
+      "sha256": "4fad76590304de4da55b47b05dd6345bf316755a942bf662fe81cb36f5325230"
+    },
+    {
+      "path": "apps/ios/LimeIoT.xcodeproj/project.pbxproj",
+      "sha256": "d8de9a3d25a5f648bcd2ba47e318fe279ec80db4c40c30953acc9ae6b6272519"
+    },
+    {
+      "path": "apps/ios/Package.swift",
+      "sha256": "9ef360ff6379188d643a4db63eafb3a5a06b42397a16c99e4cf5260798dffd97"
+    },
+    {
+      "path": "apps/ios/README.md",
+      "sha256": "44d187e26a79c910b86d8d6e5dc004536961a239639d44035202ee795e1f7574"
+    },
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/CompositionClient.swift",
+      "sha256": "209183ab2d1215d340444edce0115915a3716ff8eb827c7f7520e9f7c4a3f6fb"
+    },
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/CompositionModels.swift",
+      "sha256": "22b112b2fb8fc4741273350a203c8c9af6732f69dba3a561b48fd54a2cb8bac5"
+    },
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/GatewayClient.swift",
+      "sha256": "d28b4bb6e721981eba7da7485b91a6f7b8d50d2fa7e4c40b409dd44d6042e0c0"
+    },
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/Resources/reading-companion.json",
+      "sha256": "5b915b024e187e5a02bc634eb35d6eab1b9ed77798138a49d6ee785ebc2c532c"
+    },
+    {
+      "path": "contracts/composition.md",
+      "sha256": "8b2ba8f7d05eeede2cdddf304331eed06500372737326483ed8e5115dad4be14"
+    },
+    {
+      "path": "deploy/nas/compose.platform.yaml",
+      "sha256": "4be0149e582f5d5b37255f041828190f4e28a3e20c57860eee49856dba57ae3a"
+    },
+    {
+      "path": "deploy/nas/compose.sherpa-asr.yaml",
+      "sha256": "744b7577ac8b6d80a8526a9d0f9d2a74297eeb70f7209cb6fb8644fb162c1f98"
+    },
+    {
+      "path": "deploy/nas/compose.sherpa.yaml",
+      "sha256": "67d94a3be0915db315614e7cbad78ca510692d8167e5961175bf2018e52c53f1"
+    },
+    {
+      "path": "deploy/nas/compose.yaml",
+      "sha256": "1904adcb9a32e8d9a6f9d757325c6abb1dd3f641d4bba35bcaa360562fbe6702"
+    },
+    {
+      "path": "docs/15-客户端与交互设计.md",
+      "sha256": "5e834fd3f16e248bf4c833ee024ad0716797327784d66697477787608e860a50"
+    },
+    {
+      "path": "docs/24-实施计划与进度.md",
+      "sha256": "654363136eea6dec3a9c7b590c4b56c7d63fb8f9e381e6137040a451ed8ca3ce"
+    },
+    {
+      "path": "docs/32-能力组合与场景应用.md",
+      "sha256": "f02d5ab29b7fe61750b1f2668be134bb415ad861db08d68633c1f9466d26dc16"
+    },
+    {
+      "path": "firmware/products/desk-node/CMakeLists.txt",
+      "sha256": "91bcd70a72d97e99f09528513a15fe9d2b53cb088db9f9cb5b339662570906fe"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "7403c97d39f44aef6f64ade3904c039eceef148834eb1a5962e93fdf87625c6d"
+    },
+    {
+      "path": "package.json",
+      "sha256": "b7007e79257fe95cb57ebfee8415d7a9e7c28e5086f0323f2dcd8a7ac1968963"
+    },
+    {
+      "path": "packages/cli/package.json",
+      "sha256": "9050bb8f8620d3765cfd6ab9f8cfd6de8e8c47cbc3e3c4fc04aac68865c331bc"
+    },
+    {
+      "path": "packages/control-ui/package.json",
+      "sha256": "83b72d2b9a7b1d987d442bb9ba9d32e402c3865292b39f34e74fc7b5a1848ee6"
+    },
+    {
+      "path": "tests/composition-native.test.mjs",
+      "sha256": "289e6080df069474ee125c3682a248f8382d50e34a23ab56068241ab8a5dab33"
+    },
+    {
+      "path": "tests/fixtures/compositions/online.json",
+      "sha256": "eaf8c5fd60c6603d71c04e59fdd5c3043e0fa2e006044c70f442f63f67240e27"
+    },
+    {
+      "path": "tools/build-firmware.py",
+      "sha256": "3247c5494babfb5b641a32efa93f45a11a918acabba14278e0a86c2c7cd80ada"
+    },
+    {
+      "path": "tools/test-composition-native.mjs",
+      "sha256": "d9a5c60781de9043b0077bb648765b5ae324049da9a03a134b7f216a814b002f"
+    },
+    {
+      "path": "docs/evidence/2026-11-05-composition-native.json",
+      "sha256": "0234e8e39d563fce101faa9798258f510746fa5dfd2bcff677bfe152b5de196d"
+    }
+  ],
+  "full_goal_completed": false
+}

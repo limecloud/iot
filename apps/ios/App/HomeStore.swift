@@ -108,6 +108,10 @@ import LimeIoTKit
             if draftReference != nil && (draft == nil || draft?.status == "running") { await recoverDraft() }
         } catch { if current == generation { if !(error is CancellationError) { online = false; media?.setOnline(false); speech?.setOnline(false); transcription?.setOnline(false); vision?.setOnline(false); textGeneration?.setOnline(false); voiceTurn?.setOnline(false); companion?.setOnline(false); observation?.setOnline(false) }; report(error) } }
     }
+    func compositionClient() throws -> CompositionClient {
+        guard connected, let client, let snapshot else { throw CancellationError() }
+        return try CompositionClient(gateway: client, store: vault, space: snapshot.space)
+    }
     func aiCatalog() async throws -> AiCatalog {
         guard connected, online, let client, let space = snapshot?.space else { throw CancellationError() }
         let epoch = generation

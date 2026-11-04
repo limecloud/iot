@@ -1,0 +1,103 @@
+{
+  "package_text": "{\n  \"schema_version\": 1,\n  \"package_id\": \"reading-companion\",\n  \"version\": \"1.0.0\",\n  \"name\": \"触摸伴读灯\",\n  \"modules\": {\n    \"touch\": {\"model_revision\": \"sha256:c557e81af48798cd354c4a3558e822aed3d732f78ecdfb481d46883d13a7366d\"},\n    \"light\": {\"model_revision\": \"sha256:aaf9fc9ba87187643ab777cda43658e09603fc1c0e51dc6ec1acde160d4aecfc\"}\n  },\n  \"rule\": {\n    \"version\": 1,\n    \"id\": \"reading-companion\",\n    \"trigger\": {\"device\": \"touch\", \"event\": \"button.pressed\"},\n    \"conditions\": [],\n    \"actions\": [\n      {\"device\": \"light\", \"set\": {\"path\": \"light.power\", \"value\": true}},\n      {\"device\": \"light\", \"set\": {\"path\": \"light.brightness\", \"value\": 35}}\n    ],\n    \"cooldown_ms\": 1000\n  },\n  \"sample_event_data\": {\"count\": 1}\n}\n",
+  "bindings": {
+    "touch": "device-button",
+    "light": "device-lamp"
+  },
+  "instance_id": "native-reading",
+  "devices": [
+    {
+      "boot_id": "483d4b85-ef6e-49c9-b292-6b31621280fc",
+      "device_id": "device-button",
+      "device_info": null,
+      "last_seen": "2026-11-04T16:11:25.375184Z",
+      "last_seq": 3,
+      "model_revision": "sha256:c557e81af48798cd354c4a3558e822aed3d732f78ecdfb481d46883d13a7366d",
+      "ready": true,
+      "reported": {},
+      "session_id": "de8657cb-0796-4761-988d-240c1aaae454",
+      "state_revision": 2
+    },
+    {
+      "boot_id": "46db0706-c7c7-47c0-8fa2-694455a26dbd",
+      "device_id": "device-lamp",
+      "device_info": null,
+      "last_seen": "2026-11-04T16:11:25.376551Z",
+      "last_seq": 3,
+      "model_revision": "sha256:aaf9fc9ba87187643ab777cda43658e09603fc1c0e51dc6ec1acde160d4aecfc",
+      "ready": true,
+      "reported": {
+        "light.brightness": {
+          "observed_at": "2026-11-04T16:11:25.373949Z",
+          "quality": "confirmed",
+          "source": "simulator",
+          "value": 0
+        },
+        "light.power": {
+          "observed_at": "2026-11-04T16:11:25.373953Z",
+          "quality": "confirmed",
+          "source": "simulator",
+          "value": false
+        }
+      },
+      "session_id": "ef800713-1f23-477b-8272-6580893d464d",
+      "state_revision": 2
+    }
+  ],
+  "validation": {
+    "revision": "sha256:aceabcfd6498750ce5defd7cd57cc432e3e6fb2066de5cf39e4c9428e68a38dd",
+    "valid": true
+  },
+  "simulation": {
+    "executed": false,
+    "matched": true,
+    "proposed_actions": [
+      {
+        "device": "device-lamp",
+        "set": {
+          "path": "light.power",
+          "value": true
+        }
+      },
+      {
+        "device": "device-lamp",
+        "set": {
+          "path": "light.brightness",
+          "value": 35
+        }
+      }
+    ],
+    "revision": "sha256:aceabcfd6498750ce5defd7cd57cc432e3e6fb2066de5cf39e4c9428e68a38dd",
+    "simulation": true
+  },
+  "deployment": {
+    "last_run": null,
+    "revision": "sha256:aceabcfd6498750ce5defd7cd57cc432e3e6fb2066de5cf39e4c9428e68a38dd",
+    "rule": {
+      "actions": [
+        {
+          "device": "device-lamp",
+          "set": {
+            "path": "light.power",
+            "value": true
+          }
+        },
+        {
+          "device": "device-lamp",
+          "set": {
+            "path": "light.brightness",
+            "value": 35
+          }
+        }
+      ],
+      "conditions": [],
+      "cooldown_ms": 1000,
+      "id": "native-reading",
+      "trigger": {
+        "device": "device-button",
+        "event": "button.pressed"
+      },
+      "version": 1
+    }
+  }
+}

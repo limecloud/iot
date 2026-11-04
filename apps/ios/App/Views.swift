@@ -231,6 +231,9 @@ struct AutomationView: View {
         Form {
             MessageView()
             DraftSection()
+            if let client = try? home.compositionClient() {
+                Section { NavigationLink("使用组合包") { CompositionView(client: client, authFailure: home.report) } }
+            }
             if let target {
                 Section("设置联动") {
                     Picker("触发方式", selection: $scheduled) { Text("设备事件或属性").tag(false); Text("定时").tag(true) }

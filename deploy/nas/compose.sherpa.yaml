@@ -9,7 +9,7 @@ services:
     networks:
       speech: {}
   speech:
-    image: limeiot/sherpa-tts:0.6.0
+    image: limeiot/sherpa-tts:0.7.0
     build:
       context: ../..
       dockerfile: providers/sherpa-tts/Dockerfile

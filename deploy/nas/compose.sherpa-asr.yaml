@@ -8,7 +8,7 @@ services:
     networks:
       transcription: {}
   transcription:
-    image: limeiot/sherpa-asr:0.6.0
+    image: limeiot/sherpa-asr:0.7.0
     build:
       context: ../..
       dockerfile: providers/sherpa-asr/Dockerfile

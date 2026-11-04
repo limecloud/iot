@@ -70,9 +70,10 @@ public actor GatewayClient {
     }
     private static func encoder() -> JSONEncoder { let encoder = JSONEncoder(); encoder.keyEncodingStrategy = .convertToSnakeCase; return encoder }
     private static func decoder() -> JSONDecoder { let decoder = JSONDecoder(); decoder.keyDecodingStrategy = .convertFromSnakeCase; return decoder }
-    private func call<T: Decodable & Sendable>(_ path: String, method: String = "GET", body: Data? = nil, key: String? = nil, authenticated: Bool = true, strictJSON: Bool = false, timeout: TimeInterval = 12, maxJSONBytes: Int = 2_000_000) async throws -> T {
+    private func call<T: Decodable & Sendable>(_ path: String, method: String = "GET", body: Data? = nil, key: String? = nil, authenticated: Bool = true, strictJSON: Bool = false, timeout: TimeInterval = 12, maxJSONBytes: Int = 2_000_000, compositionEpoch: Int? = nil, createOnly: Bool = false) async throws -> T {
         guard let url = URL(string: origin + path) else { throw GatewayError.invalidEndpoint }
         if authenticated && saved == nil { throw GatewayError.unauthenticated }
+        if let compositionEpoch { try Task.checkCancellation(); guard compositionEpoch == epoch else { throw CancellationError() } }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData)
         request.timeoutInterval = timeout
         request.httpMethod = method; request.httpBody = body
@@ -80,9 +81,11 @@ public actor GatewayClient {
         if body != nil { request.setValue("application/json", forHTTPHeaderField: "Content-Type") }
         if let saved { request.setValue(saved.cookie, forHTTPHeaderField: "Cookie"); request.setValue(saved.session.csrfToken, forHTTPHeaderField: "X-CSRF-Token") }
         if let key { request.setValue(key, forHTTPHeaderField: "Idempotency-Key") }
+        if createOnly { request.setValue("*", forHTTPHeaderField: "If-None-Match") }
         let current = epoch
         let (data, response) = try await transport.send(request)
         guard epoch == current else { throw CancellationError() }
+        if compositionEpoch != nil { try Task.checkCancellation() }
         guard (200..<300).contains(response.statusCode) else {
             let code = (try? Self.decoder().decode(Failure.self, from: data).error.code) ?? "request_failed"
             if response.statusCode == 401 && authenticated { saved = nil; epoch += 1; try await store?.save(origin: origin, data: nil); throw GatewayError.unauthenticated }
@@ -96,7 +99,9 @@ public actor GatewayClient {
             try await store?.save(origin: origin, data: Self.encoder().encode(saved))
         }
         if strictJSON {
-            guard data.count <= maxJSONBytes, let text = String(data: data, encoding: .utf8), let result = try IntegerJSON.parse(text, maxBytes: maxJSONBytes) as? T else { throw GatewayError.invalidResponse }
+            guard data.count <= maxJSONBytes, let text = String(data: data, encoding: .utf8) else { throw GatewayError.invalidResponse }
+            let value = try compositionEpoch != nil ? CompositionJSON.parse(text, bytes: maxJSONBytes, depth: 12, nodes: 4096) : IntegerJSON.parse(text, maxBytes: maxJSONBytes)
+            guard let result = value as? T else { throw GatewayError.invalidResponse }
             return result
         }
         return try Self.decoder().decode(T.self, from: data.isEmpty ? Data("{}".utf8) : data)
@@ -108,6 +113,7 @@ public actor GatewayClient {
     }
     public func restore() async throws {
         guard let data = try await store?.load(origin: origin) else { throw GatewayError.unauthenticated }
+        epoch += 1
         saved = try Self.decoder().decode(SavedSession.self, from: data)
         let _: Session = try await call("/api/v1/auth/session")
     }
@@ -177,6 +183,12 @@ public actor GatewayClient {
     }
     func observationCall(space: String, suffix: String, method: String = "GET", body: JSONValue? = nil, key: String? = nil, query: Bool = false) async throws -> JSONValue {
         try await call(base(space) + suffix, method: method, body: body.map { Data(IntegerJSON.canonical($0).utf8) }, key: key, strictJSON: true, timeout: query ? 35 : 12)
+    }
+    func compositionSession() throws -> Int {
+        guard saved != nil else { throw GatewayError.unauthenticated }; return epoch
+    }
+    func compositionCall(space: String, suffix: String, epoch: Int, method: String = "GET", body: JSONValue? = nil, createOnly: Bool = false) async throws -> JSONValue {
+        try await call(base(space) + suffix, method: method, body: body.map { Data(CompositionJSON.canonical($0).utf8) }, strictJSON: true, timeout: 5, maxJSONBytes: 65536, compositionEpoch: epoch, createOnly: createOnly)
     }
     public func createDraft(reference: DraftReference, input: DraftInput) async throws -> RuleDraft {
         try await call(base(reference.space) + "/rule-drafts", method: "POST", body: Self.encoder().encode(input), key: reference.key)

@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [.library(name: "LimeIoTKit", targets: ["LimeIoTKit"])],
     targets: [
-        .target(name: "LimeIoTKit"),
+        .target(name: "LimeIoTKit", resources: [.process("Resources")]),
         .executableTarget(name: "ClientChecks", dependencies: ["LimeIoTKit"], path: "Tests/LimeIoTKitTests")
     ]
 )
