@@ -113,6 +113,7 @@ private func actualGatewayDeviceResultAndSessionRevocation() async throws {
 
 @main enum ClientChecks {
     static func main() async throws {
+        if ProcessInfo.processInfo.environment["LIMEIOT_SPACE_SELECTION_CHECK"] == "1" { try await explicitSpaceSelectionChecks(); return }
         if ProcessInfo.processInfo.environment["LIMEIOT_BRIDGE_PHASE"] != nil { try await propertyBridgeLiveChecks(); return }
         if ProcessInfo.processInfo.environment["LIMEIOT_OBSERVATION_CHECK"] == "1" { print("{\"observation_contract_groups\":\(try await observationContractChecks())}"); return }
         if ProcessInfo.processInfo.environment["LIMEIOT_VISION_CHECK"] == "1" { try await visionLiveChecks(); return }

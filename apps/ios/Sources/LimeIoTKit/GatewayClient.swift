@@ -57,7 +57,7 @@ public protocol SessionStore: Sendable {
 private struct SavedSession: Codable { let session: Session; let cookie: String }
 private struct Failure: Decodable { struct Detail: Decodable { let code: String }; let error: Detail }
 public actor GatewayClient {
-    public let origin: String
+    public nonisolated let origin: String
     private let transport: any HTTPTransport
     private let store: (any SessionStore)?
     private var saved: SavedSession?
@@ -124,9 +124,17 @@ public actor GatewayClient {
     }
     private func base(_ space: String) -> String { "/api/v1/spaces/" + Self.segment(space) }
     private static func segment(_ value: String) -> String { value.addingPercentEncoding(withAllowedCharacters: .alphanumerics.union(CharacterSet(charactersIn: "-_")))! }
-    public func snapshot() async throws -> Snapshot {
+    public func spaces() async throws -> [Space] {
         let spaces: Page<Space> = try await call("/api/v1/spaces")
-        guard let space = spaces.items.first?.spaceId else { throw GatewayError.invalidResponse }
+        return spaces.items
+    }
+    public func snapshot() async throws -> Snapshot {
+        let spaces = try await spaces()
+        guard let space = spaces.first?.spaceId else { throw GatewayError.invalidResponse }
+        return try await snapshot(space: space)
+    }
+    public func snapshot(space: String) async throws -> Snapshot {
+        guard space.range(of: #"^[A-Za-z0-9_-]{1,128}$"#, options: .regularExpression) != nil else { throw GatewayError.invalidEndpoint }
         let path = base(space)
         async let devices: Page<Device> = call(path + "/devices")
         async let capabilities: Capabilities = call(path + "/capabilities")

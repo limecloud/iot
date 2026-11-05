@@ -105,8 +105,10 @@ class GatewayClient(val origin: String, private val transport: GatewayTransport 
         call<Session>("/api/v1/auth/session")
     }
     suspend fun logout() { call<JsonObject>("/api/v1/auth/logout", "POST", "{}"); mutex.withLock { saved = null; sessionEpoch++; store?.save(origin, null) } }
-    suspend fun snapshot(): Snapshot {
-        val space = call<Page<Space>>("/api/v1/spaces").items.firstOrNull()?.spaceId ?: throw GatewayException("space_missing")
+    suspend fun spaces(): List<Space> = call<Page<Space>>("/api/v1/spaces").items
+    suspend fun snapshot(): Snapshot = snapshot(spaces().firstOrNull()?.spaceId ?: throw GatewayException("space_missing"))
+    suspend fun snapshot(space: String): Snapshot {
+        if (!space.matches(Regex("[A-Za-z0-9_-]{1,128}"))) throw GatewayException("invalid_space")
         val path = base(space)
         val capabilities = call<Capabilities>("$path/capabilities")
         return Snapshot(space, call<Page<Device>>("$path/devices").items, capabilities.models, call("$path/commands"), call<Page<Deployment>>("$path/rule-deployments").items, call<Page<Run>>("$path/runs").items, capabilities.inference)
