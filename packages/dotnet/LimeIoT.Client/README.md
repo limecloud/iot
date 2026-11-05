@@ -6,6 +6,8 @@
 
 用户客户端不消费 mTLS 执行端身份。SDK、测试夹具不代表 Windows UI、DPAPI/系统安全存储、正式云提供方或真机验收；检查入口为同级 `LimeIoT.Client.Checks` 控制台项目。
 
+本地 `SnapshotAsync` 在 `Device.Reported` 中保留网关属性观测及时间、质量和来源；缺少观测时保持空值，不补造设备状态。`CommandIntent.Create` 默认仍为 `action.invoke`，可显式传入 `type: "property.set"`。本地 confirmed 属性回执必须包含匹配原路径和值的 `device_result`，动作回执继续核对六字段 `action_result`。模型选择、可写 Schema、逐次用户确认与提交前意图耐久保存由宿主完成；SDK 不自动提交或重试。
+
 `ControlClient.BeginAuthorizationAsync("windows")` 在任何 POST 前保存并回读原键、PKCE verifier 与平台，同 origin 恢复不创建新键。宿主显示授权码并由用户打开返回的同站 URL，在系统浏览器明确批准；库不自动打开网页、批准或后台轮询。原生创建/领取/取消不携带 Cookie、Origin、Authorization。领取核对 origin、Console audience、主体、期限和当前会话后才保存材料；Console 请求使用独立 Cookie/Origin/CSRF，401 清材料但保留恢复记录，503 保留会话待核实。取消成功撤销原授权和子会话；子会话退出保留父浏览器登录。
 
 `PrepareCommandAsync` 固化空间、主体、网关绑定、设备、模型、原键、操作与 20 秒期限。`SubmitCommandAsync` 保存 attempted 后只发一次；超时后、重建客户端后，乃至原键 GET 返回 404 时都只查询。`ResolveCommandAsync(key, reconcile: true)` 只核实原 remote_id，且先保存 GET 得到的身份再发送核实请求。`CommandRecordsAsync()` 恢复当前主体所有空间的本机记录，传入空间时过滤；恢复原操作不需要原设备仍在线。未发送记录或终态/明确拒绝可用 `ForgetCommandAsync` 明确清理；已尝试但未知的记录不得丢弃。每 origin 最多 128 条，满额不自动删记录。

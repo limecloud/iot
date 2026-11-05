@@ -13,10 +13,13 @@ public interface ISessionStore {
     Task SaveAsync(string scope,string? value,CancellationToken cancellation=default);
 }
 public sealed class GatewayException(string code,int status=0):Exception(code) { public string Code {get;}=code; public int Status {get;}=status; }
-public sealed record Device(string Id,string ModelRevision,bool Ready);
+public sealed record Device(string Id,string ModelRevision,bool Ready,JsonObject? Reported=null);
 public sealed record Snapshot(string Space,IReadOnlyList<Device> Devices,JsonObject Models);
 public sealed record CommandIntent(string Key,string DeviceId,string ModelRevision,string ExpiresAt,JsonObject Operation) {
-    public static CommandIntent Create(Device device,string path,JsonNode value) => new(Guid.NewGuid().ToString(),device.Id,device.ModelRevision,DateTimeOffset.UtcNow.AddSeconds(5).ToString("O"),new JsonObject{{"type","action.invoke"},{"path",path},{"value",value.DeepClone()}});
+    public static CommandIntent Create(Device device,string path,JsonNode value,string type="action.invoke") {
+        if(type is not ("action.invoke" or "property.set"))throw new GatewayException("invalid_operation");
+        return new(Guid.NewGuid().ToString(),device.Id,device.ModelRevision,DateTimeOffset.UtcNow.AddSeconds(5).ToString("O"),new JsonObject{{"type",type},{"path",path},{"value",value.DeepClone()}});
+    }
     [JsonIgnore] public JsonObject Input => new(){{"device_id",DeviceId},{"model_revision",ModelRevision},{"expires_at",ExpiresAt},{"operation",Operation.DeepClone()}};
 }
 public sealed record CommandReceipt(string Id,string Status,JsonObject Document);
@@ -78,7 +81,7 @@ public sealed class GatewayClient:IDisposable {
     public async Task<IReadOnlyList<string>> SpacesAsync(CancellationToken cancellation=default){var result=await CallAsync("/api/v1/spaces",cancellation:cancellation);return result["items"]!.AsArray().Select(v=>v!["space_id"]!.GetValue<string>()).ToArray();}
     public async Task<Snapshot> SnapshotAsync(string space,CancellationToken cancellation=default){
         var path=SpacePath(space);var capabilities=await CallAsync(path+"/capabilities",cancellation:cancellation);var devices=await CallAsync(path+"/devices",cancellation:cancellation);
-        var items=devices["items"]!.AsArray().Select(v=>new Device(v!["device_id"]!.GetValue<string>(),v["model_revision"]!.GetValue<string>(),v["ready"]!.GetValue<bool>())).ToArray();
+        var items=devices["items"]!.AsArray().Select(v=>new Device(v!["device_id"]!.GetValue<string>(),v["model_revision"]!.GetValue<string>(),v["ready"]!.GetValue<bool>(),v["reported"] is null?null:(JsonObject)v["reported"]!.AsObject().DeepClone())).ToArray();
         return new Snapshot(space,items,(JsonObject)capabilities["models"]!.DeepClone());
     }
     public async Task<CommandReceipt> CreateAsync(string space,CommandIntent intent,CancellationToken cancellation=default)=>Validate(await CallAsync(SpacePath(space)+"/commands",HttpMethod.Post,intent.Input,intent.Key,cancellation),space,intent);
@@ -88,10 +91,16 @@ public sealed class GatewayClient:IDisposable {
             var id=document["command_id"]!.GetValue<string>();var status=document["status"]!.GetValue<string>();var request=document["request"]!.AsObject();
             if(!Regex.IsMatch(id,"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")||!new[]{"accepted","dispatched","confirmed","unknown","failed","expired","rejected"}.Contains(status)||!Regex.IsMatch(document["request_digest"]!.GetValue<string>(),"^sha256:[a-f0-9]{64}$"))throw new JsonException();
             if(!request.Select(p=>p.Key).Order().SequenceEqual(new[]{"device_id","expires_at","idempotency_key","model_revision","operation","space_id"})||request["space_id"]!.GetValue<string>()!=space||request["device_id"]!.GetValue<string>()!=intent.DeviceId||request["model_revision"]!.GetValue<string>()!=intent.ModelRevision||request["idempotency_key"]!.GetValue<string>()!=intent.Key||DateTimeOffset.Parse(request["expires_at"]!.GetValue<string>())!=DateTimeOffset.Parse(intent.ExpiresAt)||!JsonNode.DeepEquals(request["operation"],intent.Operation))throw new JsonException();
+            if(!intent.Operation.Select(p=>p.Key).ToHashSet().SetEquals(["type","path","value"])||intent.Operation["type"]!.GetValue<string>() is not ("property.set" or "action.invoke"))throw new JsonException();
             if(status=="confirmed"){
                 if(document["error"] is not null)throw new JsonException();var evidence=document["evidence"]!.AsObject();
-                if(evidence["type"]!.GetValue<string>()!="action_result"||evidence["path"]!.GetValue<string>()!=intent.Operation["path"]!.GetValue<string>()||!Regex.IsMatch(evidence["input_digest"]!.GetValue<string>(),"^sha256:[a-f0-9]{64}$")||evidence["output"] is null||!new[]{"submitted","observed"}.Contains(evidence["completion"]!.GetValue<string>()))throw new JsonException();
-                var observed=DateTimeOffset.Parse(evidence["observed_at"]!.GetValue<string>());if(observed<DateTimeOffset.Parse(intent.ExpiresAt).AddSeconds(-32)||observed>DateTimeOffset.UtcNow.AddSeconds(2))throw new JsonException();
+                if(intent.Operation["type"]!.GetValue<string>()=="property.set"){
+                    var path=intent.Operation["path"]!.GetValue<string>();
+                    if(evidence["type"]!.GetValue<string>()!="device_result"||evidence["reported"] is not JsonObject reported||!reported.ContainsKey(path)||!JsonNode.DeepEquals(reported[path],intent.Operation["value"]))throw new JsonException();
+                }else{
+                    if(!evidence.Select(p=>p.Key).ToHashSet().SetEquals(["type","path","input_digest","output","completion","observed_at"])||evidence["type"]!.GetValue<string>()!="action_result"||evidence["path"]!.GetValue<string>()!=intent.Operation["path"]!.GetValue<string>()||!Regex.IsMatch(evidence["input_digest"]!.GetValue<string>(),"^sha256:[a-f0-9]{64}$")||evidence["output"] is null||!new[]{"submitted","observed"}.Contains(evidence["completion"]!.GetValue<string>()))throw new JsonException();
+                    var observed=DateTimeOffset.Parse(evidence["observed_at"]!.GetValue<string>());if(observed<DateTimeOffset.Parse(intent.ExpiresAt).AddSeconds(-32)||observed>DateTimeOffset.UtcNow.AddSeconds(2))throw new JsonException();
+                }
             }
             return new(id,status,document);
         }catch(Exception error)when(error is not GatewayException){throw new GatewayException("invalid_response");}
