@@ -5,14 +5,14 @@ import { promisify } from 'node:util';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
-import { root, startStack, until } from '../tools/dev-stack.mjs';
+import { root, startStack, until, binaryDirectory } from '../tools/dev-stack.mjs';
 import { cloudClient, fixture, origin, post } from './helpers/control.mjs';
 
 const exec = promisify(execFile), base = '/api/v1/spaces/space-demo';
 test('真实WSS机器身份：受信CA、重启/断流重连、本地继续控制及两侧撤销', { timeout: 120000, skip: !process.env.LIMEIOT_TEST_CONTROL_CA_FILE }, async () => {
   const cloud = await cloudClient(), directory = path.join(root, '.dev', `relay-${randomBytes(8).toString('hex')}`);
   await mkdir(directory, { recursive: true }); const key = path.join(directory, 'identity.pk8');
-  await exec(path.join(root, 'target/debug/limeiot-gateway'), ['identity-init', key]);
+  await exec(path.join(binaryDirectory, 'limeiot-gateway'), ['identity-init', key]);
   const ca = process.env.LIMEIOT_TEST_CONTROL_CA_FILE;
   const s = await startStack({ directory, gatewayEnv: { LIMEIOT_CONTROL_ALLOWED_ORIGINS: origin, LIMEIOT_GATEWAY_KEY_FILE: key, LIMEIOT_CONTROL_CA_FILE: ca, LIMEIOT_CONTROL_RELAY_ENABLED: '1' } });
   const state = async () => (await s.request(`${base}/control-pairings`)).value.connection;

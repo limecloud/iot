@@ -268,7 +268,7 @@ export function Developer({ native }: { native?: string }) {
                   <dd>{session.principal.name}</dd>
                   <dt>{t("connections")}</dt>
                   <dd>
-                    LimeIoT {review.data.platform === "ios" ? "iOS" : "Android"}
+                    LimeIoT {{ios:"iOS",android:"Android",macos:"macOS",windows:"Windows"}[review.data.platform]}
                   </dd>
                   <dt>{t("sessionExpires")}</dt>
                   <dd>{when(review.data.expires_at, locale)}</dd>

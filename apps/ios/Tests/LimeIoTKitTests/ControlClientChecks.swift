@@ -108,6 +108,20 @@ private actor ControlFixture: HTTPTransport {
 }
 
 func controlContractChecks() async throws -> Int {
+    for platform in ["ios", "android", "macos", "windows"] {
+        let store = MemoryControlStore(), fixture = ControlFixture()
+        let client = try ControlClient(endpoint: "https://control.example", store: store, transport: fixture)
+        _ = try await client.beginAuthorization(platform: platform)
+        let restored = try ControlClient(endpoint: "https://control.example", store: store, transport: fixture)
+        _ = try await restored.beginAuthorization(platform: platform)
+        let requests = await fixture.requests
+        try expectControl(requests.count == 2, "four platform original proof request count")
+        let original = try JSONSerialization.jsonObject(with: requests[0].httpBody!) as! NSDictionary
+        let recovered = try JSONSerialization.jsonObject(with: requests[1].httpBody!) as! NSDictionary
+        try expectControl(original == recovered, "four platform original proof recovery")
+        let input = try JSONSerialization.jsonObject(with: requests[0].httpBody!) as! [String: Any]
+        try expectControl(input["platform"] as? String == platform, "explicit authorization platform")
+    }
     for endpoint in ["http://control.example", "https://user@control.example", "https://control.example/", "https://control.example/path", "https://control.example?key=x", "http://localhost"] {
         do { _ = try ControlClient(endpoint: endpoint, store: MemoryControlStore(), allowLoopbackHTTP: true); throw ControlCheckFailure(name: "origin accepted") } catch ControlError.invalidEndpoint {}
     }
@@ -226,6 +240,11 @@ func controlCommandContractChecks() async throws -> Int {
     await store.setFailure(false)
     try expectControl(await client.commandRecords(space: "space-a").isEmpty, "failed prepare did not create an operation")
     let record = try await client.prepareCommand(space: "space-a", gateway: gateway, device: device, path: "light.brightness", value: .integer(37))
+    let secondGateway = try decoder.decode(ControlGateway.self, from: Data("{\"gateway_id\":\"gw-b\",\"space_id\":\"space-b\",\"local_space_id\":\"local-b\",\"principal_id\":\"owner\",\"scopes\":[\"commands.write\"],\"revision\":\"revision-b\",\"active\":true}".utf8))
+    let second = try await client.prepareCommand(space: "space-b", gateway: secondGateway, device: device, path: "light.brightness", value: .integer(38))
+    try expectControl(await client.commandRecords().count == 2, "all original spaces available without selected target")
+    try expectControl(await client.commandRecords(space: "space-a").count == 1, "explicit space still filters records")
+    try await client.forgetCommand(key: second.id)
     await store.setFailure(true)
     do { _ = try await client.submitCommand(key: record.id); throw URLError(.unknown) } catch is ControlCheckFailure {}
     let before = await fixture.requests

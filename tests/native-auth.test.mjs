@@ -34,18 +34,18 @@ test('原生授权真实浏览器闭环：明确批准、丢失响应与重启�
     await page.goto(initiated.verification_uri);
     await page.getByLabel('实例凭据',{exact:true}).fill(ownerToken);
     await page.getByRole('button',{name:'登录私有实例',exact:true}).click();
-    await page.getByRole('heading',{name:'授权手机登录',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'授权应用登录',exact:true}).waitFor();
     const approve=page.getByRole('button',{name:'批准登录',exact:true});
     await expect(approve).toBeDisabled();assert.equal((await native('/poll',proof)).status,'pending');
     await page.screenshot({path:path.join(directory,'authorization-desktop.png'),fullPage:true});
     await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     await page.screenshot({path:path.join(directory,'authorization-mobile.png'),fullPage:true});
     for(const secret of [key,verifier,start.code_challenge,initiated.user_code])assert.ok(!(await page.content()).includes(secret));
-    await page.getByLabel('手机上的授权码',{exact:true}).fill(initiated.user_code);
+    await page.getByLabel('应用中的授权码',{exact:true}).fill(initiated.user_code);
     const decisionPattern='**/api/console/v1/native-authorizations/*';
     await page.route(decisionPattern,async route=>{if(route.request().method()!=='POST')return route.continue();await route.fetch();await route.abort('failed');await page.unroute(decisionPattern)});
     await approve.click();await page.getByRole('alert').waitFor();await expect(approve).toBeEnabled();
-    await approve.click();await page.getByText('请求已结束，请返回手机。',{exact:true}).waitFor();
+    await approve.click();await page.getByText('请求已结束，请返回应用。',{exact:true}).waitFor();
     await fixture({drop_native_responses:true});await assert.rejects(native('/poll',proof));
     await fixture({restart_api:true});
     const approved=await native('/poll',proof),again=await native('/poll',proof);assert.deepEqual(again,approved);
@@ -61,11 +61,19 @@ test('原生授权真实浏览器闭环：明确批准、丢失响应与重启�
     await native('/cancel',proof);await native('/cancel',proof);
     const cancelled=await native('/poll',proof);assert.equal(cancelled.status,'cancelled');assert.equal(cancelled.material,undefined);
     const rejected=await fetch(origin+'/api/console/v1/auth/session',{headers:{Cookie:cookie}});assert.equal(rejected.status,401);await rejected.body.cancel();
-    await page.reload();await page.getByText('请求已结束，请返回手机。',{exact:true}).waitFor();
+    await page.reload();await page.getByText('请求已结束，请返回应用。',{exact:true}).waitFor();
     await page.screenshot({path:path.join(directory,'cancelled-mobile.png'),fullPage:true});
+    for(const [platform,label] of [['macos','macOS'],['windows','Windows']]){
+      const desktopKey=randomBytes(32).toString('hex'),desktopProof={request_key:desktopKey,code_verifier:verifier};
+      const desktop=await native('',{...start,request_key:desktopKey,platform});
+      await page.goto(desktop.verification_uri);await expect(page.getByText('LimeIoT '+label,{exact:true})).toBeVisible();
+      await expect(approve).toBeDisabled();assert.equal((await native('/poll',desktopProof)).status,'pending');
+      await page.getByLabel('应用中的授权码',{exact:true}).fill(desktop.user_code);await approve.click();await page.getByText('请求已结束，请返回应用。',{exact:true}).waitFor();
+      assert.equal((await native('/poll',desktopProof)).status,'approved');await native('/cancel',desktopProof);
+    }
     const finalKey=randomBytes(32).toString('hex'),finalProof={request_key:finalKey,code_verifier:verifier};
     const final=await native('',{...start,request_key:finalKey,platform:'android'});
-    await page.goto(final.verification_uri);await page.getByLabel('手机上的授权码',{exact:true}).fill(final.user_code);await approve.click();await page.getByText('请求已结束，请返回手机。',{exact:true}).waitFor();
+    await page.goto(final.verification_uri);await page.getByLabel('应用中的授权码',{exact:true}).fill(final.user_code);await approve.click();await page.getByText('请求已结束，请返回应用。',{exact:true}).waitFor();
     assert.equal((await native('/poll',finalProof)).status,'approved');
     await page.getByRole('button',{name:'退出登录',exact:true}).click();await page.getByLabel('实例凭据',{exact:true}).waitFor();
     await native('/poll',finalProof,401);

@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+func nativePlatform(platform string) bool {
+	switch platform {
+	case "ios", "android", "macos", "windows":
+		return true
+	default:
+		return false
+	}
+}
+
 type NativeAuthorization struct {
 	ID, KeyHash, Origin, Platform, Challenge, CodeHash, Status string
 	Code, Material                                             []byte

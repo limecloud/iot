@@ -9,7 +9,7 @@ import { chromium, expect } from '@playwright/test';
 
 const core = path.resolve(import.meta.dirname, '..');
 const enabled = !!process.env.LIMEIOT_TEST_CONTROL_ORIGIN;
-const { startStack, until } = await import('../tools/dev-stack.mjs');
+const { startStack, until, binaryDirectory } = await import('../tools/dev-stack.mjs');
 const { origin, fixture, post, cloudClient } = await import('./helpers/control.mjs');
 const website = core;
 const exec = promisify(execFile);
@@ -130,7 +130,7 @@ test('通用工作台：空间、最小配对权限、真实 Rust/MQTT 远程闭
   let stack;
   try {
     const key = path.join(s.directory, 'identity.pk8');
-    await exec(path.join(core, 'target/debug/limeiot-gateway'), ['identity-init', key]);
+    await exec(path.join(binaryDirectory, 'limeiot-gateway'), ['identity-init', key]);
     stack = await startStack({ directory: s.directory, gatewayEnv: { LIMEIOT_CONTROL_ALLOWED_ORIGINS: origin, LIMEIOT_GATEWAY_KEY_FILE: key, LIMEIOT_CONTROL_CA_FILE: process.env.LIMEIOT_TEST_CONTROL_CA_FILE, LIMEIOT_CONTROL_RELAY_ENABLED: '1' } });
     await s.login(page, zh + '?view=spaces');
     await page.getByLabel('空间名称', { exact: true }).fill('通用工作台家庭');
@@ -262,13 +262,13 @@ test('通用手机授权页面：明确批准、无关空间零请求、子会�
     let spaceRequests = 0;
     s.page.on('request', r => { if (/\/api\/console\/v1\/spaces/.test(r.url())) spaceRequests++; });
     await s.login(s.page, zh + '?native=' + started.authorization_id);
-    await s.page.getByRole('heading', { name: '授权手机登录', exact: true }).waitFor();
+    await s.page.getByRole('heading', { name: '授权应用登录', exact: true }).waitFor();
     const approve = s.page.getByRole('button', { name: '批准登录', exact: true });
     await expect(approve).toBeDisabled();
     assert.equal((await native('/poll', { request_key: key, code_verifier: verifier })).status, 'pending');
-    await s.page.getByLabel('手机上的授权码', { exact: true }).fill(started.user_code);
+    await s.page.getByLabel('应用中的授权码', { exact: true }).fill(started.user_code);
     await approve.click();
-    await s.page.getByText('请求已结束，请返回手机。', { exact: true }).waitFor();
+    await s.page.getByText('请求已结束，请返回应用。', { exact: true }).waitFor();
     const approved = await native('/poll', { request_key: key, code_verifier: verifier });
     assert.equal(approved.status, 'approved');
     assert.equal(approved.material.origin, origin);

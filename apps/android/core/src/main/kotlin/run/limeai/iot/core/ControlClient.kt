@@ -56,7 +56,7 @@ class ControlClient(val origin: String, private val store: SessionStore, private
         val loaded = json.decodeFromString<ControlState>(raw)
         if (loaded.version != 1 || loaded.origin != origin) throw ControlException("invalid_response")
         loaded.pending?.let {
-            if (!matches(it.proof.requestKey, "[a-f0-9]{64}") || !matches(it.proof.codeVerifier, "[A-Za-z0-9._~-]{43,128}") || it.platform !in listOf("ios", "android")) throw ControlException("invalid_response")
+            if (!matches(it.proof.requestKey, "[a-f0-9]{64}") || !matches(it.proof.codeVerifier, "[A-Za-z0-9._~-]{43,128}") || it.platform !in listOf("ios", "android", "macos", "windows")) throw ControlException("invalid_response")
             it.login?.let(::validate)
         }
         loaded.material?.let { validate(it, false) }
@@ -97,7 +97,7 @@ class ControlClient(val origin: String, private val store: SessionStore, private
     suspend fun beginAuthorization(platform: String = "android"): NativeLogin = mutex.withLock {
         var next = load()
         if (next.material != null) throw ControlException("already_authenticated")
-        if (platform !in listOf("ios", "android")) throw ControlException("invalid_response")
+        if (platform !in listOf("ios", "android", "macos", "windows")) throw ControlException("invalid_response")
         if (next.pending == null) { next = next.copy(pending = NativePending(NativeProof(random(), random()), platform)); persist(next) }
         val pending = requireNotNull(next.pending)
         if (pending.platform != platform) throw ControlException("invalid_response")
@@ -226,10 +226,10 @@ class ControlClient(val origin: String, private val store: SessionStore, private
         val (material, record) = commandContext(key)
         if (record.rejection != null) record else readCommand(record, material, reconcile)
     }
-    suspend fun commandRecords(space: String): List<ControlCommandRecord> = mutex.withLock {
+    suspend fun commandRecords(space: String? = null): List<ControlCommandRecord> = mutex.withLock {
         val material = load().material ?: throw ControlException("unauthenticated", 401)
         val session = current(material)
-        load().operations.filter { it.reference.principalId == session.principal.principalId && it.reference.spaceId == space }
+        load().operations.filter { it.reference.principalId == session.principal.principalId && (space == null || it.reference.spaceId == space) }
     }
     suspend fun forgetCommand(key: String) = mutex.withLock {
         val (_, record) = commandContext(key)

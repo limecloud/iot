@@ -5,7 +5,7 @@ import { promisify } from 'node:util';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
-import { root, startStack, until } from '../tools/dev-stack.mjs';
+import { root, startStack, until, binaryDirectory } from '../tools/dev-stack.mjs';
 import { cloudClient, fixture, origin, post } from './helpers/control.mjs';
 import { actionState, startActionStack } from './helpers/actions.mjs';
 
@@ -13,7 +13,7 @@ const exec = promisify(execFile), base = '/api/v1/spaces/space-demo';
 test('受限远程控制：真实WSS/MySQL/MQTT、耐久原键、双进程重启、丢失回执不重放及撤销', { timeout: 150000, skip: !process.env.LIMEIOT_TEST_CONTROL_CA_FILE }, async () => {
   const cloud=await cloudClient(), directory=path.join(root,'.dev',`remote-${randomBytes(8).toString('hex')}`);
   await mkdir(directory,{recursive:true});const key=path.join(directory,'identity.pk8');
-  await exec(path.join(root,'target/debug/limeiot-gateway'),['identity-init',key]);
+  await exec(path.join(binaryDirectory,'limeiot-gateway'),['identity-init',key]);
   const s=await startStack({directory,gatewayEnv:{LIMEIOT_CONTROL_ALLOWED_ORIGINS:origin,LIMEIOT_GATEWAY_KEY_FILE:key,LIMEIOT_CONTROL_CA_FILE:process.env.LIMEIOT_TEST_CONTROL_CA_FILE,LIMEIOT_CONTROL_RELAY_ENABLED:'1'}});
   const pair=await cloud.pair();let binding,link;
   const here=async id=>(await s.request(`${base}/control-pairings/${id}`)).value;
@@ -77,7 +77,7 @@ test('受限远程控制：真实WSS/MySQL/MQTT、耐久原键、双进程重启
 test('远程动作CLI：真实HTTPS/WSS/MQTT、动作证据与丢响应原键恢复', { timeout: 90000, skip: !process.env.LIMEIOT_TEST_CONTROL_CA_FILE }, async () => {
   const cloud = await cloudClient(), directory = path.join(root, '.dev', `remote-actions-${randomBytes(8).toString('hex')}`);
   await mkdir(directory, { mode: 0o700 });
-  const key = path.join(directory, 'identity.pk8'); await exec(path.join(root, 'target/debug/limeiot-gateway'), ['identity-init', key]);
+  const key = path.join(directory, 'identity.pk8'); await exec(path.join(binaryDirectory, 'limeiot-gateway'), ['identity-init', key]);
   const stack = await startActionStack({ directory, gatewayEnv: { LIMEIOT_CONTROL_ALLOWED_ORIGINS: origin, LIMEIOT_GATEWAY_KEY_FILE: key, LIMEIOT_CONTROL_CA_FILE: process.env.LIMEIOT_TEST_CONTROL_CA_FILE, LIMEIOT_CONTROL_RELAY_ENABLED: '1' } });
   const session = path.join(directory, 'session.json'), inputFile = path.join(directory, 'input.json');
   async function cli(args, code = 0) {

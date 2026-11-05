@@ -43,7 +43,7 @@ func (s *Server) createNativeAuthorization(c *gin.Context) {
 	if !body(c, &input) {
 		return
 	}
-	if !hexSecret(input.Key) || !challenge(input.Challenge) || (input.Platform != "ios" && input.Platform != "android") {
+	if !hexSecret(input.Key) || !challenge(input.Challenge) || !nativePlatform(input.Platform) {
 		fail(c, 400, "invalid_request")
 		return
 	}

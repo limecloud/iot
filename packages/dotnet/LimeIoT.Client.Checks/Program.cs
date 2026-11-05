@@ -20,7 +20,9 @@ Check(GatewayClient.Validate(receipt,"chosen",original).Id=="command-1","valid r
 receipt["request"]!["device_id"]="wrong-target";
 try{GatewayClient.Validate(receipt,"chosen",original);throw new Exception("mismatched receipt accepted");}catch(GatewayException error)when(error.Code=="invalid_response"){}
 await TextChecks.Run();
-Console.WriteLine("{\"passed\":true,\"groups\":10,\"exact_origin\":true,\"explicit_space\":true,\"cookie_credentials\":true,\"no_automatic_command_retry\":true,\"original_receipt_binding\":true}");
+await ControlChecks.Run();
+if(Environment.GetEnvironmentVariable("LIMEIOT_NATIVE_CONTROL_CHECK")=="1")await ControlLiveChecks.Run();
+Console.WriteLine("{\"passed\":true,\"groups\":18,\"exact_origin\":true,\"explicit_space\":true,\"cookie_credentials\":true,\"no_automatic_command_retry\":true,\"original_receipt_binding\":true,\"native_cloud_contract\":true,\"hardware\":false}");
 
 sealed class MemoryStore:ISessionStore {
     private readonly Dictionary<string,string> values=new();

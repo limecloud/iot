@@ -260,7 +260,7 @@ try {
   if (remote && !consumerWeb) report.remote_commands = true;
   if (web) { report.control_web = true; report.native_authorization = true; }
   if (cli) report.control_cli = true;
-  if (nativeClients) { report.native_clients = true; report.native_remote = true; report.native_actions = true; report.native_app = false; report.transport = 'https'; }
+  if (nativeClients) { report.native_clients = true; report.native_remote = true; report.native_actions = true; report.native_app = false; report.transport = 'https'; report.dotnet_clients = Boolean(process.env.LIMEIOT_DOTNET); report.native_journeys = process.env.LIMEIOT_DOTNET ? 6 : 4; }
   if (consumerWeb) { report.consumer_web = true; report.consumer_suite = consumerSuite; report.transport = 'https'; report.official_cloud = false; }
   report.passed = true;
 } finally {

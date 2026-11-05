@@ -117,6 +117,19 @@ private class ControlFixture : GatewayTransport {
 class ControlClientTest {
     private val gateway = ControlGateway("gw-a", "space-a", "local-space", "owner", listOf("commands.write"), "revision-a", true)
     private val device = Device("device-lamp", "sha256:fixture", true)
+    @Test fun desktopPlatformsRestoreOriginalProofAndAllSpacesRemainRecoverable() = runBlocking {
+        for (platform in listOf("ios", "android", "macos", "windows")) {
+            val store = MemoryControlStore(); val fixture = ControlFixture(); val client = ControlClient(fixture.origin, store, fixture)
+            client.beginAuthorization(platform)
+            val restored = ControlClient(fixture.origin, store, fixture); restored.beginAuthorization(platform)
+            assertEquals(fixture.requests[0].body, fixture.requests[1].body)
+            assertEquals(platform, Json.parseToJsonElement(fixture.requests[0].body!!).jsonObject.getValue("platform").jsonPrimitive.content)
+            restored.pollAuthorization()
+            restored.prepareCommand("space-a", gateway, device, "light.power", JsonPrimitive(true))
+            restored.prepareCommand("space-b", gateway.copy(spaceId = "space-b", localSpaceId = "local-b"), device, "light.power", JsonPrimitive(false))
+            assertEquals(2, restored.commandRecords().size); assertEquals(1, restored.commandRecords("space-a").size)
+        }
+    }
     @Test fun exactOriginAndDurableProofBeforeNetwork() = runBlocking {
         for (origin in listOf("http://control.example", "https://user@control.example", "https://control.example/", "https://control.example/path", "https://control.example?key=x", "http://localhost")) {
             assertFailsWith<ControlException> { ControlClient(origin, MemoryControlStore(), allowLoopbackHTTP = true) }

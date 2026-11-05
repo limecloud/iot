@@ -8,7 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import net from 'node:net';
 
 export const root=fileURLToPath(new URL('../',import.meta.url));
-const binaryDirectory=process.env.LIMEIOT_TEST_TARGET_DIR??path.join(root,'target/debug');
+export const binaryDirectory=process.env.LIMEIOT_TEST_TARGET_DIR??path.join(root,'target/debug');
 export async function freePort() {const server=net.createServer();await new Promise((resolve,reject)=>server.once('error',reject).listen(0,'127.0.0.1',resolve));const port=server.address().port;await new Promise(resolve=>server.close(resolve));return port;}
 export async function until(check,timeout=10000) {const end=Date.now()+timeout;let last;while(Date.now()<end){try{last=await check();if(last)return last;}catch{}await delay(100);}throw new Error('readiness_timeout');}
 export async function stop(child) {if(!child||child.exitCode!==null||child.signalCode)return;const exited=new Promise(resolve=>child.once('exit',resolve));child.kill('SIGINT');await Promise.race([exited,delay(4000)]);if(child.exitCode===null&&!child.signalCode){child.kill('SIGKILL');await exited;}}

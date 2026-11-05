@@ -36,7 +36,7 @@ public actor ControlClient {
         let decoded = try Self.decoder().decode(ControlState.self, from: data)
         guard decoded.version == 1 && decoded.origin == origin else { throw ControlError.invalidResponse }
         if let pending = decoded.pending {
-            guard Self.matches(pending.proof.requestKey, "^[a-f0-9]{64}$"), Self.matches(pending.proof.codeVerifier, "^[A-Za-z0-9._~-]{43,128}$"), ["ios", "android"].contains(pending.platform) else { throw ControlError.invalidResponse }
+            guard Self.matches(pending.proof.requestKey, "^[a-f0-9]{64}$"), Self.matches(pending.proof.codeVerifier, "^[A-Za-z0-9._~-]{43,128}$"), ["ios", "android", "macos", "windows"].contains(pending.platform) else { throw ControlError.invalidResponse }
             if let login = pending.login { try validate(login) }
         }
         if let material = decoded.material { try validate(material, requireFuture: false) }
@@ -97,7 +97,7 @@ public actor ControlClient {
         try acquire(); defer { busy = false }
         var next = try await load()
         guard next.material == nil else { throw ControlError.alreadyAuthenticated }
-        guard ["ios", "android"].contains(platform) else { throw ControlError.invalidResponse }
+        guard ["ios", "android", "macos", "windows"].contains(platform) else { throw ControlError.invalidResponse }
         if next.pending == nil {
             next.pending = NativePending(proof: NativeProof(requestKey: Self.random(), codeVerifier: Self.random()), platform: platform)
             try await persist(next)
@@ -281,11 +281,11 @@ public actor ControlClient {
         if record.rejection != nil { return record }
         return try await readCommand(record, material: material, reconcile: reconcile)
     }
-    public func commandRecords(space: String) async throws -> [ControlCommandRecord] {
+    public func commandRecords(space: String? = nil) async throws -> [ControlCommandRecord] {
         try acquire(); defer { busy = false }
         guard let material = try await load().material else { throw ControlError.unauthenticated }
         let session = try await current(material)
-        return (try await load().operations ?? []).filter { $0.reference.principalId == session.principal.principalId && $0.reference.spaceId == space }
+        return (try await load().operations ?? []).filter { $0.reference.principalId == session.principal.principalId && (space == nil || $0.reference.spaceId == space) }
     }
     public func forgetCommand(key: String) async throws {
         try acquire(); defer { busy = false }

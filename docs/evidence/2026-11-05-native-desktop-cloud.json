@@ -1,0 +1,227 @@
+{
+  "as_of": "2026-11-05",
+  "scope": "IoT 四平台原生授权合同与 Swift/Kotlin/.NET SDK；非完整产品或目标系统验收",
+  "passed": true,
+  "base_revision": "313090d6b53e28d6e5ad1eaa28d29b8d7c479119",
+  "platforms": [
+    "ios",
+    "android",
+    "macos",
+    "windows"
+  ],
+  "checks": {
+    "dotnet_contract_groups": 18,
+    "swift_host": true,
+    "kotlin_control_methods": 13,
+    "go_race_and_vet": true,
+    "native_joint_tests": 7,
+    "native_library_journeys": 6,
+    "web_joint_tests": 10,
+    "native": {
+      "passed": true,
+      "isolated_mysql": true,
+      "hardware": false,
+      "process_restart": true,
+      "gateway_pairing": true,
+      "gateway_wss": true,
+      "remote_commands": true,
+      "native_clients": true,
+      "native_remote": true,
+      "native_actions": true,
+      "native_app": false,
+      "transport": "https",
+      "dotnet_clients": true,
+      "native_journeys": 6
+    },
+    "web": {
+      "passed": true,
+      "isolated_mysql": true,
+      "hardware": false,
+      "process_restart": true,
+      "gateway_pairing": true,
+      "gateway_wss": true,
+      "remote_commands": true,
+      "control_web": true,
+      "native_authorization": true
+    }
+  },
+  "limits": [
+    ".NET 在 macOS 宿主运行，Windows UI 与系统安全存储未验收",
+    "OIDC 提供方、设备与私有文件存储仍是隔离夹具；非正式云提供方或真机",
+    "网关/模拟器采用 base_revision 的固定二进制，Go 控制面与客户端采用本次来源摘要",
+    "未更新数据库结构、正式云部署或 NAS 镜像",
+    "LimeLink 产品路由和界面须独立消费与验收"
+  ],
+  "sources": [
+    {
+      "path": "apps/ios/Sources/LimeIoTKit/ControlClient.swift",
+      "sha256": "814f7a02c742285e14799a3c99df07c6aad5d10f5a3c0af0415b2ca08084ebce"
+    },
+    {
+      "path": "apps/android/core/src/main/kotlin/run/limeai/iot/core/ControlClient.kt",
+      "sha256": "27bd3d7eba378abf07ba38b4f1e45079be3d7b8b34b0f1f7b1def6912c361836"
+    },
+    {
+      "path": "apps/ios/Tests/LimeIoTKitTests/ControlClientChecks.swift",
+      "sha256": "8a3fb67e01ab9f94f22cd6060073bf71eedcea817a4409bc4432b109dd3360b1"
+    },
+    {
+      "path": "apps/android/core/src/test/kotlin/run/limeai/iot/core/ControlClientTest.kt",
+      "sha256": "667a05a745acd972256de2ef75fdfd969f81ff63e54273389ab6d8886aeee66b"
+    },
+    {
+      "path": "contracts/control.openapi.yaml",
+      "sha256": "8af047986b06a8bc17761ae85a2309c2ee844cc0e6603d1962435d5c792d13b3"
+    },
+    {
+      "path": "contracts/control-native.md",
+      "sha256": "1d4a031984c39a4180832209df164d71a74c78d5ca1c941d74269ad41338ad68"
+    },
+    {
+      "path": "packages/control-ui/src/workspace/Workspace.tsx",
+      "sha256": "2a7c4651bf7eddcbfe4ab6ccada37208a8dbb4ca17b3e035e785eaf7bf50cb9b"
+    },
+    {
+      "path": "packages/control-ui/src/workspace/contracts.ts",
+      "sha256": "184fea8af8b77374a6ca895a2a87e6d3dc6b9637097c9962abcdb4ef0b753906"
+    },
+    {
+      "path": "packages/control-ui/src/workspace/locales/zh-CN.json",
+      "sha256": "411d884c386bf8e6efb2c5e195bae03914085258c7a4dbc87311d27f027736aa"
+    },
+    {
+      "path": "packages/control-ui/src/workspace/locales/en.json",
+      "sha256": "9e4f8e858ccb18a7adb059a09436515abffdd175e71eff564623cf49669ab395"
+    },
+    {
+      "path": "packages/dotnet/LimeIoT.Client/README.md",
+      "sha256": "e1ef165bf48fdd4116499a4608075a82a1ac8525b3787401b1d4b1fa2a718bdd"
+    },
+    {
+      "path": "packages/dotnet/LimeIoT.Client/ControlModels.cs",
+      "sha256": "b2e46359f95010b4e43fe9b29f29b6c6d6a40fe802d15c4d43492e708335dd33"
+    },
+    {
+      "path": "packages/dotnet/LimeIoT.Client/ControlClient.cs",
+      "sha256": "7473e5805c82e6c6d515dbec54621f1892c33504c493182ba7f10908ca16e4c9"
+    },
+    {
+      "path": "packages/dotnet/LimeIoT.Client.Checks/Program.cs",
+      "sha256": "f8ea56dc55db9e86c6e1232ce4c0443889dfeee9d6a447f2de70005e10611396"
+    },
+    {
+      "path": "packages/dotnet/LimeIoT.Client.Checks/ControlChecks.cs",
+      "sha256": "52beb47c7ebb85942c8a8b9bbc641bd1870bcbc4ba6931bc91e914be8b1acffd"
+    },
+    {
+      "path": "packages/dotnet/LimeIoT.Client.Checks/ControlLiveChecks.cs",
+      "sha256": "adec07875d78cb2a8426835783deb16456f7a58b634c6b017009c0a26c5709c6"
+    },
+    {
+      "path": "server/internal/control/native.go",
+      "sha256": "830764c57fd4be19fbc77c7a52803ee8dbe42b60a17296d2e7ace83deb0ce2ee"
+    },
+    {
+      "path": "server/internal/control/native_http.go",
+      "sha256": "b031ec06047fd8d44a8e155d87c702808232a8da0d4e5aa1f3a30d69c2508e73"
+    },
+    {
+      "path": "server/internal/control/native_platform_test.go",
+      "sha256": "6c244d23c598509b891aca7db09d42515b0964ee374ef6a19180bcd7a6fa7548"
+    },
+    {
+      "path": "server/integration/native_test.go",
+      "sha256": "ad6daf82b032beead44c7e4354a45a7fc0097b136c1ca63b067dccbc33da8b62"
+    },
+    {
+      "path": "tests/native-auth.test.mjs",
+      "sha256": "a84ed06ae193ae39505bad2a74823c61c88b056708bf1232625c88d5093d0301"
+    },
+    {
+      "path": "tests/control-web.test.mjs",
+      "sha256": "78325d46b7255d3986ffd3c68aa00a9cb10e2046c8b9abd4b1f1280e11448e3c"
+    },
+    {
+      "path": "tests/control-native.test.mjs",
+      "sha256": "ec5ad82c1d8bde991e24d3773bb66a84a9ca1e8741a1ae91f6f2979da10bfefd"
+    },
+    {
+      "path": "tests/pairing.test.mjs",
+      "sha256": "76fce23ef01cd333d126b5900726af3c69e36ecd207e1b330079f0c0147799ea"
+    },
+    {
+      "path": "tests/relay.test.mjs",
+      "sha256": "399ddf7e06a94ac85b1f6676b77e3390c280379a30adb4b1dc0e9180c411e491"
+    },
+    {
+      "path": "tests/remote.test.mjs",
+      "sha256": "b0482f821ea616ab6e0cac01e14b8adea71bd0332189d8baef6cc9c3ca89da83"
+    },
+    {
+      "path": "tools/dev-stack.mjs",
+      "sha256": "f7288d4c0ffd289a5e6c000150ce7b691324c77b48359b4257bceddc1bd3057a"
+    },
+    {
+      "path": "tools/test-control.mjs",
+      "sha256": "3ae66c239bd09380f6ec1f41a8beb6fc24703f45c90702ce465d37bffefaee8f"
+    }
+  ],
+  "logs": [
+    {
+      "path": ".dev/limelink-control-platform.log",
+      "sha256": "0e82cad0fd8fc8d52c540a6bc319176f130d20d733ff0113a4828fa3636b6a33"
+    },
+    {
+      "path": ".dev/limelink-dotnet-control.log",
+      "sha256": "f69feae993ae5079f5d3b4ae56376eba4c4bf5239e6b52c0a1e307889a59c7f0"
+    },
+    {
+      "path": ".dev/limelink-swift-control.log",
+      "sha256": "ab11ad30ca21ce5b2c8e6ec1ab593cd2db35ce11f962448afade59e2fbc865ae"
+    },
+    {
+      "path": ".dev/limelink-kotlin-control.log",
+      "sha256": "056449a7c87a9caa29ac69c252e1fcd82b5f19f5e8d2a74b3dbb4948261688d1"
+    },
+    {
+      "path": ".dev/limelink-cloud-native.log",
+      "sha256": "8dd1d0e7634b72638e91b48ca35219ebd640395f2316fb77773feec2da7470f9"
+    },
+    {
+      "path": ".dev/limelink-cloud-web-serial.log",
+      "sha256": "015cceef67d7134ad498d42bdc486225d032eb6518e0cd9e4594accde0b7d17c"
+    }
+  ],
+  "failed_attempts": [
+    {
+      "log_sha256": "0843002c94e599e9f67db2c571f56ffaa7fe3c92083dd7bcb1084131c68b7c99",
+      "reason": "合并套件共享账号累计超过正式16空间配额；拆成独立实例，未修改配额或断言"
+    },
+    {
+      "log_sha256": "dce52b911f66db7d170a850aeb64891a101ebd0ea55f4be61f748f12d68b20ea",
+      "reason": "两临时MySQL并行时其中一个提前退出；具体退出原因未确认，串行复验通过"
+    }
+  ],
+  "runtime_binaries": [
+    {
+      "name": "limeiot-gateway",
+      "source_revision": "313090d6b53e28d6e5ad1eaa28d29b8d7c479119",
+      "sha256": "f8936979c0198d74bcaa18249207d2aafaf8aef7d266ed5f6f08b91b20d2661e"
+    },
+    {
+      "name": "limeiot-simulator",
+      "source_revision": "313090d6b53e28d6e5ad1eaa28d29b8d7c479119",
+      "sha256": "566084f226a5069b05a7960359f684c78e24b7fef9edf9dec33794c63ee00418"
+    },
+    {
+      "name": "limeiot-model-validator",
+      "source_revision": "313090d6b53e28d6e5ad1eaa28d29b8d7c479119",
+      "sha256": "c0765a1043260598ea0afbafa16e59f5f4e656d903d3bd21fb303146bf826e7d"
+    }
+  ],
+  "native_app": false,
+  "hardware": false,
+  "official_cloud": false,
+  "published": false,
+  "full_goal_completed": false
+}

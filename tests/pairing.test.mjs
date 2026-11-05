@@ -6,12 +6,12 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { chromium } from '@playwright/test';
-import { startStack, until, root } from '../tools/dev-stack.mjs';
+import { startStack, until, root, binaryDirectory } from '../tools/dev-stack.mjs';
 import { cloudClient, fixture, origin, post } from './helpers/control.mjs';
 const exec = promisify(execFile), base = '/api/v1/spaces/space-demo';
 async function stack() {
   const directory = path.join(root, '.dev', `pairing-${randomBytes(8).toString('hex')}`); await mkdir(directory, { recursive: true }); const key = path.join(directory, 'identity.pk8');
-  await exec(path.join(root, 'target/debug/limeiot-gateway'), ['identity-init', key]);
+  await exec(path.join(binaryDirectory, 'limeiot-gateway'), ['identity-init', key]);
   return startStack({ directory, gatewayEnv: { LIMEIOT_CONTROL_ALLOWED_ORIGINS: origin, LIMEIOT_GATEWAY_KEY_FILE: key, LIMEIOT_CONTROL_CA_FILE: process.env.LIMEIOT_TEST_CONTROL_CA_FILE ?? '', LIMEIOT_CONTROL_RELAY_ENABLED: '0' } });
 }
 async function settled(s, id, status) { return until(async () => { const value = (await s.request(`${base}/control-pairings/${id}`)).value; return value.status === status && value; }); }

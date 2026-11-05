@@ -194,7 +194,7 @@ export const cliSchema = z.object({
 });
 export const nativeSchema = z.object({
   authorization_id: id,
-  platform: z.enum(["ios", "android"]),
+  platform: z.enum(["ios", "android", "macos", "windows"]),
   status: z.enum(["pending", "approved", "denied", "cancelled"]),
   expires_at: date,
 });

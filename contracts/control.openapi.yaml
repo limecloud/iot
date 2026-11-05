@@ -1007,7 +1007,7 @@ components:
       properties:
         request_key: { type: string, pattern: '^[a-f0-9]{64}$', description: 原生端生成的256位随机秘密，只放安全存储与JSON正文 }
         code_challenge: { type: string, pattern: '^[A-Za-z0-9_-]{43}$', description: S256，无填充的规范base64url，必须解码为32字节 }
-        platform: { enum: [ios, android] }
+        platform: { enum: [ios, android, macos, windows] }
       additionalProperties: false
     NativeProof:
       type: object
@@ -1032,7 +1032,7 @@ components:
       required: [authorization_id, platform, status, expires_at]
       properties:
         authorization_id: { type: string, pattern: '^na-[a-f0-9]{64}$' }
-        platform: { enum: [ios, android] }
+        platform: { enum: [ios, android, macos, windows] }
         status: { enum: [pending, approved, denied, cancelled] }
         expires_at: { type: string, format: date-time }
       additionalProperties: false

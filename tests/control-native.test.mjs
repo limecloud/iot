@@ -8,23 +8,25 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '@playwright/test';
-import { root, startStack, until } from '../tools/dev-stack.mjs';
+import { root, startStack, until, binaryDirectory } from '../tools/dev-stack.mjs';
 import { origin, post, cloudClient, fixture } from './helpers/control.mjs';
 import { actionState, startActionStack } from './helpers/actions.mjs';
 import { documentDigest } from '../packages/protocol/model-validation.mjs';
 const exec=promisify(execFile),base='/api/v1/spaces/space-demo';
 
-test('Swift/Kotlin原生控制面库：属性/动作、真实HTTPS/WSS/MQTT、明确批准、丢响应与重启原键恢复', {timeout:300000,skip:!process.env.LIMEIOT_TEST_CONTROL_TOKEN_FILE}, async()=>{
+test('原生控制面库：属性/动作、真实HTTPS/WSS/MQTT、明确批准、丢响应与重启原键恢复', {timeout:480000,skip:!process.env.LIMEIOT_TEST_CONTROL_TOKEN_FILE}, async()=>{
   assert.equal(new URL(origin).protocol,'https:');assert.ok(process.env.LIMEIOT_TEST_CONTROL_CA_FILE);
   const directory=await mkdtemp(path.join(tmpdir(),'limeiot-native-clients-'));
   let browser,child,stack;
   try{
     browser=await chromium.launch({headless:true,executablePath:process.env.LIMEIOT_BROWSER_EXECUTABLE});
     const token=(await readFile(process.env.LIMEIOT_TEST_CONTROL_TOKEN_FILE,'utf8')).trim();
-    for(const [target,mode] of [['ios','property'],['android','property'],['ios','action'],['android','action']]){
+    const cases=[['ios','property'],['android','property'],['ios','action'],['android','action']];
+    if(process.env.LIMEIOT_DOTNET)cases.push(['windows','property'],['windows','action']);
+    for(const [target,mode] of cases){
       const scratch=path.join(directory,target+'-'+mode);await mkdir(scratch,{mode:0o700});
       const artifacts=path.join(root,'.dev',`native-remote-${target}-${mode}-${randomBytes(8).toString('hex')}`);await mkdir(artifacts,{recursive:true});
-      const key=path.join(artifacts,'identity.pk8');await exec(path.join(root,'target/debug/limeiot-gateway'),['identity-init',key]);
+      const key=path.join(artifacts,'identity.pk8');await exec(path.join(binaryDirectory,'limeiot-gateway'),['identity-init',key]);
       stack=await (mode==='action'?startActionStack:startStack)({directory:artifacts,gatewayEnv:{LIMEIOT_CONTROL_ALLOWED_ORIGINS:origin,LIMEIOT_GATEWAY_KEY_FILE:key,LIMEIOT_CONTROL_CA_FILE:process.env.LIMEIOT_TEST_CONTROL_CA_FILE,LIMEIOT_CONTROL_RELAY_ENABLED:'1'}});
       const cloud=await cloudClient(),pair=await cloud.pair(),space=pair.pairing.space_id;
       const local=(await stack.request(`${base}/control-pairings`,post({control_origin:pair.control_origin,pairing_id:pair.pairing.pairing_id,code:pair.code},'native-pair'))).value;
@@ -32,9 +34,9 @@ test('Swift/Kotlin原生控制面库：属性/动作、真实HTTPS/WSS/MQTT、�
       await stack.request(`${base}/control-pairings/${local.link_id}/approve`,post({review_revision:review.review_revision}));
       const binding=(await until(async()=>{const v=(await stack.request(`${base}/control-pairings/${local.link_id}`)).value;return v.status==='active'&&v})).binding;
       await until(async()=>(await cloud.connection(binding)).connected);
-      const args=target==='ios'?['run','ClientChecks']:['gradlew','--no-daemon','--configure-on-demand',':core:test','--rerun-tasks'];
+      const args=target==='windows'?['run','--project',path.join(root,'packages/dotnet/LimeIoT.Client.Checks')]:target==='ios'?['run','ClientChecks']:['gradlew','--no-daemon','--configure-on-demand',':core:test','--rerun-tasks'];
       const childEnv={...process.env,LIMEIOT_NATIVE_CONTROL_CHECK:'1',LIMEIOT_NATIVE_CHECK_ACTION:mode==='action'?'1':'0',LIMEIOT_NATIVE_CHECK_DIRECTORY:scratch,LIMEIOT_NATIVE_CHECK_SPACE:space};delete childEnv.LIMEIOT_ENDPOINT;
-      child=spawn(target==='ios'?'swift':'sh',args,{cwd:path.join(root,'apps',target),env:childEnv,stdio:['ignore','pipe','pipe']});
+      child=spawn(target==='windows'?process.env.LIMEIOT_DOTNET:target==='ios'?'swift':'sh',args,{cwd:target==='windows'?root:path.join(root,'apps',target),env:childEnv,stdio:['ignore','pipe','pipe']});
       let output='',finished=false;
       child.stdout.on('data',chunk=>{output+=chunk});child.stderr.on('data',chunk=>{output+=chunk});
       const done=new Promise(resolve=>{child.once('exit',code=>{finished=true;resolve({code})});child.once('error',error=>{finished=true;resolve({error})})});
@@ -51,7 +53,7 @@ test('Swift/Kotlin原生控制面库：属性/动作、真实HTTPS/WSS/MQTT、�
       assert.equal(login.verification_uri,origin+'/console/?native='+login.authorization_id);
       const context=await browser.newContext({ignoreHTTPSErrors:true}),page=await context.newPage();
       await page.goto(login.verification_uri);await page.getByLabel('实例凭据',{exact:true}).fill(token);await page.getByRole('button',{name:'登录私有实例',exact:true}).click();
-      await page.getByLabel('手机上的授权码',{exact:true}).fill(login.user_code);await page.getByRole('button',{name:'批准登录',exact:true}).click();await page.getByText('请求已结束，请返回手机。',{exact:true}).waitFor();
+      await page.getByLabel('应用中的授权码',{exact:true}).fill(login.user_code);await page.getByRole('button',{name:'批准登录',exact:true}).click();await page.getByText('请求已结束，请返回应用。',{exact:true}).waitFor();
       await waitFile('operation.json');const before=await fixture({drop_remote_responses:true});
       await writeFile(path.join(scratch,'send'),'send',{mode:0o600});await waitFile('unknown');
       await fixture({restart_api:true});await until(async()=>(await cloud.connection(binding)).connected);
@@ -67,7 +69,7 @@ test('Swift/Kotlin原生控制面库：属性/动作、真实HTTPS/WSS/MQTT、�
       const session=await page.request.get(origin+'/api/console/v1/auth/session');assert.equal(session.status(),200,'child logout must preserve browser parent');
       await page.getByRole('button',{name:'退出登录',exact:true}).click();await page.getByLabel('实例凭据',{exact:true}).waitFor();await context.close();
       await stack.close();stack=undefined;
-      console.log(`${target==='ios'?'Swift':'Kotlin'} ${mode}：HTTPS授权、丢响应/重启原键恢复、仅1条设备命令与独立退出通过。`);
+      console.log(`${target==='windows'?'.NET':target==='ios'?'Swift':'Kotlin'} ${mode}：HTTPS授权、丢响应/重启原键恢复、仅1条设备命令与独立退出通过。`);
     }
   }finally{
     if(child?.pid&&child.exitCode===null&&child.signalCode===null){const exited=new Promise(resolve=>child.once('exit',resolve));child.kill('SIGTERM');await exited}

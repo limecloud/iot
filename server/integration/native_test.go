@@ -56,11 +56,15 @@ func testNativeAuthorization(t *testing.T, store *mysqlstore.Store) {
 				Status   string                  `json:"status"`
 				Material control.SessionMaterial `json:"material"`
 			}
-			start := func() (started, map[string]string, map[string]string) {
+			start := func(platforms ...string) (started, map[string]string, map[string]string) {
 				t.Helper()
+				platform := "ios"
+				if len(platforms) > 0 {
+					platform = platforms[0]
+				}
 				key, verifier := control.Random(), control.Random()
 				digest := sha256.Sum256([]byte(verifier))
-				input := map[string]string{"request_key": key, "code_challenge": base64.RawURLEncoding.EncodeToString(digest[:]), "platform": "ios"}
+				input := map[string]string{"request_key": key, "code_challenge": base64.RawURLEncoding.EncodeToString(digest[:]), "platform": platform}
 				v := decode[started](t, call("/api/native/v1/authorizations", input, 200))
 				if time.Until(v.Expires) > 5*time.Minute || v.Status != "pending" || len(v.Code) != 8 || !strings.HasSuffix(v.URL, "/console/?native="+v.ID) {
 					t.Fatal("invalid native initiation")
@@ -96,6 +100,27 @@ func testNativeAuthorization(t *testing.T, store *mysqlstore.Store) {
 				other = newClient(t, server.URL)
 				other.oidc(provider, "console", "native-other", "", 303)
 				other.session("console")
+			}
+			for _, platform := range []string{"macos", "windows"} {
+				desktop, original, desktopProof := start(platform)
+				desktopPath := "/api/console/v1/native-authorizations/" + desktop.ID
+				review := decode[struct {
+					Platform string `json:"platform"`
+				}](t, owner.call("GET", desktopPath, nil, 200))
+				if review.Platform != platform {
+					t.Fatal("desktop platform changed")
+				}
+				changed := map[string]string{"request_key": original["request_key"], "code_challenge": original["code_challenge"], "platform": "ios"}
+				call("/api/native/v1/authorizations", changed, 409)
+				owner.call("POST", desktopPath, map[string]string{"decision": "approve", "user_code": desktop.Code}, 200)
+				material := decode[polled](t, call("/api/native/v1/authorizations/poll", desktopProof, 200))
+				if material.Status != "approved" || material.Material.Token == "" {
+					t.Fatal("desktop did not receive independent approved session")
+				}
+				call("/api/native/v1/authorizations/cancel", desktopProof, 200)
+				if cancelled := decode[polled](t, call("/api/native/v1/authorizations/poll", desktopProof, 200)); cancelled.Status != "cancelled" || cancelled.Material.Token != "" {
+					t.Fatal("desktop cancellation restored identity")
+				}
 			}
 			if old := decode[started](t, call("/api/native/v1/authorizations", input, 200)); old.ID != v.ID || old.Code != v.Code || !old.Expires.Equal(v.Expires) {
 				t.Fatal("native initiation replay changed original")
