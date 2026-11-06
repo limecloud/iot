@@ -42,17 +42,26 @@ interface SessionStore { suspend fun load(origin: String): String?; suspend fun 
 // OkHttp 只存在于传输适配器，不将其类型暴露给界面或领域合同。
 class OkHttpTransport : GatewayTransport {
     private val client = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false).callTimeout(12, TimeUnit.SECONDS).readTimeout(35, TimeUnit.SECONDS).cache(null).build()
+    // GET 可恢复失效的复用连接；写请求保留零自动重发，沿原操作查询结果。
+    private val readClient = client.newBuilder().retryOnConnectionFailure(true).build()
     override suspend fun send(request: GatewayRequest): GatewayResponse = suspendCancellableCoroutine { continuation ->
         val builder = Request.Builder().url(request.url)
         request.headers.forEach { (name, value) -> builder.header(name, value) }
         builder.method(request.method, request.body?.toRequestBody("application/json".toMediaType()))
-        val call = client.newCall(builder.build())
+        val call = (if (request.method == "GET") readClient else client).newCall(builder.build())
         call.timeout().timeout(request.timeoutMillis, TimeUnit.MILLISECONDS)
         continuation.invokeOnCancellation { call.cancel() }
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) { if (!continuation.isCancelled) continuation.resumeWithException(e) }
             override fun onResponse(call: Call, response: Response) { response.use {
-                if (!continuation.isCancelled) continuation.resume(GatewayResponse(it.code, it.body?.string().orEmpty(), it.header("Set-Cookie")))
+                if (!continuation.isCancelled) {
+                    val result = try { GatewayResponse(it.code, it.body?.string().orEmpty(), it.header("Set-Cookie")) }
+                    catch (error: IOException) {
+                        if (!continuation.isCancelled) continuation.resumeWithException(error)
+                        return
+                    }
+                    continuation.resume(result)
+                }
             } }
         })
     }

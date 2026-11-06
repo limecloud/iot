@@ -8,6 +8,8 @@
 
 普通控制在发送前保存并回读完整原输入；`GatewayClient.create`及`resolve(space,intent)`核对空间、键、设备、模型、期限和操作，confirmed另核对属性或动作证据。错误回执不清除原请求；SDK校验摘要格式，正式JCS摘要由Rust负责。`CommandRecoveryTest`消费`tests/fixtures/commands/recovery.json`的30组共享向量，属于JVM宿主检查；APK/lint不代表Keystore故障或完整Compose运行验收。
 
+`OkHttpTransport` 仅对 GET 开启连接失败恢复，共享原连接池并受单次请求总超时约束；POST 等写请求保持关闭自动重发，结果未知时由业务查询原操作。响应正文读取中断会作为异常返回调用方。`TransportRecoveryTest` 使用回环 HTTP 服务检查失效复用连接恢复、连续失败有界结束、POST 零重发与不完整正文返回错误，不代表公网或真机验收。
+
 仓库根目录执行`node tools/test-home-native-state.mjs android`，运行实际HomeViewModel的六组宿主旅程及云状态回归，并构建Debug APK和执行lint。旅程覆盖存储抛错/未真正保存时零POST、错误回执与404保留原字节、状态重建/退出后恢复、清理未保存及503离线禁写。家庭入口沿用云入口的ViewModel工厂方式，注入既有SessionStore、GatewayTransport和地址偏好回调；生产使用Keystore，在连接时创建OkHttp传输实例。测试不启动模拟器，不代表生产Keystore或Compose端上运行。
 
 静态配置的Zigbee开关复用家庭设备页现有电源控件与GatewayClient，不增加协议专用UI。`npm run test:zigbee:onoff-native`使用真实Rust/SQLite和软件NCP，检查Swift/Kotlin客户端库的完整读回证据、丢响应原键查询、客户端进程及网关重启零补发；宿主库联调与完整App运行分别验收。配置与范围见[属性桥接合同](../../contracts/property-bridges.md)。
